@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Finans - Hesabım</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-main: #0a0a0a; --bg-card: #141414; --bg-input: #1a1a1a;
+            --accent: #00d2ff; --accent-dark: #005f73; 
+            --text-primary: #fff; --text-secondary: #888;
+            --border: #222; 
+            --success: #2ecc71; --danger: #e74c3c; --warning: #f1c40f;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: var(--bg-main); font-family: 'Rajdhani', sans-serif; color: var(--text-primary); display: flex; justify-content: center; min-height: 100vh; }
+        .game-container { width: 100%; max-width: 450px; background: var(--bg-main); display: flex; flex-direction: column; position: relative; box-shadow: 0 0 40px rgba(0,0,0,0.5); }
+
+        /* HEADER - REMOVED (Handled by header-manager.js) */
+        /* header { 
+            padding: 15px 20px; border-bottom: 1px solid var(--border); 
+            background: rgba(10,10,10,0.95); backdrop-filter: blur(10px); 
+            display: flex; justify-content: space-between; align-items: center; z-index: 100;
+        } */
+        /* .bank-brand { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .bb-icon { color: var(--accent); font-size: 1.4rem; }
+        .bb-info h2 { font-size: 1.1rem; margin: 0; line-height: 1; font-weight: 800; letter-spacing: 0.5px; }
+        .bb-info span { font-size: 0.75rem; color: var(--text-secondary); }
+        .wallet-pill { background: rgba(46, 204, 113, 0.1); border: 1px solid var(--success); padding: 5px 12px; border-radius: 20px; color: var(--success); font-weight: 700; font-size: 0.85rem; } */
+
+        main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 90px; }
+
+        /* DIGITAL BANK CARD */
+        .credit-card-wrap {
+            perspective: 1000px;
+            margin-bottom: 25px;
+        }
+        .credit-card {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 25px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 210, 255, 0.15);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        /* Neon Glow Effect */
+        .credit-card::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(0, 210, 255, 0.1) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        
+        .cc-top { display: flex; justify-content: space-between; align-items: flex-start; }
+        .cc-chip { width: 40px; height: 30px; background: linear-gradient(135deg, #d4af37, #f9d423); border-radius: 5px; position: relative; opacity: 0.9; }
+        .cc-chip::after { content:''; position:absolute; border:1px solid rgba(0,0,0,0.3); width:100%; height:100%; border-radius:5px; }
+        .cc-bank-logo { font-size: 1.2rem; font-weight: 800; color: rgba(255,255,255,0.8); letter-spacing: 2px; font-style: italic; }
+
+        .cc-balance-label { font-size: 0.7rem; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        .cc-balance { font-size: 2.2rem; font-weight: 700; color: #fff; text-shadow: 0 0 10px rgba(0,0,0,0.5); letter-spacing: 1px; }
+
+        .cc-bottom { display: flex; justify-content: space-between; align-items: flex-end; }
+        .cc-holder { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.9); }
+        .cc-expiry { font-size: 0.8rem; color: rgba(255,255,255,0.6); }
+
+        /* STATS ROW */
+        .stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 25px; }
+        .stat-box { background: var(--bg-input); border: 1px solid var(--border); padding: 12px; border-radius: 10px; text-align: center; }
+        .sb-label { font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px; }
+        .sb-val { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+        .val-green { color: var(--success); }
+        .val-gold { color: var(--warning); }
+
+        /* ACTION GRID */
+        .section-title { font-size: 0.9rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; border-left: 3px solid var(--accent); padding-left: 10px; }
+        
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 30px; }
+        .action-btn {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 15px 5px; display: flex; flex-direction: column; align-items: center; gap: 8px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .action-btn:hover { border-color: var(--accent); background: #1f1f1f; transform: translateY(-3px); }
+        .ab-icon { width: 40px; height: 40px; background: rgba(0, 210, 255, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: var(--accent); }
+        .ab-text { font-size: 0.75rem; font-weight: 700; color: var(--text-primary); }
+
+        /* TRANSACTION HISTORY */
+        .trans-list { display: flex; flex-direction: column; gap: 10px; }
+        .trans-item { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 12px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border);
+        }
+        .ti-left { display: flex; align-items: center; gap: 12px; }
+        .ti-icon { 
+            width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem; 
+        }
+        .bg-inc { background: rgba(46, 204, 113, 0.15); color: var(--success); }
+        .bg-exp { background: rgba(231, 76, 60, 0.15); color: var(--danger); }
+        
+        .ti-info h4 { font-size: 0.9rem; margin: 0; font-weight: 600; }
+        .ti-info span { font-size: 0.7rem; color: var(--text-secondary); }
+        
+        .ti-amount { font-size: 0.95rem; font-weight: 700; }
+        .amt-plus { color: var(--success); }
+        .amt-minus { color: var(--danger); }
+
+        /* LOAN PROGRESS */
+        .loan-progress-box { background: var(--bg-card); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 25px; }
+        .lpb-header { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px; }
+        .lpb-bar-bg { width: 100%; height: 8px; background: #222; border-radius: 4px; overflow: hidden; }
+        .lpb-bar-fill { height: 100%; background: var(--danger); width: 0%; transition: width 0.5s ease; }
+        .lpb-footer { display: flex; justify-content: space-between; margin-top: 8px; align-items: center; }
+        .lpb-debt { color: var(--text-primary); font-weight: 700; font-size: 1rem; }
+        .btn-pay-sm { background: var(--danger); color: #fff; border: none; padding: 5px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 0.8rem; }
+
+        /* MODAL (Standart) */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 200; display: none; align-items: flex-end; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-content { background: #181818; width: 100%; max-width: 450px; padding: 30px 25px; border-radius: 24px 24px 0 0; border-top: 1px solid var(--accent); animation: slideUp 0.3s; }
+        .m-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 20px; color: #fff; }
+        .modern-input { width: 100%; background: #000; border: 1px solid var(--border); padding: 14px; color: #fff; border-radius: 8px; font-family: 'Rajdhani'; font-size: 1.1rem; margin-bottom: 20px; outline: none; }
+        .modern-input:focus { border-color: var(--accent); }
+        .info-row { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 25px; color: var(--text-secondary); }
+        .btn-full { width: 100%; padding: 14px; background: var(--accent); color: #000; border: none; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; }
+        .btn-close { position: absolute; top: 20px; right: 20px; font-size: 1.2rem; color: var(--text-secondary); cursor: pointer; }
+
+        /* TOAST */
+        .toast { position: absolute; top: 80px; right: 20px; background: #222; border-left: 4px solid var(--success); padding: 15px; border-radius: 4px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); display: none; z-index: 300; animation: fadeIn 0.3s; color: #fff; }
+
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <!-- Header injected by header-manager.js -->
+
+    <main>
+        <div class="page-header" style="margin-bottom: 15px;">
+            <p class="page-desc" onclick="window.location.href='bank.html'" style="cursor:pointer; color: #888; font-size: 0.9rem;">&larr; Bankalara Dön</p>
+        </div>
+
+        <!-- Dijital Banka Kartı -->
+        <div class="credit-card-wrap">
+            <div class="credit-card">
+                <div class="cc-top">
+                    <div class="cc-chip"></div>
+                    <div class="cc-bank-logo">GLOBAL<br>BANK</div>
+                </div>
+                <div class="cc-mid">
+                    <div class="cc-balance-label">TOPLAM BAKİYE</div>
+                    <div class="cc-balance" id="bankBalance">2.500.000 ₺</div>
+                </div>
+                <div class="cc-bottom">
+                    <div class="cc-holder">LORD ENES</div>
+                    <div class="cc-expiry">VIP ÜYE</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- İstatistikler -->
+        <div class="stats-row">
+            <div class="stat-box">
+                <span class="sb-label">FAİZ (GÜNLÜK)</span>
+                <span class="sb-val val-green">%5</span>
+            </div>
+            <div class="stat-box">
+                <div class="sb-label">KREDİ LİMİTİ</div>
+                <div class="sb-val">5.0M ₺</div>
+            </div>
+            <div class="stat-box">
+                <div class="sb-label">KREDİ PUANI</div>
+                <div class="sb-val val-gold">1450</div>
+            </div>
+        </div>
+
+        <!-- Kredi Durumu -->
+        <div class="section-title">KREDİ DURUMU</div>
+        <div class="loan-progress-box">
+            <div class="lpb-header">
+                <span>Kullanılan Limit</span>
+                <span id="loanPercentText">0%</span>
+            </div>
+            <div class="lpb-bar-bg">
+                <div class="lpb-bar-fill" id="loanBar"></div>
+            </div>
+            <div class="lpb-footer">
+                <div>
+                    <div style="font-size:0.7rem; color:#888">GÜNCEL BORÇ</div>
+                    <div class="lpb-debt" id="loanDebt">0 ₺</div>
+                </div>
+                <button class="btn-pay-sm" onclick="openModal('repay')">BORÇ ÖDE</button>
+            </div>
+        </div>
+
+        <!-- İşlemler -->
+        <div class="section-title">HIZLI İŞLEMLER</div>
+        <div class="action-grid">
+            <div class="action-btn" onclick="openModal('deposit')">
+                <div class="ab-icon"><i class="fas fa-arrow-down"></i></div>
+                <span class="ab-text">YATIR</span>
+            </div>
+            <div class="action-btn" onclick="openModal('withdraw')">
+                <div class="ab-icon"><i class="fas fa-arrow-up"></i></div>
+                <span class="ab-text">ÇEK</span>
+            </div>
+            <div class="action-btn" onclick="openModal('transfer')">
+                <div class="ab-icon"><i class="fas fa-paper-plane"></i></div>
+                <span class="ab-text">TRANSFER</span>
+            </div>
+            <div class="action-btn" onclick="openModal('loan')">
+                <div class="ab-icon"><i class="fas fa-hand-holding-dollar"></i></div>
+                <span class="ab-text">KREDİ</span>
+            </div>
+        </div>
+
+        <!-- Hesap Hareketleri -->
+        <div class="section-title">SON HAREKETLER</div>
+        <div class="trans-list" id="transList">
+            <!-- JS ile dolacak -->
+        </div>
+
+    </main>
+
+    <!-- Modal ve Toast (Aynı Mantık) -->
+    <div class="toast" id="toastMsg">İşlem Başarılı!</div>
+    <div class="modal-overlay" id="actionModal">
+        <div class="modal-content">
+            <i class="fas fa-times btn-close" onclick="closeModal()"></i>
+            <h3 class="m-title" id="mTitle">İşlem</h3>
+            
+            <div id="transferGroup" style="display:none; margin-bottom:15px;">
+                <label style="font-size:0.8rem; color:#888; display:block; margin-bottom:5px;">Alıcı Adı</label>
+                <input type="text" class="modern-input" style="margin-bottom:0;" placeholder="Oyuncu Adı...">
+            </div>
+
+            <input type="number" id="mAmount" class="modern-input" placeholder="Miktar Giriniz (₺)">
+
+            <div class="info-row">
+                <span id="mInfoLabel">İşlem Bilgisi</span>
+                <span style="color:#fff; font-weight:bold;" id="mInfoVal">-</span>
+            </div>
+
+            <button class="btn-full" onclick="performAction()">ONAYLA</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let wallet = 6979173;
+    let bankBalance = 2500000;
+    let loanDebt = 0;
+    let loanLimit = 5000000;
+    let currentAction = '';
+    const feeRate = 0.01;
+    const loanRate = 0.12;
+
+    // Örnek İşlem Geçmişi Verisi
+    const transactions = [
+        { title: "Maaş Ödemesi", date: "Bugün, 10:00", amount: 15000, type: "inc", icon: "fa-briefcase" },
+        { title: "Market Alışverişi", date: "Dün, 18:30", amount: -450, type: "exp", icon: "fa-shopping-cart" },
+        { title: "Para Transferi", date: "Dün, 14:20", amount: -2000, type: "exp", icon: "fa-paper-plane" }
+    ];
+
+    const fmt = (n) => n.toLocaleString('tr-TR');
+
+    function init() {
+        renderTransactions();
+        updateUI();
+    }
+
+    function updateUI() {
+        // document.getElementById('walletDisplay').innerText = fmt(wallet) + " ₺";
+        if (window.updateHeader) window.updateHeader();
+        document.getElementById('bankBalance').innerText = fmt(bankBalance) + " ₺";
+        document.getElementById('loanDebt').innerText = fmt(loanDebt) + " ₺";
+        
+        // Kredi Barı
+        const debtPercent = Math.min((loanDebt / loanLimit) * 100, 100);
+        document.getElementById('loanBar').style.width = debtPercent + "%";
+        document.getElementById('loanPercentText').innerText = debtPercent.toFixed(1) + "%";
+    }
+
+    function renderTransactions() {
+        const list = document.getElementById('transList');
+        list.innerHTML = '';
+        
+        // Yeni işlemleri başa ekle
+        transactions.forEach(t => {
+            const isInc = t.type === 'inc';
+            const colorClass = isInc ? 'amt-plus' : 'amt-minus';
+            const bgClass = isInc ? 'bg-inc' : 'bg-exp';
+            const sign = isInc ? '+' : '';
+
+            const item = document.createElement('div');
+            item.className = 'trans-item';
+            item.innerHTML = `
+                <div class="ti-left">
+                    <div class="ti-icon ${bgClass}"><i class="fas ${t.icon}"></i></div>
+                    <div class="ti-info">
+                        <h4>${t.title}</h4>
+                        <span>${t.date}</span>
+                    </div>
+                </div>
+                <div class="ti-amount ${colorClass}">${sign}${fmt(t.amount)} ₺</div>
+            `;
+            list.appendChild(item);
+        });
+    }
+
+    function addTransaction(title, amount, type, icon) {
+        const now = new Date();
+        const time = now.getHours() + ":" + (now.getMinutes()<10?'0':'') + now.getMinutes();
+        
+        transactions.unshift({
+            title: title,
+            date: "Bugün, " + time,
+            amount: type === 'exp' ? -amount : amount,
+            type: type,
+            icon: icon
+        });
+        renderTransactions();
+    }
+
+    function openModal(action) {
+        currentAction = action;
+        document.getElementById('mAmount').value = '';
+        document.getElementById('transferGroup').style.display = action === 'transfer' ? 'block' : 'none';
+        
+        let title = "İşlem";
+        let infoLabel = "Bilgi";
+        let infoVal = "-";
+
+        if(action === 'deposit') { title = "Para Yatır"; infoLabel="Hesaba Geçen"; }
+        if(action === 'withdraw') { title = "Para Çek"; infoLabel="Cüzdana Geçen"; }
+        if(action === 'transfer') { title = "Transfer Yap"; infoLabel="Komisyon (%1)"; infoVal="0 ₺"; }
+        if(action === 'loan') { title = "Kredi Çek"; infoLabel="Geri Ödeme"; infoVal="0 ₺"; }
+        if(action === 'repay') { title = "Borç Öde"; infoLabel="Kalan Borç"; infoVal=fmt(loanDebt)+" ₺"; }
+
+        document.getElementById('mTitle').innerText = title;
+        document.getElementById('mInfoLabel').innerText = infoLabel;
+        document.getElementById('mInfoVal').innerText = infoVal;
+        
+        document.getElementById('actionModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('actionModal').style.display = 'none';
+    }
+
+    function performAction() {
+        const amount = parseInt(document.getElementById('mAmount').value);
+        if(!amount || amount <= 0) return alert("Geçersiz miktar!");
+
+        if(currentAction === 'deposit') {
+            if(wallet >= amount) {
+                wallet -= amount; bankBalance += amount;
+                addTransaction("Para Yatırma", amount, "inc", "fa-piggy-bank");
+                showToast("Para yatırıldı!");
+            } else return alert("Yetersiz Cüzdan Bakiyesi");
+        }
+        else if(currentAction === 'withdraw') {
+            if(bankBalance >= amount) {
+                bankBalance -= amount; wallet += amount;
+                addTransaction("Para Çekme", amount, "exp", "fa-money-bill-wave");
+                showToast("Para çekildi!");
+            } else return alert("Yetersiz Banka Bakiyesi");
+        }
+        else if(currentAction === 'transfer') {
+            const total = Math.floor(amount * (1 + feeRate));
+            if(bankBalance >= total) {
+                bankBalance -= total;
+                addTransaction("Transfer", total, "exp", "fa-paper-plane");
+                showToast("Transfer Başarılı!");
+            } else return alert("Yetersiz Bakiye!");
+        }
+        else if(currentAction === 'loan') {
+            if((loanDebt + amount) > loanLimit) return alert("Kredi Limitini Aşıyorsunuz!");
+            const repay = Math.floor(amount * (1 + loanRate));
+            loanDebt += repay; wallet += amount;
+            addTransaction("Kredi Kullanımı", amount, "inc", "fa-hand-holding-dollar");
+            showToast("Kredi Alındı!");
+        }
+        else if(currentAction === 'repay') {
+            if(wallet >= amount) {
+                if(amount > loanDebt) return alert("Borçtan fazla ödeme yapamazsınız.");
+                wallet -= amount; loanDebt -= amount;
+                addTransaction("Kredi Ödemesi", amount, "exp", "fa-file-invoice-dollar");
+                showToast("Borç ödendi!");
+            } else return alert("Yetersiz Bakiye!");
+        }
+
+        updateUI();
+        closeModal();
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toastMsg');
+        t.innerText = msg;
+        t.style.display = 'block';
+        setTimeout(() => t.style.display = 'none', 3000);
+    }
+
+    document.getElementById('mAmount').addEventListener('input', function(e) {
+        const val = parseInt(e.target.value) || 0;
+        if(currentAction === 'transfer') document.getElementById('mInfoVal').innerText = fmt(Math.floor(val * feeRate)) + " ₺";
+        if(currentAction === 'loan') document.getElementById('mInfoVal').innerText = fmt(Math.floor(val * (1 + loanRate))) + " ₺";
+    });
+
+    // Başlat
+    init();
+
+</script>
+<script src="loader-manager.js"></script>
+<script src="header-manager.js"></script>
+<script src="menu-manager.js"></script>
+<script src="global-menu.js"></script>
+</body>
+</html>

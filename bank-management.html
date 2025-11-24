@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim of World - Banka Yönetimi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #161616;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-gold: #ffd700;
+            --accent-red: #e74c3c;
+            --text-white: #ffffff;
+            --text-muted: #888;
+            --border-color: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/World_map_blank_without_borders.svg/2000px-World_map_blank_without_borders.svg.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* HEADER */
+        header { background-color: #0a0a0a; padding: 10px; border-bottom: 1px solid var(--border-color); }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .logo { font-size: 1.2rem; font-weight: 700; }
+        .stat-box { background: #222; padding: 5px 10px; border-radius: 4px; font-size: 0.9rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 5px; }
+        .status-bars { display: flex; gap: 5px; }
+        .bar-item { background: #222; padding: 4px; border-radius: 15px; font-size: 0.75rem; flex: 1; text-align: center; font-weight: bold; }
+
+        /* MAIN */
+        main {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+
+        .page-header { text-align: center; margin-bottom: 20px; animation: fadeInDown 0.5s; }
+        .page-title { font-size: 1.4rem; letter-spacing: 1px; color: #fff; text-transform: uppercase; font-weight: 800; }
+        .page-desc { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* MANAGEMENT CARD */
+        .manage-card {
+            background: #111; border: 1px solid var(--border-color); border-radius: 10px; padding: 20px; margin-bottom: 20px;
+        }
+        .mc-header { font-size: 1.1rem; font-weight: bold; color: var(--accent-cyan); margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        
+        .vault-box {
+            background: linear-gradient(45deg, #1a1a1a, #000);
+            border: 1px solid var(--accent-gold);
+            border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 20px;
+        }
+        .vb-title { color: var(--accent-gold); font-size: 0.9rem; margin-bottom: 5px; }
+        .vb-amount { font-size: 1.8rem; font-weight: bold; color: #fff; }
+
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .stat-item { background: #181818; padding: 10px; border-radius: 5px; text-align: center; }
+        .si-val { font-weight: bold; color: #fff; font-size: 1.1rem; }
+        .si-lbl { font-size: 0.7rem; color: #888; }
+
+        .form-group { margin-bottom: 15px; }
+        .form-label { display: block; font-size: 0.8rem; color: #aaa; margin-bottom: 5px; }
+        .form-input { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px; font-family: 'Rajdhani'; }
+
+        .btn-save { width: 100%; padding: 12px; background: var(--accent-cyan); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .btn-withdraw { width: 100%; padding: 12px; background: var(--accent-gold); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <main>
+            <div class="page-header">
+                <h1 class="page-title">BANKA YÖNETİMİ</h1>
+                <p class="page-desc" onclick="window.location.href='bank.html'" style="cursor:pointer;">&larr; Bankalara Dön</p>
+            </div>
+
+            <div class="manage-card">
+                <div class="mc-header">BANKA KASASI</div>
+                <div class="vault-box">
+                    <div class="vb-title">KASA BAKİYESİ</div>
+                    <div class="vb-amount"><span id="vaultBalance">0</span> ₺</div>
+                </div>
+                <div class="form-group">
+                    <input type="number" id="withdrawAmount" class="form-input" placeholder="Çekilecek Miktar...">
+                </div>
+                <button class="btn-withdraw" onclick="withdrawVault()">KASADAN PARA ÇEK</button>
+            </div>
+
+            <div class="manage-card">
+                <div class="mc-header">İSTATİSTİKLER</div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="si-val" id="totalDeposits">0 ₺</div>
+                        <div class="si-lbl">Toplam Mevduat</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="si-val" id="totalLoans">0 ₺</div>
+                        <div class="si-lbl">Verilen Krediler</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="manage-card">
+                <div class="mc-header">AYARLAR</div>
+                <div class="form-group">
+                    <label class="form-label">Banka Adı</label>
+                    <input type="text" id="bankName" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mevduat Faizi (%)</label>
+                    <input type="number" id="interestRate" class="form-input" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Kredi Faizi (%)</label>
+                    <input type="number" id="loanRate" class="form-input" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Havale Ücreti (%)</label>
+                    <input type="number" id="transferFee" class="form-input" step="0.1">
+                </div>
+                <button class="btn-save" onclick="updateSettings()">KAYDET</button>
+            </div>
+
+        </main>
+
+        <div id="menu-container"></div>
+    </div>
+
+    <script src="loader-manager.js"></script>
+    <script src="menu-manager.js"></script>
+    <script src="header-manager.js"></script>
+    <script>
+        const fmt = (num) => num.toLocaleString('tr-TR');
+        let myBank = null;
+
+        async function initPage() {
+            await loadMyBank();
+        }
+
+        async function loadMyBank() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) return;
+
+            try {
+                // Get Bank Info
+                const response = await fetch(`/api/banks/my/${user.id}`);
+                const result = await response.json();
+
+                if (result.success && result.hasBank) {
+                    myBank = result.bank;
+                    renderBankInfo();
+                    loadStats();
+                } else {
+                    alert('Bankanız yok.');
+                    window.location.href = 'bank.html';
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch(`/api/banks/stats/${myBank.id}`);
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('totalDeposits').innerText = fmt(result.stats.total_deposits || 0) + ' ₺';
+                    document.getElementById('totalLoans').innerText = fmt(result.stats.total_loans || 0) + ' ₺';
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        function renderBankInfo() {
+            document.getElementById('vaultBalance').innerText = fmt(myBank.balance);
+            document.getElementById('bankName').value = myBank.name;
+            document.getElementById('interestRate').value = myBank.interest_rate;
+            document.getElementById('loanRate').value = myBank.loan_rate;
+            document.getElementById('transferFee').value = myBank.transfer_fee;
+        }
+
+        async function updateSettings() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            const name = document.getElementById('bankName').value;
+            const interest = document.getElementById('interestRate').value;
+            const loan = document.getElementById('loanRate').value;
+            const fee = document.getElementById('transferFee').value;
+
+            try {
+                const response = await fetch('/api/banks/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: user.id,
+                        name: name,
+                        interestRate: interest,
+                        loanRate: loan,
+                        transferFee: fee
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    toastr.success(result.message);
+                } else {
+                    toastr.error(result.message);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function withdrawVault() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            const amount = document.getElementById('withdrawAmount').value;
+
+            if (!amount || amount <= 0) return toastr.warning('Miktar giriniz.');
+
+            try {
+                const response = await fetch('/api/banks/withdraw', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, amount: amount })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    toastr.success(result.message);
+                    document.getElementById('withdrawAmount').value = '';
+                    document.getElementById('vaultBalance').innerText = fmt(result.newBalance);
+                    if (window.updateHeader) window.updateHeader();
+                } else {
+                    toastr.error(result.message);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        window.addEventListener('load', initPage);
+    </script>
+</body>
+</html>

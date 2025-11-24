@@ -1,0 +1,22 @@
+/* Global navigation overlay for Sim of World */
+:root { --gm-bg: rgba(0,0,0,0.85); --gm-card: #111; --gm-accent: #00e5ff; --gm-text: #fff; }
+.global-menu-overlay {
+  position: fixed; inset: 0; display: none; justify-content: center; align-items: center; z-index: 9999;
+  background: var(--gm-bg);
+}
+.global-menu-card {
+  width: 92%; max-width: 420px; background: linear-gradient(180deg, rgba(15,15,15,0.98), rgba(10,10,10,0.98));
+  border: 1px solid #222; border-radius: 12px; padding: 18px; box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+}
+.global-menu-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.global-menu-header h3 { color:var(--gm-text); font-family: 'Rajdhani', sans-serif; font-size:1.05rem; }
+.global-menu-close { color:var(--gm-text); font-size:1.2rem; cursor:pointer; }
+.global-menu-list { display:flex; flex-direction:column; gap:10px; margin-top:8px; }
+.global-menu-item {
+  display:flex; gap:10px; align-items:center; padding:10px 12px; background:#151515; border-radius:8px; color:var(--gm-text);
+  text-decoration:none; border:1px solid #222; transition:transform .12s, box-shadow .12s;
+}
+.global-menu-item:hover { transform:translateY(-3px); box-shadow:0 6px 18px rgba(0,0,0,0.6); }
+.global-menu-icon { width:34px; text-align:center; color:var(--gm-accent); }
+.global-menu-label { font-weight:700; color:var(--gm-text); }
+.global-menu-sub { font-size:0.8rem; color:#9aa0a6; }

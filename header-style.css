@@ -1,0 +1,173 @@
+/* TEMEL AYARLAR (Eğer sayfanda yoksa) */
+:root {
+    --bg-dark: #0d0d0d;
+    --bg-card: #161616;
+    --border-color: #333;
+    --text-white: #ffffff;
+    --font-main: 'Rajdhani', sans-serif;
+    
+    /* Renk Paleti */
+    --c-money: #2ecc71;   /* Yeşil */
+    --c-gold: #ffd700;    /* Altın */
+    --c-diamond: #00e5ff; /* Turkuaz/Elmas */
+    --c-energy: #f1c40f;  /* Sarı/Enerji */
+    --c-health: #e74c3c;  /* Kırmızı/Sağlık */
+    --c-level: #9b59b6;   /* Mor/Level */
+}
+
+/* HEADER STİLİ */
+.game-header-v2 {
+    background-color: var(--bg-card);
+    border-bottom: 1px solid var(--border-color);
+    padding: 10px 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    width: 100%;
+    max-width: 450px; /* Mobilde tam ekran hissi için max-width */
+    
+    /* Fixed Positioning & Centering */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    margin: 0 auto; /* Ortalamak için */
+    z-index: 1000;
+    
+    box-sizing: border-box;
+}
+
+/* Body Padding to prevent content overlap */
+body {
+    padding-top: 170px; /* Header yüksekliğine göre ayarlandı */
+}
+
+/* 1. SATIR: LOGO ve LEVEL */
+.gh-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+.gh-logo {
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    line-height: 1;
+    color: #fff;
+    text-decoration: none;
+}
+.gh-logo span { color: var(--border-color); font-weight: 400; font-size: 1rem; }
+
+.gh-level-badge {
+    background: rgba(155, 89, 182, 0.15);
+    border: 1px solid var(--c-level);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: var(--c-level);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 0 10px rgba(155, 89, 182, 0.2);
+}
+
+/* 2. SATIR: PARA BİRİMLERİ (Para, Altın, Elmas) */
+.gh-currencies {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.gh-curr-item {
+    background: #0a0a0a;
+    border: 1px solid #252525;
+    border-radius: 6px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+.gh-curr-item i { font-size: 1rem; margin-bottom: 2px; }
+.gh-curr-val { letter-spacing: 0.5px; color: #fff; }
+
+/* Renk Sınıfları */
+.gc-money { color: var(--c-money); text-shadow: 0 0 5px rgba(46, 204, 113, 0.3); }
+.gc-gold { color: var(--c-gold); text-shadow: 0 0 5px rgba(255, 215, 0, 0.3); }
+.gc-diamond { color: var(--c-diamond); text-shadow: 0 0 5px rgba(0, 229, 255, 0.3); }
+
+/* 3. SATIR: DURUM BARI (Enerji, Açlık) */
+.gh-stats {
+    display: flex;
+    gap: 10px;
+}
+.gh-stat-row {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #111;
+    padding: 4px 8px;
+    border-radius: 20px;
+    border: 1px solid #222;
+}
+.gh-stat-icon { font-size: 0.9rem; }
+
+/* Progress Bar Yapısı */
+.gh-progress-bg {
+    flex: 1;
+    height: 6px;
+    background: #333;
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+}
+.gh-progress-fill {
+    height: 100%;
+    width: 0%;
+    transition: width 0.5s ease;
+    border-radius: 3px;
+}
+.gh-stat-text { font-size: 0.75rem; font-weight: bold; width: 30px; text-align: right; color: #fff; }
+
+/* Bar Renkleri */
+.fill-health { background: var(--c-health); box-shadow: 0 0 8px var(--c-health); }
+.icon-health { color: var(--c-health); }
+
+.fill-energy { background: var(--c-energy); box-shadow: 0 0 8px var(--c-energy); }
+.icon-energy { color: var(--c-energy); }
+
+/* Menu Button (Added to match previous functionality) */
+.gh-menu-btn {
+    background: none;
+    border: none;
+    color: var(--text-white);
+    font-size: 1.2rem;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+/* --- GLOBAL MENU STYLES (Merged from global-menu.css) --- */
+:root { --gm-bg: rgba(0,0,0,0.85); --gm-card: #111; --gm-accent: #00e5ff; --gm-text: #fff; }
+.global-menu-overlay {
+  position: fixed; inset: 0; display: none; justify-content: center; align-items: center; z-index: 9999;
+  background: var(--gm-bg);
+}
+.global-menu-card {
+  width: 92%; max-width: 420px; background: linear-gradient(180deg, rgba(15,15,15,0.98), rgba(10,10,10,0.98));
+  border: 1px solid #222; border-radius: 12px; padding: 18px; box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+}
+.global-menu-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.global-menu-header h3 { color:var(--gm-text); font-family: 'Rajdhani', sans-serif; font-size:1.05rem; }
+.global-menu-close { color:var(--gm-text); font-size:1.2rem; cursor:pointer; }
+.global-menu-list { display:flex; flex-direction:column; gap:10px; margin-top:8px; }
+.global-menu-item {
+  display:flex; gap:10px; align-items:center; padding:10px 12px; background:#151515; border-radius:8px; color:var(--gm-text);
+  text-decoration:none; border:1px solid #222; transition:transform .12s, box-shadow .12s;
+}
+.global-menu-item:hover { transform:translateY(-3px); box-shadow:0 6px 18px rgba(0,0,0,0.6); }
+.global-menu-icon { width:34px; text-align:center; color:var(--gm-accent); }
+.global-menu-label { font-weight:700; color:var(--gm-text); }
+.global-menu-sub { font-size:0.8rem; color:#9aa0a6; }

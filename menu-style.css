@@ -1,0 +1,58 @@
+/* --- ALT MENÜ (FIXED BOTTOM NAV) --- */
+.bottom-nav {
+    position: fixed; /* Konteynerin altına sabitle */
+    bottom: 0;
+    left: 0;
+    right: 0; /* Ortalamak için */
+    margin: 0 auto; /* Ortalamak için */
+    width: 100%;
+    max-width: 450px; /* Mobil boyutunda sınırla */
+    height: 70px;
+    background-color: rgba(10, 10, 10, 0.95); /* Yarı saydam */
+    border-top: 1px solid #333;
+    display: flex;
+    justify-content: space-around; /* Eşit dağılım */
+    align-items: center;
+    backdrop-filter: blur(10px);
+    z-index: 1000; /* Header ile aynı seviye veya altı/üstü */
+    box-sizing: border-box;
+    border-left: 1px solid #333; /* Kenarlıklar */
+    border-right: 1px solid #333;
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #7f8c8d;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 25%; /* 4 eleman olduğu için */
+    height: 100%;
+    -webkit-tap-highlight-color: transparent;
+    text-decoration: none;
+}
+
+.nav-icon {
+    font-size: 1.4rem;
+    margin-bottom: 4px;
+    transition: transform 0.2s;
+}
+
+.nav-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* Aktif Durum */
+.nav-item.active {
+    color: #00e5ff;
+    border-top: 2px solid #00e5ff; /* Üst çizgi */
+    background: linear-gradient(to bottom, rgba(0, 229, 255, 0.05), transparent);
+}
+.nav-item.active .nav-icon {
+    transform: translateY(-2px);
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+}

@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim of World - Manuel Maden</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="global-menu.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-header: #0a0a0a;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-yellow: #f1c40f;
+            --text-white: #ffffff;
+            --text-gray: #a0a0a0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            max-height: 900px;
+            position: relative;
+            overflow-y: auto;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HEADER REMOVED - Handled by header-manager.js */
+
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .logo { font-size: 1.2rem; font-weight: 700; line-height: 1; }
+        .logo span { display: block; font-size: 0.8rem; letter-spacing: 2px; }
+        .resource-stats { display: flex; gap: 5px; font-size: 0.8rem; }
+        .stat-box { background: #222; padding: 4px 8px; border-radius: 4px; display: flex; align-items: center; gap: 5px; }
+        .money { color: var(--accent-cyan); }
+        .level { color: #9b59b6; }
+        .status-bars { display: flex; gap: 5px; }
+        .bar-item { background: #222; padding: 3px 8px; border-radius: 15px; font-size: 0.75rem; flex: 1; display: flex; justify-content: center; align-items: center; gap: 5px; }
+
+        /* MAIN */
+        main {
+            padding: 15px;
+            flex: 1;
+            background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=1000') center/cover;
+        }
+
+        /* MADEN KARTI */
+        .mining-card {
+            background-color: rgba(22, 22, 22, 0.95);
+            border-top: 2px solid #444;
+            border-bottom: 2px solid #444;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .stone-image { width: 80px; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); }
+        .card-title { font-size: 1.1rem; margin-bottom: 5px; color: #ddd; }
+        .card-subtitle { font-size: 0.9rem; color: #888; margin-bottom: 5px; }
+        .green-text { color: var(--accent-green); font-size: 0.85rem; font-weight: 600; }
+
+        /* BUTON STİLİ */
+        .mining-action-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #444;
+            width: 100%;
+            padding: 15px;
+            margin-top: 20px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            user-select: none;
+        }
+
+        .mining-action-btn:hover { background-color: rgba(255,255,255,0.1); border-color: #666; }
+        
+        /* Buton Devre Dışı (Cooldown) */
+        .mining-action-btn.disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-color: #222;
+        }
+
+        .miner-icon {
+            color: #ccc;
+            font-size: 2rem;
+            transition: color 0.3s;
+        }
+        
+        /* Kazma Animasyonu */
+        .mining-action-btn.digging .miner-icon {
+            color: var(--accent-yellow);
+            animation: dig 0.5s infinite;
+        }
+
+        @keyframes dig {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(-45deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        .mining-status-text { color: #fff; font-size: 1.1rem; font-weight: bold; }
+
+        /* Progress Bar (Süre Dolumu) */
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background-color: #333;
+            margin-top: 10px;
+            border-radius: 3px;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: var(--accent-cyan);
+            /* Animasyon JS ile kontrol edilecek */
+        }
+
+        /* ENVANTER & LOG */
+        .cyan-divider { height: 3px; background-color: var(--accent-cyan); box-shadow: 0 0 10px var(--accent-cyan); margin: 15px 0; }
+        .info-text { text-align: center; color: var(--text-gray); font-size: 0.8rem; margin-bottom: 15px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        
+        .stat-card {
+            background-color: #1a1a1a;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+        }
+        .stat-card::after { content: ''; position: absolute; bottom: 0; left: 10px; width: 40px; height: 2px; }
+        .stat-card.left::after { background: #fff; }
+        .stat-card.right::after { background: var(--accent-green); }
+        .stat-icon img { width: 30px; filter: grayscale(100%); }
+        .stat-info h4 { font-size: 0.75rem; color: #aaa; text-transform: uppercase; }
+        .stat-info span { font-size: 1rem; font-weight: bold; color: #fff; }
+
+        .log-section { background-color: rgba(20, 20, 20, 0.9); padding: 10px; border-radius: 5px; height: 220px; overflow-y: auto; display: flex; flex-direction: column; }
+        .log-header { text-align: center; font-size: 0.9rem; color: #ccc; margin-bottom: 5px; }
+        .log-list { display: flex; flex-direction: column; gap: 8px; }
+        .log-item {
+            background-color: #252525; padding: 8px 10px; border-radius: 4px; font-size: 0.75rem; color: #aaa;
+            border-left: 3px solid var(--accent-green); display: flex; align-items: center; gap: 10px;
+            animation: slideIn 0.3s ease;
+        }
+        .log-item.fail { border-left-color: var(--accent-yellow); color: #bbb; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+
+        @media (max-width: 480px) { .game-container { max-width: 100%; height: 100vh; border-radius: 0; } }
+        /* Geliştirme Butonu */
+        .upgrade-btn {
+            background: linear-gradient(45deg, #2c3e50, #34495e);
+            border: 1px solid #555;
+            color: #fff;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-family: 'Rajdhani';
+            font-weight: bold;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .upgrade-btn:hover { background: linear-gradient(45deg, #34495e, #2c3e50); border-color: var(--accent-cyan); }
+        .upgrade-btn i { color: var(--accent-gold); }
+
+        /* Rezerv Araştırma Butonu */
+        .reserve-btn {
+            background: linear-gradient(45deg, #2e4033, #3a5a40);
+            border: 1px solid #4a6b50;
+            color: #fff;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-family: 'Rajdhani';
+            font-weight: bold;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .reserve-btn:hover { background: linear-gradient(45deg, #3a5a40, #2e4033); border-color: var(--accent-green); }
+        .reserve-btn i { color: var(--accent-green); }
+
+        /* Modal Styles (Reused/Adapted) */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 2000;
+            display: none; justify-content: center; align-items: center;
+        }
+        .modal-card {
+            background: #1a1a1a; width: 90%; max-width: 350px; padding: 20px;
+            border-radius: 10px; border: 1px solid #444; text-align: center;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        .modal-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; color: #fff; }
+        .modal-info { text-align: left; margin-bottom: 20px; font-size: 0.9rem; color: #ccc; }
+        .modal-row { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 4px; }
+        .modal-actions { display: flex; gap: 10px; }
+        .btn-modal { flex: 1; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-family: 'Rajdhani'; }
+        .btn-cancel { background: #333; color: #fff; }
+        .btn-confirm { background: var(--accent-green); color: #000; }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Header removed, injected by header-manager.js -->
+
+        <main>
+            <div class="cyan-divider" style="opacity: 0.5; margin-top:0;"></div>
+            
+            <div class="mining-card">
+                <img src="" alt="Maden" class="stone-image" id="mineImage">
+                <h2 class="card-title" id="mineTitle">YÜKLENİYOR...</h2>
+                <p class="card-subtitle" id="mineSubtitle">...</p>
+                <p class="green-text" id="mineDesc">...</p>
+                
+                <!-- Rezerv Göstergesi -->
+                <div style="margin: 10px 0; background: #222; border-radius: 4px; height: 16px; position: relative; border: 1px solid #444;">
+                    <div id="reserveBar" style="width: 100%; height: 100%; background: var(--accent-green); transition: width 0.5s;"></div>
+                    <span id="reserveText" style="position: absolute; top: 0; left: 0; width: 100%; text-align: center; font-size: 0.7rem; line-height: 14px; color: #fff; text-shadow: 0 0 2px #000;">Rezerv: %100</span>
+                </div>
+
+                <button class="mining-action-btn" id="miningBtn" onclick="handleMineClick()">
+                    <div class="miner-icon"><i class="fas fa-person-digging"></i></div>
+                    <div class="mining-status-text" id="statusText">KAZI YAP</div>
+                    <div style="font-size: 0.75rem; color: #aaa; margin-top: 5px;">
+                        Tüketim: <span id="costEnergy" style="color: var(--accent-yellow)">-10 Enerji</span> | <span id="costHealth" style="color: var(--accent-red)">-10 Can</span>
+                    </div>
+                    
+                    <div class="progress-container" id="progressContainer">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                </button>
+
+                <button class="upgrade-btn" onclick="openUpgradeModal()">
+                    <i class="fas fa-arrow-up"></i> MADENİ GELİŞTİR
+                </button>
+
+                <button class="reserve-btn" onclick="openReserveModal()">
+                    <i class="fas fa-search-location"></i> REZERV ARAŞTIR
+                </button>
+            </div>
+
+            <div class="cyan-divider"></div>
+
+            <div class="inventory-section">
+                <p class="info-text">Madenlerinizi "BORSA" bölümünde satabilirsiniz.</p>
+                <div class="stats-grid">
+                    <div class="stat-card left">
+                        <div class="stat-icon"><img src="" alt="İkon" id="statIcon1"></div>
+                        <div class="stat-info">
+                            <h4 id="statLabel1">TOPLAM</h4>
+                            <span id="totalDisplay">0 ad.</span>
+                        </div>
+                    </div>
+                    <div class="stat-card right">
+                        <div class="stat-icon"><img src="" alt="İkon" id="statIcon2"></div>
+                        <div class="stat-info">
+                            <h4>BUGÜN</h4>
+                            <span id="todayDisplay">0 ad.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="log-section">
+                <div class="log-header">SON BULUNAN TAŞLAR</div>
+                <div class="log-list" id="logList"></div>
+            </div>
+        </main>
+
+        <!-- UPGRADE MODAL -->
+        <div id="upgradeModal" class="modal-overlay">
+            <div class="modal-card">
+                <div class="modal-title">MADEN GELİŞTİRME</div>
+                <div class="modal-info">
+                    <div class="modal-row">
+                        <span>Mevcut Seviye:</span>
+                        <span id="modalCurrentLv" style="color: var(--accent-cyan)">1</span>
+                    </div>
+                    <div class="modal-row">
+                        <span>Sonraki Seviye:</span>
+                        <span id="modalNextLv" style="color: var(--accent-green)">2</span>
+                    </div>
+                    <div class="modal-row">
+                        <span>Gereken Para:</span>
+                        <span id="modalCostMoney" style="color: var(--accent-gold)">5.000 ₺</span>
+                    </div>
+                    <div class="modal-row">
+                        <span>Gereken Altın:</span>
+                        <span id="modalCostGold" style="color: var(--accent-yellow)">50</span>
+                    </div>
+                    <div class="modal-row">
+                        <span>Gereken Lisans:</span>
+                        <span id="modalLicenseReq">Lv. 2</span>
+                    </div>
+                    <div class="modal-row">
+                        <span>Süre:</span>
+                        <span id="modalDuration">60 Sn</span>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-modal btn-cancel" onclick="closeUpgradeModal()">İPTAL</button>
+                    <button class="btn-modal btn-confirm" id="btnConfirmUpgrade" onclick="startUpgrade()">BAŞLAT</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESERVE MODAL -->
+        <div id="reserveModal" class="modal-overlay">
+            <div class="modal-card">
+                <div class="modal-title">REZERV ARAŞTIRMA</div>
+                <div class="modal-info">
+                    <p style="margin-bottom: 10px; font-size: 0.8rem; color: #aaa;">
+                        Maden çevresinde yeni rezervler aramak için jeolojik araştırma başlatın.
+                    </p>
+                    <div class="modal-row">
+                        <span>Gereken Para:</span>
+                        <span id="modalResCostMoney" style="color: var(--accent-gold)">2.000 ₺</span>
+                    </div>
+                    <div class="modal-row">
+                        <span>Gereken Altın:</span>
+                        <span id="modalResCostGold" style="color: var(--accent-yellow)">10</span>
+                    </div>
+                    <div class="modal-row">
+                        <span>Süre:</span>
+                        <span id="modalResDuration">10 Sn</span>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-modal btn-cancel" onclick="closeReserveModal()">İPTAL</button>
+                    <button class="btn-modal btn-confirm" onclick="startReserveResearch()">BAŞLAT</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // OYUN DEĞİŞKENLERİ
+        const urlParams = new URLSearchParams(window.location.search);
+        const resType = urlParams.get('res') || 'stone';
+        
+        let totalResource = 0;
+        let todayResource = 0;
+        let isCooldown = false;
+        const COOLDOWN_TIME = 5000; // 5 Saniye
+        let currentLevel = 1;
+        let currentReserve = 1000;
+        let maxReserve = 1000;
+        let currentLicenseLevel = 0;
+
+        // Maden Verileri
+        const mines = {
+            stone: {
+                name: "TAŞ MADENİ",
+                itemKey: "stone",
+                img: "https://cdn-icons-png.flaticon.com/512/6660/6660085.png",
+                color: "#00e5ff"
+            },
+            coal: {
+                name: "KÖMÜR MADENİ",
+                itemKey: "coal",
+                img: "https://cdn-icons-png.flaticon.com/512/2163/2163291.png",
+                color: "#e74c3c"
+            },
+            iron: {
+                name: "DEMİR MADENİ",
+                itemKey: "iron",
+                img: "https://cdn-icons-png.flaticon.com/512/7396/7396136.png",
+                color: "#95a5a6"
+            },
+            gold: {
+                name: "ALTIN MADENİ",
+                itemKey: "gold",
+                img: "https://cdn-icons-png.flaticon.com/512/2535/2535561.png",
+                color: "#ffd700"
+            },
+            diamond: {
+                name: "ELMAS MADENİ",
+                itemKey: "diamond",
+                img: "https://cdn-icons-png.flaticon.com/512/4248/4248369.png",
+                color: "#3498db"
+            },
+            oil: {
+                name: "PETROL KUYUSU",
+                itemKey: "oil",
+                img: "https://cdn-icons-png.flaticon.com/512/2933/2933900.png",
+                color: "#f39c12"
+            },
+            wood: {
+                name: "ODUN KAMPI",
+                itemKey: "wood",
+                img: "https://cdn-icons-png.flaticon.com/512/2965/2965567.png",
+                color: "#2ecc71"
+            },
+            uranium: {
+                name: "URANYUM MADENİ",
+                itemKey: "uranium",
+                img: "https://cdn-icons-png.flaticon.com/512/3055/3055350.png",
+                color: "#a4e628"
+            },
+            copper: {
+                name: "BAKIR MADENİ",
+                itemKey: "copper",
+                img: "https://cdn-icons-png.flaticon.com/512/3655/3655599.png",
+                color: "#d35400"
+            }
+        };
+
+        const currentMine = mines[resType] || mines['stone'];
+
+        // Elementler
+        const btn = document.getElementById('miningBtn');
+        const statusText = document.getElementById('statusText');
+        const progressBar = document.getElementById('progressBar');
+        const progressContainer = document.getElementById('progressContainer');
+        const totalDisplay = document.getElementById('totalDisplay');
+        const todayDisplay = document.getElementById('todayDisplay');
+        const logList = document.getElementById('logList');
+        
+        // UI Elementleri
+        const mineImage = document.getElementById('mineImage');
+        const mineTitle = document.getElementById('mineTitle');
+        const mineSubtitle = document.getElementById('mineSubtitle');
+        const mineDesc = document.getElementById('mineDesc');
+        const statIcon1 = document.getElementById('statIcon1');
+        const statIcon2 = document.getElementById('statIcon2');
+        const statLabel1 = document.getElementById('statLabel1');
+
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        async function initPage() {
+            // Başlık ve Görselleri Ayarla
+            mineImage.src = currentMine.img;
+            mineTitle.innerText = currentMine.name;
+            
+            statIcon1.src = currentMine.img;
+            statIcon2.src = currentMine.img;
+            statLabel1.innerText = currentMine.itemKey.toUpperCase() + "INIZ";
+
+            // Kullanıcı verilerini çek
+            await fetchUserData();
+            await fetchArgeData();
+        }
+
+        let upgradeInterval;
+
+        async function fetchArgeData() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) return;
+
+            try {
+                // Fetch AR-GE Data
+                const response = await fetch(`/api/arge/status/${user.id}`);
+                const argeData = await response.json();
+                
+                // Fetch License Data
+                const licResponse = await fetch(`/api/licenses/${user.id}`);
+                const licData = await licResponse.json();
+                currentLicenseLevel = licData[currentMine.itemKey] || 0;
+
+                const mineArge = argeData[currentMine.itemKey] || { level: 1, reserve: 1000 };
+                currentLevel = mineArge.level;
+                currentReserve = mineArge.reserve !== undefined ? mineArge.reserve : 1000;
+                maxReserve = 1000 + (currentLevel * 500); // Kapasite formülü
+
+                // Hesaplamalar (Server ile aynı olmalı)
+                const baseChance = 30;
+                const chanceIncrease = (currentLevel - 1) * 5;
+                const totalChance = Math.min(baseChance + chanceIncrease, 75);
+                
+                const minAmount = 1 + Math.floor((currentLevel - 1) / 2);
+                const maxAmount = 3 + (currentLevel - 1);
+
+                // Tüketim Hesaplama
+                const consumption = Math.max(5, 10 - Math.floor((currentLevel - 1) * 0.5));
+                document.getElementById('costEnergy').innerText = `-${consumption} Enerji`;
+                document.getElementById('costHealth').innerText = `-${consumption} Can`;
+
+                mineSubtitle.innerText = `%${totalChance} İhtimalle ${currentMine.name.split(' ')[0]} Bulunur`;
+                mineDesc.innerText = `RASTGELE ${minAmount} - ${maxAmount} ARASINDA KAYNAK (AR-GE Lv. ${currentLevel})`;
+                
+                // Rezerv Barı Güncelle
+                const reservePercent = Math.max(0, Math.min(100, (currentReserve / maxReserve) * 100));
+                document.getElementById('reserveBar').style.width = `${reservePercent}%`;
+                document.getElementById('reserveText').innerText = `Rezerv: ${currentReserve} / ${maxReserve}`;
+                
+                // Rezerv düşükse uyarı rengi
+                if (reservePercent < 20) {
+                    document.getElementById('reserveBar').style.background = 'var(--accent-red)';
+                } else {
+                    document.getElementById('reserveBar').style.background = 'var(--accent-green)';
+                }
+
+                // Upgrade Status Check
+                const upgradeBtn = document.querySelector('.upgrade-btn');
+                if (mineArge.is_researching) {
+                    const now = Date.now();
+                    const endTime = mineArge.research_end_time;
+                    
+                    if (endTime > now) {
+                        // Active Research
+                        startUpgradeTimer(endTime);
+                        upgradeBtn.classList.add('disabled');
+                        upgradeBtn.onclick = null;
+                    } else {
+                        // Finished but not yet updated
+                        upgradeBtn.innerHTML = '<i class="fas fa-check"></i> TAMAMLANDI (YENİLE)';
+                        upgradeBtn.classList.remove('disabled');
+                        upgradeBtn.onclick = () => location.reload();
+                    }
+                } else {
+                    upgradeBtn.innerHTML = '<i class="fas fa-arrow-up"></i> MADENİ GELİŞTİR';
+                    upgradeBtn.classList.remove('disabled');
+                    upgradeBtn.onclick = openUpgradeModal;
+                }
+
+            } catch (error) {
+                console.error('AR-GE verisi alınamadı:', error);
+                mineSubtitle.innerText = "Veri Alınamadı";
+                mineDesc.innerText = "AR-GE verisi yüklenemedi.";
+            }
+        }
+
+        function startUpgradeTimer(endTime) {
+            const upgradeBtn = document.querySelector('.upgrade-btn');
+            
+            if (upgradeInterval) clearInterval(upgradeInterval);
+            
+            // İlk güncelleme
+            updateTimerDisplay(endTime, upgradeBtn);
+
+            upgradeInterval = setInterval(() => {
+                updateTimerDisplay(endTime, upgradeBtn);
+            }, 1000);
+        }
+
+        function updateTimerDisplay(endTime, btn) {
+            const now = Date.now();
+            const diff = endTime - now;
+            
+            if (diff <= 0) {
+                clearInterval(upgradeInterval);
+                btn.innerHTML = '<i class="fas fa-check"></i> TAMAMLANDI (YENİLE)';
+                btn.onclick = () => location.reload();
+                return;
+            }
+            
+            const minutes = Math.floor(diff / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+            
+            btn.innerHTML = `<i class="fas fa-clock"></i> GELİŞTİRİLİYOR: ${minutes}dk ${seconds}sn`;
+        }
+
+        async function fetchUserData() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) return;
+
+            try {
+                const response = await fetch(`/api/inventory/${user.id}`);
+                const data = await response.json();
+                
+                // Envanterden ilgili madeni bul (Data obje formatında: { stone: 10, wood: 5 })
+                const qty = data[currentMine.itemKey] || 0;
+                totalResource = qty;
+                totalDisplay.innerText = formatNumber(totalResource) + " ad.";
+            } catch (error) {
+                console.error('Veri hatası:', error);
+            }
+        }
+
+        function handleMineClick() {
+            if (isCooldown) return;
+            startMiningProcess();
+        }
+
+        function startMiningProcess() {
+            isCooldown = true;
+            
+            // Görsel Değişiklikler (Aktif)
+            btn.classList.add('disabled', 'digging');
+            statusText.innerText = "KAZILIYOR...";
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+
+            // 1.5 Saniye "Kazma" simülasyonu
+            setTimeout(() => {
+                performMining();
+                btn.classList.remove('digging'); 
+                statusText.innerText = "BEKLEYİNİZ...";
+            }, 1500);
+
+            // 5 Saniyelik Soğuma Süresi Animasyonu
+            let startTime = Date.now();
+            let interval = setInterval(() => {
+                let elapsedTime = Date.now() - startTime;
+                let progress = (elapsedTime / COOLDOWN_TIME) * 100;
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    progressBar.style.width = '100%';
+                    resetButton();
+                } else {
+                    progressBar.style.width = progress + '%';
+                }
+            }, 50);
+        }
+
+        async function performMining() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) {
+                addLog("Hata: Giriş yapılmamış!", "fail");
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/mine', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        userId: user.id, 
+                        mineType: currentMine.itemKey 
+                    })
+                });
+                
+                const result = await response.json();
+
+                if (result.success) {
+                    const amount = result.amount;
+                    addLog(`Başarılı! ${amount} adet ${currentMine.itemKey} kazandın.`);
+                    
+                    // Sayaçları güncelle
+                    totalResource += amount;
+                    todayResource += amount;
+                    
+                    totalDisplay.innerText = formatNumber(totalResource) + " ad.";
+                    todayDisplay.innerText = formatNumber(todayResource) + " ad.";
+                    
+                    // Header güncelle (Enerji/Can düştü)
+                    if (window.updateHeader) {
+                        window.updateHeader({ 
+                            energy: result.newEnergy, 
+                            health: result.newHealth 
+                        });
+                    }
+                    
+                    // Rezerv güncelle
+                    if (result.reserve !== undefined) {
+                        currentReserve = result.reserve;
+                        const reservePercent = Math.max(0, Math.min(100, (currentReserve / maxReserve) * 100));
+                        document.getElementById('reserveBar').style.width = `${reservePercent}%`;
+                        document.getElementById('reserveText').innerText = `Rezerv: ${currentReserve} / ${maxReserve}`;
+                    }
+
+                } else {
+                    addLog(result.message || "Kazı başarısız oldu.", "fail");
+                    // Başarısız olsa bile enerji düşebilir
+                    if (result.newEnergy !== undefined && window.updateHeader) {
+                        window.updateHeader({ 
+                            energy: result.newEnergy, 
+                            health: result.newHealth 
+                        });
+                    }
+                }
+
+            } catch (error) {
+                console.error(error);
+                addLog("Sunucu hatası oluştu.", "fail");
+            }
+        }
+
+        function resetButton() {
+            isCooldown = false;
+            btn.classList.remove('disabled', 'digging');
+            statusText.innerText = "KAZI YAP";
+            progressContainer.style.display = 'none';
+            progressBar.style.width = '0%';
+        }
+
+        function addLog(msg, type = 'success') {
+            const div = document.createElement('div');
+            div.className = `log-item ${type}`;
+            div.innerHTML = `<span>${msg}</span> <span style="font-size:0.7rem; margin-left:auto; opacity:0.5">${new Date().toLocaleTimeString()}</span>`;
+            
+            logList.prepend(div);
+            
+            // Listeyi temizle (max 20)
+            if (logList.children.length > 20) {
+                logList.lastElementChild.remove();
+            }
+        }
+
+        // --- UPGRADE SYSTEM ---
+        function openUpgradeModal() {
+            const nextLevel = currentLevel + 1;
+            const costMoney = Math.floor(5000 * Math.pow(1.8, currentLevel - 1));
+            const costGold = 50 * currentLevel;
+            const duration = currentLevel * 60;
+
+            document.getElementById('modalCurrentLv').innerText = currentLevel;
+            document.getElementById('modalNextLv').innerText = nextLevel;
+            document.getElementById('modalCostMoney').innerText = formatNumber(costMoney) + " ₺";
+            document.getElementById('modalCostGold').innerText = costGold;
+            document.getElementById('modalDuration').innerText = duration + " Sn";
+
+            // License Check
+            const licenseEl = document.getElementById('modalLicenseReq');
+            const confirmBtn = document.getElementById('btnConfirmUpgrade');
+            
+            licenseEl.innerText = `Lv. ${nextLevel}`;
+            
+            if (currentLicenseLevel >= nextLevel) {
+                licenseEl.style.color = 'var(--accent-green)';
+                confirmBtn.disabled = false;
+                confirmBtn.style.opacity = '1';
+                confirmBtn.style.cursor = 'pointer';
+                confirmBtn.innerText = 'BAŞLAT';
+            } else {
+                licenseEl.style.color = 'var(--accent-red)';
+                confirmBtn.disabled = true;
+                confirmBtn.style.opacity = '0.5';
+                confirmBtn.style.cursor = 'not-allowed';
+                confirmBtn.innerText = 'LİSANS YETERSİZ';
+            }
+
+            document.getElementById('upgradeModal').style.display = 'flex';
+        }
+
+        function closeUpgradeModal() {
+            document.getElementById('upgradeModal').style.display = 'none';
+        }
+
+        async function startUpgrade() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) return;
+
+            try {
+                const response = await fetch('/api/arge/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, mineType: currentMine.itemKey })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    closeUpgradeModal();
+                    // Verileri yenile (Timer başlayacak)
+                    await fetchArgeData();
+                    // Header bakiyesini güncelle
+                    if (window.updateHeader) {
+                        // Header update fonksiyonu varsa çağır (bakiye düştü)
+                        // Not: Header manager şu an sadece enerji/can alıyor olabilir, 
+                        // ama tam yenileme için sayfayı yenilemek yerine fetchUserData çağrılabilir.
+                        // Basitlik için şimdilik sadece arge verisini yeniliyoruz.
+                    }
+                } else {
+                    alert(result.message || 'Başlatılamadı.');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Hata oluştu.');
+            }
+        }
+
+        // --- RESERVE SYSTEM ---
+        function openReserveModal() {
+            const costMoney = 2000 * currentLevel;
+            const costGold = 10 * currentLevel;
+            const duration = 10; // 10 Saniye
+
+            document.getElementById('modalResCostMoney').innerText = formatNumber(costMoney) + " ₺";
+            document.getElementById('modalResCostGold').innerText = costGold;
+            document.getElementById('modalResDuration').innerText = duration + " Sn";
+
+            document.getElementById('reserveModal').style.display = 'flex';
+        }
+
+        function closeReserveModal() {
+            document.getElementById('reserveModal').style.display = 'none';
+        }
+
+        async function startReserveResearch() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) return;
+
+            try {
+                const response = await fetch('/api/reserve/research/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, mineType: currentMine.itemKey })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    closeReserveModal();
+                    await fetchArgeData();
+                    // Header update if needed
+                } else {
+                    alert(result.message || 'Başlatılamadı.');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Hata oluştu.');
+            }
+        }
+
+        // Başlat
+        window.addEventListener('load', initPage);
+    </script>
+    <script src="loader-manager.js"></script>
+    <script src="menu-manager.js"></script>
+    <script src="header-manager.js"></script>
+</body>
+</html>

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim of World - Hastane Detay</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #161616;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-red: #e74c3c;
+            --accent-gold: #ffd700;
+            --text-white: #ffffff;
+            --text-muted: #888;
+            --border-color: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/World_map_blank_without_borders.svg/2000px-World_map_blank_without_borders.svg.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* MAIN */
+        main {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+
+        .hospital-info {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .h-name { font-size: 1.5rem; font-weight: 800; color: var(--accent-cyan); margin-bottom: 5px; }
+        .h-owner { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px; }
+        .h-stats { display: flex; justify-content: center; gap: 15px; font-size: 0.9rem; }
+        .h-stat { background: #222; padding: 5px 10px; border-radius: 5px; }
+        .h-stat i { margin-right: 5px; }
+
+        /* BED GRID */
+        .bed-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .bed-item {
+            background: #222;
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .bed-item.empty { border-color: var(--accent-green); }
+        .bed-item.occupied { border-color: var(--accent-red); }
+
+        .bed-icon { font-size: 2rem; margin-bottom: 10px; }
+        .empty .bed-icon { color: var(--accent-green); }
+        .occupied .bed-icon { color: var(--accent-red); }
+
+        .bed-label { font-size: 0.8rem; color: #aaa; margin-bottom: 5px; }
+        .bed-timer { font-size: 1rem; font-weight: bold; color: #fff; }
+        .bed-user { font-size: 0.7rem; color: var(--accent-gold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .main-action-area {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .btn-treatment {
+            width: 100%;
+            max-width: 300px;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: #fff;
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+        }
+        .btn-treatment:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(46, 204, 113, 0.4); }
+        .btn-treatment:disabled { background: #333; color: #666; cursor: not-allowed; box-shadow: none; }
+
+        .btn-upgrade {
+            background: linear-gradient(45deg, #f39c12, #d35400);
+            color: #fff;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 0.8rem;
+        }
+
+        /* HISTORY SECTION */
+        .history-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+        }
+        .hs-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 15px; color: #fff; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .hs-list { display: flex; flex-direction: column; gap: 10px; max-height: 200px; overflow-y: auto; }
+        .hs-item {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #1a1a1a; padding: 10px; border-radius: 6px; font-size: 0.9rem;
+            border-left: 3px solid var(--accent-cyan);
+        }
+        .hs-time { color: var(--accent-gold); font-weight: bold; }
+        .hs-user { color: #fff; }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--accent-cyan);
+            border-radius: 10px;
+            padding: 20px;
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+        }
+        .m-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; color: #fff; }
+        .m-text { color: #aaa; margin-bottom: 20px; font-size: 0.9rem; }
+        .m-price { color: var(--accent-gold); font-weight: bold; font-size: 1.1rem; margin: 10px 0; }
+        .m-btns { display: flex; gap: 10px; justify-content: center; }
+        .m-btn { padding: 8px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; }
+        
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Header injected by header-manager.js -->
+
+        <main>
+            <div id="hospitalInfo" class="hospital-info">
+                <div class="h-name">Yükleniyor...</div>
+            </div>
+
+            <div class="main-action-area">
+                <button id="mainTreatBtn" class="btn-treatment" onclick="openModal()">TEDAVİ OL</button>
+            </div>
+
+            <div id="bedGrid" class="bed-grid">
+                <!-- JS ile doldurulacak -->
+            </div>
+
+            <div class="history-section">
+                <div class="hs-title">TEDAVİ GEÇMİŞİ</div>
+                <div class="hs-list" id="historyList">
+                    <div style="text-align:center; color:#666;">Kayıt yok.</div>
+                </div>
+            </div>
+        </main>
+
+        <!-- CONFIRM MODAL -->
+        <div class="modal-overlay" id="treatmentModal">
+            <div class="modal-content">
+                <i class="fas fa-procedures" style="font-size:3rem; color:var(--accent-cyan); margin-bottom:10px;"></i>
+                <div class="m-title">TEDAVİ OL</div>
+                <div class="m-text">
+                    Tedavi olmak istiyor musunuz? Süre: 5 Dakika.<br>
+                    <span style="color:var(--accent-green)">İyileşme: +<span id="healAmountInfo">10</span> Can</span>
+                </div>
+                <div class="m-price" id="modalPrice">100 ₺</div>
+                <div class="m-btns">
+                    <button class="m-btn" style="background:#333; color:#fff;" onclick="closeModal()">İPTAL</button>
+                    <button class="m-btn" style="background:var(--accent-green); color:#000;" onclick="startTreatment()">ONAYLA</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="menu-container"></div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const hospitalId = urlParams.get('id');
+        let hospitalData = null;
+        let activeTreatments = [];
+        let currentUser = null;
+
+        async function initPage() {
+            if (!hospitalId) {
+                toastr.error('Hastane ID bulunamadı.');
+                setTimeout(() => window.location.href = 'hospital.html', 2000);
+                return;
+            }
+            currentUser = JSON.parse(localStorage.getItem('simWorldUser'));
+            await loadHospitalDetails();
+            // Refresh every 2 seconds for realtime feel
+            setInterval(loadHospitalDetails, 2000);
+        }
+
+        async function loadHospitalDetails() {
+            try {
+                const response = await fetch(`/api/hospital/${hospitalId}/details`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    hospitalData = result.data;
+                    activeTreatments = result.activeTreatments || [];
+                    renderHospitalInfo();
+                    renderBeds();
+                    renderHistory(result.history);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        function renderHospitalInfo() {
+            const h = hospitalData;
+            // const isOwner = currentUser && currentUser.id === h.user_id;
+
+            document.getElementById('hospitalInfo').innerHTML = `
+                <div class="h-name">${h.name} (Seviye ${h.level})</div>
+                <div class="h-owner">Sahibi: ${h.owner_name}</div>
+                <div class="h-stats">
+                    <div class="h-stat"><i class="fas fa-bed"></i> ${h.capacity} Kapasite</div>
+                    <div class="h-stat"><i class="fas fa-heart"></i> +${h.level * 10} Can</div>
+                    <div class="h-stat"><i class="fas fa-clock"></i> 5 Dk</div>
+                    <div class="h-stat"><i class="fas fa-tag" style="color:var(--accent-green)"></i> ${h.treatment_price} ₺</div>
+                </div>
+            `;
+        }
+
+        function renderBeds() {
+            const container = document.getElementById('bedGrid');
+            const now = Date.now();
+            let html = '';
+            let occupiedCount = 0;
+
+            // Map active treatments by bed_index
+            const treatmentMap = {};
+            activeTreatments.forEach(t => {
+                const endTime = new Date(t.end_time).getTime();
+                if (endTime > now) {
+                    treatmentMap[t.bed_index] = t;
+                    occupiedCount++;
+                }
+            });
+
+            for (let i = 1; i <= hospitalData.capacity; i++) {
+                const treatment = treatmentMap[i];
+                const isOccupied = !!treatment;
+                
+                let content = '';
+                if (isOccupied) {
+                    const endTime = new Date(treatment.end_time).getTime();
+                    const timeLeft = Math.ceil((endTime - now) / 1000);
+                    
+                    const minutes = Math.floor(timeLeft / 60);
+                    const seconds = timeLeft % 60;
+                    const timeStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                    content = `
+                        <div class="bed-item occupied">
+                            <i class="fas fa-procedures bed-icon"></i>
+                            <div class="bed-label">Yatak ${i}</div>
+                            <div class="bed-timer">${timeStr}</div>
+                            <div class="bed-user">${treatment.username}</div>
+                        </div>
+                    `;
+                } else {
+                    content = `
+                        <div class="bed-item empty">
+                            <i class="fas fa-procedures bed-icon"></i>
+                            <div class="bed-label">Yatak ${i}</div>
+                            <div class="bed-timer" style="color:#aaa;">BOŞ</div>
+                        </div>
+                    `;
+                }
+                html += content;
+            }
+            container.innerHTML = html;
+
+            // Update Main Button
+            const btn = document.getElementById('mainTreatBtn');
+            if (occupiedCount >= hospitalData.capacity) {
+                btn.disabled = true;
+                btn.innerText = 'KAPASİTE DOLU';
+            } else {
+                btn.disabled = false;
+                btn.innerText = 'TEDAVİ OL';
+            }
+        }
+
+        function renderHistory(history) {
+            const container = document.getElementById('historyList');
+            if (!history || history.length === 0) {
+                container.innerHTML = '<div style="text-align:center; color:#666;">Kayıt yok.</div>';
+                return;
+            }
+
+            let html = '';
+            history.forEach(item => {
+                const date = new Date(item.start_time);
+                const timeStr = date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                const dateStr = date.toLocaleDateString('tr-TR');
+                const healAmount = item.heal_amount || (item.hospital_level * 10) || 10; // Fallback
+                
+                html += `
+                    <div class="hs-item">
+                        <span class="hs-time">${dateStr} ${timeStr}</span>
+                        <span class="hs-user">Oyuncu ${item.username}, Seviye ${item.hospital_level || '?'} Hastanede +${healAmount} can aldı</span>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function openModal() {
+            document.getElementById('modalPrice').innerText = `${hospitalData.treatment_price} ₺`;
+            const healAmount = hospitalData.level * 10;
+            document.getElementById('healAmountInfo').innerText = healAmount;
+            document.getElementById('treatmentModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('treatmentModal').style.display = 'none';
+        }
+
+        async function startTreatment() {
+            if (!currentUser) return;
+
+            try {
+                const response = await fetch('/api/hospital/treat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        userId: currentUser.id, 
+                        hospitalId: hospitalId
+                    })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    toastr.success('Tedavi başladı! 5 dakika sonra sağlığınız artacak.', 'Başarılı');
+                    closeModal();
+                    loadHospitalDetails();
+                } else {
+                    toastr.error(result.message, 'Hata');
+                }
+            } catch (error) {
+                console.error(error);
+                toastr.error('Sunucu hatası.', 'Hata');
+            }
+        }
+
+        window.addEventListener('load', initPage);
+    </script>
+    <script src="loader-manager.js"></script>
+    <script src="header-manager.js"></script>
+    <script src="menu-manager.js"></script>
+</body>
+</html>

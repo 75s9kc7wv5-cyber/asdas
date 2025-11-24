@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim of World - Ana Sayfa</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #161616;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-gold: #ffd700;
+            --accent-red: #e74c3c;
+            --text-white: #ffffff;
+            --text-gray: #a0a0a0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            background-image: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/World_map_blank_without_borders.svg/2000px-World_map_blank_without_borders.svg.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* MAIN CONTENT */
+        main {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            padding-bottom: 80px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .welcome-card {
+            background: linear-gradient(135deg, rgba(0, 229, 255, 0.1), rgba(0, 0, 0, 0.8));
+            border: 1px solid var(--accent-cyan);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            animation: fadeInDown 0.6s ease;
+        }
+        .welcome-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 5px; color: var(--accent-cyan); }
+        .welcome-text { font-size: 0.9rem; color: var(--text-gray); }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .dash-item {
+            background: rgba(30, 30, 30, 0.9);
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-decoration: none;
+            color: white;
+            transition: transform 0.2s, border-color 0.2s;
+            height: 120px;
+        }
+        .dash-item:hover { transform: translateY(-3px); border-color: var(--accent-cyan); background: rgba(40, 40, 40, 0.95); }
+        
+        .dash-icon { font-size: 2rem; color: var(--accent-cyan); }
+        .dash-label { font-size: 1.1rem; font-weight: 600; }
+
+        .news-section {
+            background: rgba(20, 20, 20, 0.9);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #333;
+        }
+        .news-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .news-item { font-size: 0.9rem; color: #aaa; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .news-item i { color: var(--accent-gold); font-size: 0.8rem; }
+
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Header injected by header-manager.js -->
+
+        <main>
+            <div class="welcome-card">
+                <div class="welcome-title">HOŞ GELDİNİZ</div>
+                <div class="welcome-text" id="userNameDisplay">Yönetici</div>
+            </div>
+
+            <div class="dashboard-grid">
+                <a href="mines.html" class="dash-item">
+                    <i class="fas fa-coins dash-icon" style="color: #f1c40f;"></i>
+                    <span class="dash-label">Madenler</span>
+                </a>
+                <a href="licence.html" class="dash-item">
+                    <i class="fas fa-id-card dash-icon" style="color: #3498db;"></i>
+                    <span class="dash-label">Lisanslar</span>
+                </a>
+                <a href="market.html" class="dash-item">
+                    <i class="fas fa-shopping-basket dash-icon" style="color: #e74c3c;"></i>
+                    <span class="dash-label">Pazar</span>
+                </a>
+                <a href="bank.html" class="dash-item">
+                    <i class="fas fa-university dash-icon" style="color: #2ecc71;"></i>
+                    <span class="dash-label">Banka</span>
+                </a>
+                <a href="arge.html" class="dash-item">
+                    <i class="fas fa-flask dash-icon" style="color: #9b59b6;"></i>
+                    <span class="dash-label">AR-GE</span>
+                </a>
+            </div>
+
+            <div class="news-section">
+                <div class="news-title">SON GELİŞMELER</div>
+                <div class="news-item"><i class="fas fa-circle"></i> Lisans sistemi aktif edildi!</div>
+                <div class="news-item"><i class="fas fa-circle"></i> Yeni madenler keşfedildi.</div>
+                <div class="news-item"><i class="fas fa-circle"></i> Pazar fiyatları güncellendi.</div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        window.addEventListener('load', () => {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            document.getElementById('userNameDisplay').textContent = user.username || 'Oyuncu';
+        });
+    </script>
+    <script src="loader-manager.js"></script>
+    <script src="header-manager.js"></script>
+    <script src="menu-manager.js"></script>
+</body>
+</html>

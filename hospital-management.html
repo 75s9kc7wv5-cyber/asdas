@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim of World - Hastane Yönetimi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #161616;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-gold: #ffd700;
+            --accent-red: #e74c3c;
+            --accent-purple: #9b59b6;
+            --text-white: #ffffff;
+            --text-muted: #888;
+            --border-color: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            border-left: 1px solid #222;
+            border-right: 1px solid #222;
+        }
+
+        /* HEADER */
+        header { background-color: #0a0a0a; padding: 10px; border-bottom: 1px solid var(--border-color); }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .logo { font-size: 1.2rem; font-weight: 700; }
+        .stat-box { background: #222; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 10px; }
+        .stat-item { display: flex; align-items: center; gap: 3px; }
+        
+        .status-bars { display: flex; gap: 5px; }
+        .bar-item { background: #222; padding: 4px; border-radius: 15px; font-size: 0.75rem; flex: 1; text-align: center; font-weight: bold; }
+
+        /* MAIN */
+        main {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+
+        .page-header { text-align: center; margin-bottom: 20px; animation: fadeInDown 0.5s; }
+        .page-title { font-size: 1.4rem; letter-spacing: 1px; color: #fff; text-transform: uppercase; font-weight: 800; }
+        
+        /* KASA KARTI */
+        .vault-card {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.1), rgba(30,30,30,0.9));
+            border: 1px solid var(--accent-green);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .vault-icon { font-size: 2.5rem; color: var(--accent-green); margin-bottom: 10px; }
+        .vault-title { font-size: 0.9rem; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+        .vault-amount { font-size: 1.8rem; font-weight: bold; color: #fff; margin: 5px 0 15px 0; text-shadow: 0 0 10px rgba(46, 204, 113, 0.3); }
+        
+        .vault-actions { display: flex; gap: 10px; }
+        .vault-input { 
+            flex: 1; background: #000; border: 1px solid #444; color: #fff; 
+            padding: 10px; border-radius: 5px; font-family: 'Rajdhani'; font-weight: bold; text-align: center;
+        }
+        .btn-withdraw {
+            background: var(--accent-green); color: #000; border: none; padding: 0 20px;
+            border-radius: 5px; font-weight: bold; font-family: 'Rajdhani'; cursor: pointer;
+        }
+
+        /* AYARLAR KARTI */
+        .settings-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .card-title { font-size: 1.1rem; color: var(--accent-cyan); margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-label { display: block; font-size: 0.8rem; color: #aaa; margin-bottom: 5px; }
+        .form-input { 
+            width: 100%; background: #111; border: 1px solid #444; color: #fff; 
+            padding: 10px; border-radius: 5px; font-family: 'Rajdhani';
+        }
+        .btn-save {
+            width: 100%; background: #333; color: #fff; border: 1px solid #555;
+            padding: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-save:hover { background: var(--accent-cyan); color: #000; border-color: var(--accent-cyan); }
+
+        /* GELİŞTİRME KARTI */
+        .upgrade-card {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.05), rgba(30,30,30,0.9));
+            border: 1px solid var(--accent-gold);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        .upgrade-info { display: flex; justify-content: space-between; margin-bottom: 15px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 5px; }
+        .u-col h4 { color: var(--accent-gold); font-size: 0.8rem; margin-bottom: 5px; }
+        .u-col p { font-size: 1rem; font-weight: bold; }
+        .u-arrow { display: flex; align-items: center; color: #555; }
+
+        .btn-upgrade {
+            width: 100%; background: var(--accent-gold); color: #000; border: none;
+            padding: 12px; border-radius: 5px; font-weight: bold; font-size: 1rem; 
+            cursor: pointer; font-family: 'Rajdhani'; display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        
+        /* Sayaç/Progress */
+        .upgrade-progress-container { display: none; margin-top: 10px; }
+        .u-progress-bg { width: 100%; height: 10px; background: #333; border-radius: 5px; overflow: hidden; }
+        .u-progress-fill { width: 0%; height: 100%; background: var(--accent-gold); transition: width 0.1s linear; }
+        .u-timer-text { font-size: 0.9rem; color: var(--accent-gold); margin-top: 5px; font-weight: bold; }
+
+        /* MODAL - REVIZE EDILDI */
+        .modal-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 100;
+            display: none; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        .modal-content {
+            background: #181818; width: 90%; padding: 20px; border-radius: 10px;
+            border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-gold);
+        }
+        
+        /* Gereksinim Grid */
+        .req-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .req-item {
+            background: #111; border: 1px solid #333; padding: 10px 5px; border-radius: 5px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .req-icon { font-size: 1.2rem; margin-bottom: 5px; }
+        .req-val { font-size: 0.9rem; font-weight: bold; }
+        .req-label { font-size: 0.65rem; color: #aaa; text-transform: uppercase; }
+        
+        /* Renkli Gereksinimler */
+        .req-money { color: var(--accent-green); border-color: rgba(46, 204, 113, 0.3); }
+        .req-gold { color: var(--accent-gold); border-color: rgba(255, 215, 0, 0.3); }
+        .req-license { color: var(--accent-cyan); border-color: rgba(0, 229, 255, 0.3); }
+
+        .m-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 1rem; }
+
+        /* BOTTOM NAV */
+        .bottom-nav {
+            position: absolute; bottom: 0; width: 100%; background: #0a0a0a;
+            border-top: 1px solid #333; display: flex; justify-content: space-around;
+            padding: 10px 0; z-index: 10;
+        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 0.75rem; cursor: pointer; }
+        .nav-item i { font-size: 1.4rem; margin-bottom: 3px; }
+        .nav-item.active { color: var(--accent-cyan); }
+
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <header>
+            <div class="top-bar">
+                <div class="logo">SIM <span>OF WORLD</span></div>
+                <div class="stat-box">
+                    <div class="stat-item" style="color:var(--accent-green)">
+                        <i class="fas fa-wallet"></i> <span id="userMoney">6.9M</span>
+                    </div>
+                    <div class="stat-item" style="color:var(--accent-gold)">
+                        <i class="fas fa-coins"></i> <span id="userGold">5000</span>
+                    </div>
+                </div>
+            </div>
+            <div class="status-bars">
+                <div class="bar-item" style="color:#e74c3c;"><i class="fas fa-heart"></i> %100</div>
+                <div class="bar-item" style="color:#f1c40f;"><i class="fas fa-hamburger"></i> %92</div>
+                <div class="bar-item" style="color:#00e5ff;"><i class="fas fa-bolt"></i> %97</div>
+                <div class="bar-item" style="color:#2ecc71;">VIP</div>
+            </div>
+        </header>
+
+        <main>
+            <div class="page-header">
+                <h1 class="page-title">HASTANE YÖNETİMİ</h1>
+            </div>
+
+            <div class="vault-card">
+                <i class="fas fa-coins vault-icon"></i>
+                <div class="vault-title">HASTANE KASASI</div>
+                <div class="vault-amount" id="hospitalBalance">154.000 ₺</div>
+                
+                <div class="vault-actions">
+                    <input type="number" id="withdrawAmount" class="vault-input" placeholder="Miktar Gir">
+                    <button class="btn-withdraw" onclick="withdrawMoney()">ÇEK</button>
+                </div>
+            </div>
+
+            <div class="settings-card">
+                <div class="card-title">BİLGİLERİ DÜZENLE</div>
+                <div class="form-group">
+                    <label class="form-label">Hastane Adı</label>
+                    <input type="text" id="hNameInput" class="form-input" value="Şifa Merkezi">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tedavi Ücreti (₺)</label>
+                    <input type="number" id="hPriceInput" class="form-input" value="1500">
+                </div>
+                <button class="btn-save" onclick="saveSettings()">KAYDET</button>
+            </div>
+
+            <div class="settings-card upgrade-card">
+                <div class="card-title" style="border-color:var(--accent-gold); color:var(--accent-gold);">HASTANE SEVİYESİ</div>
+                
+                <div class="upgrade-info">
+                    <div class="u-col">
+                        <h4>MEVCUT</h4>
+                        <p id="currentLevel">Seviye 1</p>
+                        <small style="color:#aaa">100 Yatak</small>
+                    </div>
+                    <div class="u-arrow"><i class="fas fa-arrow-right"></i></div>
+                    <div class="u-col">
+                        <h4>SONRAKİ</h4>
+                        <p id="nextLevel">Seviye 2</p>
+                        <small style="color:var(--accent-green)">150 Yatak</small>
+                    </div>
+                </div>
+
+                <button id="upgradeBtn" class="btn-upgrade" onclick="openUpgradeModal()">
+                    <i class="fas fa-arrow-circle-up"></i> GELİŞTİR
+                </button>
+
+                <div id="upgradeProgress" class="upgrade-progress-container">
+                    <div class="u-progress-bg">
+                        <div id="uBar" class="u-progress-fill"></div>
+                    </div>
+                    <div id="uTimer" class="u-timer-text">Geliştiriliyor... 10s</div>
+                </div>
+            </div>
+
+        </main>
+
+        <div class="modal-overlay" id="confirmModal">
+            <div class="modal-content">
+                <i class="fas fa-hammer" style="font-size:3rem; color:var(--accent-gold); margin-bottom:10px;"></i>
+                <h3 style="color:#fff; margin-bottom:5px;">Seviye Yükselt</h3>
+                <p style="color:#aaa; font-size:0.8rem; margin-bottom:20px;">Kapasite ve gelir artışı için yükseltme yapın.</p>
+                
+                <div class="req-grid">
+                    <div class="req-item req-money">
+                        <i class="fas fa-wallet req-icon"></i>
+                        <div class="req-val" id="reqMoney">500K</div>
+                        <div class="req-label">PARA</div>
+                    </div>
+                    <div class="req-item req-gold">
+                        <i class="fas fa-coins req-icon"></i>
+                        <div class="req-val" id="reqGold">500</div>
+                        <div class="req-label">ALTIN</div>
+                    </div>
+                    <div class="req-item req-license">
+                        <i class="fas fa-file-contract req-icon"></i>
+                        <div class="req-val" id="reqLicense">Lv. 2</div>
+                        <div class="req-label">LİSANS</div>
+                    </div>
+                </div>
+
+                <p style="font-size:0.8rem; color:#888;">İşlem Süresi: 10 Saniye</p>
+
+                <div class="m-btns">
+                    <button class="m-btn" style="background:#333; color:#fff;" onclick="closeModal()">İPTAL</button>
+                    <button class="m-btn" style="background:var(--accent-green); color:#000;" onclick="startUpgrade()">ONAYLA</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-nav">
+            <div class="nav-item">
+                <i class="fas fa-arrow-left"></i>
+                <span onclick="window.location.href='hastane.html'">Geri</span>
+            </div>
+            <div class="nav-item active">
+                <i class="fas fa-cogs"></i>
+                <span>Yönetim</span>
+            </div>
+            <div class="nav-item">
+                <i class="fas fa-briefcase"></i>
+                <span>Çanta</span>
+            </div>
+            <div class="nav-item">
+                <i class="fas fa-user"></i>
+                <span>Profil</span>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- VERİLER ---
+        let user = {
+            money: 6979173,
+            gold: 5000,
+            licenseLevel: 1 // Oyuncunun mevcut lisans seviyesi
+        };
+
+        let hospital = {
+            balance: 154000,
+            name: "Şifa Merkezi",
+            price: 1500,
+            level: 1,
+            
+            // Geliştirme Maliyetleri
+            upgradeCostMoney: 500000,
+            upgradeCostGold: 500,
+            upgradeTime: 10 // Saniye
+        };
+
+        // Formatlama
+        const fmt = (num) => num.toLocaleString('tr-TR');
+
+        // Başlangıç
+        updateUI();
+
+        function updateUI() {
+            document.getElementById('userMoney').innerText = fmt(user.money);
+            document.getElementById('userGold').innerText = fmt(user.gold);
+            document.getElementById('hospitalBalance').innerText = fmt(hospital.balance) + " ₺";
+            document.getElementById('hNameInput').value = hospital.name;
+            document.getElementById('hPriceInput').value = hospital.price;
+            
+            document.getElementById('currentLevel').innerText = "Seviye " + hospital.level;
+            document.getElementById('nextLevel').innerText = "Seviye " + (hospital.level + 1);
+            
+            // Modal Değerleri Güncelle
+            document.getElementById('reqMoney').innerText = (hospital.upgradeCostMoney / 1000) + "K";
+            document.getElementById('reqGold').innerText = hospital.upgradeCostGold;
+            document.getElementById('reqLicense').innerText = "Lv. " + (hospital.level + 1);
+        }
+
+        // --- KASA İŞLEMLERİ ---
+        function withdrawMoney() {
+            const amount = parseInt(document.getElementById('withdrawAmount').value);
+            
+            if(!amount || amount <= 0) {
+                alert("Geçerli bir miktar giriniz.");
+                return;
+            }
+
+            if(amount > hospital.balance) {
+                alert("Kasada yeterli para yok!");
+                return;
+            }
+
+            hospital.balance -= amount;
+            user.money += amount;
+            
+            document.getElementById('withdrawAmount').value = "";
+            updateUI();
+            alert("Para başarıyla envantere aktarıldı.");
+        }
+
+        // --- AYARLAR ---
+        function saveSettings() {
+            const newName = document.getElementById('hNameInput').value;
+            const newPrice = parseInt(document.getElementById('hPriceInput').value);
+
+            if(newName.length < 3) {
+                alert("Hastane ismi en az 3 karakter olmalıdır.");
+                return;
+            }
+            if(newPrice < 0 || newPrice > 10000) {
+                alert("Fiyat 0 ile 10.000 arasında olmalıdır.");
+                return;
+            }
+
+            hospital.name = newName;
+            hospital.price = newPrice;
+            alert("Bilgiler güncellendi!");
+        }
+
+        // --- GELİŞTİRME SİSTEMİ ---
+        function openUpgradeModal() {
+            // Renklendirme kontrolü (Yetersiz bakiye varsa kırmızı yap)
+            const reqMoneyEl = document.querySelector('.req-money');
+            const reqGoldEl = document.querySelector('.req-gold');
+            const reqLicEl = document.querySelector('.req-license');
+
+            reqMoneyEl.style.borderColor = user.money >= hospital.upgradeCostMoney ? 'rgba(46, 204, 113, 0.3)' : 'var(--accent-red)';
+            reqGoldEl.style.borderColor = user.gold >= hospital.upgradeCostGold ? 'rgba(255, 215, 0, 0.3)' : 'var(--accent-red)';
+            reqLicEl.style.borderColor = user.licenseLevel >= (hospital.level + 1) ? 'rgba(0, 229, 255, 0.3)' : 'var(--accent-red)';
+
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+        }
+
+        function startUpgrade() {
+            const nextLevel = hospital.level + 1;
+
+            // 1. Lisans Kontrolü
+            if (user.licenseLevel < nextLevel) {
+                alert(`Yetersiz Lisans! Bu işlem için Lisans Seviye ${nextLevel} gereklidir. Lisans sayfasından yükseltin.`);
+                return;
+            }
+
+            // 2. Bakiye Kontrolü
+            if(user.money < hospital.upgradeCostMoney) {
+                alert("Yetersiz Para!");
+                return;
+            }
+            if(user.gold < hospital.upgradeCostGold) {
+                alert("Yetersiz Altın!");
+                return;
+            }
+
+            // İşlem Başarılı
+            user.money -= hospital.upgradeCostMoney;
+            user.gold -= hospital.upgradeCostGold;
+            
+            updateUI();
+            closeModal();
+
+            // UI Değişiklikleri (Butonu gizle, sayacı aç)
+            document.getElementById('upgradeBtn').style.display = 'none';
+            document.getElementById('upgradeProgress').style.display = 'block';
+
+            // Sayaç Başlat
+            let timeLeft = hospital.upgradeTime;
+            const bar = document.getElementById('uBar');
+            const text = document.getElementById('uTimer');
+            
+            const interval = setInterval(() => {
+                timeLeft--;
+                const percent = ((hospital.upgradeTime - timeLeft) / hospital.upgradeTime) * 100;
+                
+                bar.style.width = percent + "%";
+                text.innerText = `Geliştiriliyor... ${timeLeft}s`;
+
+                if(timeLeft <= 0) {
+                    clearInterval(interval);
+                    finishUpgrade();
+                }
+            }, 1000);
+        }
+
+        function finishUpgrade() {
+            hospital.level++;
+            // Maliyetleri artır
+            hospital.upgradeCostMoney = Math.floor(hospital.upgradeCostMoney * 1.5);
+            hospital.upgradeCostGold = Math.floor(hospital.upgradeCostGold * 1.2);
+            
+            updateUI();
+            
+            // UI Reset
+            document.getElementById('upgradeBtn').style.display = 'flex';
+            document.getElementById('upgradeProgress').style.display = 'none';
+            document.getElementById('uBar').style.width = "0%";
+            
+            alert(`Tebrikler! Hastaneniz Seviye ${hospital.level} oldu.`);
+        }
+
+    </script>
+</body>
+</html>

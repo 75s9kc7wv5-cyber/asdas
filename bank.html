@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim of World - Bankalar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #161616;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-gold: #ffd700;
+            --accent-red: #e74c3c;
+            --text-white: #ffffff;
+            --text-muted: #888;
+            --border-color: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/World_map_blank_without_borders.svg/2000px-World_map_blank_without_borders.svg.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* HEADER */
+        header { background-color: #0a0a0a; padding: 10px; border-bottom: 1px solid var(--border-color); }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .logo { font-size: 1.2rem; font-weight: 700; }
+        .stat-box { background: #222; padding: 5px 10px; border-radius: 4px; font-size: 0.9rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 5px; }
+        .status-bars { display: flex; gap: 5px; }
+        .bar-item { background: #222; padding: 4px; border-radius: 15px; font-size: 0.75rem; flex: 1; text-align: center; font-weight: bold; }
+
+        /* MAIN */
+        main {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+
+        .page-header { text-align: center; margin-bottom: 20px; animation: fadeInDown 0.5s; }
+        .page-title { font-size: 1.4rem; letter-spacing: 1px; color: #fff; text-transform: uppercase; font-weight: 800; }
+        .page-desc { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* TABS */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
+        .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: #777; font-family: 'Rajdhani'; font-weight: bold; cursor: pointer; border-radius: 6px; transition: all 0.3s; }
+        .tab-btn.active { background: #222; color: var(--accent-gold); border: 1px solid var(--accent-gold); box-shadow: 0 0 10px rgba(255, 215, 0, 0.1); }
+
+        /* BANK LIST */
+        .bank-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+
+        .bank-card {
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid var(--border-color);
+            border-left: 3px solid var(--accent-gold);
+            border-radius: 8px;
+            padding: 15px;
+            position: relative;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .bc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .bc-title { font-size: 1.1rem; font-weight: bold; color: #fff; display: flex; align-items: center; gap: 10px; }
+        .bc-icon { width: 30px; height: 30px; background: #222; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent-gold); }
+        .bc-owner { font-size: 0.8rem; color: var(--text-muted); }
+
+        .bc-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 15px; background: #111; padding: 10px; border-radius: 5px; }
+        .bc-stat { text-align: center; }
+        .bc-stat-val { font-size: 0.9rem; font-weight: bold; color: var(--accent-cyan); }
+        .bc-stat-lbl { font-size: 0.7rem; color: #666; }
+
+        .bc-balance { font-size: 0.8rem; color: #aaa; margin-bottom: 10px; text-align: center; }
+        .bc-balance span { color: var(--accent-green); font-weight: bold; }
+
+        .btn-action {
+            width: 100%; padding: 8px; border: none; border-radius: 4px;
+            background: var(--accent-gold); color: #000; font-weight: bold; cursor: pointer;
+            font-family: 'Rajdhani'; transition: all 0.2s;
+        }
+        .btn-action:hover { background: #e6c200; }
+
+        /* CREATE BANK */
+        .create-bank-card {
+            text-align: center; padding: 30px; background: #111; border: 1px dashed #444; border-radius: 10px;
+        }
+        .create-icon { font-size: 3rem; color: var(--accent-gold); margin-bottom: 15px; }
+        .create-cost { font-size: 1.2rem; color: var(--accent-green); font-weight: bold; margin: 10px 0; }
+
+        /* MODAL */
+        .modal-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 100;
+            display: none; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        .modal-content {
+            background: #181818; width: 85%; padding: 25px; border-radius: 10px;
+            border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-gold);
+        }
+        .m-input {
+            width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: #fff;
+            border-radius: 5px; margin: 15px 0; font-family: 'Rajdhani';
+        }
+        .m-btns { display: flex; gap: 10px; }
+        .m-btn { flex: 1; padding: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+      
+
+        <main>
+            <div class="page-header">
+                <h1 class="page-title">BANKACILIK</h1>
+                <p class="page-desc">Paranı yönet, kredi çek veya kendi bankanı kur.</p>
+            </div>
+
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('city')">ŞEHİRDEKİ BANKALAR</button>
+                <button class="tab-btn" onclick="switchTab('my')">BANKAM</button>
+            </div>
+
+            <!-- CITY BANKS TAB -->
+            <div id="tab-city">
+                <div class="bank-grid" id="cityBankList">
+                    <!-- JS will populate -->
+                </div>
+            </div>
+
+            <!-- MY BANK TAB -->
+            <div id="tab-my" style="display:none;">
+                <div id="myBankContent">
+                    <!-- JS will populate -->
+                </div>
+            </div>
+
+        </main>
+
+        <!-- CREATE BANK MODAL -->
+        <div class="modal-overlay" id="createBankModal">
+            <div class="modal-content">
+                <i class="fas fa-university" style="font-size:3rem; color:var(--accent-gold); margin-bottom:10px;"></i>
+                <h3 style="color:#fff;">Banka Kur</h3>
+                <p style="color:#aaa; font-size:0.9rem;">Kendi bankanı kurmak için isim belirle.</p>
+                
+                <input type="text" id="newBankName" class="m-input" placeholder="Banka Adı Giriniz...">
+                <p style="color:var(--accent-green); font-weight:bold; margin-bottom:15px;">Kurulum Ücreti: 100.000 ₺</p>
+
+                <div class="m-btns">
+                    <button class="m-btn" style="background:#333; color:#fff;" onclick="closeModal('createBankModal')">İPTAL</button>
+                    <button class="m-btn" style="background:var(--accent-gold); color:#000;" onclick="createBank()">KUR</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="menu-container"></div>
+    </div>
+
+    <script src="loader-manager.js"></script>
+    <script src="menu-manager.js"></script>
+    <script src="header-manager.js"></script>
+    <script>
+        const fmt = (num) => num.toLocaleString('tr-TR');
+
+        async function initPage() {
+            await loadCityBanks();
+            await loadMyBank();
+        }
+
+        async function loadCityBanks() {
+            try {
+                const response = await fetch('/api/banks');
+                const banks = await response.json();
+                const container = document.getElementById('cityBankList');
+                container.innerHTML = '';
+
+                if (banks.length === 0) {
+                    container.innerHTML = '<div style="text-align:center; color:#666;">Şehirde henüz banka yok.</div>';
+                    return;
+                }
+
+                banks.forEach(b => {
+                    const card = document.createElement('div');
+                    card.className = 'bank-card';
+                    card.innerHTML = `
+                        <div class="bc-header">
+                            <div class="bc-title">
+                                <div class="bc-icon"><i class="fas fa-landmark"></i></div>
+                                ${b.name}
+                            </div>
+                            <div class="bc-owner">${b.owner_name}</div>
+                        </div>
+                        <div class="bc-stats">
+                            <div class="bc-stat">
+                                <div class="bc-stat-val">%${b.interest_rate}</div>
+                                <div class="bc-stat-lbl">Mevduat Faizi</div>
+                            </div>
+                            <div class="bc-stat">
+                                <div class="bc-stat-val">%${b.loan_rate}</div>
+                                <div class="bc-stat-lbl">Kredi Faizi</div>
+                            </div>
+                            <div class="bc-stat">
+                                <div class="bc-stat-val">%${b.transfer_fee}</div>
+                                <div class="bc-stat-lbl">Havale Ücreti</div>
+                            </div>
+                        </div>
+                        <div class="bc-balance">Banka Büyüklüğü: <span>${fmt(b.balance)} ₺</span></div>
+                        <button class="btn-action" onclick="openAccountPage(${b.id})">HESAP AÇ / GİRİŞ YAP</button>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function loadMyBank() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) return;
+
+            try {
+                const response = await fetch(`/api/banks/my/${user.id}`);
+                const result = await response.json();
+                const container = document.getElementById('myBankContent');
+
+                if (result.success && result.hasBank) {
+                    const b = result.bank;
+                    container.innerHTML = `
+                        <div class="bank-card" style="border-left-color:var(--accent-cyan);">
+                            <div class="bc-header">
+                                <div class="bc-title" style="color:var(--accent-cyan);">
+                                    <div class="bc-icon" style="color:var(--accent-cyan);"><i class="fas fa-briefcase"></i></div>
+                                    ${b.name}
+                                </div>
+                                <div class="bc-owner">YÖNETİCİ PANELİ</div>
+                            </div>
+                            <div class="bc-stats">
+                                <div class="bc-stat">
+                                    <div class="bc-stat-val">%${b.interest_rate}</div>
+                                    <div class="bc-stat-lbl">Mevduat</div>
+                                </div>
+                                <div class="bc-stat">
+                                    <div class="bc-stat-val">%${b.loan_rate}</div>
+                                    <div class="bc-stat-lbl">Kredi</div>
+                                </div>
+                                <div class="bc-stat">
+                                    <div class="bc-stat-val">%${b.transfer_fee}</div>
+                                    <div class="bc-stat-lbl">Havale</div>
+                                </div>
+                            </div>
+                            <div class="bc-balance">Kasa Bakiyesi: <span>${fmt(b.balance)} ₺</span></div>
+                            <button class="btn-action" style="background:var(--accent-cyan);" onclick="window.location.href='bank-management.html'">BANKA YÖNET</button>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <div class="create-bank-card">
+                            <div class="create-icon"><i class="fas fa-university"></i></div>
+                            <h3>Kendi Bankanı Kur</h3>
+                            <p style="color:#888; font-size:0.9rem;">Şehrin finansını yönet, kredi ver ve kazan.</p>
+                            <div class="create-cost">100.000 ₺</div>
+                            <button class="btn-action" onclick="openCreateModal()">BANKA KUR</button>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        function openAccountPage(bankId) {
+            window.location.href = `players-bank-account.html?bankId=${bankId}`;
+        }
+
+        function openCreateModal() {
+            document.getElementById('createBankModal').style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        async function createBank() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            const name = document.getElementById('newBankName').value;
+            
+            if (!name) return toastr.warning('Banka adı giriniz.');
+
+            try {
+                const response = await fetch('/api/banks/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, name: name })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    toastr.success(result.message);
+                    closeModal('createBankModal');
+                    loadMyBank();
+                    loadCityBanks();
+                    if (window.updateHeader) window.updateHeader();
+                } else {
+                    toastr.error(result.message);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.getElementById('tab-city').style.display = 'none';
+            document.getElementById('tab-my').style.display = 'none';
+            
+            document.getElementById('tab-' + tab).style.display = 'block';
+        }
+
+        window.addEventListener('load', initPage);
+    </script>
+</body>
+</html>
