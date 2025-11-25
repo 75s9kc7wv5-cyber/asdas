@@ -1,5 +1,3 @@
+nohup: ignoring input
 Server running at http://localhost:3000
-Connected to MySQL database.
-Licenses table ready.
-Hospitals table ready.
-Hospital Treatments table ready.
+Connected to database: simworld

@@ -1,20 +1,30 @@
 (function() {
-    // 1. Inject CSS
+    // 1. Check Authentication
+    const userStr = localStorage.getItem('simWorldUser');
+    if (!userStr) {
+        console.log("No user logged in. Header stats will not be displayed.");
+        return; 
+    }
+
+    const user = JSON.parse(userStr);
+    const userId = user.id;
+
+    // 2. Inject CSS
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'header-style.css';
     document.head.appendChild(link);
 
-    // 2. Create Header HTML
+    // 3. Create Header HTML
     const headerHTML = `
-    <header class="game-header-v2">
+    <header class="game-header-v2" id="gameHeader">
         
         <div class="gh-top">
             <a href="index.html" class="gh-logo">SIM <span>OF WORLD</span></a>
             <div style="display:flex; align-items:center;">
                 <div class="gh-level-badge">
                     <i class="fas fa-crown"></i>
-                    <span id="headerLevel">Lv. 1</span>
+                    <span id="headerLevel">Lv. ...</span>
                 </div>
                 <button class="gh-menu-btn" onclick="toggleGlobalMenu()">☰</button>
             </div>
@@ -23,15 +33,15 @@
         <div class="gh-currencies">
             <div class="gh-curr-item">
                 <i class="fas fa-wallet gc-money"></i>
-                <span class="gh-curr-val" id="headerMoney">0 ₺</span>
+                <span class="gh-curr-val" id="headerMoney">...</span>
             </div>
             <div class="gh-curr-item">
                 <i class="fas fa-coins gc-gold"></i>
-                <span class="gh-curr-val" id="headerGold">0</span>
+                <span class="gh-curr-val" id="headerGold">...</span>
             </div>
             <div class="gh-curr-item">
                 <i class="fas fa-gem gc-diamond"></i>
-                <span class="gh-curr-val" id="headerDiamond">0</span>
+                <span class="gh-curr-val" id="headerDiamond">...</span>
             </div>
         </div>
 
@@ -41,7 +51,7 @@
                 <div class="gh-progress-bg">
                     <div class="gh-progress-fill fill-health" id="barHealth" style="width: 0%"></div>
                 </div>
-                <span class="gh-stat-text" id="textHealth">0%</span>
+                <span class="gh-stat-text" id="textHealth">...</span>
             </div>
             
             <div class="gh-stat-row">
@@ -49,7 +59,7 @@
                 <div class="gh-progress-bg">
                     <div class="gh-progress-fill fill-energy" id="barEnergy" style="width: 0%"></div>
                 </div>
-                <span class="gh-stat-text" id="textEnergy">0%</span>
+                <span class="gh-stat-text" id="textEnergy">...</span>
             </div>
         </div>
 
@@ -59,13 +69,28 @@
     // Insert Header at the beginning of body
     document.body.insertAdjacentHTML('afterbegin', headerHTML);
 
-    // 3. Fetch and Update Data
+    // 4. Fetch and Update Data
     async function updateHeaderStats() {
-        const userId = localStorage.getItem('userId') || 1; // Default to 1 if not set
+        // Re-check auth in case user logged out in another tab
+        const currentUserStr = localStorage.getItem('simWorldUser');
+        if (!currentUserStr) {
+            clearInterval(statsInterval);
+            const header = document.getElementById('gameHeader');
+            if (header) header.style.display = 'none';
+            return;
+        }
         
         try {
             const response = await fetch(`/api/user-stats/${userId}`);
-            if (!response.ok) throw new Error('Network response was not ok');
+            if (!response.ok) {
+                if (response.status === 404) {
+                    console.error("User not found in DB");
+                    localStorage.removeItem('simWorldUser');
+                    window.location.href = 'login.html';
+                    return;
+                }
+                throw new Error('Network response was not ok');
+            }
             
             const data = await response.json();
             updateHeader(data);
@@ -76,7 +101,6 @@
     }
 
     // HEADER GÜNCELLEME SİSTEMİ
-    // Bu fonksiyonu oyunun herhangi bir yerinden çağırarak header'ı güncelleyebilirsin.
     function updateHeader(data) {
         // Sayı Formatlama (1.000.000 gibi)
         const fmt = (num) => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -101,12 +125,17 @@
     // Initial update
     updateHeaderStats();
 
-    // Update every 10 seconds
-    setInterval(updateHeaderStats, 10000);
+    // Update every 2 seconds (Faster polling for near-instant updates)
+    const statsInterval = setInterval(updateHeaderStats, 2000);
 
     // Expose update function globally if needed
     window.updateHeaderStats = updateHeaderStats;
     window.updateHeader = updateHeader;
+
+    // Listen for custom event 'userStatsUpdated' to trigger immediate update
+    window.addEventListener('userStatsUpdated', () => {
+        updateHeaderStats();
+    });
 
     // --- GLOBAL MENU LOGIC (Merged) ---
     const menuPages = [

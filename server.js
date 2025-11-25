@@ -6,6 +6,21 @@ const path = require('path');
 const app = express();
 const port = 3000;
 
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: 'simuser',
+    password: 'password',
+    database: 'simworld'
+});
+
+db.connect((err) => {
+    if (err) {
+        console.error('Database connection failed:', err);
+    } else {
+        console.log('Connected to database: simworld');
+    }
+});
+
 // Middleware
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, '.')));
@@ -13,6 +28,35 @@ app.use(express.static(path.join(__dirname, '.')));
 // Root Route
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Login Endpoint
+app.post('/api/login', (req, res) => {
+    const { username, password } = req.body;
+    const query = 'SELECT * FROM users WHERE username = ? AND password = ?';
+    db.query(query, [username, password], (err, results) => {
+        if (err) return res.status(500).json({ message: 'Veritabanı hatası' });
+        if (results.length > 0) {
+            res.json({ user: results[0] });
+        } else {
+            res.status(401).json({ message: 'Kullanıcı adı veya şifre hatalı' });
+        }
+    });
+});
+
+// Register Endpoint
+app.post('/api/register', (req, res) => {
+    const { username, password, email } = req.body;
+    const query = 'INSERT INTO users (username, password, email, money, energy, health) VALUES (?, ?, ?, 1000, 100, 100)';
+    db.query(query, [username, password, email], (err, result) => {
+        if (err) {
+            if (err.code === 'ER_DUP_ENTRY') {
+                return res.status(400).json({ message: 'Kullanıcı adı veya e-posta zaten kullanımda.' });
+            }
+            return res.status(500).json({ message: 'Kayıt hatası.' });
+        }
+        res.json({ success: true, message: 'Kayıt başarılı!' });
+    });
 });
 
 // Stats Endpoint
@@ -570,249 +614,287 @@ app.post('/api/licenses/buy', (req, res) => {
     });
 });
 
-// MySQL Connection
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'simuser', 
-    password: 'simpass', 
-    database: 'simworld'
-});
+// --- BANK MANAGEMENT ENDPOINTS ---
 
-db.connect((err) => {
-    if (err) {
-        console.error('MySQL connection failed:', err);
-        // If password fails, user might need to set one, but usually empty works in dev containers or 'root'
-    } else {
-        console.log('Connected to MySQL database.');
-
-        // Create Licenses Table
-        const createLicensesTable = `
-            CREATE TABLE IF NOT EXISTS licenses (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                user_id INT NOT NULL,
-                mine_type VARCHAR(50) NOT NULL,
-                level INT DEFAULT 0,
-                UNIQUE KEY unique_license (user_id, mine_type)
-            )
-        `;
-        db.query(createLicensesTable, (err) => {
-            if (err) console.error('Error creating licenses table:', err);
-            else console.log('Licenses table ready.');
-        });
-
-        // Create Hospitals Table
-        const createHospitalsTable = `
-            CREATE TABLE IF NOT EXISTS hospitals (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                user_id INT NOT NULL,
-                name VARCHAR(255) NOT NULL,
-                level INT DEFAULT 1,
-                capacity INT DEFAULT 5,
-                price INT DEFAULT 100,
-                quality INT DEFAULT 1,
-                treatment_price INT DEFAULT 100,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE KEY unique_owner (user_id)
-            )
-        `;
-        db.query(createHospitalsTable, (err) => {
-            if (err) console.error('Error creating hospitals table:', err);
-            else console.log('Hospitals table ready.');
-        });
-
-        // Create Hospital Treatments Table
-        const createTreatmentsTable = `
-            CREATE TABLE IF NOT EXISTS hospital_treatments (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                hospital_id INT NOT NULL,
-                bed_index INT NOT NULL,
-                user_id INT NOT NULL,
-                start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                end_time TIMESTAMP NOT NULL,
-                heal_amount INT DEFAULT 0,
-                is_completed BOOLEAN DEFAULT FALSE,
-                INDEX (hospital_id),
-                INDEX (user_id)
-            )
-        `;
-        db.query(createTreatmentsTable, (err) => {
-            if (err) console.error('Error creating hospital_treatments table:', err);
-            else console.log('Hospital Treatments table ready.');
-        });
-
-        // --- BANKING SYSTEM TABLES ---
-        
-        // Banks Table
-        const createBanksTable = `
-            CREATE TABLE IF NOT EXISTS banks (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                owner_id INT NOT NULL,
-                name VARCHAR(255) NOT NULL,
-                interest_rate DECIMAL(5,2) DEFAULT 1.00,
-                loan_rate DECIMAL(5,2) DEFAULT 5.00,
-                transfer_fee DECIMAL(5,2) DEFAULT 2.00,
-                balance BIGINT DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE KEY unique_owner (owner_id)
-            )
-        `;
-        db.query(createBanksTable, (err) => {
-            if (err) console.error('Error creating banks table:', err);
-            else console.log('Banks table ready.');
-        });
-
-        // Bank Accounts Table
-        const createBankAccountsTable = `
-            CREATE TABLE IF NOT EXISTS bank_accounts (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                bank_id INT NOT NULL,
-                user_id INT NOT NULL,
-                balance BIGINT DEFAULT 0,
-                loan_debt BIGINT DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE KEY unique_account (bank_id, user_id)
-            )
-        `;
-        db.query(createBankAccountsTable, (err) => {
-            if (err) console.error('Error creating bank_accounts table:', err);
-            else console.log('Bank Accounts table ready.');
-        });
-    }
-});
-
-// Routes
-
-// Register
-app.post('/api/register', (req, res) => {
-    const { username, password } = req.body;
-
-    if (!username || !password) {
-        return res.status(400).json({ message: 'Kullanıcı adı ve şifre gereklidir.' });
-    }
-
-    const query = 'INSERT INTO users (username, password) VALUES (?, ?)';
-    db.query(query, [username, password], (err, result) => {
-        if (err) {
-            if (err.code === 'ER_DUP_ENTRY') {
-                return res.status(409).json({ message: 'Bu kullanıcı adı zaten alınmış.' });
-            }
-            return res.status(500).json({ message: 'Veritabanı hatası.' });
-        }
-        res.status(201).json({ message: 'Kayıt başarılı.' });
-    });
-});
-
-// Login
-app.post('/api/login', (req, res) => {
-    const { username, password } = req.body;
-
-    if (!username || !password) {
-        return res.status(400).json({ message: 'Kullanıcı adı ve şifre gereklidir.' });
-    }
-
-    const query = 'SELECT * FROM users WHERE username = ? AND password = ?';
-    db.query(query, [username, password], (err, results) => {
-        if (err) {
-            return res.status(500).json({ message: 'Veritabanı hatası.' });
-        }
-
-        if (results.length > 0) {
-            const user = results[0];
-            res.json({ 
-                message: 'Giriş başarılı.',
-                user: { id: user.id, username: user.username }
-            });
-        } else {
-            res.status(401).json({ message: 'Kullanıcı adı veya şifre hatalı.' });
-        }
-    });
-});
-
-// Hospital Endpoints
-
-// Get All Hospitals (City List)
-app.get('/api/hospitals', (req, res) => {
+// Get All Banks (City Banks)
+app.get('/api/banks', (req, res) => {
+    const userId = req.query.userId || 0;
     const query = `
-        SELECT h.id, h.user_id, h.name, h.level, h.capacity, h.treatment_price as price, h.quality, h.created_at, u.username as owner_name 
-        FROM hospitals h 
-        JOIN users u ON h.user_id = u.id 
-        ORDER BY h.quality DESC, h.treatment_price ASC
+        SELECT b.*, u.username as owner_name,
+        (SELECT COUNT(*) FROM bank_accounts ba WHERE ba.bank_id = b.id AND ba.user_id = ?) as has_account
+        FROM banks b
+        JOIN users u ON b.owner_id = u.id
+        ORDER BY COALESCE(b.balance, 0) DESC, b.id ASC
     `;
-    db.query(query, (err, results) => {
+    db.query(query, [userId], (err, results) => {
         if (err) return res.status(500).json({ error: err });
         res.json(results);
     });
 });
 
-// Get My Hospital
-app.get('/api/hospitals/my/:userId', (req, res) => {
-    const userId = req.params.userId;
-    const query = 'SELECT *, treatment_price as price FROM hospitals WHERE user_id = ?';
+// Get My Bank
+app.get('/api/banks/my/:userId', (req, res) => {
+    const { userId } = req.params;
+    const query = 'SELECT * FROM banks WHERE owner_id = ?';
     db.query(query, [userId], (err, results) => {
-        if (err) return res.status(500).json({ success: false, message: 'Veritabanı hatası.' });
-        if (results.length === 0) return res.json({ success: true, hasHospital: false });
-        res.json({ success: true, hasHospital: true, hospital: results[0] });
+        if (err) return res.status(500).json({ success: false, error: err });
+        if (results.length > 0) {
+            res.json({ success: true, hasBank: true, bank: results[0] });
+        } else {
+            res.json({ success: true, hasBank: false });
+        }
     });
 });
 
-// Buy Hospital
-app.post('/api/hospitals/buy', (req, res) => {
+// Create Bank
+app.post('/api/banks/create', (req, res) => {
     const { userId, name } = req.body;
-    const hospitalName = name || 'Şehir Hastanesi';
-    
-    // Costs
-    const BASE_PRICE = 50000;
-    const GOLD_PRICE = 500;
-    const TAX_RATE = 0.10;
-    const TAX_AMOUNT = BASE_PRICE * TAX_RATE;
-    const TOTAL_MONEY = BASE_PRICE + TAX_AMOUNT;
+    const COST = 100000;
 
-    // 1. Check if user already has a hospital
-    const checkHospital = 'SELECT id FROM hospitals WHERE user_id = ?';
-    db.query(checkHospital, [userId], (err, results) => {
-        if (err) return res.status(500).json({ success: false, message: 'Veritabanı hatası.' });
-        if (results.length > 0) {
-            return res.json({ success: false, message: 'Zaten bir hastaneniz var.' });
-        }
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
 
-        // 2. Check License
-        const checkLicense = 'SELECT level FROM licenses WHERE user_id = ? AND mine_type = "hospital"';
-        db.query(checkLicense, [userId], (err, licenseRes) => {
-            if (err) return res.status(500).json({ success: false, message: 'Lisans kontrol hatası.' });
+        // Check User Money
+        db.query('SELECT money FROM users WHERE id = ?', [userId], (err, users) => {
+            if (err || users.length === 0) return db.rollback(() => res.status(500).json({ success: false, message: 'User not found' }));
             
-            const licenseLevel = licenseRes.length > 0 ? licenseRes[0].level : 0;
-            if (licenseLevel < 1) {
-                return res.json({ success: false, message: 'Hastane satın almak için "Hastane Lisansı" gereklidir.' });
+            const user = users[0];
+            if (user.money < COST) {
+                return db.rollback(() => res.json({ success: false, message: 'Yetersiz bakiye.' }));
             }
 
-            // 3. Check Balance
-            const checkBalance = 'SELECT money, gold FROM users WHERE id = ?';
-            db.query(checkBalance, [userId], (err, userRes) => {
-                if (err) return res.status(500).json({ success: false, message: 'Kullanıcı hatası.' });
-                const user = userRes[0];
-
-                if (user.money < TOTAL_MONEY || user.gold < GOLD_PRICE) {
-                    return res.json({ success: false, message: `Yetersiz bakiye. Gereken: ${TOTAL_MONEY} TL (Vergi Dahil) ve ${GOLD_PRICE} Altın.` });
+            // Check if user already has a bank
+            db.query('SELECT id FROM banks WHERE owner_id = ?', [userId], (err, banks) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
+                if (banks.length > 0) {
+                    return db.rollback(() => res.json({ success: false, message: 'Zaten bir bankanız var.' }));
                 }
 
-                // 4. Transaction: Deduct & Create
-                db.beginTransaction(err => {
-                    if (err) return res.status(500).json({ success: false, message: 'İşlem başlatılamadı.' });
+                // Deduct Money
+                db.query('UPDATE users SET money = money - ? WHERE id = ?', [COST, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Money update error' }));
 
-                    const updateBalance = 'UPDATE users SET money = money - ?, gold = gold - ? WHERE id = ?';
-                    db.query(updateBalance, [TOTAL_MONEY, GOLD_PRICE, userId], (err) => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Bakiye düşülemedi.' }));
+                    // Create Bank
+                    const insertQuery = `
+                        INSERT INTO banks (owner_id, name, balance, interest_rate, loan_rate, transfer_fee, account_opening_fee) 
+                        VALUES (?, ?, 0, 5, 15, 2, 100)
+                    `;
+                    db.query(insertQuery, [userId, name], (err, result) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Bank creation error' }));
 
-                        const createHospital = 'INSERT INTO hospitals (user_id, name, capacity, quality, treatment_price) VALUES (?, ?, 5, 100, 100)';
-                        db.query(createHospital, [userId, hospitalName], (err) => {
-                            if (err) {
-                                console.error("Hospital Create Error:", err);
-                                return db.rollback(() => res.status(500).json({ success: false, message: 'Hastane oluşturulamadı.' }));
-                            }
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                            res.json({ success: true, message: 'Banka başarıyla kuruldu!' });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
 
-                            db.commit(err => {
-                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'İşlem onaylanamadı.' }));
-                                res.json({ success: true, message: 'Hastane başarıyla satın alındı!' });
+// Open Bank Account
+app.post('/api/bank-accounts/open', (req, res) => {
+    const { userId, bankId } = req.body;
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
+
+        // Get Bank Info (Fee)
+        db.query('SELECT account_opening_fee FROM banks WHERE id = ?', [bankId], (err, banks) => {
+            if (err || banks.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Banka bulunamadı' }));
+            
+            const fee = banks[0].account_opening_fee;
+
+            // Check User Money
+            db.query('SELECT money FROM users WHERE id = ?', [userId], (err, users) => {
+                if (err || users.length === 0) return db.rollback(() => res.status(500).json({ success: false, message: 'User error' }));
+                
+                const user = users[0];
+                if (user.money < fee) {
+                    return db.rollback(() => res.json({ success: false, message: 'Yetersiz bakiye.' }));
+                }
+
+                // Deduct Fee & Add to Bank
+                db.query('UPDATE users SET money = money - ? WHERE id = ?', [fee, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User update error' }));
+
+                    db.query('UPDATE banks SET balance = balance + ? WHERE id = ?', [fee, bankId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Bank update error' }));
+
+                        // Create Account
+                        // Generate IBAN (6 Digits for varchar(6))
+                        const generateIBAN = () => Math.floor(100000 + Math.random() * 900000).toString();
+                        
+                        // Retry loop for IBAN uniqueness is better, but for simplicity:
+                        const createAccount = (retryCount = 0) => {
+                            if (retryCount > 3) return db.rollback(() => res.status(500).json({ success: false, message: 'IBAN generation failed' }));
+                            
+                            const iban = generateIBAN();
+                            const query = 'INSERT INTO bank_accounts (bank_id, user_id, iban, created_at) VALUES (?, ?, ?, NOW())';
+                            
+                            db.query(query, [bankId, userId, iban], (err, result) => {
+                                if (err) {
+                                    console.error("Account Creation Error:", err); // Log the error
+                                    // Check duplicate IBAN
+                                    if (err.code === 'ER_DUP_ENTRY') return createAccount(retryCount + 1);
+                                    return db.rollback(() => res.status(500).json({ success: false, message: 'Account creation error', error: err.message }));
+                                }
+                                
+                                const newAccountId = result.insertId;
+
+                                // Log Transaction
+                                db.query('INSERT INTO bank_transactions (user_id, bank_id, bank_account_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?, ?)', 
+                                    [userId, bankId, newAccountId, 'account_opening', fee, 'Hesap Açılışı'], (err) => {
+                                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log error' }));
+
+                                        db.commit(err => {
+                                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                                            res.json({ success: true, message: 'Hesap oluşturuldu.', iban: iban });
+                                        });
+                                    });
+                            });
+                        };
+                        createAccount();
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Get Account Details
+app.get('/api/bank-accounts/:userId/:bankId', (req, res) => {
+    const { userId, bankId } = req.params;
+    const query = `
+        SELECT ba.*, b.name as bank_name, b.interest_rate, b.loan_rate, b.transfer_fee 
+        FROM bank_accounts ba
+        JOIN banks b ON ba.bank_id = b.id
+        WHERE ba.user_id = ? AND ba.bank_id = ?
+    `;
+    db.query(query, [userId, bankId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        if (results.length > 0) {
+            res.json({ success: true, account: results[0] });
+        } else {
+            res.json({ success: false, message: 'Hesap bulunamadı.' });
+        }
+    });
+});
+
+// Get Account Logs
+app.get('/api/bank-accounts/logs/:userId/:bankId', (req, res) => {
+    const { userId, bankId } = req.params;
+    
+    // First find the active account ID
+    db.query('SELECT id FROM bank_accounts WHERE user_id = ? AND bank_id = ?', [userId, bankId], (err, accounts) => {
+        if (err) return res.status(500).json({ success: false, error: err.message });
+        
+        if (accounts.length === 0) {
+            // No active account, return empty logs
+            return res.json({ success: true, logs: [] });
+        }
+
+        const accountId = accounts[0].id;
+        const query = `
+            SELECT * FROM bank_transactions 
+            WHERE bank_account_id = ? 
+            ORDER BY created_at DESC LIMIT 50
+        `;
+        db.query(query, [accountId], (err, results) => {
+            if (err) {
+                console.error('Logs Error:', err);
+                return res.status(500).json({ success: false, error: err.message || err });
+            }
+            res.json({ success: true, logs: results });
+        });
+    });
+});
+
+// Close Bank Account
+app.post('/api/bank-accounts/close', (req, res) => {
+    const { userId, bankId } = req.body;
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
+
+        // 1. Get Bank Fee & Account Info
+        const infoQuery = `
+            SELECT ba.id, b.closing_fee, ba.loan_debt, ba.balance, u.money as user_money, u.username
+            FROM bank_accounts ba
+            JOIN banks b ON ba.bank_id = b.id
+            JOIN users u ON ba.user_id = u.id
+            WHERE ba.user_id = ? AND ba.bank_id = ?
+        `;
+        
+        db.query(infoQuery, [userId, bankId], (err, results) => {
+            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
+            if (results.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Hesap bulunamadı.' }));
+
+            const { id: accountId, closing_fee, loan_debt, balance, user_money, username } = results[0];
+            const fee = closing_fee || 5000;
+
+            // 2. Check Debt
+            if (loan_debt > 0) {
+                // Penalty for attempting to close with debt
+                const scoreDec = (Math.random() * 3.0) + 2.0; // 2.0 - 5.0
+                db.query('UPDATE bank_accounts SET credit_score = GREATEST(0, credit_score - ?) WHERE user_id = ? AND bank_id = ?', [scoreDec, userId, bankId], (err) => {
+                    if (err) console.error('Credit Score Penalty Error', err);
+                    
+                    db.query('INSERT INTO bank_transactions (user_id, bank_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?)', 
+                        [userId, bankId, 'score_update', 0, `Kredi Puanı Güncellendi (-${scoreDec.toFixed(2)}) - Borçlu Kapatma Girişimi`], (err) => {
+                            db.commit(err => { // Commit the penalty even if we fail the close
+                                return res.status(400).json({ success: false, message: 'Bu banka hesabını kapatamazsınız, aktif kredi borcunuz bulunuyor! (Kredi Puanı Düşürüldü)' });
+                            });
+                        });
+                });
+                return; // Stop here, but we committed the penalty in a separate flow? 
+                // Wait, we are in a transaction. If we commit, we commit everything. 
+                // But we haven't done anything else yet. So committing here just saves the penalty. Correct.
+            }
+
+            // 2.1 Check Active Deposits
+            const depositQuery = 'SELECT COUNT(*) as count FROM bank_deposits WHERE user_id = ? AND bank_id = ? AND status = "active"';
+            db.query(depositQuery, [userId, bankId], (err, depResults) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Deposit check error' }));
+                
+                if (depResults[0].count > 0) {
+                    return db.rollback(() => res.status(400).json({ success: false, message: 'Bu banka hesabını kapatamazsınız, aktif mevduat hesabınız bulunuyor!' }));
+                }
+
+                // 3. Check if user can afford fee (Balance + Pocket Money >= Fee)
+                const totalAssets = user_money + balance;
+                if (totalAssets < fee) {
+                    return db.rollback(() => res.status(400).json({ success: false, message: 'Hesap kapatma ücretini ödeyecek bakiyeniz yok.' }));
+                }
+
+                // 4. Calculate Net Change
+                // User gets balance, pays fee. Net = balance - fee.
+                const netChange = balance - fee;
+
+                // 5. Update User Money
+                db.query('UPDATE users SET money = money + ? WHERE id = ?', [netChange, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User update error' }));
+
+                    // 6. Update Bank Balance (Add Fee)
+                    db.query('UPDATE banks SET balance = balance + ? WHERE id = ?', [fee, bankId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Bank update error' }));
+
+                        // 7. Delete Account
+                        db.query('DELETE FROM bank_accounts WHERE user_id = ? AND bank_id = ?', [userId, bankId], (err) => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Delete error' }));
+
+                            // 8. Log Transaction
+                            const logDesc = `Hesap Kapatma (Ücret: ${fee} TL) 🏦❌`;
+                            const logQuery = 'INSERT INTO bank_transactions (user_id, bank_id, bank_account_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?, ?)';
+                            
+                            db.query(logQuery, [userId, bankId, accountId, 'account_closure', fee, logDesc], (err) => {
+                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log error' }));
+
+                                db.commit(err => {
+                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                                    res.json({ success: true, message: 'Banka hesabınız başarıyla kapatıldı.' });
+                                });
                             });
                         });
                     });
@@ -822,141 +904,172 @@ app.post('/api/hospitals/buy', (req, res) => {
     });
 });
 
-// Get Hospital Details & Beds
-app.get('/api/hospital/:id/details', (req, res) => {
-    const hospitalId = req.params.id;
-    
-    const hospQuery = `
-        SELECT h.*, u.username as owner_name 
-        FROM hospitals h 
-        JOIN users u ON h.user_id = u.id 
-        WHERE h.id = ?
-    `;
-    
-    db.query(hospQuery, [hospitalId], (err, results) => {
-        if (err) return res.status(500).json({ success: false, message: 'DB Error' });
-        if (results.length === 0) return res.status(404).json({ success: false, message: 'Hastane bulunamadı.' });
-        
-        const hospital = results[0];
-        
-        // Get Active Treatments (All occupied beds)
-        const activeTreatQuery = `
-            SELECT t.bed_index, t.end_time, u.username 
-            FROM hospital_treatments t
-            JOIN users u ON t.user_id = u.id
-            WHERE t.hospital_id = ? AND t.end_time > NOW()
-        `;
-        
-        db.query(activeTreatQuery, [hospitalId], (err, activeRes) => {
-            if (err) return res.status(500).json({ success: false, message: 'Active Treatment DB Error' });
-            
-            // Get History (Last 10)
-            const historyQuery = `
-                SELECT t.start_time, t.heal_amount, u.username, h.level as hospital_level
-                FROM hospital_treatments t
-                JOIN users u ON t.user_id = u.id
-                JOIN hospitals h ON t.hospital_id = h.id
-                WHERE t.hospital_id = ?
-                ORDER BY t.start_time DESC
-                LIMIT 10
-            `;
+// Deposit Money
+app.post('/api/bank-accounts/deposit', (req, res) => {
+    const { userId, bankId, amount } = req.body;
+    if (amount <= 0) return res.status(400).json({ success: false, message: 'Geçersiz miktar.' });
 
-            db.query(historyQuery, [hospitalId], (err, historyRes) => {
-                if (err) return res.status(500).json({ success: false, message: 'History DB Error' });
-                
-                res.json({ 
-                    success: true, 
-                    data: hospital, 
-                    activeTreatments: activeRes,
-                    history: historyRes
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
+
+        // Check Account Existence
+        db.query('SELECT id FROM bank_accounts WHERE user_id = ? AND bank_id = ?', [userId, bankId], (err, accounts) => {
+            if (err || accounts.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Hesap bulunamadı.' }));
+            const accountId = accounts[0].id;
+
+            // Check User Money
+            db.query('SELECT money FROM users WHERE id = ?', [userId], (err, users) => {
+                if (err || users.length === 0) return db.rollback(() => res.status(500).json({ success: false, message: 'User error' }));
+                if (users[0].money < amount) return db.rollback(() => res.json({ success: false, message: 'Yetersiz nakit.' }));
+
+                // Deduct from User
+                db.query('UPDATE users SET money = money - ? WHERE id = ?', [amount, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User update error' }));
+
+                    // Add to Bank Account
+                    db.query('UPDATE bank_accounts SET balance = balance + ? WHERE id = ?', [amount, accountId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Account update error' }));
+
+                        // Log & Score Update
+                        let scoreInc = 0;
+                        if (amount >= 10000) {
+                            scoreInc = Math.min(0.5, (amount / 100000) * 0.5);
+                        }
+
+                        const updateScoreQuery = scoreInc > 0 
+                            ? 'UPDATE bank_accounts SET credit_score = LEAST(100, credit_score + ?) WHERE id = ?'
+                            : 'SELECT 1'; // No-op
+                        
+                        const updateParams = scoreInc > 0 ? [scoreInc, accountId] : [];
+
+                        db.query(updateScoreQuery, updateParams, (err) => {
+                            if (err) console.error('Credit Score Update Error', err);
+                            
+                            db.query('INSERT INTO bank_transactions (user_id, bank_id, bank_account_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?, ?)', 
+                                [userId, bankId, accountId, 'deposit', amount, 'Para Yatırma'], (err) => {
+                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log error' }));
+                                    
+                                    const finish = () => {
+                                        db.commit(err => {
+                                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                                            res.json({ success: true, message: 'Para yatırıldı.' });
+                                        });
+                                    };
+
+                                    if (scoreInc > 0) {
+                                        db.query('INSERT INTO bank_transactions (user_id, bank_id, bank_account_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?, ?)', 
+                                            [userId, bankId, accountId, 'score_update', 0, `Kredi Puanı Güncellendi (+${scoreInc.toFixed(4)})`], (err) => {
+                                                finish();
+                                            });
+                                    } else {
+                                        finish();
+                                    }
+                                });
+                        });
+                    });
                 });
             });
         });
     });
 });
 
-// Treat Player (New Logic with Capacity & Levels)
-app.post('/api/hospital/treat', (req, res) => {
-    const { userId, hospitalId } = req.body;
+// Withdraw Money
+app.post('/api/bank-accounts/withdraw', (req, res) => {
+    const { userId, bankId, amount } = req.body;
+    if (amount <= 0) return res.status(400).json({ success: false, message: 'Geçersiz miktar.' });
 
-    // 1. Get Hospital Info
-    const hospQuery = 'SELECT * FROM hospitals WHERE id = ?';
-    db.query(hospQuery, [hospitalId], (err, hospRes) => {
-        if (err || hospRes.length === 0) return res.status(404).json({ success: false, message: 'Hastane bulunamadı.' });
-        
-        const hospital = hospRes[0];
-        const price = hospital.treatment_price || 100;
-        const maxCapacity = hospital.capacity || (hospital.level * 5);
-        const healAmount = hospital.level * 10;
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
 
-        // 0. Check if user is already being treated anywhere
-        const activeUserTreatQuery = 'SELECT id FROM hospital_treatments WHERE user_id = ? AND end_time > NOW()';
-        db.query(activeUserTreatQuery, [userId], (err, activeRes) => {
-            if (err) return res.status(500).json({ success: false, message: 'Active Check Error' });
-            if (activeRes.length > 0) return res.json({ success: false, message: 'Zaten şu anda tedavi görüyorsunuz.' });
+        // Check Account Balance
+        db.query('SELECT id, balance FROM bank_accounts WHERE user_id = ? AND bank_id = ?', [userId, bankId], (err, accounts) => {
+            if (err || accounts.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Hesap bulunamadı.' }));
+            const accountId = accounts[0].id;
+            if (accounts[0].balance < amount) return db.rollback(() => res.json({ success: false, message: 'Yetersiz bakiye.' }));
 
-            // 2. Check Bed Availability
-            const bedQuery = 'SELECT bed_index FROM hospital_treatments WHERE hospital_id = ? AND end_time > NOW()';
-            db.query(bedQuery, [hospitalId], (err, bedRes) => {
-                if (err) return res.status(500).json({ success: false, message: 'Bed Check Error' });
-                
-                const occupiedBeds = bedRes.map(b => b.bed_index);
-                if (occupiedBeds.length >= maxCapacity) {
-                    return res.json({ success: false, message: 'Kapasite dolu.' });
-                }
+            // Deduct from Account
+            db.query('UPDATE bank_accounts SET balance = balance - ? WHERE id = ?', [amount, accountId], (err) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Account update error' }));
 
-                // Find first empty bed
-                let assignedBed = -1;
-                for (let i = 1; i <= maxCapacity; i++) {
-                    if (!occupiedBeds.includes(i)) {
-                        assignedBed = i;
-                        break;
-                    }
-                }
+                // Add to User
+                db.query('UPDATE users SET money = money + ? WHERE id = ?', [amount, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User update error' }));
 
-                if (assignedBed === -1) return res.json({ success: false, message: 'Kapasite dolu.' });
+                    // Log
+                    db.query('INSERT INTO bank_transactions (user_id, bank_id, bank_account_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?, ?)', 
+                        [userId, bankId, accountId, 'withdraw', amount, 'Para Çekme'], (err) => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log error' }));
+                            
+                            db.commit(err => {
+                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                                res.json({ success: true, message: 'Para çekildi.' });
+                            });
+                        });
+                });
+            });
+        });
+    });
+});
 
-                // 3. Check User
-                const userQuery = 'SELECT money, health FROM users WHERE id = ?';
-                db.query(userQuery, [userId], (err, userRes) => {
-                    if (err || userRes.length === 0) return res.status(500).json({ success: false, message: 'User error' });
-                    
-                    const user = userRes[0];
-                    if (user.money < price) return res.json({ success: false, message: 'Yetersiz para.' });
-                    if (user.health >= 100) return res.json({ success: false, message: 'Sağlığınız zaten dolu.' });
+// Transfer Money
+app.post('/api/bank-accounts/transfer', (req, res) => {
+    const { userId, bankId, amount, targetIban } = req.body;
+    if (amount <= 0) return res.status(400).json({ success: false, message: 'Geçersiz miktar.' });
 
-                    // 4. Transaction
-                    db.beginTransaction(err => {
-                        if (err) return res.status(500).json({ success: false, message: 'Tx Error' });
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
 
-                        const updateUser = 'UPDATE users SET money = money - ? WHERE id = ?';
-                        db.query(updateUser, [price, userId], (err) => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Update User Error' }));
+        // Get Sender Account & Bank Fee
+        const senderQuery = `
+            SELECT ba.id, ba.balance, b.transfer_fee 
+            FROM bank_accounts ba 
+            JOIN banks b ON ba.bank_id = b.id 
+            WHERE ba.user_id = ? AND ba.bank_id = ?
+        `;
+        db.query(senderQuery, [userId, bankId], (err, senders) => {
+            if (err || senders.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Gönderen hesap bulunamadı.' }));
+            
+            const sender = senders[0];
+            const senderAccountId = sender.id;
+            const feeRate = sender.transfer_fee;
+            const fee = Math.ceil(amount * (feeRate / 100));
+            const totalDeduct = amount + fee;
 
-                            // Add Money to Hospital Vault (100% share to hospital balance)
-                            const updateHospitalBalance = 'UPDATE hospitals SET balance = balance + ? WHERE id = ?';
-                            db.query(updateHospitalBalance, [price, hospitalId], (err) => {
-                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Update Hospital Balance Error' }));
+            if (sender.balance < totalDeduct) return db.rollback(() => res.json({ success: false, message: 'Yetersiz bakiye (Transfer + Ücret).' }));
 
-                                // Create Treatment Record (5 minutes = 300 seconds)
-                                const duration = 300;
-                                const endTime = new Date(Date.now() + duration * 1000);
+            // Find Target Account
+            db.query('SELECT id, user_id, bank_id FROM bank_accounts WHERE iban = ?', [targetIban], (err, targets) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Target search error' }));
+                if (targets.length === 0) return db.rollback(() => res.json({ success: false, message: 'Alıcı IBAN bulunamadı.' }));
+
+                const target = targets[0];
+                const targetAccountId = target.id;
+
+                // Deduct from Sender
+                db.query('UPDATE bank_accounts SET balance = balance - ? WHERE id = ?', [totalDeduct, senderAccountId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Sender update error' }));
+
+                    // Add to Target
+                    db.query('UPDATE bank_accounts SET balance = balance + ? WHERE id = ?', [amount, targetAccountId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Target update error' }));
+
+                        // Add Fee to Bank
+                        db.query('UPDATE banks SET balance = balance + ? WHERE id = ?', [fee, bankId], (err) => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Bank fee update error' }));
+
+                            // Logs
+                            const logSender = 'INSERT INTO bank_transactions (user_id, bank_id, bank_account_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?, ?)';
+                            const logTarget = 'INSERT INTO bank_transactions (user_id, bank_id, bank_account_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?, ?)';
+
+                            db.query(logSender, [userId, bankId, senderAccountId, 'transfer_out', totalDeduct, `Transfer: ${targetIban}`], (err) => {
+                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log sender error' }));
                                 
-                                const insertTreat = 'INSERT INTO hospital_treatments (hospital_id, bed_index, user_id, end_time, heal_amount) VALUES (?, ?, ?, ?, ?)';
-                                db.query(insertTreat, [hospitalId, assignedBed, userId, endTime, healAmount], (err) => {
-                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Insert Treatment Error' }));
+                                db.query(logTarget, [target.user_id, target.bank_id, targetAccountId, 'transfer_in', amount, `Gelen Transfer`], (err) => {
+                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log target error' }));
 
                                     db.commit(err => {
-                                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                                        
-                                        setTimeout(() => {
-                                            const healQuery = 'UPDATE users SET health = LEAST(100, health + ?) WHERE id = ?';
-                                            db.query(healQuery, [healAmount, userId], (err) => {
-                                                if (err) console.error('Auto-heal failed for user', userId);
-                                            });
-                                        }, duration * 1000);
-
-                                        res.json({ success: true, message: 'Tedavi başladı!', endTime: endTime, bedIndex: assignedBed });
+                                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                                        res.json({ success: true, message: 'Transfer başarılı.' });
                                     });
                                 });
                             });
@@ -968,382 +1081,74 @@ app.post('/api/hospital/treat', (req, res) => {
     });
 });
 
-// Start Hospital Upgrade
-app.post('/api/hospital/upgrade/start', (req, res) => {
-    const { userId, hospitalId } = req.body;
-
-    const hospQuery = 'SELECT * FROM hospitals WHERE id = ?';
-    db.query(hospQuery, [hospitalId], (err, hospRes) => {
-        if (err || hospRes.length === 0) return res.status(404).json({ success: false, message: 'Hastane bulunamadı.' });
-        
-        const hospital = hospRes[0];
-        if (hospital.user_id !== userId) return res.status(403).json({ success: false, message: 'Bu hastane size ait değil.' });
-        if (hospital.level >= 10) return res.json({ success: false, message: 'Maksimum seviyeye ulaşıldı.' });
-        if (hospital.upgrade_end_time) return res.json({ success: false, message: 'Zaten geliştirme yapılıyor.' });
-
-        const nextLevel = hospital.level + 1;
-        const costMoney = hospital.level * 25000;
-        const costGold = hospital.level * 50;
-        const requiredLicense = nextLevel;
-
-        const userQuery = 'SELECT money, gold, license_hospital_level FROM users WHERE id = ?';
-        db.query(userQuery, [userId], (err, userRes) => {
-            if (err || userRes.length === 0) return res.status(500).json({ success: false, message: 'User error' });
-            
-            const user = userRes[0];
-            const userLicense = user.license_hospital_level || 1;
-
-            if (userLicense < requiredLicense) return res.json({ success: false, message: `Yetersiz Lisans! Seviye ${requiredLicense} Hastane Lisansı gerekli.` });
-            if (user.money < costMoney) return res.json({ success: false, message: `Yetersiz Para. Gerekli: ${costMoney}` });
-            if (user.gold < costGold) return res.json({ success: false, message: `Yetersiz Altın. Gerekli: ${costGold}` });
-
-            db.beginTransaction(err => {
-                if (err) return res.status(500).json({ success: false, message: 'Tx Error' });
-
-                const deductResources = 'UPDATE users SET money = money - ?, gold = gold - ? WHERE id = ?';
-                db.query(deductResources, [costMoney, costGold, userId], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kaynak düşülemedi.' }));
-
-                    const duration = 10; // 10 seconds for demo
-                    const endTime = new Date(Date.now() + duration * 1000);
-                    
-                    const startUpgrade = 'UPDATE hospitals SET upgrade_end_time = ? WHERE id = ?';
-                    db.query(startUpgrade, [endTime, hospitalId], (err) => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Geliştirme başlatılamadı.' }));
-
-                        db.commit(err => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                            res.json({ success: true, message: 'Geliştirme başladı!', duration: duration });
-                        });
-                    });
-                });
-            });
-        });
-    });
-});
-
-// Complete Hospital Upgrade
-app.post('/api/hospital/upgrade/complete', (req, res) => {
-    const { userId, hospitalId } = req.body;
-
-    const hospQuery = 'SELECT * FROM hospitals WHERE id = ?';
-    db.query(hospQuery, [hospitalId], (err, hospRes) => {
-        if (err || hospRes.length === 0) return res.status(404).json({ success: false, message: 'Hastane bulunamadı.' });
-        
-        const hospital = hospRes[0];
-        if (!hospital.upgrade_end_time) return res.json({ success: false, message: 'Aktif geliştirme yok.' });
-        
-        const now = new Date();
-        const endTime = new Date(hospital.upgrade_end_time);
-
-        if (now < endTime) return res.json({ success: false, message: 'Geliştirme henüz bitmedi.' });
-
-        const updateHosp = 'UPDATE hospitals SET level = level + 1, capacity = capacity + 5, upgrade_end_time = NULL WHERE id = ?';
-        db.query(updateHosp, [hospitalId], (err) => {
-            if (err) return res.status(500).json({ success: false, message: 'Güncelleme hatası.' });
-            res.json({ success: true, message: `Tebrikler! Hastaneniz Seviye ${hospital.level + 1} oldu.` });
-        });
-    });
-});
-
-// Get My Hospital Details
-app.get('/api/hospital/my', (req, res) => {
-    const userId = req.query.userId;
-    if (!userId) return res.status(400).json({ success: false, message: 'User ID required' });
-
-    const query = 'SELECT * FROM hospitals WHERE user_id = ?';
-    db.query(query, [userId], (err, results) => {
-        if (err) return res.status(500).json({ success: false, message: 'Database error' });
-        if (results.length === 0) return res.json({ success: false, message: 'Hastaneniz yok.' });
-        res.json({ success: true, hospital: results[0] });
-    });
-});
-
-// Withdraw Money from Hospital Vault
-app.post('/api/hospital/withdraw', (req, res) => {
-    const { userId, amount } = req.body;
-    
-    if (!amount || amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
-
-    const hospQuery = 'SELECT * FROM hospitals WHERE user_id = ?';
-    db.query(hospQuery, [userId], (err, hospRes) => {
-        if (err || hospRes.length === 0) return res.status(404).json({ success: false, message: 'Hastane bulunamadı.' });
-        
-        const hospital = hospRes[0];
-        if (hospital.balance < amount) return res.json({ success: false, message: 'Kasada yeterli para yok.' });
-
-        db.beginTransaction(err => {
-            if (err) return res.status(500).json({ success: false, message: 'Tx Error' });
-
-            const updateHosp = 'UPDATE hospitals SET balance = balance - ? WHERE id = ?';
-            db.query(updateHosp, [amount, hospital.id], (err) => {
-                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Hastane bakiyesi güncellenemedi.' }));
-
-                const updateUser = 'UPDATE users SET money = money + ? WHERE id = ?';
-                db.query(updateUser, [amount, userId], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kullanıcı bakiyesi güncellenemedi.' }));
-
-                    db.commit(err => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                        res.json({ success: true, message: 'Para çekildi!', newBalance: hospital.balance - amount });
-                    });
-                });
-            });
-        });
-    });
-});
-
-// Update Hospital Settings (Name, Price)
-app.post('/api/hospital/update', (req, res) => {
-    const { userId, name, price } = req.body;
-
-    if (!name || price < 0) return res.json({ success: false, message: 'Geçersiz bilgiler.' });
-
-    const checkQuery = 'SELECT id FROM hospitals WHERE user_id = ?';
-    db.query(checkQuery, [userId], (err, results) => {
-        if (err || results.length === 0) return res.status(404).json({ success: false, message: 'Hastane bulunamadı.' });
-
-        const updateQuery = 'UPDATE hospitals SET name = ?, treatment_price = ? WHERE user_id = ?';
-        db.query(updateQuery, [name, price, userId], (err) => {
-            if (err) return res.status(500).json({ success: false, message: 'Güncelleme hatası.' });
-            res.json({ success: true, message: 'Hastane bilgileri güncellendi.' });
-        });
-    });
-});
-
-// --- BANKING SYSTEM ENDPOINTS ---
-
-// Get All Banks
-app.get('/api/banks', (req, res) => {
-    const query = `
-        SELECT b.*, u.username as owner_name 
-        FROM banks b 
-        JOIN users u ON b.owner_id = u.id 
-        ORDER BY b.balance DESC
-    `;
-    db.query(query, (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json(results);
-    });
-});
-
-// Get My Bank
-app.get('/api/banks/my/:userId', (req, res) => {
-    const userId = req.params.userId;
-    const query = 'SELECT * FROM banks WHERE owner_id = ?';
-    db.query(query, [userId], (err, results) => {
-        if (err) return res.status(500).json({ success: false, message: 'DB Error' });
-        if (results.length === 0) return res.json({ success: true, hasBank: false });
-        res.json({ success: true, hasBank: true, bank: results[0] });
-    });
-});
-
-// Create Bank
-app.post('/api/banks/create', (req, res) => {
-    const { userId, name } = req.body;
-    const COST = 100000; // 100k to create bank
-
-    if (!name) return res.json({ success: false, message: 'Banka adı gerekli.' });
-
-    // Check if user already has a bank
-    db.query('SELECT id FROM banks WHERE owner_id = ?', [userId], (err, resBank) => {
-        if (resBank.length > 0) return res.json({ success: false, message: 'Zaten bir bankanız var.' });
-
-        // Check Money
-        db.query('SELECT money FROM users WHERE id = ?', [userId], (err, resUser) => {
-            if (resUser[0].money < COST) return res.json({ success: false, message: 'Yetersiz bakiye. 100.000 TL gerekli.' });
-
-            db.beginTransaction(err => {
-                if (err) return res.status(500).json({ success: false });
-
-                db.query('UPDATE users SET money = money - ? WHERE id = ?', [COST, userId], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false }));
-
-                    db.query('INSERT INTO banks (owner_id, name) VALUES (?, ?)', [userId, name], (err) => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false }));
-                        
-                        db.commit(err => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false }));
-                            res.json({ success: true, message: 'Banka kuruldu!' });
-                        });
-                    });
-                });
-            });
-        });
-    });
-});
-
-// Update Bank Settings
-app.post('/api/banks/update', (req, res) => {
-    const { userId, name, interestRate, loanRate, transferFee } = req.body;
-    
-    const query = 'UPDATE banks SET name = ?, interest_rate = ?, loan_rate = ?, transfer_fee = ? WHERE owner_id = ?';
-    db.query(query, [name, interestRate, loanRate, transferFee, userId], (err, result) => {
-        if (err) return res.status(500).json({ success: false, message: 'Güncelleme hatası.' });
-        if (result.affectedRows === 0) return res.json({ success: false, message: 'Banka bulunamadı.' });
-        res.json({ success: true, message: 'Ayarlar güncellendi.' });
-    });
-});
-
-// Withdraw from Bank Vault
-app.post('/api/banks/withdraw', (req, res) => {
-    const { userId, amount } = req.body;
-    if (amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
-
-    db.query('SELECT * FROM banks WHERE owner_id = ?', [userId], (err, resBank) => {
-        if (resBank.length === 0) return res.json({ success: false, message: 'Banka bulunamadı.' });
-        const bank = resBank[0];
-
-        if (bank.balance < amount) return res.json({ success: false, message: 'Kasa bakiyesi yetersiz.' });
-
-        db.beginTransaction(err => {
-            db.query('UPDATE banks SET balance = balance - ? WHERE id = ?', [amount, bank.id], (err) => {
-                if (err) return db.rollback(() => res.status(500).json({ success: false }));
-                
-                db.query('UPDATE users SET money = money + ? WHERE id = ?', [amount, userId], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false }));
-                    
-                    db.commit(err => {
-                        res.json({ success: true, message: 'Para çekildi.', newBalance: bank.balance - amount });
-                    });
-                });
-            });
-        });
-    });
-});
-
-// Get Bank Stats (Total Deposits, Loans)
-app.get('/api/banks/stats/:bankId', (req, res) => {
-    const bankId = req.params.bankId;
-    const q1 = 'SELECT SUM(balance) as total_deposits, SUM(loan_debt) as total_loans FROM bank_accounts WHERE bank_id = ?';
-    db.query(q1, [bankId], (err, results) => {
-        if (err) return res.status(500).json({ success: false });
-        res.json({ success: true, stats: results[0] });
-    });
-});
-
-// --- BANK ACCOUNT OPERATIONS ---
-
-// Open Account / Get Account
-app.post('/api/bank-accounts/open', (req, res) => {
-    const { userId, bankId } = req.body;
-    
-    const query = 'INSERT IGNORE INTO bank_accounts (bank_id, user_id) VALUES (?, ?)';
-    db.query(query, [bankId, userId], (err) => {
-        if (err) return res.status(500).json({ success: false, message: 'Hesap oluşturma hatası.' });
-        res.json({ success: true, message: 'Hesap hazır.' });
-    });
-});
-
-// Get Account Details
-app.get('/api/bank-accounts/:userId/:bankId', (req, res) => {
-    const { userId, bankId } = req.params;
-    
-    const query = `
-        SELECT ba.*, b.name as bank_name, b.interest_rate, b.loan_rate, b.transfer_fee 
-        FROM bank_accounts ba 
-        JOIN banks b ON ba.bank_id = b.id 
-        WHERE ba.user_id = ? AND ba.bank_id = ?
-    `;
-    db.query(query, [userId, bankId], (err, results) => {
-        if (err) return res.status(500).json({ success: false });
-        if (results.length === 0) return res.json({ success: false, message: 'Hesap bulunamadı.' });
-        res.json({ success: true, account: results[0] });
-    });
-});
-
-// Deposit Money
-app.post('/api/bank-accounts/deposit', (req, res) => {
-    const { userId, bankId, amount } = req.body;
-    if (amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
-
-    db.query('SELECT money FROM users WHERE id = ?', [userId], (err, resUser) => {
-        if (resUser[0].money < amount) return res.json({ success: false, message: 'Yetersiz nakit.' });
-
-        db.beginTransaction(err => {
-            db.query('UPDATE users SET money = money - ? WHERE id = ?', [amount, userId], (err) => {
-                if (err) return db.rollback(() => res.status(500).json({ success: false }));
-                
-                db.query('UPDATE bank_accounts SET balance = balance + ? WHERE user_id = ? AND bank_id = ?', [amount, userId, bankId], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false }));
-                    
-                    // Add to Bank Vault (Deposits increase bank liquidity)
-                    db.query('UPDATE banks SET balance = balance + ? WHERE id = ?', [amount, bankId], (err) => {
-                         if (err) return db.rollback(() => res.status(500).json({ success: false }));
-                         
-                         db.commit(err => {
-                            res.json({ success: true, message: 'Para yatırıldı.' });
-                         });
-                    });
-                });
-            });
-        });
-    });
-});
-
-// Withdraw Money
-app.post('/api/bank-accounts/withdraw', (req, res) => {
-    const { userId, bankId, amount } = req.body;
-    if (amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
-
-    db.query('SELECT balance FROM bank_accounts WHERE user_id = ? AND bank_id = ?', [userId, bankId], (err, resAcc) => {
-        if (resAcc.length === 0 || resAcc[0].balance < amount) return res.json({ success: false, message: 'Yetersiz bakiye.' });
-
-        // Check Bank Vault Liquidity
-        db.query('SELECT balance FROM banks WHERE id = ?', [bankId], (err, resBank) => {
-            if (resBank[0].balance < amount) return res.json({ success: false, message: 'Banka kasasında yeterli nakit yok.' });
-
-            db.beginTransaction(err => {
-                db.query('UPDATE bank_accounts SET balance = balance - ? WHERE user_id = ? AND bank_id = ?', [amount, userId, bankId], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false }));
-                    
-                    db.query('UPDATE users SET money = money + ? WHERE id = ?', [amount, userId], (err) => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false }));
-                        
-                        db.query('UPDATE banks SET balance = balance - ? WHERE id = ?', [amount, bankId], (err) => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false }));
-                            
-                            db.commit(err => {
-                                res.json({ success: true, message: 'Para çekildi.' });
-                            });
-                        });
-                    });
-                });
-            });
-        });
+// Check Active Loan
+app.get('/api/bank-accounts/has-loan/:userId', (req, res) => {
+    const { userId } = req.params;
+    // Check if user has ANY loan debt > 0 in ANY bank account
+    db.query('SELECT COUNT(*) as count FROM bank_accounts WHERE user_id = ? AND loan_debt > 0', [userId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        res.json({ success: true, hasLoan: results[0].count > 0 });
     });
 });
 
 // Take Loan
 app.post('/api/bank-accounts/loan', (req, res) => {
     const { userId, bankId, amount } = req.body;
-    if (amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
+    
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
 
-    db.query('SELECT * FROM banks WHERE id = ?', [bankId], (err, resBank) => {
-        const bank = resBank[0];
-        if (bank.balance < amount) return res.json({ success: false, message: 'Banka bu krediyi veremez (Yetersiz Kasa).' });
+        // Check existing loan & Credit Score
+        db.query('SELECT id, loan_debt, credit_score FROM bank_accounts WHERE user_id = ? AND bank_id = ?', [userId, bankId], (err, accounts) => {
+            if (err || accounts.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Hesap bulunamadı.' }));
+            
+            const acc = accounts[0];
+            const accountId = acc.id;
+            if (acc.loan_debt > 0) return db.rollback(() => res.json({ success: false, message: 'Zaten ödenmemiş krediniz var.' }));
 
-        const interest = (amount * bank.loan_rate) / 100;
-        const totalDebt = parseInt(amount) + parseInt(interest);
+            // Credit Score Validation
+            let requiredScore = 0;
+            if (amount >= 500000) requiredScore = 90;
+            else if (amount >= 250000) requiredScore = 50;
+            else if (amount >= 100000) requiredScore = 30;
+            else if (amount >= 50000) requiredScore = 20; // Keep 50k as 20
+            else if (amount >= 30000) requiredScore = 0; // 30k is free
 
-        db.beginTransaction(err => {
-            // Give money to user
-            db.query('UPDATE users SET money = money + ? WHERE id = ?', [amount, userId], (err) => {
-                if (err) return db.rollback(() => res.status(500).json({ success: false }));
-                
-                // Add debt to account
-                db.query('UPDATE bank_accounts SET loan_debt = loan_debt + ? WHERE user_id = ? AND bank_id = ?', [totalDebt, userId, bankId], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false }));
-                    
-                    // Deduct from Bank Vault
-                    db.query('UPDATE banks SET balance = balance - ? WHERE id = ?', [amount, bankId], (err) => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false }));
-                        
+            if ((acc.credit_score || 0) < requiredScore) {
+                // Log Failure
+                db.query('INSERT INTO bank_transactions (user_id, bank_id, bank_account_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?, ?)', 
+                    [userId, bankId, accountId, 'loan_rejected', 0, `Kredi Başvurusu Reddedildi (Yetersiz Puan: ${acc.credit_score}/${requiredScore})`], (err) => {
                         db.commit(err => {
-                            res.json({ success: true, message: `Kredi alındı. Geri ödeme: ${totalDebt} TL` });
+                            return res.status(400).json({ success: false, message: `Kredi Puanı Yetersiz! (Gereken: ${requiredScore}, Mevcut: ${parseFloat(acc.credit_score).toFixed(2)})` });
                         });
                     });
-                });
+                return;
+            }
+
+            // Get Bank Rate
+            db.query('SELECT loan_rate FROM banks WHERE id = ?', [bankId], (err, banks) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Bank error' }));
+                
+                const rate = banks[0].loan_rate;
+                const interest = Math.floor(amount * (rate / 100));
+                const totalDebt = amount + interest;
+
+                // Update Account (Add Balance, Set Debt, Set Loan Taken Time)
+                db.query('UPDATE bank_accounts SET balance = balance + ?, loan_debt = ?, loan_taken_at = NOW() WHERE id = ?', 
+                    [amount, totalDebt, accountId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Account update error' }));
+
+                        // Log (No Score Increase on Take)
+                        db.query('INSERT INTO bank_transactions (user_id, bank_id, bank_account_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?, ?)', 
+                            [userId, bankId, accountId, 'loan_taken', amount, 'Kredi Verildi'], (err) => {
+                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log error' }));
+
+                                db.commit(err => {
+                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                                    res.json({ success: true, message: 'Kredi başvurusu onaylandı ve hesabınıza yattı.' });
+                                });
+                            });
+                    });
             });
         });
     });
@@ -1351,29 +1156,166 @@ app.post('/api/bank-accounts/loan', (req, res) => {
 
 // Pay Loan
 app.post('/api/bank-accounts/pay-loan', (req, res) => {
-    const { userId, bankId, amount } = req.body;
-    if (amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
+    const { userId, bankId, amount } = req.body; // Amount is what user pays
 
-    db.query('SELECT loan_debt FROM bank_accounts WHERE user_id = ? AND bank_id = ?', [userId, bankId], (err, resAcc) => {
-        if (resAcc[0].loan_debt < amount) return res.json({ success: false, message: 'Borçtan fazla ödeme yapılamaz.' });
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
 
-        db.query('SELECT money FROM users WHERE id = ?', [userId], (err, resUser) => {
-            if (resUser[0].money < amount) return res.json({ success: false, message: 'Yetersiz nakit.' });
+        db.query('SELECT id, balance, loan_debt, loan_taken_at, last_loan_score_update_at FROM bank_accounts WHERE user_id = ? AND bank_id = ?', [userId, bankId], (err, accounts) => {
+            if (err || accounts.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Hesap bulunamadı.' }));
+            
+            const acc = accounts[0];
+            const accountId = acc.id;
+            if (acc.loan_debt <= 0) return db.rollback(() => res.json({ success: false, message: 'Borcunuz yok.' }));
+            
+            // If amount > debt, just pay debt
+            const payAmount = Math.min(amount, acc.loan_debt);
+            
+            if (acc.balance < payAmount) return db.rollback(() => res.json({ success: false, message: 'Hesap bakiyesi yetersiz.' }));
 
-            db.beginTransaction(err => {
-                db.query('UPDATE users SET money = money - ? WHERE id = ?', [amount, userId], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false }));
-                    
-                    db.query('UPDATE bank_accounts SET loan_debt = loan_debt - ? WHERE user_id = ? AND bank_id = ?', [amount, userId, bankId], (err) => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false }));
+            // Update Account
+            db.query('UPDATE bank_accounts SET balance = balance - ?, loan_debt = loan_debt - ? WHERE id = ?', 
+                [payAmount, payAmount, accountId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Update error' }));
+
+                    // Add Profit to Bank
+                    db.query('UPDATE banks SET balance = balance + ? WHERE id = ?', [payAmount, bankId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Bank update error' }));
+
+                        // Check if fully paid
+                        const isFullyPaid = (acc.loan_debt - payAmount) <= 0;
+                        let scoreInc = 0;
+                        let scoreDesc = '';
+
+                        if (isFullyPaid) {
+                            const now = new Date();
+                            const takenAt = new Date(acc.loan_taken_at);
+                            const diffMs = now - takenAt;
+                            const diffMins = diffMs / 60000;
+                            const diffHours = diffMins / 60;
+
+                            // Cooldown Check (24h)
+                            const lastUpdate = acc.last_loan_score_update_at ? new Date(acc.last_loan_score_update_at) : new Date(0);
+                            const cooldownMs = now - lastUpdate;
+                            const cooldownHours = cooldownMs / (1000 * 60 * 60);
+
+                            if (cooldownHours >= 24) {
+                                if (diffMins < 1) {
+                                    scoreInc = 0.1; // Very fast repayment
+                                    scoreDesc = 'Anında Ödeme (+0.1)';
+                                } else if (diffMins < 120) {
+                                    scoreInc = 0.2;
+                                    scoreDesc = 'Hızlı Ödeme (+0.2)';
+                                } else if (diffHours < 24) {
+                                    scoreInc = 0.5;
+                                    scoreDesc = 'Zamanında Ödeme (+0.5)';
+                                } else {
+                                    scoreInc = 1.0;
+                                    scoreDesc = 'Uzun Vadeli Ödeme (+1.0)';
+                                }
+
+                                // Scale by Loan Size (Approximate logic based on debt paid)
+                                // If debt was small (<100k), maybe cap it? Prompt says:
+                                // "küçük krediler (30k–100k) düşük etki, büyük krediler (250k–500k) yalnızca maksimum +1 sınırına kadar artış sağlayabilsin"
+                                // My logic above gives max +1 anyway. Let's reduce for small loans.
+                                if (payAmount < 100000) {
+                                    scoreInc = Math.min(scoreInc, 0.3); // Cap small loans at 0.3
+                                    if (scoreInc > 0) scoreDesc += ' (Küçük Kredi Limiti)';
+                                }
+                            } else {
+                                scoreDesc = 'Cooldown (24s)';
+                            }
+                        }
+
+                        const updateScoreQuery = scoreInc > 0 
+                            ? 'UPDATE bank_accounts SET credit_score = LEAST(100, credit_score + ?), last_loan_score_update_at = NOW() WHERE id = ?'
+                            : 'SELECT 1';
                         
-                        // Add to Bank Vault (Profit)
-                        db.query('UPDATE banks SET balance = balance + ? WHERE id = ?', [amount, bankId], (err) => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false }));
-                            
-                            db.commit(err => {
-                                res.json({ success: true, message: 'Borç ödendi.' });
-                            });
+                        const updateParams = scoreInc > 0 ? [scoreInc, accountId] : [];
+
+                        db.query(updateScoreQuery, updateParams, (err) => {
+                            if (err) console.error('Credit Score Update Error', err);
+
+                            db.query('INSERT INTO bank_transactions (user_id, bank_id, bank_account_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?, ?)', 
+                                [userId, bankId, accountId, 'loan_paid', payAmount, 'Kredi Ödemesi'], (err) => {
+                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log error' }));
+
+                                    const finish = () => {
+                                        db.commit(err => {
+                                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                                            res.json({ success: true, message: 'Ödeme yapıldı.' });
+                                        });
+                                    };
+
+                                    if (scoreInc > 0) {
+                                        db.query('INSERT INTO bank_transactions (user_id, bank_id, bank_account_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?, ?)', 
+                                            [userId, bankId, accountId, 'score_update', 0, `Kredi Puanı Güncellendi (+${scoreInc.toFixed(2)}) - ${scoreDesc}`], (err) => {
+                                                finish();
+                                            });
+                                    } else {
+                                        finish();
+                                    }
+                                });
+                        });
+                    });
+                });
+        });
+    });
+});
+
+// Create Deposit (Mevduat)
+app.post('/api/bank-accounts/deposit-create', (req, res) => {
+    const { userId, bankId, amount, durationMinutes } = req.body;
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
+
+        // Check Balance
+        db.query('SELECT id, balance FROM bank_accounts WHERE user_id = ? AND bank_id = ?', [userId, bankId], (err, accounts) => {
+            if (err || accounts.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Hesap bulunamadı.' }));
+            const accountId = accounts[0].id;
+            if (accounts[0].balance < amount) return db.rollback(() => res.json({ success: false, message: 'Yetersiz bakiye.' }));
+
+            // Get Interest Rate
+            db.query('SELECT interest_rate FROM banks WHERE id = ?', [bankId], (err, banks) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Bank error' }));
+                
+                const rate = banks[0].interest_rate;
+                // Interest = Amount * (Rate/100) * (Duration/60) (Hourly rate assumption)
+                const interestAmount = Math.floor(amount * (rate / 100) * (durationMinutes / 60));
+                
+                const startTime = new Date();
+                const endTime = new Date(startTime.getTime() + durationMinutes * 60000);
+
+                // Deduct Balance
+                db.query('UPDATE bank_accounts SET balance = balance - ? WHERE id = ?', [amount, accountId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Balance update error' }));
+
+                    // Create Deposit Record
+                    const insertDep = `
+                        INSERT INTO bank_deposits (user_id, bank_id, amount, interest_rate, interest_amount, start_time, end_time, status) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, 'active')
+                    `;
+                    db.query(insertDep, [userId, bankId, amount, rate, interestAmount, startTime, endTime], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Deposit create error' }));
+
+                        // Log & Score Update (Fixed +0.5)
+                        const scoreInc = 0.5;
+                        db.query('UPDATE bank_accounts SET credit_score = LEAST(100, credit_score + ?) WHERE id = ?', [scoreInc, accountId], (err) => {
+                            if (err) console.error('Credit Score Update Error', err);
+
+                            db.query('INSERT INTO bank_transactions (user_id, bank_id, bank_account_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?, ?)', 
+                                [userId, bankId, accountId, 'deposit_open', amount, 'Mevduat Açılışı'], (err) => {
+                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log error' }));
+
+                                    db.query('INSERT INTO bank_transactions (user_id, bank_id, bank_account_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?, ?)', 
+                                        [userId, bankId, accountId, 'score_update', 0, `Kredi Puanı Güncellendi (+${scoreInc.toFixed(2)})`], (err) => {
+                                            db.commit(err => {
+                                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                                                res.json({ success: true, message: 'Mevduat hesabı açıldı.' });
+                                            });
+                                        });
+                                });
                         });
                     });
                 });
@@ -1382,54 +1324,134 @@ app.post('/api/bank-accounts/pay-loan', (req, res) => {
     });
 });
 
-// Transfer Money
-app.post('/api/bank-accounts/transfer', (req, res) => {
-    const { userId, bankId, targetUsername, amount } = req.body;
-    if (amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
+// Get Active Deposits
+app.get('/api/bank-accounts/deposits/:userId/:bankId', (req, res) => {
+    const { userId, bankId } = req.params;
+    const query = 'SELECT * FROM bank_deposits WHERE user_id = ? AND bank_id = ? AND status = "active"';
+    db.query(query, [userId, bankId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        res.json({ success: true, deposits: results });
+    });
+});
 
-    // 1. Find Target User
-    db.query('SELECT id FROM users WHERE username = ?', [targetUsername], (err, resTarget) => {
-        if (resTarget.length === 0) return res.json({ success: false, message: 'Kullanıcı bulunamadı.' });
-        const targetId = resTarget[0].id;
+// Break Deposit (Erken Bozma)
+app.post('/api/bank-accounts/deposit-break', (req, res) => {
+    const { userId, depositId } = req.body;
 
-        // 2. Get Sender Account & Bank Info
-        const q = `SELECT ba.balance, b.transfer_fee FROM bank_accounts ba JOIN banks b ON ba.bank_id = b.id WHERE ba.user_id = ? AND ba.bank_id = ?`;
-        db.query(q, [userId, bankId], (err, resSender) => {
-            if (resSender.length === 0) return res.json({ success: false, message: 'Hesap hatası.' });
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
+
+        db.query('SELECT * FROM bank_deposits WHERE id = ? AND user_id = ? AND status = "active"', [depositId, userId], (err, deposits) => {
+            if (err || deposits.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Mevduat bulunamadı.' }));
             
-            const sender = resSender[0];
-            const fee = Math.floor((amount * sender.transfer_fee) / 100);
-            const totalDeduct = parseInt(amount) + fee;
+            const dep = deposits[0];
+            const penalty = Math.floor(dep.amount * 0.03); // 3% Penalty
+            const refund = dep.amount - penalty;
 
-            if (sender.balance < totalDeduct) return res.json({ success: false, message: `Yetersiz bakiye. İşlem ücreti: ${fee} TL` });
+            // Find Account ID
+            db.query('SELECT id FROM bank_accounts WHERE user_id = ? AND bank_id = ?', [userId, dep.bank_id], (err, accounts) => {
+                if (err || accounts.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Hesap bulunamadı.' }));
+                const accountId = accounts[0].id;
 
-            // 3. Check Target Account (Create if not exists? No, must have account in same bank for simplicity or cross-bank?)
-            // For simplicity: Target must have account in THIS bank.
-            db.query('SELECT id FROM bank_accounts WHERE user_id = ? AND bank_id = ?', [targetId, bankId], (err, resTargetAcc) => {
-                if (resTargetAcc.length === 0) return res.json({ success: false, message: 'Alıcının bu bankada hesabı yok.' });
+                // Update Deposit Status
+                db.query('UPDATE bank_deposits SET status = "broken" WHERE id = ?', [depositId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Update status error' }));
 
-                db.beginTransaction(err => {
-                    // Deduct from Sender
-                    db.query('UPDATE bank_accounts SET balance = balance - ? WHERE user_id = ? AND bank_id = ?', [totalDeduct, userId, bankId], (err) => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false }));
-                        
-                        // Add to Target
-                        db.query('UPDATE bank_accounts SET balance = balance + ? WHERE user_id = ? AND bank_id = ?', [amount, targetId, bankId], (err) => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false }));
-                            
-                            // Add Fee to Bank Vault
-                            db.query('UPDATE banks SET balance = balance + ? WHERE id = ?', [fee, bankId], (err) => {
-                                if (err) return db.rollback(() => res.status(500).json({ success: false }));
-                                
-                                db.commit(err => {
-                                    res.json({ success: true, message: 'Transfer başarılı.' });
+                    // Refund to Account
+                    db.query('UPDATE bank_accounts SET balance = balance + ? WHERE id = ?', [refund, accountId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Refund error' }));
+
+                        // Log
+                        const scoreDec = (Math.random() * 2.0) + 1.0; // 1.0 - 3.0
+                        db.query('UPDATE bank_accounts SET credit_score = GREATEST(0, credit_score - ?) WHERE id = ?', [scoreDec, accountId], (err) => {
+                            if (err) console.error('Credit Score Update Error', err);
+
+                            db.query('INSERT INTO bank_transactions (user_id, bank_id, bank_account_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?, ?)', 
+                                [userId, dep.bank_id, accountId, 'deposit_break', refund, 'Mevduat Bozma (Ceza: ' + penalty + ')'], (err) => {
+                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log error' }));
+
+                                    db.query('INSERT INTO bank_transactions (user_id, bank_id, bank_account_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?, ?)', 
+                                        [userId, dep.bank_id, accountId, 'score_update', 0, `Kredi Puanı Güncellendi (-${scoreDec.toFixed(2)})`], (err) => {
+                                            db.commit(err => {
+                                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                                                res.json({ success: true, message: 'Mevduat bozuldu.' });
+                                            });
+                                        });
                                 });
-                            });
                         });
                     });
                 });
             });
         });
+    });
+});// Collect Deposit (Vade Sonu)
+app.post('/api/bank-accounts/deposit-collect', (req, res) => {
+    const { userId, depositId } = req.body;
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
+
+        db.query('SELECT * FROM bank_deposits WHERE id = ? AND user_id = ? AND status = "active"', [depositId, userId], (err, deposits) => {
+            if (err || deposits.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Mevduat bulunamadı.' }));
+            
+            const dep = deposits[0];
+            if (new Date() < new Date(dep.end_time)) return db.rollback(() => res.json({ success: false, message: 'Vade henüz dolmadı.' }));
+
+            const totalReturn = dep.amount + dep.interest_amount;
+
+            // Update Status
+            db.query('UPDATE bank_deposits SET status = "completed" WHERE id = ?', [depositId], (err) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Update status error' }));
+
+                // Add to Account
+                db.query('UPDATE bank_accounts SET balance = balance + ? WHERE user_id = ? AND bank_id = ?', [totalReturn, userId, dep.bank_id], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Pay error' }));
+
+                    // Log
+                    db.query('INSERT INTO bank_transactions (user_id, bank_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?)', 
+                        [userId, dep.bank_id, 'deposit_collect', totalReturn, 'Mevduat Tahsilatı'], (err) => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log error' }));
+
+                            db.commit(err => {
+                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                                res.json({ success: true, message: 'Mevduat tahsil edildi.' });
+                            });
+                        });
+                });
+            });
+        });
+    });
+});
+
+// Get Bank Logs (For Bank Manager)
+app.get('/api/banks/:bankId/logs', (req, res) => {
+    const { bankId } = req.params;
+    const query = `
+        SELECT bt.*, u.username, bt.user_id as user_id_display
+        FROM bank_transactions bt
+        JOIN users u ON bt.user_id = u.id
+        WHERE bt.bank_id = ?
+        ORDER BY bt.created_at DESC LIMIT 100
+    `;
+    db.query(query, [bankId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        res.json({ success: true, logs: results });
+    });
+});
+
+// Get Bank Customers (For Bank Manager)
+app.get('/api/banks/:bankId/customers', (req, res) => {
+    const { bankId } = req.params;
+    const query = `
+        SELECT ba.id, ba.user_id, u.username, ba.balance, ba.loan_debt, ba.iban, ba.created_at, ba.credit_score
+        FROM bank_accounts ba
+        JOIN users u ON ba.user_id = u.id
+        WHERE ba.bank_id = ?
+        ORDER BY ba.balance DESC
+    `;
+    db.query(query, [bankId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        res.json({ success: true, customers: results });
     });
 });
 

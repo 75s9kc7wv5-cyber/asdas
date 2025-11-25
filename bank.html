@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="loader-manager.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     
@@ -98,14 +99,13 @@
         .bc-stat-lbl { font-size: 0.7rem; color: #666; }
 
         .bc-balance { font-size: 0.8rem; color: #aaa; margin-bottom: 10px; text-align: center; }
-        .bc-balance span { color: var(--accent-green); font-weight: bold; }
+        .bc-balance span { color: #fff; font-weight: bold; }
 
-        .btn-action {
-            width: 100%; padding: 8px; border: none; border-radius: 4px;
-            background: var(--accent-gold); color: #000; font-weight: bold; cursor: pointer;
-            font-family: 'Rajdhani'; transition: all 0.2s;
-        }
-        .btn-action:hover { background: #e6c200; }
+        .btn-action { width: 100%; padding: 10px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; transition: all 0.2s; }
+        .btn-open { background: linear-gradient(45deg, #2ecc71, #27ae60); color: #fff; }
+        .btn-open:hover { box-shadow: 0 0 15px rgba(46, 204, 113, 0.4); transform: translateY(-2px); }
+        .btn-view { background: linear-gradient(45deg, #3498db, #2980b9); color: #fff; }
+        .btn-view:hover { box-shadow: 0 0 15px rgba(52, 152, 219, 0.4); transform: translateY(-2px); }
 
         /* CREATE BANK */
         .create-bank-card {
@@ -115,12 +115,7 @@
         .create-cost { font-size: 1.2rem; color: var(--accent-green); font-weight: bold; margin: 10px 0; }
 
         /* MODAL */
-        .modal-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); z-index: 100;
-            display: none; justify-content: center; align-items: center;
-            animation: fadeIn 0.3s;
-        }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; display: none; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
         .modal-content {
             background: #181818; width: 85%; padding: 25px; border-radius: 10px;
             border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-gold);
@@ -186,10 +181,28 @@
             </div>
         </div>
 
+        <!-- Open Account Modal -->
+        <div id="openAccountModal" class="modal-overlay" style="display:none;">
+            <div class="modal-content">
+                <h3 class="m-title" style="color:#fff; margin-bottom:10px;">HESAP AÇ</h3>
+                <p style="color:#aaa; font-size:0.9rem; margin-bottom:10px;">
+                    <span id="openAccBankName" style="color:var(--accent-cyan); font-weight:bold;"></span> bankasında hesap açmak üzeresiniz.
+                </p>
+                <p style="color:var(--accent-gold); font-weight:bold; margin-bottom:20px;">
+                    Hesap Açılış Ücreti: <span id="openAccFee">0</span> ₺
+                </p>
+                <div class="m-btns">
+                    <button class="m-btn" style="background:#333; color:#fff;" onclick="closeModal('openAccountModal')">İPTAL</button>
+                    <button class="m-btn" style="background:var(--accent-green); color:#fff;" onclick="confirmOpenAccount()">ONAYLA</button>
+                </div>
+            </div>
+        </div>
+
+
+
         <div id="menu-container"></div>
     </div>
 
-    <script src="loader-manager.js"></script>
     <script src="menu-manager.js"></script>
     <script src="header-manager.js"></script>
     <script>
@@ -202,7 +215,8 @@
 
         async function loadCityBanks() {
             try {
-                const response = await fetch('/api/banks');
+                const user = JSON.parse(localStorage.getItem('simWorldUser'));
+                const response = await fetch('/api/banks?userId=' + (user ? user.id : 0));
                 const banks = await response.json();
                 const container = document.getElementById('cityBankList');
                 container.innerHTML = '';
@@ -213,6 +227,11 @@
                 }
 
                 banks.forEach(b => {
+                    const hasAccount = b.has_account > 0;
+                    const btnText = hasAccount ? 'HESABI GÖRÜNTÜLE' : 'HESAP AÇ';
+                    const btnClass = hasAccount ? 'btn-view' : 'btn-open';
+                    const btnAction = hasAccount ? `openAccountPage(${b.id})` : `openOpenAccountModal(${b.id}, '${b.name}', ${b.account_opening_fee || 0})`;
+
                     const card = document.createElement('div');
                     card.className = 'bank-card';
                     card.innerHTML = `
@@ -238,7 +257,7 @@
                             </div>
                         </div>
                         <div class="bc-balance">Banka Büyüklüğü: <span>${fmt(b.balance)} ₺</span></div>
-                        <button class="btn-action" onclick="openAccountPage(${b.id})">HESAP AÇ / GİRİŞ YAP</button>
+                        <button class="btn-action ${btnClass}" onclick="${btnAction}">${btnText}</button>
                     `;
                     container.appendChild(card);
                 });
@@ -301,8 +320,50 @@
             }
         }
 
+        let selectedBankId = null;
+
+        function openOpenAccountModal(bankId, bankName, fee) {
+            selectedBankId = bankId;
+            document.getElementById('openAccBankName').innerText = bankName;
+            document.getElementById('openAccFee').innerText = fmt(fee);
+            document.getElementById('openAccountModal').style.display = 'flex';
+        }
+
+        async function confirmOpenAccount() {
+            if (!selectedBankId) return;
+            const btn = document.querySelector('#openAccountModal .m-btn:last-child');
+            btn.disabled = true;
+            btn.innerText = 'İŞLENİYOR...';
+
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            
+            try {
+                const response = await fetch('/api/bank-accounts/open', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, bankId: selectedBankId })
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    toastr.success(result.message);
+                    closeModal('openAccountModal');
+                    loadCityBanks();
+                    if (window.updateHeader) window.updateHeader();
+                } else {
+                    toastr.error(result.message);
+                }
+            } catch (error) {
+                console.error(error);
+                toastr.error('Bir hata oluştu.');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'ONAYLA';
+            }
+        }
+
         function openAccountPage(bankId) {
-            window.location.href = `players-bank-account.html?bankId=${bankId}`;
+            window.location.href = `players-bank-account.html?bank_id=${bankId}`;
         }
 
         function openCreateModal() {
