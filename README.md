@@ -1,4 +1,4 @@
-# Sim of World - Geliştirme Dokümantasyonu
+Geliştirme Dokümantasyonu
 
 Bu proje, "Sim of World" adlı web tabanlı bir strateji ve simülasyon oyununun geliştirme dosyalarını içerir. Proje, **Node.js (Express)** backend ve **MySQL** veritabanı üzerinde çalışan kapsamlı bir ekonomi ve yönetim simülasyonudur.
 
