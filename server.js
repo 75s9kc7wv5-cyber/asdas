@@ -113,7 +113,7 @@ app.post('/api/mine', (req, res) => {
     }
 
     // 1. Kullanıcı Enerji ve Sağlık Kontrolü
-    const userQuery = 'SELECT energy, health FROM users WHERE id = ?';
+    const userQuery = 'SELECT energy, health, xp, level FROM users WHERE id = ?';
     db.query(userQuery, [userId], (err, userRes) => {
         if (err || userRes.length === 0) return res.status(500).json({ success: false, message: 'Kullanıcı hatası.' });
         
@@ -159,12 +159,27 @@ app.post('/api/mine', (req, res) => {
                 currentReserve = Math.max(0, currentReserve - amount);
             }
 
+            // XP & Level Logic
+            const xpGain = 2; // 2 XP per mining attempt
+            let currentLevel = user.level || 1;
+            let currentXp = (user.xp || 0) + xpGain;
+            let requiredXp = currentLevel * 100;
+            let leveledUp = false;
+
+            while (currentXp >= requiredXp) {
+                currentXp -= requiredXp;
+                currentLevel++;
+                requiredXp = currentLevel * 100;
+                leveledUp = true;
+            }
+
             // Transaction Başlat
             db.beginTransaction(err => {
                 if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
 
-                // 1. Kullanıcıdan Enerji/Sağlık Düş
-                db.query('UPDATE users SET energy = energy - ?, health = health - ? WHERE id = ?', [consumption, consumption, userId], (err) => {
+                // 1. Kullanıcıdan Enerji/Sağlık Düş, XP/Level Ekle
+                db.query('UPDATE users SET energy = energy - ?, health = health - ?, xp = ?, level = ? WHERE id = ?', 
+                    [consumption, consumption, currentXp, currentLevel, userId], (err) => {
                     if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Update User Error' }));
 
                     // 2. Rezervi Güncelle (Eğer kayıt yoksa oluştur)
@@ -403,34 +418,37 @@ app.post('/api/arge/start', (req, res) => {
                     return res.json({ success: false, message: 'Maksimum seviyeye ulaşıldı.' });
                 }
 
-                // Check License Level
-                const licenseQuery = 'SELECT level FROM licenses WHERE user_id = ? AND mine_type = ?';
-                db.query(licenseQuery, [userId, mineType], (err, licenseRes) => {
-                    if (err) return res.status(500).json({ success: false, message: 'License DB Error' });
+                // Check License Level - REMOVED as per request
+                // const licenseQuery = 'SELECT level FROM licenses WHERE user_id = ? AND mine_type = ?';
+                // db.query(licenseQuery, [userId, mineType], (err, licenseRes) => {
+                    // if (err) return res.status(500).json({ success: false, message: 'License DB Error' });
                     
-                    const licenseLevel = licenseRes.length > 0 ? licenseRes[0].level : 0;
+                    // const licenseLevel = licenseRes.length > 0 ? licenseRes[0].level : 0;
                     
-                    if (licenseLevel < targetLevel) {
-                        return res.json({ success: false, message: `Yetersiz Lisans! Bu madeni geliştirmek için ${targetLevel}. seviye lisans gerekiyor.` });
-                    }
+                    // if (licenseLevel < targetLevel) {
+                    //     return res.json({ success: false, message: `Yetersiz Lisans! Bu madeni geliştirmek için ${targetLevel}. seviye lisans gerekiyor.` });
+                    // }
 
                     // Cost Calculation
                     const costMoney = Math.floor(5000 * Math.pow(1.8, currentLevel - 1));
                     const costGold = 50 * currentLevel;
+                    const costDiamond = currentLevel >= 5 ? (currentLevel - 4) * 2 : 0; // Example: Level 5 needs 2 diamonds, Level 6 needs 4...
                     
-                    if (user.money < costMoney || user.gold < costGold) {
+                    if (user.money < costMoney || user.gold < costGold || (user.diamond || 0) < costDiamond) {
                         return res.json({ success: false, message: 'Yetersiz kaynak.' });
                     }
                     
                     // Duration Calculation
                     const durationSeconds = currentLevel * 60;
+                    // Use MySQL NOW() for consistency if possible, but here we use timestamp for JS compatibility in this file
+                    // To be safe and consistent with the "server-side timer" request, let's stick to Date.now() which IS server time.
                     const endTime = Date.now() + (durationSeconds * 1000);
                     
                     // 3. Deduct Resources & Start Research
                     db.beginTransaction(err => {
                         if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
                         
-                        db.query('UPDATE users SET money = money - ?, gold = gold - ? WHERE id = ?', [costMoney, costGold, userId], (err) => {
+                        db.query('UPDATE users SET money = money - ?, gold = gold - ?, diamond = diamond - ? WHERE id = ?', [costMoney, costGold, costDiamond, userId], (err) => {
                             if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Money Update Error' }));
                             
                             const upsertQuery = `
@@ -444,12 +462,18 @@ app.post('/api/arge/start', (req, res) => {
                                 
                                 db.commit(err => {
                                     if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                                    res.json({ success: true, endTime: endTime });
+                                    
+                                    // Return new balances for UI update
+                                    const newMoney = user.money - costMoney;
+                                    const newGold = user.gold - costGold;
+                                    const newDiamond = (user.diamond || 0) - costDiamond;
+                                    
+                                    res.json({ success: true, endTime: endTime, newMoney, newGold, newDiamond });
                                 });
                             });
                         });
                     });
-                });
+                // }); // End License Query
             });
         });
     });
@@ -489,11 +513,27 @@ app.post('/api/arge/finish', (req, res) => {
 // User Stats Endpoint
 app.get('/api/user-stats/:userId', (req, res) => {
     const userId = req.params.userId;
-    const query = 'SELECT money, gold, diamond, health, energy, level, license_hospital_level FROM users WHERE id = ?';
-    db.query(query, [userId], (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        if (results.length === 0) return res.status(404).json({ error: 'User not found' });
-        res.json(results[0]);
+
+    // Check for finished treatments
+    const checkTreatmentQuery = 'SELECT * FROM hospital_active_treatments WHERE user_id = ? AND end_time <= NOW()';
+    db.query(checkTreatmentQuery, [userId], (err, finishedTreatments) => {
+        if (!err && finishedTreatments.length > 0) {
+            const treatment = finishedTreatments[0];
+            // Heal User
+            db.query('UPDATE users SET health = 100 WHERE id = ?', [userId], (err) => {
+                if (!err) {
+                    // Remove from active treatments
+                    db.query('DELETE FROM hospital_active_treatments WHERE id = ?', [treatment.id]);
+                }
+            });
+        }
+
+        const query = 'SELECT money, gold, diamond, health, energy, level, license_hospital_level FROM users WHERE id = ?';
+        db.query(query, [userId], (err, results) => {
+            if (err) return res.status(500).json({ error: err });
+            if (results.length === 0) return res.status(404).json({ error: 'User not found' });
+            res.json(results[0]);
+        });
     });
 });
 
@@ -586,7 +626,7 @@ app.post('/api/licenses/buy', (req, res) => {
             // 4. Deduct & Update (Transaction)
             db.beginTransaction(err => {
                 if (err) return res.status(500).json({ success: false, message: 'İşlem başlatılamadı.' });
-
+                
                 const updateBalance = 'UPDATE users SET money = money - ?, gold = gold - ? WHERE id = ?';
                 db.query(updateBalance, [moneyCost, goldCost, userId], (err) => {
                     if (err) {
@@ -1399,24 +1439,30 @@ app.post('/api/bank-accounts/deposit-collect', (req, res) => {
 
             const totalReturn = dep.amount + dep.interest_amount;
 
-            // Update Status
-            db.query('UPDATE bank_deposits SET status = "completed" WHERE id = ?', [depositId], (err) => {
-                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Update status error' }));
+            // Find Account ID first
+            db.query('SELECT id FROM bank_accounts WHERE user_id = ? AND bank_id = ?', [userId, dep.bank_id], (err, accounts) => {
+                if (err || accounts.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Hesap bulunamadı.' }));
+                const accountId = accounts[0].id;
 
-                // Add to Account
-                db.query('UPDATE bank_accounts SET balance = balance + ? WHERE user_id = ? AND bank_id = ?', [totalReturn, userId, dep.bank_id], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Pay error' }));
+                // Update Status
+                db.query('UPDATE bank_deposits SET status = "completed" WHERE id = ?', [depositId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Update status error' }));
 
-                    // Log
-                    db.query('INSERT INTO bank_transactions (user_id, bank_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?)', 
-                        [userId, dep.bank_id, 'deposit_collect', totalReturn, 'Mevduat Tahsilatı'], (err) => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log error' }));
+                    // Add to Account
+                    db.query('UPDATE bank_accounts SET balance = balance + ? WHERE id = ?', [totalReturn, accountId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Pay error' }));
 
-                            db.commit(err => {
-                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
-                                res.json({ success: true, message: 'Mevduat tahsil edildi.' });
+                        // Log
+                        db.query('INSERT INTO bank_transactions (user_id, bank_id, bank_account_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?, ?)', 
+                            [userId, dep.bank_id, accountId, 'deposit_collect', totalReturn, 'Mevduat Tahsilatı'], (err) => {
+                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log error' }));
+
+                                db.commit(err => {
+                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                                    res.json({ success: true, message: 'Mevduat tahsil edildi.' });
+                                });
                             });
-                        });
+                    });
                 });
             });
         });
@@ -1455,7 +1501,1143 @@ app.get('/api/banks/:bankId/customers', (req, res) => {
     });
 });
 
-// Start Server
+// Update Bank Settings
+app.post('/api/banks/update', (req, res) => {
+    const { userId, name, interestRate, loanRate, transferFee, accountOpeningFee } = req.body;
+
+    db.query('UPDATE banks SET name = ?, interest_rate = ?, loan_rate = ?, transfer_fee = ?, account_opening_fee = ? WHERE owner_id = ?', 
+        [name, interestRate, loanRate, transferFee, accountOpeningFee, userId], (err, result) => {
+            if (err) return res.status(500).json({ success: false, message: 'Update error', error: err });
+            if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Banka bulunamadı.' });
+            res.json({ success: true, message: 'Banka ayarları güncellendi.' });
+        });
+});
+
+// Bank Vault Deposit (Owner -> Bank)
+app.post('/api/banks/deposit', (req, res) => {
+    const { userId, amount } = req.body;
+    if (amount <= 0) return res.status(400).json({ success: false, message: 'Geçersiz miktar.' });
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
+
+        // Check User Money & Get Bank ID
+        db.query('SELECT money FROM users WHERE id = ?', [userId], (err, users) => {
+            if (err || users.length === 0) return db.rollback(() => res.status(500).json({ success: false, message: 'User error' }));
+            if (users[0].money < amount) return db.rollback(() => res.json({ success: false, message: 'Yetersiz nakit.' }));
+
+            db.query('SELECT id, balance FROM banks WHERE owner_id = ?', [userId], (err, banks) => {
+                if (err || banks.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Banka bulunamadı.' }));
+                const bank = banks[0];
+
+                // Deduct from User
+                db.query('UPDATE users SET money = money - ? WHERE id = ?', [amount, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User update error' }));
+
+                    // Add to Bank Vault
+                    db.query('UPDATE banks SET balance = balance + ? WHERE id = ?', [amount, bank.id], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Bank update error' }));
+
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                            res.json({ success: true, message: 'Kasaya para yatırıldı.', newBalance: bank.balance + parseInt(amount) });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Bank Vault Withdraw (Bank -> Owner)
+app.post('/api/banks/withdraw', (req, res) => {
+    const { userId, amount } = req.body;
+    if (amount <= 0) return res.status(400).json({ success: false, message: 'Geçersiz miktar.' });
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
+
+        db.query('SELECT id, balance FROM banks WHERE owner_id = ?', [userId], (err, banks) => {
+            if (err || banks.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Banka bulunamadı.' }));
+            const bank = banks[0];
+
+            if (bank.balance < amount) return db.rollback(() => res.json({ success: false, message: 'Kasa bakiyesi yetersiz.' }));
+
+            // Deduct from Bank Vault
+            db.query('UPDATE banks SET balance = balance - ? WHERE id = ?', [amount, bank.id], (err) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Bank update error' }));
+
+                // Add to User
+                db.query('UPDATE users SET money = money + ? WHERE id = ?', [amount, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User update error' }));
+
+                    db.commit(err => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                        res.json({ success: true, message: 'Kasadan para çekildi.', newBalance: bank.balance - parseInt(amount) });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Get Bank Stats
+app.get('/api/banks/stats/:bankId', (req, res) => {
+    const { bankId } = req.params;
+    
+    const qDeposits = 'SELECT SUM(amount) as total FROM bank_deposits WHERE bank_id = ? AND status = "active"';
+    const qLoans = 'SELECT SUM(loan_debt) as total FROM bank_accounts WHERE bank_id = ?';
+
+    db.query(qDeposits, [bankId], (err, depRes) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        
+        db.query(qLoans, [bankId], (err, loanRes) => {
+            if (err) return res.status(500).json({ success: false, error: err });
+            
+            res.json({
+                success: true,
+                totalDeposits: depRes[0].total || 0,
+                totalLoans: loanRes[0].total || 0
+            });
+        });
+    });
+});
+
+// --- HOSPITAL SYSTEM ---
+
+// Create Hospitals Table
+const createHospitalsTable = `
+    CREATE TABLE IF NOT EXISTS hospitals (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        level INT DEFAULT 1,
+        capacity INT DEFAULT 5,
+        quality INT DEFAULT 100,
+        price INT DEFAULT 100,
+        balance INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+`;
+
+db.query(createHospitalsTable, (err) => {
+    if (err) console.error('Hospitals table creation failed:', err);
+    else {
+        console.log('Hospitals table ready');
+        
+        // Ensure columns exist (for existing tables)
+        const checkAndAddColumn = (colName, colDef) => {
+            db.query(`SHOW COLUMNS FROM hospitals LIKE '${colName}'`, (err, result) => {
+                if (!err && result.length === 0) {
+                    db.query(`ALTER TABLE hospitals ADD COLUMN ${colName} ${colDef}`, (err) => {
+                        if (err) console.error(`Error adding ${colName} column:`, err);
+                        else console.log(`Added ${colName} column to hospitals`);
+                    });
+                }
+            });
+        };
+
+        checkAndAddColumn('balance', 'INT DEFAULT 0');
+        checkAndAddColumn('price', 'INT DEFAULT 100');
+        checkAndAddColumn('total_treatments', 'INT DEFAULT 0');
+    }
+});
+
+// Create Hospital Treatments Table (Logs)
+const createHospitalTreatmentsTable = `
+    CREATE TABLE IF NOT EXISTS hospital_treatments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        hospital_id INT NOT NULL,
+        patient_name VARCHAR(255) NOT NULL,
+        price INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+`;
+
+db.query(createHospitalTreatmentsTable, (err) => {
+    if (err) console.error('Hospital Treatments table creation failed:', err);
+    else console.log('Hospital Treatments table ready');
+});
+
+// Create Hospital Active Treatments Table
+const createHospitalActiveTreatmentsTable = `
+    CREATE TABLE IF NOT EXISTS hospital_active_treatments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        hospital_id INT NOT NULL,
+        user_id INT NOT NULL,
+        bed_index INT NOT NULL,
+        start_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+        end_time DATETIME NOT NULL,
+        UNIQUE KEY unique_bed (hospital_id, bed_index),
+        UNIQUE KEY unique_user (user_id)
+    )
+`;
+
+db.query(createHospitalActiveTreatmentsTable, (err) => {
+    if (err) console.error('Hospital Active Treatments table creation failed:', err);
+    else console.log('Hospital Active Treatments table ready');
+});
+
+// Get All Hospitals
+app.get('/api/hospitals', (req, res) => {
+    const query = `
+        SELECT h.*, u.username as owner_name,
+        (SELECT COUNT(*) FROM hospital_active_treatments WHERE hospital_id = h.id) as active_patients
+        FROM hospitals h 
+        JOIN users u ON h.user_id = u.id 
+        ORDER BY h.quality DESC
+    `;
+    db.query(query, (err, results) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        res.json(results);
+    });
+});
+
+// Get My Hospital
+app.get('/api/hospitals/my/:userId', (req, res) => {
+    const { userId } = req.params;
+    console.log(`[Hospital Check] Checking hospital for user ${userId}`);
+    
+    db.query('SELECT * FROM hospitals WHERE user_id = ?', [userId], (err, results) => {
+        if (err) {
+            console.error("[Hospital Check] DB Error:", err);
+            return res.status(500).json({ success: false, error: err });
+        }
+        
+        if (results.length > 0) {
+            let hospital = results[0];
+            console.log(`[Hospital Check] Found hospital: ${hospital.id} for user ${userId}`);
+
+            // Check for Upgrade Completion
+            if (hospital.upgrade_end_time) {
+                const now = new Date();
+                const upgradeEnd = new Date(hospital.upgrade_end_time);
+                
+                if (now >= upgradeEnd) {
+                    // Upgrade Finished!
+                    const newLevel = hospital.level + 1;
+                    const newCapacity = newLevel * 5; // Capacity = Level * 5
+                    
+                    const updateQuery = 'UPDATE hospitals SET level = ?, capacity = ?, upgrade_end_time = NULL WHERE id = ?';
+                    db.query(updateQuery, [newLevel, newCapacity, hospital.id], (err) => {
+                        if (err) console.error("Upgrade Apply Error:", err);
+                        else {
+                            console.log(`Hospital ${hospital.id} upgraded to level ${newLevel}`);
+                            hospital.level = newLevel;
+                            hospital.capacity = newCapacity;
+                            hospital.upgrade_end_time = null;
+                        }
+                        
+                        // Return response after update attempt
+                        sendResponse(hospital);
+                    });
+                    return;
+                }
+            }
+            
+            sendResponse(hospital);
+
+            function sendResponse(hospData) {
+                // Get Logs
+                db.query('SELECT * FROM hospital_treatments WHERE hospital_id = ? ORDER BY created_at DESC LIMIT 50', [hospData.id], (err, logs) => {
+                    if (err) {
+                        console.error("[Hospital Check] Logs DB Error:", err);
+                        return res.json({ success: true, hasHospital: true, hospital: hospData, logs: [] });
+                    }
+                    res.json({ success: true, hasHospital: true, hospital: hospData, logs: logs });
+                });
+            }
+
+        } else {
+            console.log(`[Hospital Check] No hospital found for user ${userId}`);
+            res.json({ success: true, hasHospital: false });
+        }
+    });
+});
+
+// Buy Hospital
+app.post('/api/hospitals/buy', (req, res) => {
+    const { userId, name } = req.body;
+    const costMoney = 50000; // Base cost
+    const tax = 5000;
+    const totalMoney = costMoney + tax;
+    const costGold = 500;
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
+
+        // Check User & License
+        db.query('SELECT money, gold, license_hospital_level FROM users WHERE id = ?', [userId], (err, users) => {
+            if (err || users.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' }));
+            
+            const user = users[0];
+            
+            // Check License
+            if (!user.license_hospital_level || user.license_hospital_level < 1) {
+                return db.rollback(() => res.json({ success: false, message: 'Hastane lisansınız yok! Önce lisans almalısınız.' }));
+            }
+
+            // Check Existing Hospital
+            db.query('SELECT id FROM hospitals WHERE user_id = ?', [userId], (err, hospitals) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
+                if (hospitals.length > 0) return db.rollback(() => res.json({ success: false, message: 'Zaten bir hastaneniz var.' }));
+
+                // Check Balance
+                if (user.money < totalMoney || user.gold < costGold) {
+                    return db.rollback(() => res.json({ success: false, message: 'Yetersiz bakiye.' }));
+                }
+
+                // Deduct Money
+                db.query('UPDATE users SET money = money - ?, gold = gold - ? WHERE id = ?', [totalMoney, costGold, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Update error' }));
+
+                    // Create Hospital
+                    const insertQuery = 'INSERT INTO hospitals (user_id, name, level, capacity, quality, price) VALUES (?, ?, 1, 5, 100, 100)';
+                    db.query(insertQuery, [userId, name], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Insert error' }));
+
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                            res.json({ success: true, message: 'Hastane başarıyla satın alındı!' });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Treat User
+app.post('/api/hospital/treat', (req, res) => {
+    const { userId, hospitalId } = req.body;
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
+
+        // 1. Check if user is already being treated
+        db.query('SELECT id FROM hospital_active_treatments WHERE user_id = ?', [userId], (err, active) => {
+            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
+            if (active.length > 0) return db.rollback(() => res.json({ success: false, message: 'Zaten tedavi görüyorsunuz.' }));
+
+            // 2. Get Hospital Info & Capacity
+            db.query('SELECT * FROM hospitals WHERE id = ?', [hospitalId], (err, hospitals) => {
+                if (err || hospitals.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Hastane bulunamadı.' }));
+                const hospital = hospitals[0];
+                const price = hospital.price;
+                const capacity = hospital.capacity;
+
+                // 3. Find Available Bed
+                db.query('SELECT bed_index FROM hospital_active_treatments WHERE hospital_id = ?', [hospitalId], (err, beds) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
+                    
+                    const occupiedBeds = beds.map(b => b.bed_index);
+                    let freeBed = -1;
+                    for (let i = 1; i <= capacity; i++) {
+                        if (!occupiedBeds.includes(i)) {
+                            freeBed = i;
+                            break;
+                        }
+                    }
+
+                    if (freeBed === -1) return db.rollback(() => res.json({ success: false, message: 'Hastane dolu.' }));
+
+                    // 4. Get User Info
+                    db.query('SELECT username, money, health FROM users WHERE id = ?', [userId], (err, users) => {
+                        if (err || users.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' }));
+                        const user = users[0];
+
+                        if (user.health >= 100) return db.rollback(() => res.json({ success: false, message: 'Sağlığınız zaten dolu.' }));
+                        if (user.money < price) return db.rollback(() => res.json({ success: false, message: 'Yetersiz bakiye.' }));
+
+                        // 5. Deduct Money (Don't heal yet)
+                        db.query('UPDATE users SET money = money - ? WHERE id = ?', [price, userId], (err) => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User update error' }));
+
+                            // 6. Add Money to Hospital Balance
+                            db.query('UPDATE hospitals SET balance = balance + ?, total_treatments = total_treatments + 1 WHERE id = ?', [price, hospital.id], (err) => {
+                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Hospital update error' }));
+
+                                // 7. Start Treatment (Dynamic Duration)
+                                // Level 1 = 20 mins, Level 10 = 3 mins. Formula: Max(3, 20 - (level-1)*2)
+                                const durationMinutes = Math.max(3, 20 - (hospital.level - 1) * 2);
+                                const endTime = new Date(Date.now() + durationMinutes * 60000);
+                                
+                                db.query('INSERT INTO hospital_active_treatments (hospital_id, user_id, bed_index, end_time) VALUES (?, ?, ?, ?)', 
+                                    [hospitalId, userId, freeBed, endTime], (err) => {
+                                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Insert treatment error' }));
+
+                                        // 8. Log Treatment
+                                        db.query('INSERT INTO hospital_treatments (hospital_id, patient_name, price) VALUES (?, ?, ?)', 
+                                            [hospitalId, user.username || 'Unknown', price], (err) => {
+                                                // Ignore log error
+                                                db.commit(err => {
+                                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                                                    res.json({ success: true, message: `Tedavi başladı! ${durationMinutes} dakika sürecek.` });
+                                                });
+                                            });
+                                    });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Hospital Details
+app.get('/api/hospital/:id/details', (req, res) => {
+    const { id } = req.params;
+    db.query('SELECT h.*, u.username as owner_name FROM hospitals h JOIN users u ON h.user_id = u.id WHERE h.id = ?', [id], (err, results) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        if (results.length === 0) return res.status(404).json({ success: false, message: 'Not found' });
+        
+        const hospital = results[0];
+
+        // Get Active Treatments
+        const activeQuery = `
+            SELECT hat.*, u.username 
+            FROM hospital_active_treatments hat 
+            JOIN users u ON hat.user_id = u.id 
+            WHERE hat.hospital_id = ?
+        `;
+        db.query(activeQuery, [id], (err, activeTreatments) => {
+            if (err) return res.status(500).json({ success: false, error: err });
+
+            // Get History
+            db.query('SELECT * FROM hospital_treatments WHERE hospital_id = ? ORDER BY created_at DESC LIMIT 20', [id], (err, history) => {
+                if (err) return res.status(500).json({ success: false, error: err });
+                
+                res.json({ success: true, data: hospital, activeTreatments: activeTreatments, history: history });
+            });
+        });
+    });
+});
+
+// Update Hospital Settings
+app.post('/api/hospital/update', (req, res) => {
+    const { userId, name, price } = req.body;
+    
+    console.log(`[Hospital Update] Request for UserID: ${userId}, Name: ${name}, Price: ${price}`);
+
+    if (!name || name.length < 3) return res.json({ success: false, message: 'İsim en az 3 karakter olmalı.' });
+    if (isNaN(price) || price < 0 || price > 10000) return res.json({ success: false, message: 'Fiyat 0-10000 arası olmalı.' });
+
+    db.query('UPDATE hospitals SET name = ?, price = ? WHERE user_id = ?', [name, price, userId], (err, result) => {
+        if (err) {
+            console.error("[Hospital Update] SQL Error:", err);
+            return res.status(500).json({ success: false, message: 'Veritabanı hatası: ' + err.sqlMessage });
+        }
+        if (result.affectedRows === 0) {
+            console.warn("[Hospital Update] No hospital found for user:", userId);
+            return res.status(404).json({ success: false, message: 'Hastane bulunamadı.' });
+        }
+        console.log("[Hospital Update] Success");
+        res.json({ success: true, message: 'Ayarlar güncellendi.' });
+    });
+});
+
+// Upgrade Hospital
+app.post('/api/hospital/upgrade', (req, res) => {
+    const { userId } = req.body;
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
+
+        // Get Hospital & User
+        const query = `
+            SELECT h.id, h.level, h.capacity, h.upgrade_end_time, u.money, u.gold, u.diamond, u.license_hospital_level 
+            FROM hospitals h 
+            JOIN users u ON h.user_id = u.id 
+            WHERE h.user_id = ?
+        `;
+        db.query(query, [userId], (err, results) => {
+            if (err || results.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Hastane bulunamadı.' }));
+            
+            const data = results[0];
+            
+            // Check if already upgrading
+            if (data.upgrade_end_time) {
+                const now = new Date();
+                const upgradeEnd = new Date(data.upgrade_end_time);
+                if (now < upgradeEnd) {
+                    return db.rollback(() => res.json({ success: false, message: 'Hastane zaten geliştiriliyor.' }));
+                }
+            }
+
+            const nextLevel = data.level + 1;
+            if (nextLevel > 10) return db.rollback(() => res.json({ success: false, message: 'Maksimum seviyeye ulaşıldı.' }));
+            
+            // Costs
+            const costMoney = Math.floor(250000 * Math.pow(1.65, data.level - 1));
+            const costGold = Math.floor(100 * Math.pow(data.level, 1.8));
+            // Diamond cost starts from level 5 (upgrading to 6)
+            const costDiamond = (data.level >= 5) ? Math.floor(25 * Math.pow(data.level - 4, 2)) : 0;
+
+            // Checks
+            if ((data.license_hospital_level || 0) < nextLevel) return db.rollback(() => res.json({ success: false, message: `Yetersiz Lisans! Seviye ${nextLevel} lisans gerekli.` }));
+            if (data.money < costMoney) return db.rollback(() => res.json({ success: false, message: 'Yetersiz Para.' }));
+            if (data.gold < costGold) return db.rollback(() => res.json({ success: false, message: 'Yetersiz Altın.' }));
+            if ((data.diamond || 0) < costDiamond) return db.rollback(() => res.json({ success: false, message: 'Yetersiz Elmas.' }));
+
+            // Duration
+            // 1->2: 3h, 2->3: 6h ... Level * 3 hours
+            const durationHours = data.level * 3;
+            const endTime = new Date();
+            endTime.setHours(endTime.getHours() + durationHours);
+
+            // Deduct & Start Upgrade
+            db.query('UPDATE users SET money = money - ?, gold = gold - ?, diamond = diamond - ? WHERE id = ?', [costMoney, costGold, costDiamond, userId], (err) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User update error' }));
+
+                // Set upgrade_end_time, do NOT change level yet
+                db.query('UPDATE hospitals SET upgrade_end_time = ? WHERE id = ?', [endTime, data.id], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Hospital update error' }));
+
+                    db.commit(err => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                        res.json({ 
+                            success: true, 
+                            message: `Geliştirme başladı! Süre: ${durationHours} Saat.`,
+                            upgradeEndTime: endTime
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Withdraw Money from Hospital
+app.post('/api/hospital/withdraw', (req, res) => {
+    const { userId, amount } = req.body;
+    if (amount <= 0) return res.status(400).json({ success: false, message: 'Geçersiz miktar.' });
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
+
+        db.query('SELECT id, balance FROM hospitals WHERE user_id = ?', [userId], (err, hospitals) => {
+            if (err || hospitals.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Hastane bulunamadı.' }));
+            
+            const hospital = hospitals[0];
+            if (hospital.balance < amount) return db.rollback(() => res.json({ success: false, message: 'Yetersiz bakiye.' }));
+
+            db.query('UPDATE hospitals SET balance = balance - ? WHERE id = ?', [amount, hospital.id], (err) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Hospital update error' }));
+
+                db.query('UPDATE users SET money = money + ? WHERE id = ?', [amount, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User update error' }));
+
+                    db.commit(err => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                        res.json({ success: true, message: 'Para çekildi.' });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Get Hospital Stats
+app.get('/api/hospitals/stats/:hospitalId', (req, res) => {
+    const { hospitalId } = req.params;
+    
+    const qPatients = 'SELECT COUNT(*) as total FROM treatments WHERE hospital_id = ?';
+    const qIncome = 'SELECT SUM(amount) as total FROM transactions WHERE hospital_id = ? AND type = "income"';
+    const qExpenses = 'SELECT SUM(amount) as total FROM transactions WHERE hospital_id = ? AND type = "expense"';
+
+    db.query(qPatients, [hospitalId], (err, patientRes) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        
+        db.query(qIncome, [hospitalId], (err, incomeRes) => {
+            if (err) return res.status(500).json({ success: false, error: err });
+            
+            db.query(qExpenses, [hospitalId], (err, expenseRes) => {
+                if (err) return res.status(500).json({ success: false, error: err });
+                
+                const totalIncome = incomeRes[0].total || 0;
+                const totalExpenses = expenseRes[0].total || 0;
+                const profit = totalIncome - totalExpenses;
+
+                res.json({
+                    success: true,
+                    totalPatients: patientRes[0].total || 0,
+                    totalIncome: totalIncome,
+                    totalExpenses: totalExpenses,
+                    profit: profit
+                });
+            });
+        });
+    });
+});
+
+// Get Treatment History
+app.get('/api/treatments/history/:userId', (req, res) => {
+    const { userId } = req.params;
+    const query = `
+        SELECT t.*, h.name as hospital_name, h.id as hospital_id
+        FROM treatments t
+        JOIN hospitals h ON t.hospital_id = h.id
+        WHERE t.user_id = ?
+        ORDER BY t.date DESC
+    `;
+    db.query(query, [userId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        res.json({ success: true, history: results });
+    });
+});
+
+// Get User Treatment Status
+app.get('/api/treatment/status/:userId', (req, res) => {
+    const { userId } = req.params;
+    const query = `
+        SELECT t.*, h.name as hospital_name, h.id as hospital_id
+        FROM treatments t
+        JOIN hospitals h ON t.hospital_id = h.id
+        WHERE t.user_id = ? AND t.status = 'active'
+        ORDER BY t.date DESC
+    `;
+    db.query(query, [userId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        res.json({ success: true, treatment: results.length > 0 });
+    });
+});
+
+// Start Treatment
+app.post('/api/treatment/start', (req, res) => {
+    const { userId, hospitalId } = req.body;
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
+
+        // Check Hospital
+        db.query('SELECT * FROM hospitals WHERE id = ?', [hospitalId], (err, hospitals) => {
+            if (err || hospitals.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Hastane bulunamadı.' }));
+            const hospital = hospitals[0];
+
+            // Check User
+            db.query('SELECT * FROM users WHERE id = ?', [userId], (err, users) => {
+                if (err || users.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' }));
+                const user = users[0];
+
+                // Check if already treated
+                db.query('SELECT * FROM treatments WHERE user_id = ? AND hospital_id = ? AND status = "active"', [userId, hospitalId], (err, treatments) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Treatment check error' }));
+                    if (treatments.length > 0) {
+                        return db.rollback(() => res.json({ success: false, message: 'Zaten tedavi ediliyorsunuz.' }));
+                    }
+
+                    // Start Treatment
+                    const query = 'INSERT INTO treatments (user_id, hospital_id, status, date) VALUES (?, ?, "active", NOW())';
+                    db.query(query, [userId, hospitalId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Tedavi başlatılamadı.' }));
+
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                            res.json({ success: true, message: 'Tedaviye başlandı.' });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Complete Treatment
+app.post('/api/treatment/complete', (req, res) => {
+    const { userId, hospitalId } = req.body;
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
+
+        // Check Treatment
+        db.query('SELECT * FROM treatments WHERE user_id = ? AND hospital_id = ? AND status = "active"', [userId, hospitalId], (err, treatments) => {
+            if (err || treatments.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Tedavi bulunamadı.' }));
+            const treatment = treatments[0];
+
+            // Complete Treatment
+            db.query('UPDATE treatments SET status = "completed", date = NOW() WHERE id = ?', [treatment.id], (err) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Tedavi tamamlanamadı.' }));
+
+                db.commit(err => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                    res.json({ success: true, message: 'Tedavi tamamlandı.' });
+                });
+            });
+        });
+    });
+});
+
+// Get Hospital Queue
+app.get('/api/hospital/queue/:hospitalId', (req, res) => {
+    const { hospitalId } = req.params;
+    const query = `
+        SELECT t.*, u.username
+        FROM treatments t
+        JOIN users u ON t.user_id = u.id
+        WHERE t.hospital_id = ? AND t.status = 'active'
+        ORDER BY t.date ASC
+    `;
+    db.query(query, [hospitalId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        res.json({ success: true, queue: results });
+    });
+});
+
+// Get User Treatment Queue Position
+app.get('/api/treatment/queue-position/:userId', (req, res) => {
+    const { userId } = req.params;
+    const query = `
+        SELECT COUNT(*) as position
+        FROM treatments t
+        WHERE t.hospital_id = (SELECT id FROM hospitals WHERE user_id = ?)
+        AND t.status = 'active'
+        AND t.date <= (SELECT date FROM treatments WHERE user_id = ? AND status = 'active' LIMIT 1)
+    `;
+    db.query(query, [userId, userId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        res.json({ success: true, position: results[0].position + 1 });
+    });
+});
+
+// Cancel Treatment
+app.post('/api/treatment/cancel', (req, res) => {
+    const { userId, hospitalId } = req.body;
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
+
+        // Check Treatment
+        db.query('SELECT * FROM treatments WHERE user_id = ? AND hospital_id = ? AND status = "active"', [userId, hospitalId], (err, treatments) => {
+            if (err || treatments.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Tedavi bulunamadı.' }));
+            const treatment = treatments[0];
+
+            // Cancel Treatment
+            db.query('UPDATE treatments SET status = "canceled" WHERE id = ?', [treatment.id], (err) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Tedavi iptal edilemedi.' }));
+
+                db.commit(err => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                    res.json({ success: true, message: 'Tedavi iptal edildi.' });
+                });
+            });
+        });
+    });
+});
+
+// Get User Active Treatment
+app.get('/api/treatment/active/:userId', (req, res) => {
+    const { userId } = req.params;
+    const query = `
+        SELECT t.*, h.name as hospital_name, h.id as hospital_id
+        FROM treatments t
+        JOIN hospitals h ON t.hospital_id = h.id
+        WHERE t.user_id = ? AND t.status = 'active'
+        ORDER BY t.date DESC
+    `;
+    db.query(query, [userId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        res.json({ success: true, treatment: results.length > 0 ? results[0] : null });
+    });
+});
+
+// Get Treatment Details
+app.get('/api/treatment/:id', (req, res) => {
+    const { id } = req.params;
+    db.query('SELECT t.*, h.name as hospital_name, h.id as hospital_id FROM treatments t JOIN hospitals h ON t.hospital_id = h.id WHERE t.id = ?', [id], (err, results) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        if (results.length === 0) return res.status(404).json({ success: false, message: 'Not found' });
+        res.json({ success: true, data: results[0] });
+    });
+});
+
+// --- DAILY JOBS SYSTEM ---
+
+const DAILY_JOBS = [
+    { id: 1, name: "Sokak Temizliği", time: 30, minLevel: 1, costH: 5, costE: 10, reward: { money: 100, xp: 10 }, icon: "fa-broom" },
+    { id: 2, name: "Garsonluk", time: 60, minLevel: 2, costH: 8, costE: 15, reward: { money: 250, xp: 20 }, icon: "fa-utensils" },
+    { id: 3, name: "Kuryelik", time: 90, minLevel: 3, costH: 10, costE: 20, reward: { money: 400, xp: 35 }, icon: "fa-motorcycle" },
+    { id: 4, name: "Depo İşçiliği", time: 120, minLevel: 5, costH: 15, costE: 25, reward: { money: 600, xp: 50 }, icon: "fa-boxes-packing" },
+    { id: 5, name: "Taksi Şoförlüğü", time: 150, minLevel: 8, costH: 10, costE: 30, reward: { money: 850, xp: 75, gold: 1 }, icon: "fa-taxi" },
+    { id: 6, name: "Güvenlik Görevlisi", time: 180, minLevel: 12, costH: 20, costE: 20, reward: { money: 1200, xp: 100, gold: 2 }, icon: "fa-shield-halved" },
+    { id: 7, name: "Yazılım Geliştirme", time: 240, minLevel: 15, costH: 5, costE: 40, reward: { money: 2000, xp: 150, gold: 5 }, icon: "fa-laptop-code" },
+    { id: 8, name: "Banka Müdürlüğü", time: 300, minLevel: 20, costH: 10, costE: 50, reward: { money: 5000, xp: 300, gold: 10, diamond: 1 }, icon: "fa-building-columns" },
+    { id: 9, name: "Pilotluk", time: 360, minLevel: 25, costH: 15, costE: 60, reward: { money: 8000, xp: 500, gold: 20, diamond: 2 }, icon: "fa-plane" },
+    { id: 10, name: "Gizli Ajanlık", time: 420, minLevel: 30, costH: 50, costE: 80, reward: { money: 15000, xp: 1000, gold: 50, diamond: 5 }, icon: "fa-user-secret" }
+];
+
+// Create Daily Job Tables
+const createDailyJobTables = () => {
+    const q1 = `
+        CREATE TABLE IF NOT EXISTS daily_job_completions (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            job_id INT NOT NULL,
+            completion_date DATE NOT NULL,
+            UNIQUE KEY unique_daily_job (user_id, job_id, completion_date)
+        )
+    `;
+    const q2 = `
+        CREATE TABLE IF NOT EXISTS active_daily_jobs (
+            user_id INT PRIMARY KEY,
+            job_id INT NOT NULL,
+            start_time DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `;
+    const q3 = `
+        CREATE TABLE IF NOT EXISTS daily_job_logs (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            job_id INT NOT NULL,
+            reward_text VARCHAR(255),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    `;
+
+    db.query(q1, (err) => { if(err) console.error('Daily Job Completions Table Error', err); });
+    db.query(q2, (err) => { if(err) console.error('Active Daily Jobs Table Error', err); });
+    db.query(q3, (err) => { if(err) console.error('Daily Job Logs Table Error', err); });
+};
+createDailyJobTables();
+
+// Get Jobs List
+app.get('/api/daily-jobs', (req, res) => {
+    res.json(DAILY_JOBS);
+});
+
+// Get User Job Status
+app.get('/api/daily-jobs/status/:userId', (req, res) => {
+    const { userId } = req.params;
+    
+    // 1. Get Completed Jobs Today
+    const qCompleted = 'SELECT job_id FROM daily_job_completions WHERE user_id = ? AND completion_date = CURDATE()';
+    
+    // 2. Get Active Job
+    const qActive = 'SELECT * FROM active_daily_jobs WHERE user_id = ?';
+
+    // 3. Get Logs (REMOVED FOR USER)
+    // const qLogs = 'SELECT * FROM daily_job_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT 20';
+
+    db.query(qCompleted, [userId], (err, completedRes) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        
+        db.query(qActive, [userId], (err, activeRes) => {
+            if (err) return res.status(500).json({ success: false, error: err });
+
+            // db.query(qLogs, [userId], (err, logsRes) => { // REMOVED
+                // if (err) return res.status(500).json({ success: false, error: err });
+
+                const completedIds = completedRes.map(r => r.job_id);
+                const activeJob = activeRes.length > 0 ? activeRes[0] : null;
+
+                // Calculate remaining time if active
+                let activeJobData = null;
+                if (activeJob) {
+                    const jobDef = DAILY_JOBS.find(j => j.id === activeJob.job_id);
+                    if (jobDef) {
+                        let remaining;
+                        if (activeJob.end_time) {
+                            const endTime = new Date(activeJob.end_time).getTime();
+                            remaining = Math.max(0, (endTime - Date.now()) / 1000);
+                        } else {
+                            const startTime = new Date(activeJob.start_time).getTime();
+                            const elapsed = (Date.now() - startTime) / 1000;
+                            remaining = Math.max(0, jobDef.time - elapsed);
+                        }
+                        
+                        activeJobData = {
+                            ...activeJob,
+                            name: jobDef.name,
+                            totalTime: jobDef.time,
+                            remainingTime: remaining
+                        };
+                    }
+                }
+
+                res.json({
+                    success: true,
+                    completedJobs: completedIds,
+                    activeJob: activeJobData,
+                    logs: [] // Empty logs for user
+                });
+            // });
+        });
+    });
+});
+
+// Start Job
+app.post('/api/daily-jobs/start', (req, res) => {
+    const { userId, jobId } = req.body;
+    
+    const job = DAILY_JOBS.find(j => j.id === jobId);
+    if (!job) return res.status(400).json({ success: false, message: 'İş bulunamadı.' });
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
+
+        // 1. Check Active Job
+        db.query('SELECT * FROM active_daily_jobs WHERE user_id = ?', [userId], (err, activeRes) => {
+            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
+            if (activeRes.length > 0) return db.rollback(() => res.json({ success: false, message: 'Zaten çalışan bir işin var.' }));
+
+            // 2. Check Completed Today
+            db.query('SELECT * FROM daily_job_completions WHERE user_id = ? AND job_id = ? AND completion_date = CURDATE()', [userId, jobId], (err, compRes) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
+                if (compRes.length > 0) return db.rollback(() => res.json({ success: false, message: 'Bu işi bugün zaten yaptın.' }));
+
+                // 3. Check User Stats (Level, Health, Energy)
+                db.query('SELECT level, health, energy FROM users WHERE id = ?', [userId], (err, users) => {
+                    if (err || users.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' }));
+                    const user = users[0];
+
+                    if (user.level < job.minLevel) return db.rollback(() => res.json({ success: false, message: 'Seviyen yetersiz.' }));
+                    if (user.health < job.costH) return db.rollback(() => res.json({ success: false, message: 'Sağlığın yetersiz.' }));
+                    if (user.energy < job.costE) return db.rollback(() => res.json({ success: false, message: 'Enerjin yetersiz.' }));
+
+                    // 4. Deduct Costs Immediately
+                    const newHealth = user.health - job.costH;
+                    const newEnergy = user.energy - job.costE;
+
+                    db.query('UPDATE users SET health = ?, energy = ? WHERE id = ?', [newHealth, newEnergy, userId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Cost deduction error' }));
+
+                        // 5. Start Job (Insert Active)
+                        const startTime = new Date();
+                        const endTime = new Date(startTime.getTime() + job.time * 1000);
+
+                        // Format dates for MySQL (YYYY-MM-DD HH:mm:ss) to avoid timezone issues
+                        const toMysqlFormat = (date) => date.toISOString().slice(0, 19).replace('T', ' ');
+                        
+                        // Note: Using local time might be better if DB is local, but ISO is UTC. 
+                        // Let's rely on the driver to handle Date objects, but ensure we are consistent.
+                        // Actually, let's use MySQL NOW() and DATE_ADD for consistency on DB side.
+                        
+                        const qInsert = `INSERT INTO active_daily_jobs (user_id, job_id, start_time, end_time) 
+                                         VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL ? SECOND))`;
+
+                        db.query(qInsert, [userId, jobId, job.time], (err) => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Start job error' }));
+
+                            // Log Start
+                            const logText = `${job.name} başladı.`;
+                            db.query('INSERT INTO daily_job_logs (user_id, job_id, reward_text) VALUES (?, ?, ?)', [userId, jobId, logText], (err) => {
+                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log error' }));
+
+                                db.commit(err => {
+                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                                    res.json({ 
+                                        success: true, 
+                                        message: 'İş başladı!', 
+                                        duration: job.time,
+                                        newStats: { health: newHealth, energy: newEnergy }
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Complete Job
+app.post('/api/daily-jobs/complete', (req, res) => {
+    const { userId, jobId } = req.body;
+    console.log(`Completing job ${jobId} for user ${userId}`);
+
+    const job = DAILY_JOBS.find(j => j.id === jobId);
+    if (!job) return res.status(400).json({ success: false, message: 'İş bulunamadı.' });
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
+
+        // 1. Get Active Job
+        db.query('SELECT * FROM active_daily_jobs WHERE user_id = ? AND job_id = ?', [userId, jobId], (err, activeRes) => {
+            if (err) {
+                console.error("DB Error active_daily_jobs:", err);
+                return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
+            }
+            if (activeRes.length === 0) {
+                console.log("Active job not found for user", userId);
+                return db.rollback(() => res.json({ success: false, message: 'Aktif iş bulunamadı.' }));
+            }
+
+            const activeJob = activeRes[0];
+            
+            // Check Time
+            let isTimeUp = false;
+            if (activeJob.end_time) {
+                const endTime = new Date(activeJob.end_time).getTime();
+                if (Date.now() >= (endTime - 2000)) isTimeUp = true;
+            } else {
+                const startTime = new Date(activeJob.start_time).getTime();
+                const elapsed = (Date.now() - startTime) / 1000;
+                if (elapsed >= (job.time - 2)) isTimeUp = true;
+            }
+
+            if (!isTimeUp) {
+                return db.rollback(() => res.json({ success: false, message: 'Süre henüz dolmadı!' }));
+            }
+
+            // 2. Get User (For Rewards)
+            db.query('SELECT money, gold, diamond, xp, health, energy, level FROM users WHERE id = ?', [userId], (err, users) => {
+                if (err) {
+                    console.error("DB Error users:", err);
+                    return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
+                }
+                if (users.length === 0) {
+                    console.error("User not found in DB:", userId);
+                    return db.rollback(() => res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' }));
+                }
+                const user = users[0];
+
+                // Calculate New Values (Costs already deducted at start)
+                const newMoney = user.money + job.reward.money;
+                const newGold = user.gold + (job.reward.gold || 0);
+                const newDiamond = (user.diamond || 0) + (job.reward.diamond || 0);
+                
+                // Level Up Logic
+                let currentLevel = user.level || 1;
+                let currentXp = (user.xp || 0) + job.reward.xp;
+                let leveledUp = false;
+                
+                // Simple formula: Level * 100 XP required for next level
+                // Example: Level 1 needs 100 XP. Level 2 needs 200 XP.
+                let requiredXp = currentLevel * 100;
+
+                while (currentXp >= requiredXp) {
+                    currentXp -= requiredXp;
+                    currentLevel++;
+                    requiredXp = currentLevel * 100;
+                    leveledUp = true;
+                }
+
+                // Update User Rewards
+                const updateQ = 'UPDATE users SET money = ?, gold = ?, diamond = ?, xp = ?, level = ? WHERE id = ?';
+                db.query(updateQ, [newMoney, newGold, newDiamond, currentXp, currentLevel, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User update error' }));
+
+                    // 3. Mark Completed
+                    db.query('INSERT INTO daily_job_completions (user_id, job_id, completion_date) VALUES (?, ?, CURDATE())', [userId, jobId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Completion insert error' }));
+
+                        // 4. Remove Active
+                        db.query('DELETE FROM active_daily_jobs WHERE user_id = ?', [userId], (err) => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Active delete error' }));
+
+                            // 5. Log
+                            const logText = `${job.name} tamamlandı. +${job.reward.money} Para, +${job.reward.xp} XP`;
+                            db.query('INSERT INTO daily_job_logs (user_id, job_id, reward_text) VALUES (?, ?, ?)', [userId, jobId, logText], (err) => {
+                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log error' }));
+
+                                db.commit(err => {
+                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                                    
+                                    let msg = 'İş tamamlandı!';
+                                    if (leveledUp) {
+                                        msg += ` Tebrikler! Seviye atladın! Yeni Seviye: ${currentLevel}`;
+                                    }
+
+                                    res.json({ 
+                                        success: true, 
+                                        message: msg,
+                                        rewards: job.reward,
+                                        newStats: { 
+                                            money: newMoney, 
+                                            gold: newGold, 
+                                            diamond: newDiamond, 
+                                            xp: currentXp,
+                                            level: currentLevel
+                                        }
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// --- ADMIN SYSTEM ---
+
+
+// Ensure users table has necessary columns
+const checkAndAddUserColumn = (colName, colDef) => {
+    db.query(`SHOW COLUMNS FROM users LIKE '${colName}'`, (err, result) => {
+        if (!err && result.length === 0) {
+            db.query(`ALTER TABLE users ADD COLUMN ${colName} ${colDef}`, (err) => {
+                if (err) console.error(`Error adding ${colName} column to users:`, err);
+                else console.log(`Added ${colName} column to users`);
+            });
+        }
+    });
+};
+checkAndAddUserColumn('diamond', 'INT DEFAULT 0');
+checkAndAddUserColumn('gold', 'INT DEFAULT 0');
+checkAndAddUserColumn('xp', 'INT DEFAULT 0');
+checkAndAddUserColumn('level', 'INT DEFAULT 1');
+
+app.get('/api/admin/users', (req, res) => {
+    db.query('SELECT id, username, money, gold, diamond, energy, health, level FROM users', (err, results) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        res.json(results);
+    });
+});
+
+app.post('/api/admin/update-user', (req, res) => {
+    const { id, money, gold, diamond, energy, health, level } = req.body;
+    const query = 'UPDATE users SET money = ?, gold = ?, diamond = ?, energy = ?, health = ?, level = ? WHERE id = ?';
+    db.query(query, [money, gold, diamond, energy, health, level, id], (err, result) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        res.json({ success: true, message: 'Kullanıcı güncellendi.' });
+    });
+});
+
+// Get Daily Job Logs (Admin)
+app.get('/api/admin/daily-job-logs', (req, res) => {
+    const query = `
+        SELECT l.*, u.username, j.name as job_name 
+        FROM daily_job_logs l 
+        JOIN users u ON l.user_id = u.id 
+        LEFT JOIN (
+            SELECT 1 as id, 'Sokak Temizliği' as name UNION ALL
+            SELECT 2, 'Garsonluk' UNION ALL
+            SELECT 3, 'Kuryelik' UNION ALL
+            SELECT 4, 'Depo İşçiliği' UNION ALL
+            SELECT 5, 'Taksi Şoförlüğü' UNION ALL
+            SELECT 6, 'Güvenlik Görevlisi' UNION ALL
+            SELECT 7, 'Yazılım Geliştirme' UNION ALL
+            SELECT 8, 'Banka Müdürlüğü' UNION ALL
+            SELECT 9, 'Pilotluk' UNION ALL
+            SELECT 10, 'Gizli Ajanlık'
+        ) j ON l.job_id = j.id
+        ORDER BY l.created_at DESC LIMIT 100
+    `;
+    // Note: Since jobs are in memory array in server.js, we can't join easily in SQL unless we create a jobs table.
+    // For now, I'll just fetch logs and map job names in JS or use a simple CASE/UNION if I really want SQL.
+    // Actually, let's just fetch logs and users, and I'll map job names in the response.
+    
+    const q = `SELECT l.*, u.username FROM daily_job_logs l JOIN users u ON l.user_id = u.id ORDER BY l.created_at DESC LIMIT 100`;
+    
+    db.query(q, (err, results) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        
+        // Map job names
+        const enriched = results.map(r => {
+            const job = DAILY_JOBS.find(j => j.id === r.job_id);
+            return { ...r, job_name: job ? job.name : 'Bilinmeyen İş' };
+        });
+        
+        res.json(enriched);
+    });
+});
+
+// --- END ADMIN SYSTEM ---
+
+// Start the server
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
 });

@@ -1,3 +1,103 @@
-nohup: ignoring input
 Server running at http://localhost:3000
 Connected to database: simworld
+Hospitals table ready
+Hospital Treatments table ready
+[Hospital Check] Checking hospital for user 1
+[Hospital Check] Found hospital: 1 for user 1
+[Hospital Check] Logs DB Error: Error: Unknown column 'created_at' in 'order clause'
+    at Packet.asError (/workspaces/asdas/node_modules/mysql2/lib/packets/packet.js:740:17)
+    at Query.execute (/workspaces/asdas/node_modules/mysql2/lib/commands/command.js:29:26)
+    at Connection.handlePacket (/workspaces/asdas/node_modules/mysql2/lib/base/connection.js:477:34)
+    at PacketParser.onPacket (/workspaces/asdas/node_modules/mysql2/lib/base/connection.js:93:12)
+    at PacketParser.executeStart (/workspaces/asdas/node_modules/mysql2/lib/packet_parser.js:75:16)
+    at Socket.<anonymous> (/workspaces/asdas/node_modules/mysql2/lib/base/connection.js:100:25)
+    at Socket.emit (node:events:519:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5) {
+  code: 'ER_BAD_FIELD_ERROR',
+  errno: 1054,
+  sqlState: '42S22',
+  sqlMessage: "Unknown column 'created_at' in 'order clause'",
+  sql: 'SELECT * FROM hospital_treatments WHERE hospital_id = 1 ORDER BY created_at DESC LIMIT 50'
+}
+[Hospital Check] Checking hospital for user 1
+[Hospital Check] Found hospital: 1 for user 1
+[Hospital Check] Logs DB Error: Error: Unknown column 'created_at' in 'order clause'
+    at Packet.asError (/workspaces/asdas/node_modules/mysql2/lib/packets/packet.js:740:17)
+    at Query.execute (/workspaces/asdas/node_modules/mysql2/lib/commands/command.js:29:26)
+    at Connection.handlePacket (/workspaces/asdas/node_modules/mysql2/lib/base/connection.js:477:34)
+    at PacketParser.onPacket (/workspaces/asdas/node_modules/mysql2/lib/base/connection.js:93:12)
+    at PacketParser.executeStart (/workspaces/asdas/node_modules/mysql2/lib/packet_parser.js:75:16)
+    at Socket.<anonymous> (/workspaces/asdas/node_modules/mysql2/lib/base/connection.js:100:25)
+    at Socket.emit (node:events:519:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5) {
+  code: 'ER_BAD_FIELD_ERROR',
+  errno: 1054,
+  sqlState: '42S22',
+  sqlMessage: "Unknown column 'created_at' in 'order clause'",
+  sql: 'SELECT * FROM hospital_treatments WHERE hospital_id = 1 ORDER BY created_at DESC LIMIT 50'
+}
+[Hospital Check] Checking hospital for user 1
+[Hospital Check] Found hospital: 1 for user 1
+[Hospital Check] Logs DB Error: Error: Unknown column 'created_at' in 'order clause'
+    at Packet.asError (/workspaces/asdas/node_modules/mysql2/lib/packets/packet.js:740:17)
+    at Query.execute (/workspaces/asdas/node_modules/mysql2/lib/commands/command.js:29:26)
+    at Connection.handlePacket (/workspaces/asdas/node_modules/mysql2/lib/base/connection.js:477:34)
+    at PacketParser.onPacket (/workspaces/asdas/node_modules/mysql2/lib/base/connection.js:93:12)
+    at PacketParser.executeStart (/workspaces/asdas/node_modules/mysql2/lib/packet_parser.js:75:16)
+    at Socket.<anonymous> (/workspaces/asdas/node_modules/mysql2/lib/base/connection.js:100:25)
+    at Socket.emit (node:events:519:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5) {
+  code: 'ER_BAD_FIELD_ERROR',
+  errno: 1054,
+  sqlState: '42S22',
+  sqlMessage: "Unknown column 'created_at' in 'order clause'",
+  sql: 'SELECT * FROM hospital_treatments WHERE hospital_id = 1 ORDER BY created_at DESC LIMIT 50'
+}
+[Hospital Check] Checking hospital for user 1
+[Hospital Check] Found hospital: 1 for user 1
+[Hospital Check] Logs DB Error: Error: Unknown column 'created_at' in 'order clause'
+    at Packet.asError (/workspaces/asdas/node_modules/mysql2/lib/packets/packet.js:740:17)
+    at Query.execute (/workspaces/asdas/node_modules/mysql2/lib/commands/command.js:29:26)
+    at Connection.handlePacket (/workspaces/asdas/node_modules/mysql2/lib/base/connection.js:477:34)
+    at PacketParser.onPacket (/workspaces/asdas/node_modules/mysql2/lib/base/connection.js:93:12)
+    at PacketParser.executeStart (/workspaces/asdas/node_modules/mysql2/lib/packet_parser.js:75:16)
+    at Socket.<anonymous> (/workspaces/asdas/node_modules/mysql2/lib/base/connection.js:100:25)
+    at Socket.emit (node:events:519:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5) {
+  code: 'ER_BAD_FIELD_ERROR',
+  errno: 1054,
+  sqlState: '42S22',
+  sqlMessage: "Unknown column 'created_at' in 'order clause'",
+  sql: 'SELECT * FROM hospital_treatments WHERE hospital_id = 1 ORDER BY created_at DESC LIMIT 50'
+}
+[Hospital Update] Request for UserID: 1, Name: dev a, Price: 900
+[Hospital Update] Success
+[Hospital Update] Request for UserID: 1, Name: Devlet Hastanesi, Price: 900
+[Hospital Update] Success
+[Hospital Check] Checking hospital for user 1
+[Hospital Check] Found hospital: 1 for user 1
+[Hospital Check] Logs DB Error: Error: Unknown column 'created_at' in 'order clause'
+    at Packet.asError (/workspaces/asdas/node_modules/mysql2/lib/packets/packet.js:740:17)
+    at Query.execute (/workspaces/asdas/node_modules/mysql2/lib/commands/command.js:29:26)
+    at Connection.handlePacket (/workspaces/asdas/node_modules/mysql2/lib/base/connection.js:477:34)
+    at PacketParser.onPacket (/workspaces/asdas/node_modules/mysql2/lib/base/connection.js:93:12)
+    at PacketParser.executeStart (/workspaces/asdas/node_modules/mysql2/lib/packet_parser.js:75:16)
+    at Socket.<anonymous> (/workspaces/asdas/node_modules/mysql2/lib/base/connection.js:100:25)
+    at Socket.emit (node:events:519:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5) {
+  code: 'ER_BAD_FIELD_ERROR',
+  errno: 1054,
+  sqlState: '42S22',
+  sqlMessage: "Unknown column 'created_at' in 'order clause'",
+  sql: 'SELECT * FROM hospital_treatments WHERE hospital_id = 1 ORDER BY created_at DESC LIMIT 50'
+}

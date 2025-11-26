@@ -203,8 +203,8 @@
                 <div class="cc-mid">
                     <div class="cc-balance-label">TOPLAM BAKİYE</div>
                     <div class="cc-balance" id="bankBalance">0 ₺</div>
-                    <div class="cc-iban-box">
-                        IBAN: <span class="cc-iban" id="ibanDisplay">TR-- ----</span>
+                    <div class="cc-iban-box" onclick="copyIban()" style="cursor: pointer;" title="Kopyalamak için tıkla">
+                        IBAN: <span class="cc-iban" id="ibanDisplay">TR-- ----</span> <i class="fas fa-copy" style="font-size:0.8rem; margin-left:5px; opacity:0.7;"></i>
                     </div>
                 </div>
                 <div class="cc-bottom">
@@ -460,6 +460,7 @@
     const urlParams = new URLSearchParams(window.location.search);
     const bankId = urlParams.get('bank_id') || 1;
     let userId = 1; 
+    let username = 'KULLANICI';
     
     let accountData = {};
     let currentAction = '';
@@ -471,6 +472,7 @@
         const user = JSON.parse(localStorage.getItem('simWorldUser'));
         if (user) {
             userId = user.id;
+            username = user.username || 'KULLANICI';
             loadAccountDetails();
             loadBankLogs(); // Load logs independently
         } else {
@@ -619,7 +621,7 @@
 
         document.getElementById('bankBalance').innerText = fmt(accountData.balance) + " ₺";
         document.getElementById('ibanDisplay').innerText = accountData.iban || '----';
-        document.getElementById('usernameDisplay').innerText = "KULLANICI " + userId; // Placeholder
+        document.getElementById('usernameDisplay').innerText = username;
 
         document.getElementById('interestRateDisplay').innerText = '%' + accountData.interest_rate;
         document.getElementById('loanRateDisplay').innerText = '%' + accountData.loan_rate;
@@ -1171,6 +1173,18 @@
         t.style.borderLeftColor = type === 'error' ? 'var(--danger)' : 'var(--success)';
         t.style.display = 'block';
         setTimeout(() => t.style.display = 'none', 3000);
+    }
+
+    function copyIban() {
+        const iban = document.getElementById('ibanDisplay').innerText;
+        if (!iban || iban === '----') return;
+        
+        navigator.clipboard.writeText(iban).then(() => {
+            showToast('IBAN Kopyalandı!', 'success');
+        }).catch(err => {
+            console.error('Copy failed', err);
+            showToast('Kopyalama başarısız', 'error');
+        });
     }
 
 </script>

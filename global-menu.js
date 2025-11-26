@@ -3,12 +3,14 @@
   const pages = [
     { href: 'bank.html', icon: 'fas fa-university', label: 'Banka' },
     { href: 'envanter.html', icon: 'fas fa-briefcase', label: 'Envanter' },
+    { href: 'daily-job.html', icon: 'fas fa-calendar-check', label: 'Günlük İşler' },
     { href: 'factory.html', icon: 'fas fa-industry', label: 'Fabrikalar' },
     { href: 'hospital.html', icon: 'fas fa-hospital-alt', label: 'Hastane' },
     { href: 'market.html', icon: 'fas fa-shopping-basket', label: 'Pazar' },
     { href: 'meclis.html', icon: 'fas fa-landmark', label: 'Meclis' },
     { href: 'mines.html', icon: 'fas fa-coins', label: 'Madenler' },
-    { href: 'Untitled-1.html', icon: 'fas fa-hammer', label: 'Manuel Maden' }
+    { href: 'Untitled-1.html', icon: 'fas fa-hammer', label: 'Manuel Maden' },
+    { href: 'admin.html', icon: 'fas fa-user-shield', label: 'Admin Paneli' }
   ];
 
   function buildMenu() {

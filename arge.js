@@ -113,7 +113,7 @@ function renderArgeList() {
             actionHTML = `
                 <button class="btn-research" onclick="openModal('${mine.id}')">
                     <span>Geliştir (Sv. ${nextLevel})</span>
-                    <small>${formatMoney(costMoney)} ₺</small>
+                    <small>Detaylar <i class="fas fa-chevron-right"></i></small>
                 </button>
             `;
         }
@@ -148,12 +148,25 @@ function openModal(mineId) {
     const level = mineArge.level;
     
     const costMoney = Math.floor(5000 * Math.pow(1.8, level - 1));
+    const costGold = 50 * level;
+    const costDiamond = level >= 5 ? (level - 4) * 2 : 0;
+
     const duration = level * 60;
     const bonus = 5; // +5% per level
 
     document.getElementById('mTitle').innerText = mine.name;
     document.getElementById('mTime').innerText = formatTime(duration);
-    document.getElementById('mCost').innerText = formatMoney(costMoney) + " ₺";
+    
+    let costText = `<div style="display:flex; flex-direction:column; gap:5px;">
+        <span style="color:var(--accent-green)">${formatMoney(costMoney)} ₺</span>
+        <span style="color:var(--accent-gold)">${formatMoney(costGold)} Altın</span>`;
+    
+    if (costDiamond > 0) {
+        costText += `<span style="color:var(--accent-cyan)">${costDiamond} Elmas</span>`;
+    }
+    costText += `</div>`;
+
+    document.getElementById('mCost').innerHTML = costText;
     document.getElementById('mEffect').innerText = `+%${bonus} Verimlilik`;
 
     document.getElementById('confirmModal').style.display = 'flex';
@@ -179,24 +192,28 @@ async function startResearch() {
             argeData[mineType].is_researching = 1;
             argeData[mineType].research_end_time = result.endTime;
             
-            // Update money display
+            // Update money/gold/diamond display
             if (result.newMoney !== undefined) {
                 user.money = result.newMoney;
+                user.gold = result.newGold;
+                user.diamond = result.newDiamond;
                 localStorage.setItem('simWorldUser', JSON.stringify(user));
-                if (document.getElementById('userMoney')) {
-                    document.getElementById('userMoney').innerText = formatMoney(user.money);
-                }
+                
+                if (document.getElementById('userMoney')) document.getElementById('userMoney').innerText = formatMoney(user.money);
+                if (document.getElementById('userGold')) document.getElementById('userGold').innerText = formatMoney(user.gold);
+                if (document.getElementById('userDiamond')) document.getElementById('userDiamond').innerText = formatMoney(user.diamond);
             }
             
             closeModal();
             renderArgeList();
+            toastr.success('Araştırma başlatıldı!', 'Başarılı');
         } else {
-            alert(result.message || 'Başlatılamadı.');
+            toastr.error(result.message || 'Başlatılamadı.', 'Hata');
             closeModal();
         }
     } catch (error) {
         console.error(error);
-        alert('Hata oluştu.');
+        toastr.error('Bir hata oluştu.', 'Hata');
     }
 }
 
@@ -245,9 +262,7 @@ async function finishResearch(mineType) {
             argeData[mineType].is_researching = 0;
             argeData[mineType].research_end_time = null;
             
-            // Show Popup
-            // document.getElementById('levelupPopup').classList.add('active'); // Popup HTML might be missing
-            alert('Araştırma Tamamlandı! Seviye Atladı.');
+            toastr.success('Araştırma Tamamlandı! Seviye Atladı.', 'Tebrikler');
             
             renderArgeList();
         }

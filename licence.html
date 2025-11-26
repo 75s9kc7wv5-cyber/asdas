@@ -6,6 +6,7 @@
     <title>Sim of World - İşletme Lisansları</title>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     
     <style>
         :root {
@@ -145,79 +146,34 @@
 
         /* MODAL STYLES */
         .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s, visibility 0.3s;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 1000;
+            display: none; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
         }
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
+        .modal-overlay.active { display: flex; }
+        
         .modal-content {
-            background: var(--bg-card);
-            border: 1px solid var(--accent-cyan);
-            border-radius: 10px;
-            padding: 20px;
-            width: 90%;
-            max-width: 350px;
-            text-align: center;
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
-            transform: scale(0.8);
-            transition: transform 0.3s;
+            background: #181818; width: 85%; max-width: 400px; padding: 25px; border-radius: 10px;
+            border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-cyan);
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
+            transform: none;
         }
-        .modal-overlay.active .modal-content {
-            transform: scale(1);
-        }
-        .modal-title {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--text-white);
-            margin-bottom: 10px;
-        }
-        .modal-text {
-            font-size: 0.9rem;
-            color: var(--text-gray);
-            margin-bottom: 20px;
-        }
-        .modal-actions {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-        }
-        .btn-modal {
-            padding: 8px 20px;
-            border-radius: 5px;
-            border: none;
-            font-family: 'Rajdhani', sans-serif;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .btn-confirm {
-            background: var(--accent-green);
-            color: #000;
-        }
-        .btn-confirm:hover {
-            box-shadow: 0 0 10px rgba(46, 204, 113, 0.4);
-        }
-        .btn-cancel {
-            background: #333;
-            color: #fff;
-        }
-        .btn-cancel:hover {
-            background: #444;
-        }
+        
+        .m-icon { font-size: 3rem; color: var(--accent-cyan); margin-bottom: 10px; }
+        .m-title { font-size: 1.3rem; margin-bottom: 10px; color: #fff; font-weight: bold; }
+        .m-details { background: #222; padding: 10px; border-radius: 6px; margin-bottom: 20px; text-align: left; font-size: 0.9rem; color: #ccc; }
+        .m-row { display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .m-row:last-child { border: none; padding: 0; margin: 0; }
+        
+        .modal-btns { display: flex; gap: 10px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 1rem; }
+        .btn-confirm { background: var(--accent-green); color: #000; }
+        .btn-cancel { background: #333; color: #fff; }
+        .btn-confirm:hover { box-shadow: 0 0 10px rgba(46, 204, 113, 0.4); }
+        .btn-cancel:hover { background: #444; }
 
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
 
     </style>
@@ -235,9 +191,9 @@
 
             <!-- TABS -->
             <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('mine')">Maden</button>
-                <button class="tab-btn" onclick="switchTab('factory')">Fabrika</button>
-                <button class="tab-btn" onclick="switchTab('business')">İşletme</button>
+                <button class="tab-btn active" onclick="switchTab('mine', this)">Maden</button>
+                <button class="tab-btn" onclick="switchTab('factory', this)">Fabrika</button>
+                <button class="tab-btn" onclick="switchTab('business', this)">İşletme</button>
             </div>
 
             <!-- MADEN LİSANSLARI -->
@@ -260,17 +216,43 @@
         <!-- CONFIRMATION MODAL -->
         <div class="modal-overlay" id="confirmModal">
             <div class="modal-content">
-                <div class="modal-title">ONAYLA</div>
-                <div class="modal-text" id="modalText">Bu işlemi yapmak istediğine emin misin?</div>
-                <div class="modal-actions">
-                    <button class="btn-modal btn-cancel" onclick="closeModal()">İPTAL</button>
-                    <button class="btn-modal btn-confirm" id="confirmBtn">ONAYLA</button>
+                <i class="fas fa-id-card m-icon"></i>
+                <h3 class="m-title" id="mTitle">Lisans İşlemi</h3>
+                
+                <div class="m-details">
+                    <div class="m-row">
+                        <span>İşlem:</span>
+                        <span id="mAction" style="color:var(--accent-cyan)">Satın Alma</span>
+                    </div>
+                    <div class="m-row">
+                        <span>Seviye:</span>
+                        <span id="mLevel" style="color:var(--text-white)">1</span>
+                    </div>
+                    <div class="m-row">
+                        <span>Maliyet:</span>
+                        <span id="mCost" style="color:var(--accent-gold)">1.000 ₺</span>
+                    </div>
+                </div>
+
+                <div class="modal-btns">
+                    <button class="m-btn btn-cancel" onclick="closeModal()">İPTAL</button>
+                    <button class="m-btn btn-confirm" onclick="confirmAction()">ONAYLA</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script>
+        // Toastr Config
+        toastr.options = {
+            "closeButton": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "timeOut": "3000"
+        };
+
         const minesData = [
             { id: 'wood', name: 'Odun Kampı', icon: 'https://cdn-icons-png.flaticon.com/512/2965/2965567.png' },
             { id: 'stone', name: 'Taş Ocağı', icon: 'https://cdn-icons-png.flaticon.com/512/6660/6660085.png' },
@@ -284,7 +266,8 @@
         ];
 
         const businessData = [
-            { id: 'hospital', name: 'Hastane İşletmesi', icon: 'https://cdn-icons-png.flaticon.com/512/4320/4320371.png' }
+            { id: 'hospital', name: 'Hastane İşletmesi', icon: 'https://cdn-icons-png.flaticon.com/512/4320/4320371.png' },
+            { id: 'bank', name: 'Banka Açma Lisansı', icon: 'https://cdn-icons-png.flaticon.com/512/2830/2830284.png' }
         ];
 
         let userLicenses = {};
@@ -316,17 +299,16 @@
             }
         }
 
-        function switchTab(tabName) {
+        function switchTab(tabName, btnElement) {
             // Buttons
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+            if (btnElement) btnElement.classList.add('active');
 
             // Lists
             document.querySelectorAll('.license-list').forEach(list => list.classList.remove('active'));
             
-            if(tabName === 'mine') document.getElementById('mineList').classList.add('active');
-            else if(tabName === 'factory') document.getElementById('factoryList').classList.add('active');
-            else if(tabName === 'business') document.getElementById('businessList').classList.add('active');
+            const target = document.getElementById(tabName + 'List');
+            if (target) target.classList.add('active');
         }
 
         function calculateCost(level) {
@@ -341,26 +323,44 @@
         }
 
         function openModal(mineId, mineName, level) {
+            console.log('Opening modal for:', mineId);
             pendingMineId = mineId;
-            const text = level === 0 
-                ? `${mineName} lisansını satın almak istiyor musun?` 
-                : `${mineName} lisansını yükseltmek istiyor musun?`;
+            const nextLevel = level + 1;
+            const cost = calculateCost(level);
             
-            document.getElementById('modalText').textContent = text;
-            document.getElementById('confirmModal').classList.add('active');
+            const actionText = level === 0 ? 'Satın Al' : 'Yükselt';
+            
+            const elTitle = document.getElementById('mTitle');
+            const elAction = document.getElementById('mAction');
+            const elLevel = document.getElementById('mLevel');
+            const elCost = document.getElementById('mCost');
+            const elModal = document.getElementById('confirmModal');
+
+            if(elTitle) elTitle.innerText = mineName;
+            if(elAction) elAction.innerText = actionText;
+            if(elLevel) elLevel.innerText = `Seviye ${nextLevel}`;
+            
+            let costHtml = `<span style="color:var(--accent-green)">${formatMoney(cost.money)} ₺</span>`;
+            if (cost.gold > 0) {
+                costHtml += ` + <span style="color:var(--accent-gold)">${cost.gold} Altın</span>`;
+            }
+            if(elCost) elCost.innerHTML = costHtml;
+            
+            if(elModal) elModal.classList.add('active');
         }
 
         function closeModal() {
-            document.getElementById('confirmModal').classList.remove('active');
+            const elModal = document.getElementById('confirmModal');
+            if(elModal) elModal.classList.remove('active');
             pendingMineId = null;
         }
 
-        document.getElementById('confirmBtn').addEventListener('click', () => {
+        function confirmAction() {
             if (pendingMineId) {
                 processBuyLicense(pendingMineId);
                 closeModal();
             }
-        });
+        }
 
         function renderLicenses() {
             renderList('mineList', minesData);
@@ -436,12 +436,16 @@
                     userLicenses[mineId] = result.newLevel;
                     if (window.updateHeaderStats) window.updateHeaderStats();
                     renderLicenses();
+                    if (typeof toastr !== 'undefined') toastr.success('İşlem başarılı!', 'Başarılı');
+                    else alert('İşlem başarılı!');
                 } else {
-                    alert(result.message || 'Bir hata oluştu.');
+                    if (typeof toastr !== 'undefined') toastr.error(result.message || 'Bir hata oluştu.', 'Hata');
+                    else alert(result.message || 'Bir hata oluştu.');
                 }
             } catch (error) {
                 console.error(error);
-                alert('Sunucu hatası.');
+                if (typeof toastr !== 'undefined') toastr.error('Sunucu hatası.', 'Hata');
+                else alert('Sunucu hatası.');
             }
         }
 

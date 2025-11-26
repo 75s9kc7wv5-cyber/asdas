@@ -8,6 +8,7 @@
     // 2. Define Menu Items
     const menuItems = [
         { label: 'Meydan', icon: 'fa-chess-board', href: 'home.html' },
+        { label: 'İşler', icon: 'fa-calendar-check', href: 'daily-job.html' },
         { label: 'Fabrika', icon: 'fa-industry', href: 'factory.html' },
         { label: 'AR-GE', icon: 'fa-flask', href: 'arge.html' },
         { label: 'Harita', icon: 'fa-map-marked-alt', href: 'mines.html' }

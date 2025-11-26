@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim of World - Admin Paneli</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #161616;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-gold: #ffd700;
+            --accent-red: #e74c3c;
+            --text-white: #ffffff;
+            --border-color: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            color: var(--text-white);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 { color: var(--accent-red); margin-bottom: 20px; text-align: center; text-transform: uppercase; letter-spacing: 2px; }
+
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .user-table th, .user-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+
+        .user-table th {
+            background: #222;
+            color: var(--accent-cyan);
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        .user-table tr:hover { background: #1a1a1a; }
+
+        .btn-edit {
+            background: var(--accent-gold);
+            color: #000;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: 'Rajdhani';
+        }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 100;
+            display: none; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: #181818; width: 400px; padding: 25px; border-radius: 10px;
+            border: 1px solid #444; border-top: 3px solid var(--accent-gold);
+        }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-label { display: block; font-size: 0.9rem; color: #aaa; margin-bottom: 5px; }
+        .form-input { 
+            width: 100%; background: #111; border: 1px solid #444; color: #fff; 
+            padding: 10px; border-radius: 5px; font-family: 'Rajdhani';
+        }
+
+        .m-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .m-btn { flex: 1; padding: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; }
+
+        /* RESPONSIVE TABLE */
+        @media (max-width: 768px) {
+            .user-table thead { display: none; }
+            .user-table, .user-table tbody, .user-table tr, .user-table td { display: block; width: 100%; }
+            .user-table tr { margin-bottom: 15px; border: 1px solid #333; border-radius: 10px; background: #1a1a1a; padding: 10px; }
+            .user-table td { text-align: right; padding: 10px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
+            .user-table td:last-child { border-bottom: none; justify-content: center; }
+            .user-table td::before { content: attr(data-label); font-weight: bold; color: #aaa; text-transform: uppercase; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Admin Paneli - Oyuncu Yönetimi</h1>
+        
+        <table class="user-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Kullanıcı Adı</th>
+                    <th>Para</th>
+                    <th>Altın</th>
+                    <th>Elmas</th>
+                    <th>Enerji</th>
+                    <th>Sağlık</th>
+                    <th>Seviye</th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody id="userList">
+                <!-- Users will be loaded here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- EDIT MODAL -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal-content">
+            <h3 style="color:#fff; margin-bottom:20px;">Oyuncu Düzenle</h3>
+            <input type="hidden" id="editId">
+            
+            <div class="form-group">
+                <label class="form-label">Kullanıcı Adı</label>
+                <input type="text" id="editUsername" class="form-input" disabled style="color:#666;">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Para</label>
+                <input type="number" id="editMoney" class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Altın</label>
+                <input type="number" id="editGold" class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Elmas</label>
+                <input type="number" id="editDiamonds" class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Enerji</label>
+                <input type="number" id="editEnergy" class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Sağlık</label>
+                <input type="number" id="editHealth" class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Seviye</label>
+                <input type="number" id="editLevel" class="form-input">
+            </div>
+
+            <div class="m-btns">
+                <button class="m-btn" style="background:#333; color:#fff;" onclick="closeModal()">İPTAL</button>
+                <button class="m-btn" style="background:var(--accent-green); color:#000;" onclick="saveUser()">KAYDET</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fmt = (num) => num ? num.toLocaleString('tr-TR') : '0';
+
+        document.addEventListener('DOMContentLoaded', loadUsers);
+
+        async function loadUsers() {
+            try {
+                const res = await fetch('/api/admin/users');
+                const users = await res.json();
+                renderUsers(users);
+            } catch (e) {
+                console.error(e);
+                toastr.error('Kullanıcılar yüklenemedi.');
+            }
+        }
+
+        function renderUsers(users) {
+            const tbody = document.getElementById('userList');
+            tbody.innerHTML = '';
+            
+            users.forEach(u => {
+                const row = `
+                    <tr>
+                        <td data-label="ID">${u.id}</td>
+                        <td data-label="Kullanıcı Adı">${u.username}</td>
+                        <td data-label="Para" style="color:var(--accent-green)">${fmt(u.money)} ₺</td>
+                        <td data-label="Altın" style="color:var(--accent-gold)">${fmt(u.gold)}</td>
+                        <td data-label="Elmas" style="color:var(--accent-cyan)">${fmt(u.diamond)}</td>
+                        <td data-label="Enerji">${u.energy}</td>
+                        <td data-label="Sağlık">${u.health}</td>
+                        <td data-label="Seviye">${u.level}</td>
+                        <td data-label="İşlem">
+                            <button class="btn-edit" onclick='openEditModal(${JSON.stringify(u)})'>
+                                <i class="fas fa-edit"></i> DÜZENLE
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function openEditModal(user) {
+            document.getElementById('editId').value = user.id;
+            document.getElementById('editUsername').value = user.username;
+            document.getElementById('editMoney').value = user.money;
+            document.getElementById('editGold').value = user.gold;
+            document.getElementById('editDiamonds').value = user.diamond || 0;
+            document.getElementById('editEnergy').value = user.energy;
+            document.getElementById('editHealth').value = user.health;
+            document.getElementById('editLevel').value = user.level;
+            
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        async function saveUser() {
+            const id = document.getElementById('editId').value;
+            const money = document.getElementById('editMoney').value;
+            const gold = document.getElementById('editGold').value;
+            const diamond = document.getElementById('editDiamonds').value;
+            const energy = document.getElementById('editEnergy').value;
+            const health = document.getElementById('editHealth').value;
+            const level = document.getElementById('editLevel').value;
+
+            try {
+                const res = await fetch('/api/admin/update-user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, money, gold, diamond, energy, health, level })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    toastr.success('Kullanıcı güncellendi.');
+                    closeModal();
+                    loadUsers();
+                } else {
+                    toastr.error('Hata oluştu.');
+                }
+            } catch (e) {
+                console.error(e);
+                toastr.error('Sunucu hatası.');
+            }
+        }
+    </script>
+    <script src="header-manager.js"></script>
+    <script src="menu-manager.js"></script>
+</body>
+</html>

@@ -148,7 +148,8 @@
         { href: 'mines.html', icon: 'fas fa-coins', label: 'Madenler' },
         { href: 'licence.html', icon: 'fas fa-id-card', label: 'Lisanslar' },
         { href: 'arge.html', icon: 'fas fa-flask', label: 'AR-GE Merkezi' },
-        { href: 'Untitled-1.html', icon: 'fas fa-hammer', label: 'Manuel Maden' }
+        { href: 'Untitled-1.html', icon: 'fas fa-hammer', label: 'Manuel Maden' },
+        { href: 'admin.html', icon: 'fas fa-user-shield', label: 'Admin Paneli' }
     ];
 
     function buildMenu() {
