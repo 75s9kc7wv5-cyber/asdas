@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim of World - Parlamento</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/global-menu.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-header: #0a0a0a;
+            --accent-blue: #007bff; /* Buton Mavisi */
+            --accent-red: #dc3545;  /* Buton Kırmızısı */
+            --accent-gold: #ffd700; /* Başkan Altını */
+            --text-white: #ffffff;
+            --text-muted: #a0a0a0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            background-image: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/World_map_blank_without_borders.svg/2000px-World_map_blank_without_borders.svg.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* MAIN CONTENT */
+        main {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        /* Sayfa Başlıkları */
+        .page-title-block { text-align: center; margin-bottom: 25px; animation: fadeInDown 0.6s ease; }
+        .main-title { font-size: 1.5rem; font-weight: 700; letter-spacing: 1px; margin-bottom: 5px; }
+        .sub-title { font-size: 0.9rem; color: var(--text-muted); }
+
+        /* Aksiyon Butonları */
+        .action-buttons-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            animation: fadeIn 0.8s ease;
+        }
+        .action-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 25px; /* Yuvarlak köşeler */
+            font-family: 'Rajdhani';
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, filter 0.2s;
+        }
+        .action-btn:active { transform: scale(0.98); }
+        .action-btn:hover { filter: brightness(1.1); }
+        .btn-blue { background: linear-gradient(135deg, #007bff, #0056b3); box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3); }
+        .btn-red { background: linear-gradient(135deg, #dc3545, #a71d2a); box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3); }
+
+        /* Meclis Üyeleri Alanı */
+        .members-section { margin-top: 20px; }
+        .section-header { text-align: center; margin-bottom: 20px; animation: fadeIn 1s ease; }
+        .section-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 5px; }
+
+        /* Üye Kartları Layout */
+        .members-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Kart Genel Stili */
+        .member-card {
+            background: rgba(30, 30, 30, 0.9);
+            border: 1px solid #333;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            position: relative;
+            animation: fadeSlideUp 0.6s ease backwards;
+        }
+
+        /* Kart Hiyerarşisi ve Renkler */
+        /* Başkan Kartı (Altın) */
+        .card-president {
+            border-top: 3px solid var(--accent-gold);
+            padding: 25px;
+        }
+        .card-president .role-badge { color: var(--accent-gold); }
+        
+        /* Bakan Kartı (Standart) */
+        .card-minister {
+            border-top: 3px solid #444;
+            width: 90%; /* Bakan kartı biraz daha dar */
+            margin: 0 auto;
+        }
+        
+        /* Vekil Kartları (Sarı vurgulu ve standart) */
+        .card-mp.highlight { border-top: 3px solid var(--accent-gold); }
+        .card-mp { border-top: 2px solid #333; padding: 15px 10px; }
+
+
+        /* Avatar ve Metinler */
+        .avatar-wrapper {
+            width: 60px; height: 60px;
+            background: #222; border-radius: 50%;
+            margin: 0 auto 10px;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden; border: 2px solid #333;
+        }
+        /* Güneş Logosu (Placeholder) */
+        .sun-icon { color: var(--accent-gold); font-size: 1.8rem; }
+        /* Standart User İkonu */
+        .user-icon { color: #666; font-size: 2rem; }
+
+        .member-name { font-size: 1rem; font-weight: 700; margin-bottom: 2px; }
+        .member-role { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+        .role-badge { font-weight: bold; color: #fff; }
+
+        /* Vekiller Grid Yapısı */
+        .mps-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        /* Animasyon Tanımları */
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeSlideUp { 
+            from { opacity: 0; transform: translateY(30px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+
+        /* Animasyon Gecikmeleri */
+        .delay-1 { animation-delay: 0.2s; }
+        .delay-2 { animation-delay: 0.4s; }
+        .delay-3 { animation-delay: 0.6s; }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Header removed, injected by header-manager.js -->
+
+        <main>
+            <div class="page-title-block">
+                <h1 class="main-title">PARLAMENTO</h1>
+                <p class="sub-title">Devlet Yönetimi</p>
+            </div>
+
+            <div class="action-buttons-container">
+                <button class="action-btn btn-blue" onclick="alert('Yasa teklifi ekranı açılıyor...')">
+                    <i class="fas fa-folder-plus"></i> YASA TEKLİFİ VER
+                </button>
+                <button class="action-btn btn-red" onclick="alert('Yasa teklifleri listeleniyor...')">
+                    <i class="fas fa-file-alt"></i> YASA TEKLİFLERİ
+                </button>
+            </div>
+
+            <div class="section-header">
+                <h2 class="section-title">MECLİS ÜYELERİ</h2>
+                <p class="sub-title">Başkan, Bakan ve Vekiller</p>
+            </div>
+
+            <div class="members-layout">
+                
+                <div class="member-card card-president delay-1">
+                    <div class="avatar-wrapper" style="border-color: var(--accent-gold);">
+                        <i class="fas fa-sun sun-icon"></i>
+                    </div>
+                    <div class="member-name">Enes</div>
+                    <div class="member-role">
+                        <span class="role-badge">BAŞKAN</span> (AP)
+                    </div>
+                </div>
+
+                <div class="member-card card-minister delay-2">
+                    <div class="avatar-wrapper">
+                        <i class="fas fa-user user-icon"></i>
+                    </div>
+                    <div class="member-name">Yetkili</div>
+                    <div class="member-role">BAKAN</div>
+                </div>
+
+                <div class="mps-grid delay-3">
+                    
+                    <div class="member-card card-mp highlight">
+                        <div class="avatar-wrapper" style="border-color: var(--accent-gold);">
+                            <i class="fas fa-sun sun-icon" style="font-size:1.4rem;"></i>
+                        </div>
+                        <div class="member-name">Umut Özon</div>
+                        <div class="member-role"><span style="color:var(--accent-gold)">VEKİL (AP)</span></div>
+                    </div>
+
+                    <div class="member-card card-mp">
+                        <div class="avatar-wrapper">
+                            <i class="fas fa-user user-icon"></i>
+                        </div>
+                        <div class="member-name">eqwe</div>
+                        <div class="member-role">VEKİL</div>
+                    </div>
+
+                    <div class="member-card card-mp">
+                        <div class="avatar-wrapper">
+                            <i class="fas fa-user user-icon"></i>
+                        </div>
+                        <div class="member-name">Melih Can</div>
+                        <div class="member-role">VEKİL</div>
+                    </div>
+
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="js/loader-manager.js"></script>
+    <script src="js/menu-manager.js"></script>
+    <script src="js/header-manager.js"></script>
+</body>
+</html>

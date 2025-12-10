@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim of World - Global Pazar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/global-menu.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #161616;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-red: #e74c3c;
+            --accent-gold: #ffd700;
+            --accent-orange: #e67e22;
+            --text-white: #ffffff;
+            --text-muted: #888;
+            --border-color: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            background-image: linear-gradient(rgba(0,0,0,0.9), rgba(0,0,0,0.9)), url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/World_map_blank_without_borders.svg/2000px-World_map_blank_without_borders.svg.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* MARKET TICKER (Üst Kayan Bant) */
+        .market-ticker {
+            background: #111;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+            overflow-x: auto;
+            white-space: nowrap;
+            display: flex;
+            gap: 15px;
+            padding-left: 15px;
+        }
+        
+        .ticker-item { font-size: 0.8rem; display: flex; align-items: center; gap: 5px; color: #ccc; }
+        .trend-up { color: var(--accent-green); }
+        .trend-down { color: var(--accent-red); }
+
+        /* MAIN CONTENT */
+        main {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+
+        /* Kategoriler */
+        .category-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        .cat-btn {
+            background: #222;
+            border: 1px solid #444;
+            color: #aaa;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-family: 'Rajdhani';
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .cat-btn.active {
+            background: var(--accent-orange);
+            color: #000;
+            border-color: var(--accent-orange);
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(230, 126, 34, 0.4);
+        }
+
+        /* MARKET GRID */
+        .market-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 3 Sütun */
+            gap: 12px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .product-card {
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 140px;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+        }
+        .product-card:hover { transform: translateY(-3px); border-color: var(--accent-orange); }
+
+        .prod-name { font-size: 0.8rem; font-weight: bold; color: #fff; margin-bottom: 2px; }
+        .prod-stat { font-size: 0.7rem; color: var(--accent-green); margin-bottom: 5px; }
+        
+        .prod-icon { 
+            font-size: 2rem; 
+            margin: 5px 0; 
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));
+            transition: transform 0.2s;
+        }
+        .product-card:hover .prod-icon { transform: scale(1.1); }
+
+        .prod-price { font-size: 1rem; font-weight: bold; color: var(--text-white); margin-top: auto; }
+        .prod-price span { color: var(--accent-orange); font-size: 0.8rem; }
+
+        /* MODAL (SATIN ALMA) */
+        .modal-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 100;
+            display: none; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: #181818; width: 85%; padding: 20px; border-radius: 10px;
+            text-align: center; border: 1px solid #444; border-top: 3px solid var(--accent-orange);
+        }
+        .modal-title { font-size: 1.2rem; color: #fff; margin-bottom: 10px; }
+        .modal-icon { font-size: 3rem; margin-bottom: 10px; display: inline-block; }
+        
+        .qty-control {
+            display: flex; align-items: center; justify-content: center; gap: 10px; margin: 15px 0;
+        }
+        .qty-btn { width: 30px; height: 30px; background: #333; border: none; color: #fff; border-radius: 4px; cursor: pointer; font-size: 1.2rem; }
+        .qty-input { width: 60px; text-align: center; background: #111; border: 1px solid #444; color: #fff; padding: 5px; border-radius: 4px; font-family: 'Rajdhani'; font-size: 1.1rem; }
+
+        .total-price { font-size: 1.2rem; color: var(--accent-green); margin-bottom: 15px; font-weight: bold; }
+
+        .action-btn { width: 100%; padding: 12px; border: none; border-radius: 5px; font-family: 'Rajdhani'; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .btn-buy { background: var(--accent-orange); color: #000; margin-bottom: 10px; }
+        .btn-cancel { background: #333; color: #fff; }
+
+        /* BOTTOM NAV */
+        .bottom-nav {
+            position: absolute; bottom: 0; width: 100%; background: #0a0a0a;
+            border-top: 1px solid #333; display: flex; justify-content: space-around;
+            padding: 10px 0; z-index: 10;
+        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 0.75rem; cursor: pointer; }
+        .nav-item i { font-size: 1.4rem; margin-bottom: 3px; }
+        .nav-item.active { color: var(--accent-orange); }
+
+        /* Renkler */
+        .c-red { color: #e74c3c; }
+        .c-green { color: #2ecc71; }
+        .c-yellow { color: #f1c40f; }
+        .c-white { color: #fff; }
+        .c-brown { color: #d35400; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Header removed, injected by header-manager.js -->
+
+        <div class="market-ticker">
+            <div class="ticker-item"><i class="fas fa-oil-can"></i> Petrol: $74 <span class="trend-down">(-0.5%)</span></div>
+            <div class="ticker-item"><i class="fas fa-bars"></i> Altın: $435 <span class="trend-up">(+1.2%)</span></div>
+            <div class="ticker-item"><i class="fas fa-box"></i> Bakır: $4 <span class="trend-down">(-0.1%)</span></div>
+            <div class="ticker-item"><i class="fas fa-gem"></i> Elmas: $1,600 <span class="trend-up">(+0.0%)</span></div>
+        </div>
+
+        <main>
+            <div class="category-tabs">
+                <button class="cat-btn active" onclick="filterMarket('food')">GIDA</button>
+                <button class="cat-btn" onclick="filterMarket('resource')">KAYNAK</button>
+                <button class="cat-btn" onclick="filterMarket('military')">ASKERİ</button>
+            </div>
+
+            <div class="market-grid" id="marketGrid">
+                </div>
+        </main>
+
+        <div class="modal-overlay" id="buyModal">
+            <div class="modal-content">
+                <div id="modalIcon" class="modal-icon"></div>
+                <h3 id="modalTitle" class="modal-title">Ürün Adı</h3>
+                <p style="color:#aaa; font-size:0.9rem;">Birim Fiyat: <span id="unitPrice" style="color:#fff;">0</span> ₺</p>
+                
+                <div class="qty-control">
+                    <button class="qty-btn" onclick="changeQty(-1)">-</button>
+                    <input type="number" id="qtyInput" class="qty-input" value="1" oninput="calcTotal()">
+                    <button class="qty-btn" onclick="changeQty(1)">+</button>
+                </div>
+
+                <div class="total-price">Toplam: <span id="totalPrice">0</span> ₺</div>
+                
+                <button class="action-btn btn-buy" onclick="confirmBuy()">SATIN AL</button>
+                <button class="action-btn btn-cancel" onclick="closeModal()">İPTAL</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="js/loader-manager.js"></script>
+    <script src="js/menu-manager.js"></script>
+    <script src="js/header-manager.js"></script>
+    <script>
+        // MARKET VERİLERİ
+        // Game.prices ile senkronize edilebilir ama şimdilik burada tutalım, 
+        // ancak satın alma işlemi Game.js üzerinden yapılmalı.
+        const products = [
+            // GIDA
+            { id: 1, name: "Domates", category: "food", price: 8, stat: "Tokluk +2", icon: "fa-apple-alt", color: "c-red", key: "food" }, 
+            { id: 2, name: "Salatalık", category: "food", price: 10, stat: "Tokluk +3", icon: "fa-leaf", color: "c-green", key: "food" },
+            { id: 3, name: "Biber", category: "food", price: 15, stat: "Tokluk +4", icon: "fa-pepper-hot", color: "c-green", key: "food" },
+            { id: 4, name: "Ekmek", category: "food", price: 24, stat: "Tokluk +10", icon: "fa-bread-slice", color: "c-yellow", key: "food" },
+            { id: 5, name: "Haşlama", category: "food", price: 29, stat: "Tokluk +12", icon: "fa-utensils", color: "c-white", key: "food" },
+            { id: 6, name: "Salata", category: "food", price: 81, stat: "Sağlık +5", icon: "fa-carrot", color: "c-green", key: "food" },
+            { id: 7, name: "Süt", category: "food", price: 48, stat: "Enerji +5", icon: "fa-wine-bottle", color: "c-white", key: "food" },
+            { id: 8, name: "Yumurta", category: "food", price: 38, stat: "Tokluk +8", icon: "fa-egg", color: "c-white", key: "food" },
+            { id: 9, name: "Peynir", category: "food", price: 61, stat: "Tokluk +15", icon: "fa-cheese", color: "c-yellow", key: "food" },
+            
+            // KAYNAK
+            { id: 10, name: "Odun", category: "resource", price: 15, stat: "İnşaat", icon: "fa-tree", color: "c-brown", key: "wood" },
+            { id: 11, name: "Demir", category: "resource", price: 45, stat: "Sanayi", icon: "fa-cube", color: "c-white", key: "iron" },
+            { id: 12, name: "Petrol", category: "resource", price: 120, stat: "Enerji", icon: "fa-oil-can", color: "c-red", key: "oil" }, // Petrol henüz envanterde yok ama eklenebilir
+
+            // ASKERİ
+            { id: 13, name: "Mermi", category: "military", price: 5, stat: "Saldırı", icon: "fa-burn", color: "c-yellow", key: "ammo" },
+            { id: 14, name: "Tüfek", category: "military", price: 2500, stat: "Saldırı +50", icon: "fa-crosshairs", color: "c-white", key: "weapon" },
+            { id: 15, name: "Kask", category: "military", price: 800, stat: "Defans +20", icon: "fa-hard-hat", color: "c-green", key: "helmet" },
+        ];
+
+        let selectedProduct = null;
+
+        // Render
+        function renderMarket(category) {
+            const grid = document.getElementById('marketGrid');
+            grid.innerHTML = '';
+
+            const filtered = products.filter(p => p.category === category);
+
+            filtered.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'product-card';
+                div.onclick = () => openModal(p);
+                div.innerHTML = `
+                    <div>
+                        <div class="prod-name">${p.name}</div>
+                        <div class="prod-stat">${p.stat}</div>
+                    </div>
+                    <i class="fas ${p.icon} prod-icon ${p.color}"></i>
+                    <div class="prod-price">${p.price} <span>₺</span></div>
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        function filterMarket(cat) {
+            // Buton aktiflik
+            document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderMarket(cat);
+        }
+
+        // Modal Logic
+        function openModal(product) {
+            selectedProduct = product;
+            document.getElementById('buyModal').style.display = 'flex';
+            document.getElementById('modalTitle').innerText = product.name;
+            document.getElementById('modalIcon').innerHTML = `<i class="fas ${product.icon} ${product.color}"></i>`;
+            document.getElementById('unitPrice').innerText = product.price;
+            document.getElementById('qtyInput').value = 1;
+            calcTotal();
+        }
+
+        function closeModal() {
+            document.getElementById('buyModal').style.display = 'none';
+        }
+
+        function changeQty(delta) {
+            let input = document.getElementById('qtyInput');
+            let val = parseInt(input.value) + delta;
+            if(val < 1) val = 1;
+            input.value = val;
+            calcTotal();
+        }
+
+        function calcTotal() {
+            let qty = parseInt(document.getElementById('qtyInput').value);
+            let total = qty * selectedProduct.price;
+            document.getElementById('totalPrice').innerText = total.toLocaleString('tr-TR');
+        }
+
+        function confirmBuy() {
+            let qty = parseInt(document.getElementById('qtyInput').value);
+            let total = qty * selectedProduct.price;
+
+            if(Game.spendMoney(total)) {
+                // Envantere ekle
+                // Ürün anahtarını (key) kullanarak ekle, yoksa genel isimle
+                const itemKey = selectedProduct.key || selectedProduct.name.toLowerCase();
+                Game.addItem(itemKey, qty);
+                
+                document.getElementById('walletDisplay').innerText = Game.state.money.toLocaleString('tr-TR');
+                alert(`${qty} adet ${selectedProduct.name} satın alındı!`);
+                closeModal();
+            } else {
+                alert("Yetersiz Bakiye!");
+            }
+        }
+
+        // Başlangıç
+        renderMarket('food');
+
+    </script>
+    <script src="js/global-menu.js"></script>
+</body>
+</html>

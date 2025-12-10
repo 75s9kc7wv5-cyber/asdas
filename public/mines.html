@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim of World - Madenler</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #161616;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-gold: #ffd700;
+            --accent-red: #e74c3c;
+            --accent-purple: #9b59b6;
+            --text-white: #ffffff;
+            --border-color: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/World_map_blank_without_borders.svg/2000px-World_map_blank_without_borders.svg.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        main {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+
+        .page-header { text-align: center; margin-bottom: 20px; }
+        .page-title { font-size: 1.5rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+
+        /* TABS */
+        .tabs { display: flex; border-bottom: 1px solid #333; margin-bottom: 20px; }
+        .tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            padding: 15px;
+            color: #888;
+            font-family: 'Rajdhani';
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: 0.3s;
+        }
+        .tab-btn.active { color: var(--accent-cyan); border-bottom-color: var(--accent-cyan); }
+        .tab-content { display: none; animation: fadeIn 0.4s; }
+        .tab-content.active { display: block; }
+
+        /* MINE CARD */
+        .mine-card {
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: transform 0.2s;
+        }
+        .mine-card:hover { transform: translateY(-2px); border-color: #555; }
+
+        .mine-icon {
+            width: 50px; height: 50px;
+            background: #222;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+            border: 1px solid #444;
+        }
+        
+        .mine-info { flex: 1; }
+        .mine-name { font-size: 1.1rem; font-weight: bold; color: #fff; }
+        .mine-desc { font-size: 0.8rem; color: #888; }
+        .mine-stats { font-size: 0.75rem; color: var(--accent-green); margin-top: 3px; }
+
+        .btn-action {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Rajdhani';
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+        .btn-buy { background: var(--accent-gold); color: #000; }
+        .btn-manage { background: var(--accent-cyan); color: #000; }
+        .btn-buy:hover { box-shadow: 0 0 10px rgba(255, 215, 0, 0.4); }
+        .btn-manage:hover { box-shadow: 0 0 10px rgba(0, 229, 255, 0.4); }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 2000;
+            display: none; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        .modal-overlay.active { display: flex; }
+        
+        .modal-content {
+            background: #181818; width: 90%; max-width: 400px; padding: 25px; border-radius: 10px;
+            border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-gold);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
+        }
+        
+        .req-list { 
+            text-align: center; 
+            margin: 20px 0; 
+            background: #222; 
+            padding: 15px; 
+            border-radius: 8px; 
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .req-badge {
+            background: #333;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #ccc;
+            border: 1px solid #444;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .req-badge.ok { border-color: var(--accent-green); color: var(--accent-green); background: rgba(46, 204, 113, 0.1); }
+        .req-badge.fail { border-color: var(--accent-red); color: var(--accent-red); background: rgba(231, 76, 60, 0.1); }
+
+        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; }
+        .btn-confirm { background: var(--accent-green); color: #000; }
+        .btn-cancel { background: #333; color: #fff; }
+        .btn-confirm:disabled { background: #444; color: #888; cursor: not-allowed; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Colors for Mines */
+        .color-wood { color: #2ecc71; }
+        .color-stone { color: #95a5a6; }
+        .color-iron { color: #e67e22; }
+        .color-coal { color: #34495e; }
+        .color-copper { color: #d35400; }
+        .color-gold { color: #f1c40f; }
+        .color-oil { color: #2c3e50; }
+        .color-uranium { color: #8e44ad; }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Header injected by header-manager.js -->
+
+        <main>
+            <div class="page-header">
+                <h1 class="page-title">MADENLER</h1>
+            </div>
+
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('city')">Şehirdeki Madenler</button>
+                <button class="tab-btn" onclick="switchTab('my')">Madenlerim</button>
+            </div>
+
+            <!-- CITY MINES TAB -->
+            <div id="tab-city" class="tab-content active">
+                <div id="cityMinesList">
+                    <!-- JS ile doldurulacak -->
+                </div>
+            </div>
+
+            <!-- MY MINES TAB -->
+            <div id="tab-my" class="tab-content">
+                <div id="myMinesList">
+                    <!-- JS ile doldurulacak -->
+                </div>
+            </div>
+        </main>
+
+        <!-- BUY MODAL -->
+        <div class="modal-overlay" id="buyModal">
+            <div class="modal-content">
+                <h3 style="color:#fff; margin-bottom:10px;" id="mTitle">Maden Satın Al</h3>
+                <p style="color:#888; font-size:0.9rem;">Bu madeni işletmek için gereksinimleri karşılamalısınız.</p>
+                
+                <div class="req-list" id="reqList">
+                    <!-- Requirements here -->
+                </div>
+
+                <div class="modal-btns">
+                    <button class="m-btn btn-cancel" onclick="closeModal()">İPTAL</button>
+                    <button class="m-btn btn-confirm" id="btnConfirmBuy" onclick="confirmBuy()">SATIN AL</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="js/loader-manager.js"></script>
+    <script src="js/header-manager.js"></script>
+    <script src="js/menu-manager.js"></script>
+
+    <script>
+        toastr.options = { "positionClass": "toast-top-right", "timeOut": "3000" };
+
+        const mineTypes = [
+            { id: 'wood', name: 'Odun Kampı', icon: 'fa-tree', color: 'color-wood', reqLevel: 1, costMoney: 1000, costGold: 0, costDiamond: 0 },
+            { id: 'stone', name: 'Taş Ocağı', icon: 'fa-cubes', color: 'color-stone', reqLevel: 5, costMoney: 2000, costGold: 0, costDiamond: 0 },
+            { id: 'iron', name: 'Demir Madeni', icon: 'fa-hammer', color: 'color-iron', reqLevel: 15, costMoney: 5000, costGold: 10, costDiamond: 0 },
+            { id: 'coal', name: 'Kömür Madeni', icon: 'fa-fire', color: 'color-coal', reqLevel: 20, costMoney: 8000, costGold: 20, costDiamond: 0 },
+            { id: 'copper', name: 'Bakır Madeni', icon: 'fa-bolt', color: 'color-copper', reqLevel: 30, costMoney: 10000, costGold: 30, costDiamond: 0 },
+            { id: 'gold', name: 'Altın Madeni', icon: 'fa-coins', color: 'color-gold', reqLevel: 40, costMoney: 25000, costGold: 50, costDiamond: 5 },
+            { id: 'oil', name: 'Petrol Kuyusu', icon: 'fa-oil-can', color: 'color-oil', reqLevel: 50, costMoney: 15000, costGold: 40, costDiamond: 10 },
+            { id: 'uranium', name: 'Uranyum Madeni', icon: 'fa-radiation', color: 'color-uranium', reqLevel: 80, costMoney: 50000, costGold: 100, costDiamond: 20 }
+        ];
+
+        let userMines = [];
+        let userData = {};
+        let userLicenses = {};
+        let selectedMine = null;
+
+        async function initPage() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) { window.location.href = 'login.html'; return; }
+
+            try {
+                // Fetch User Data (Fresh)
+                const uRes = await fetch('/api/login', { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({ username: user.username, password: user.password }) // Re-auth to get fresh data is hacky but works for now, or use a specific user endpoint
+                });
+                // Better: use a get user endpoint if available, but login works to refresh session data
+                // Actually, let's assume localStorage is somewhat ok but we need fresh money/skill.
+                // Let's use the education status endpoint to get skill at least.
+                
+                // Fetch Skill
+                const eduRes = await fetch(`/api/education/status/${user.id}`);
+                const eduData = await eduRes.json();
+                userData = { ...user, education_skill: eduData.skill }; // Merge skill
+
+                // Fetch Licenses
+                const licRes = await fetch(`/api/licenses/${user.id}`);
+                userLicenses = await licRes.json();
+
+                // Fetch My Mines
+                const myMinesRes = await fetch(`/api/mines/my/${user.id}`);
+                userMines = await myMinesRes.json();
+
+                // Fetch City Mines
+                const cityMinesRes = await fetch('/api/mines/city');
+                const cityMines = await cityMinesRes.json();
+
+                renderMyMines();
+                renderCityMines(cityMines);
+
+            } catch (e) {
+                console.error(e);
+                toastr.error('Veri yüklenemedi.');
+            }
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+        }
+
+        function renderMyMines() {
+            const container = document.getElementById('myMinesList');
+            container.innerHTML = '';
+
+            mineTypes.forEach(type => {
+                const owned = userMines.find(m => m.mine_type === type.id);
+                
+                const card = document.createElement('div');
+                card.className = 'mine-card';
+                
+                let btnHTML = '';
+                if (owned) {
+                    btnHTML = `
+                        <button class="btn-action btn-manage" onclick="location.href='mine-management.html?id=${owned.id}'">YÖNET</button>
+                        <button class="btn-action btn-work" onclick="location.href='mines-detail.html?id=${owned.id}'" style="margin-top:5px; background:var(--accent-gold); color:#000;">ÇALIŞ</button>
+                    `;
+                } else {
+                    btnHTML = `<button class="btn-action btn-buy" onclick="openBuyModal('${type.id}')">SATIN AL</button>`;
+                }
+
+                card.innerHTML = `
+                    <div class="mine-icon ${type.color}">
+                        <i class="fas ${type.icon}"></i>
+                    </div>
+                    <div class="mine-info">
+                        <div class="mine-name">${type.name}</div>
+                        <div class="mine-desc">Gereken Eğitim: Lv. ${type.reqLevel}</div>
+                    </div>
+                    <div>${btnHTML}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderCityMines(mines) {
+            const container = document.getElementById('cityMinesList');
+            container.innerHTML = '';
+
+            if (mines.length === 0) {
+                container.innerHTML = '<div style="text-align:center; color:#666; padding:20px;">Henüz hiç maden kurulmamış.</div>';
+                return;
+            }
+
+            mines.forEach(mine => {
+                const type = mineTypes.find(t => t.id === mine.mine_type);
+                if (!type) return;
+
+                const card = document.createElement('div');
+                card.className = 'mine-card';
+                card.style.cursor = 'pointer';
+                card.onclick = () => location.href = `mines-detail.html?id=${mine.id}`;
+
+                card.innerHTML = `
+                    <div class="mine-icon ${type.color}">
+                        <i class="fas ${type.icon}"></i>
+                    </div>
+                    <div class="mine-info">
+                        <div class="mine-name">${mine.name || type.name} <span style="font-size:0.8rem; color:#666;">(${type.name})</span></div>
+                        <div class="mine-desc">Sahibi: <span style="color:var(--accent-cyan)">${mine.username}</span></div>
+                        <div class="mine-stats">Seviye: ${mine.level} | Rezerv: ${mine.reserve}% | Maaş: <span style="color:var(--accent-gold)">${mine.salary} ₺</span></div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function openBuyModal(mineId) {
+            selectedMine = mineTypes.find(m => m.id === mineId);
+            if (!selectedMine) return;
+
+            document.getElementById('mTitle').innerText = selectedMine.name + " Satın Al";
+            
+            const hasLicense = userLicenses[mineId] > 0;
+            const hasSkill = (userData.education_skill || 1) >= selectedMine.reqLevel;
+            const hasMoney = userData.money >= selectedMine.costMoney;
+            const hasGold = userData.gold >= selectedMine.costGold;
+            const hasDiamond = (userData.diamond || 0) >= selectedMine.costDiamond;
+
+            const canBuy = hasLicense && hasSkill && hasMoney && hasGold && hasDiamond;
+
+            let html = '';
+            
+            // Education
+            html += `<div class="req-badge ${hasSkill ? 'ok' : 'fail'}"><i class="fas fa-graduation-cap"></i> Lv. ${selectedMine.reqLevel}</div>`;
+            
+            // License
+            html += `<div class="req-badge ${hasLicense ? 'ok' : 'fail'}"><i class="fas fa-id-card"></i> Lisans</div>`;
+            
+            // Money
+            html += `<div class="req-badge ${hasMoney ? 'ok' : 'fail'}"><i class="fas fa-lira-sign"></i> ${selectedMine.costMoney}</div>`;
+            
+            // Gold
+            if (selectedMine.costGold > 0) {
+                html += `<div class="req-badge ${hasGold ? 'ok' : 'fail'}"><i class="fas fa-coins"></i> ${selectedMine.costGold}</div>`;
+            }
+            
+            // Diamond
+            if (selectedMine.costDiamond > 0) {
+                html += `<div class="req-badge ${hasDiamond ? 'ok' : 'fail'}"><i class="fas fa-gem"></i> ${selectedMine.costDiamond}</div>`;
+            }
+
+            document.getElementById('reqList').innerHTML = html;
+            document.getElementById('btnConfirmBuy').disabled = !canBuy;
+            document.getElementById('buyModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('buyModal').classList.remove('active');
+        }
+
+        async function confirmBuy() {
+            if (!selectedMine) return;
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            
+            try {
+                const response = await fetch('/api/mines/buy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, mineType: selectedMine.id })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    toastr.success(result.message);
+                    closeModal();
+                    // Refresh data
+                    // Update local storage money roughly or reload
+                    // Simple reload for now to ensure sync
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    toastr.error(result.message);
+                }
+            } catch (e) {
+                console.error(e);
+                toastr.error('İşlem başarısız.');
+            }
+        }
+
+        window.addEventListener('load', initPage);
+    </script>
+</body>
+</html>

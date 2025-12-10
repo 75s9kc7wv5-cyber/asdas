@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <script>
+        // Basit Auth Kontrolü
+        const user = localStorage.getItem('simWorldUser');
+        if (!user) {
+            window.location.href = 'login.html';
+        }
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim of World - Manuel Maden</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/global-menu.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-header: #0a0a0a;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-yellow: #f1c40f;
+            --text-white: #ffffff;
+            --text-gray: #a0a0a0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            max-height: 900px;
+            position: relative;
+            overflow-y: auto;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* MAIN */
+        main {
+            padding: 15px;
+            flex: 1;
+            background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=1000') center/cover;
+        }
+
+        /* MADEN KARTI */
+        .mining-card {
+            background-color: rgba(22, 22, 22, 0.95);
+            border-top: 2px solid #444;
+            border-bottom: 2px solid #444;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .stone-image { width: 80px; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); }
+        .card-title { font-size: 1.1rem; margin-bottom: 5px; color: #ddd; }
+        .card-subtitle { font-size: 0.9rem; color: #888; margin-bottom: 5px; }
+        .green-text { color: var(--accent-green); font-size: 0.85rem; font-weight: 600; }
+
+        /* BUTON STİLİ */
+        .mining-action-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #444;
+            width: 100%;
+            padding: 15px;
+            margin-top: 20px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            user-select: none;
+        }
+
+        .mining-action-btn:hover { background-color: rgba(255,255,255,0.1); border-color: #666; }
+        
+        /* Buton Devre Dışı (Cooldown) */
+        .mining-action-btn.disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-color: #222;
+        }
+
+        .miner-icon {
+            color: #ccc;
+            font-size: 2rem;
+            transition: color 0.3s;
+        }
+        
+        /* Kazma Animasyonu */
+        .mining-action-btn.digging .miner-icon {
+            color: var(--accent-yellow);
+            animation: dig 0.5s infinite;
+        }
+
+        @keyframes dig {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(-45deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        .mining-status-text { color: #fff; font-size: 1.1rem; font-weight: bold; }
+
+        /* Progress Bar (Süre Dolumu) */
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background-color: #333;
+            margin-top: 10px;
+            border-radius: 3px;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: var(--accent-cyan);
+            /* Animasyon JS ile kontrol edilecek */
+        }
+
+        /* ENVANTER & LOG */
+        .cyan-divider { height: 3px; background-color: var(--accent-cyan); box-shadow: 0 0 10px var(--accent-cyan); margin: 15px 0; }
+        .info-text { text-align: center; color: var(--text-gray); font-size: 0.8rem; margin-bottom: 15px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        
+        .stat-card {
+            background-color: #1a1a1a;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+        }
+        .stat-card::after { content: ''; position: absolute; bottom: 0; left: 10px; width: 40px; height: 2px; }
+        .stat-card.left::after { background: #fff; }
+        .stat-card.right::after { background: var(--accent-green); }
+        .stat-icon img { width: 30px; filter: grayscale(100%); }
+        .stat-info h4 { font-size: 0.75rem; color: #aaa; text-transform: uppercase; }
+        .stat-info span { font-size: 1rem; font-weight: bold; color: #fff; }
+
+        .log-section { background-color: rgba(20, 20, 20, 0.9); padding: 10px; border-radius: 5px; height: 220px; overflow-y: auto; display: flex; flex-direction: column; }
+        .log-header { text-align: center; font-size: 0.9rem; color: #ccc; margin-bottom: 5px; }
+        .log-list { display: flex; flex-direction: column; gap: 8px; }
+        .log-item {
+            background-color: #252525; padding: 8px 10px; border-radius: 4px; font-size: 0.75rem; color: #aaa;
+            border-left: 3px solid var(--accent-green); display: flex; align-items: center; gap: 10px;
+            animation: slideIn 0.3s ease;
+        }
+        .log-item.fail { border-left-color: var(--accent-yellow); color: #bbb; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+
+        @media (max-width: 480px) { .game-container { max-width: 100%; height: 100vh; border-radius: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Header removed, injected by header-manager.js -->
+
+        <main>
+            <div class="cyan-divider" style="opacity: 0.5; margin-top:0;"></div>
+            
+            <div class="mining-card">
+                <img src="https://cdn-icons-png.flaticon.com/512/6660/6660085.png" alt="Taş" class="stone-image">
+                <h2 class="card-title">TAŞ MADENİ</h2>
+                <p class="card-subtitle">%80 İhtimalle Taş Bulunur</p>
+                <p class="green-text">RASTGELE 1 - 2 ARASINDA TAŞ BULURSUNUZ</p>
+
+                <button class="mining-action-btn" id="miningBtn" onclick="handleMineClick()">
+                    <div class="miner-icon"><i class="fas fa-person-digging"></i></div>
+                    <div class="mining-status-text" id="statusText">KAZI YAP</div>
+                    
+                    <div class="progress-container" id="progressContainer">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                </button>
+            </div>
+
+            <div class="cyan-divider"></div>
+
+            <div class="inventory-section">
+                <p class="info-text">Taşlarınızı "BORSA" bölümünde satabilirsiniz.</p>
+                <div class="stats-grid">
+                    <div class="stat-card left">
+                        <div class="stat-icon"><img src="https://cdn-icons-png.flaticon.com/512/6660/6660085.png" alt="Taş"></div>
+                        <div class="stat-info">
+                            <h4>TAŞINIZ</h4>
+                            <span id="totalStoneDisplay">1.826 ad.</span>
+                        </div>
+                    </div>
+                    <div class="stat-card right">
+                        <div class="stat-icon"><img src="https://cdn-icons-png.flaticon.com/512/6660/6660085.png" alt="Taş"></div>
+                        <div class="stat-info">
+                            <h4>BUGÜN</h4>
+                            <span id="todayStoneDisplay">0 ad.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="log-section">
+                <div class="log-header">SON BULUNAN TAŞLAR</div>
+                <div class="log-list" id="logList"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/loader-manager.js"></script>
+    <script src="js/header-manager.js"></script>
+    <script>
+        // OYUN DEĞİŞKENLERİ
+        // let totalStones = ... (Artık Game.state.inventory.stone)
+        let todayStones = 0;
+        let isCooldown = false; // Butona basılabilir mi?
+        const COOLDOWN_TIME = 5000; // 5 Saniye
+        const ENERGY_COST = 10; // Enerji maliyeti
+
+        // Elementler
+        const btn = document.getElementById('miningBtn');
+        const statusText = document.getElementById('statusText');
+        const progressBar = document.getElementById('progressBar');
+        const progressContainer = document.getElementById('progressContainer');
+        const totalDisplay = document.getElementById('totalStoneDisplay');
+        const todayDisplay = document.getElementById('todayStoneDisplay');
+        const logList = document.getElementById('logList');
+
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        function handleMineClick() {
+            // Eğer soğuma süresindeyse işlem yapma
+            if (isCooldown) return;
+
+            // Enerji Kontrolü
+            if (!Game.useEnergy(ENERGY_COST)) {
+                return;
+            }
+
+            // 1. Kazı Başlat
+            startMiningProcess();
+        }
+
+        function startMiningProcess() {
+            isCooldown = true;
+            
+            // Görsel Değişiklikler (Aktif)
+            btn.classList.add('disabled', 'digging');
+            statusText.innerText = "KAZILIYOR...";
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+
+            // 1.5 Saniye "Kazma" simülasyonu, sonra sonuç ver
+            setTimeout(() => {
+                calculateReward();
+                btn.classList.remove('digging'); // Kazma animasyonu dursun
+                statusText.innerText = "BEKLEYİNİZ...";
+            }, 1500);
+
+            // 5 Saniyelik Soğuma Süresi (Bar Dolar)
+            let startTime = Date.now();
+            let interval = setInterval(() => {
+                let elapsedTime = Date.now() - startTime;
+                let percentage = (elapsedTime / COOLDOWN_TIME) * 100;
+
+                if (percentage >= 100) {
+                    clearInterval(interval);
+                    resetButton();
+                } else {
+                    progressBar.style.width = percentage + "%";
+                }
+            }, 50); // Akıcı animasyon için 50ms
+        }
+
+        function calculateReward() {
+            // %80 Şans
+            if (Math.random() < 0.80) {
+                const amount = Math.floor(Math.random() * 2) + 1; // 1-2 taş
+                
+                // Game Engine'e ekle
+                Game.addItem('stone', amount);
+                Game.gainXp(5); // XP Kazan
+
+                todayStones += amount;
+                updateStats();
+                addLog(true, amount);
+            } else {
+                addLog(false, 0);
+            }
+        }
+
+        function resetButton() {
+            isCooldown = false;
+            btn.classList.remove('disabled', 'digging');
+            statusText.innerText = "KAZI YAP (-10 Enerji)";
+            progressContainer.style.display = 'none';
+            progressBar.style.width = '0%';
+        }
+
+        function updateStats() {
+            // Game state'den oku
+            totalDisplay.innerText = formatNumber(Game.state.inventory.stone || 0) + " ad.";
+            todayDisplay.innerText = formatNumber(todayStones) + " ad.";
+        }
+
+        function addLog(success, amount) {
+            const date = new Date();
+            const time = date.toLocaleTimeString('tr-TR');
+            const day = date.getDate();
+            const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+            const month = months[date.getMonth()];
+
+            const div = document.createElement('div');
+            
+            if (success) {
+                div.className = 'log-item';
+                div.innerHTML = `<i class="fas fa-check" style="color:var(--accent-green)"></i> 
+                                 <span>Tebrikler ${amount} adet taş buldun. / ${day} ${month} ${time}</span>`;
+            } else {
+                div.className = 'log-item fail';
+                div.innerHTML = `<i class="fas fa-times" style="color:var(--accent-yellow)"></i> 
+                                 <span>Maalesef taş bulamadın. / ${day} ${month} ${time}</span>`;
+            }
+
+            logList.prepend(div);
+            // Log temizliği (Hafıza şişmesin diye son 20 taneyi tut)
+            if (logList.children.length > 20) logList.lastElementChild.remove();
+        }
+
+        // Sayfa yüklendiğinde statları güncelle
+        window.addEventListener('load', () => {
+            setTimeout(updateStats, 100);
+            statusText.innerText = "KAZI YAP (-10 Enerji)";
+        });
+
+    </script>
+    <script src="js/loader-manager.js"></script>
+    <script src="js/menu-manager.js"></script>
+    <script src="js/header-manager.js"></script>
+</body>
+</html>

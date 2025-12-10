@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim of World - Maden Yönetimi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #161616;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-gold: #ffd700;
+            --accent-red: #e74c3c;
+            --accent-purple: #9b59b6;
+            --text-white: #ffffff;
+            --border-color: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/World_map_blank_without_borders.svg/2000px-World_map_blank_without_borders.svg.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        main {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+
+        .page-header { text-align: center; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .page-title { font-size: 1.5rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+        .header-icon { font-size: 2rem; color: var(--accent-cyan); }
+
+        /* CARDS */
+        .card {
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            animation: fadeIn 0.5s;
+        }
+        .card-title { font-size: 1.1rem; font-weight: bold; color: var(--accent-cyan); margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; display: flex; justify-content: space-between; }
+        
+        /* STATS GRID */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .stat-item { background: #222; padding: 10px; border-radius: 5px; text-align: center; }
+        .stat-val { font-size: 1.2rem; font-weight: bold; color: #fff; }
+        .stat-label { font-size: 0.8rem; color: #888; }
+
+        /* FORM ELEMENTS */
+        .form-group { margin-bottom: 10px; }
+        .form-label { font-size: 0.9rem; color: #ccc; display: block; margin-bottom: 5px; }
+        .form-input { width: 100%; background: #111; border: 1px solid #444; color: #fff; padding: 8px; border-radius: 4px; font-family: 'Rajdhani'; }
+        
+        .btn-action {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Rajdhani';
+            font-size: 1rem;
+            transition: 0.2s;
+            margin-top: 5px;
+        }
+        .btn-green { background: var(--accent-green); color: #000; }
+        .btn-gold { background: var(--accent-gold); color: #000; }
+        .btn-cyan { background: var(--accent-cyan); color: #000; }
+        .btn-purple { background: var(--accent-purple); color: #fff; }
+        .btn-red { background: var(--accent-red); color: #fff; }
+
+        /* LOG TABLE */
+        .log-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .log-table th { text-align: left; color: #888; padding: 5px; border-bottom: 1px solid #444; }
+        .log-table td { padding: 5px; border-bottom: 1px solid #333; color: #ccc; }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 2000;
+            display: none; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        .modal-overlay.active { display: flex; }
+        
+        .modal-content {
+            background: #181818; width: 90%; max-width: 400px; padding: 25px; border-radius: 10px;
+            border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-cyan);
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.1);
+        }
+
+        .req-badge {
+            background: #333; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; font-weight: bold; color: #ccc;
+            border: 1px solid #444; display: flex; align-items: center; gap: 5px; justify-content: center; margin-bottom: 5px;
+        }
+        .req-badge.ok { border-color: var(--accent-green); color: var(--accent-green); background: rgba(46, 204, 113, 0.1); }
+        .req-badge.fail { border-color: var(--accent-red); color: var(--accent-red); background: rgba(231, 76, 60, 0.1); }
+
+        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; }
+        .btn-confirm { background: var(--accent-green); color: #000; }
+        .btn-cancel { background: #333; color: #fff; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Header injected by header-manager.js -->
+
+        <main>
+            <div class="page-header">
+                <h1 class="page-title" id="pageTitle">MADEN YÖNETİMİ</h1>
+                <i class="fas fa-hammer header-icon" id="headerIcon"></i>
+            </div>
+
+            <!-- OVERVIEW CARD -->
+            <div class="card">
+                <div class="card-title">GENEL DURUM</div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-val" id="statLevel">1</div>
+                        <div class="stat-label">Seviye</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-val" id="statReserve">100%</div>
+                        <div class="stat-label">Rezerv</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-val" id="statStock">0 / 1000</div>
+                        <div class="stat-label">Depo</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-val" id="statWorkers">0 / 5</div>
+                        <div class="stat-label">İşçi</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-val" id="statArge">Lv. 1</div>
+                        <div class="stat-label">Ar-Ge</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-val" id="statChance">100%</div>
+                        <div class="stat-label">Verim</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INFO & SETTINGS -->
+            <div class="card">
+                <div class="card-title">MADEN BİLGİLERİ</div>
+                <div class="form-group">
+                    <label class="form-label">Maden Adı</label>
+                    <input type="text" class="form-input" id="inputName" placeholder="Maden Adı">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">İşçi Maaşı (Günlük)</label>
+                    <input type="number" class="form-input" id="inputSalary" placeholder="Maaş">
+                </div>
+                <button class="btn-action btn-cyan" onclick="updateSettings()">GÜNCELLE</button>
+            </div>
+
+            <!-- VAULT -->
+            <div class="card">
+                <div class="card-title">MADEN KASASI <span id="vaultBalance" style="color:var(--accent-gold)">0 ₺</span></div>
+                <div class="form-group">
+                    <input type="number" class="form-input" id="inputDeposit" placeholder="Miktar">
+                </div>
+                <button class="btn-action btn-gold" onclick="depositMoney()">KASAYA EKLE</button>
+            </div>
+
+            <!-- STORAGE -->
+            <div class="card">
+                <div class="card-title">MADEN DEPOSU</div>
+                <p style="color:#888; font-size:0.9rem; margin-bottom:10px;">Depodaki ürünleri envanterine çek.</p>
+                <button class="btn-action btn-green" onclick="withdrawStock()">ÜRÜNLERİ ÇEK</button>
+            </div>
+
+            <!-- RESERVE RESEARCH -->
+            <div class="card">
+                <div class="card-title">REZERV ARAŞTIRMASI</div>
+                <div style="text-align:center; margin-bottom:10px;">
+                    <div style="font-size:2rem; font-weight:bold; color:var(--accent-purple);" id="reserveDisplay">100%</div>
+                    <div style="font-size:0.8rem; color:#888;">Mevcut Rezerv</div>
+                </div>
+                <button class="btn-action btn-purple" onclick="openResearchModal()">YENİ REZERV ARAŞTIR</button>
+            </div>
+
+            <!-- UPGRADE -->
+            <div class="card">
+                <div class="card-title">SEVİYE YÜKSELTME</div>
+                <p style="color:#888; font-size:0.9rem; margin-bottom:10px;">Kapasiteyi ve verimliliği artır.</p>
+                <button class="btn-action btn-cyan" onclick="openUpgradeModal()">YÜKSELT (Lv. <span id="nextLevelDisplay">2</span>)</button>
+            </div>
+
+            <!-- WORK LOGS -->
+            <div class="card">
+                <div class="card-title">ÇALIŞMA LOGU</div>
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th>İşçi</th>
+                            <th>Tarih</th>
+                            <th>Üretim</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logTableBody">
+                        <!-- JS -->
+                    </tbody>
+                </table>
+            </div>
+
+        </main>
+
+        <!-- MODALS -->
+        
+        <!-- RESEARCH MODAL -->
+        <div class="modal-overlay" id="researchModal">
+            <div class="modal-content" style="border-top-color: var(--accent-purple);">
+                <h3 style="color:#fff; margin-bottom:10px;">Rezerv Araştırması</h3>
+                <p style="color:#ccc; font-size:0.9rem; margin-bottom:15px;">Kapasitenin %30 - %100'ü kadar yeni rezerv bulunacak.</p>
+                
+                <div class="req-badge ok"><i class="fas fa-lira-sign"></i> Maliyet: <span id="researchCost">5000</span> ₺</div>
+                <div class="req-badge ok"><i class="fas fa-clock"></i> Süre: 10 Sn</div>
+
+                <div class="modal-btns">
+                    <button class="m-btn btn-cancel" onclick="closeModal('researchModal')">İPTAL</button>
+                    <button class="m-btn btn-confirm" style="background:var(--accent-purple); color:#fff;" onclick="startResearch()">BAŞLAT</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- UPGRADE MODAL -->
+        <div class="modal-overlay" id="upgradeModal">
+            <div class="modal-content">
+                <h3 style="color:#fff; margin-bottom:10px;">Seviye Yükselt</h3>
+                <div id="upgradeReqs">
+                    <!-- JS -->
+                </div>
+                <div class="modal-btns">
+                    <button class="m-btn btn-cancel" onclick="closeModal('upgradeModal')">İPTAL</button>
+                    <button class="m-btn btn-confirm" id="btnConfirmUpgrade" onclick="startUpgrade()">YÜKSELT</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="js/loader-manager.js"></script>
+    <script src="js/header-manager.js"></script>
+    <script src="js/menu-manager.js"></script>
+
+    <script>
+        toastr.options = { "positionClass": "toast-top-right", "timeOut": "3000" };
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const mineId = urlParams.get('id');
+        let mineData = null;
+        let userData = null;
+        let workersData = [];
+
+        async function initPage() {
+            if (!mineId) { window.location.href = 'mines.html'; return; }
+            
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) { window.location.href = 'login.html'; return; }
+
+            try {
+                // Fetch Mine Data
+                // We need a specific endpoint for single mine details + logs
+                // For now, let's mock or assume we have one.
+                // Let's create a quick endpoint in server.js for this later.
+                // Assuming GET /api/mines/detail/:id
+                
+                const res = await fetch(`/api/mines/detail/${mineId}`);
+                const data = await res.json();
+                
+                if (!data.success) {
+                    toastr.error(data.message || 'Maden bulunamadı.');
+                    setTimeout(() => window.location.href = 'mines.html', 2000);
+                    return;
+                }
+
+                mineData = data.mine;
+                workersData = data.workers || [];
+                userData = user; // Should refresh user data too really
+
+                renderPage();
+                renderLogs(data.logs);
+
+            } catch (e) {
+                console.error(e);
+                toastr.error('Veri yüklenemedi.');
+            }
+        }
+
+        function renderPage() {
+            document.getElementById('pageTitle').innerText = mineData.mine_type.toUpperCase() + " YÖNETİMİ";
+            // Icon mapping
+            const icons = { 'wood': 'fa-tree', 'stone': 'fa-cubes', 'iron': 'fa-hammer', 'coal': 'fa-fire', 'copper': 'fa-bolt', 'gold': 'fa-gem', 'oil': 'fa-oil-can', 'uranium': 'fa-radiation' };
+            document.getElementById('headerIcon').className = `fas ${icons[mineData.mine_type] || 'fa-industry'} header-icon`;
+
+            document.getElementById('statLevel').innerText = mineData.level;
+            const maxReserve = mineData.level * 10000;
+            document.getElementById('statReserve').innerText = `${mineData.reserve} / ${maxReserve}`;
+            // Mock stock/capacity for now as they are not in DB yet
+            document.getElementById('statStock').innerText = `${mineData.stock || 0} / ${mineData.level * 1000}`;
+            
+            // Worker Stats
+            const maxWorkers = mineData.max_workers || (mineData.level * 5);
+            document.getElementById('statWorkers').innerText = `${workersData.length} / ${maxWorkers}`;
+            
+            // Derived stats
+            document.getElementById('statArge').innerText = 'Lv. ' + (mineData.arge_level || 1);
+            document.getElementById('statChance').innerText = (mineData.efficiency || 30) + '%';
+
+            document.getElementById('inputName').value = mineData.name || '';
+            document.getElementById('inputSalary').value = mineData.salary || 100;
+            document.getElementById('vaultBalance').innerText = (mineData.vault || 0) + ' ₺';
+            document.getElementById('reserveDisplay').innerText = `${mineData.reserve} / ${maxReserve}`;
+            document.getElementById('nextLevelDisplay').innerText = mineData.level + 1;
+        }
+
+        function renderLogs(logs) {
+            const tbody = document.getElementById('logTableBody');
+            tbody.innerHTML = '';
+            if (!logs || logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Kayıt yok.</td></tr>';
+                return;
+            }
+            logs.forEach(log => {
+                const row = `<tr>
+                    <td>${log.username}</td>
+                    <td>${new Date(log.created_at).toLocaleDateString()}</td>
+                    <td style="color:var(--accent-green)">+${log.amount}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // ACTIONS
+        async function updateSettings() {
+            const name = document.getElementById('inputName').value;
+            const salary = parseInt(document.getElementById('inputSalary').value);
+
+            if (isNaN(salary) || salary < 10 || salary > 1000) {
+                toastr.warning('Maaş en az 10 TL, en fazla 1000 TL olabilir.');
+                return;
+            }
+            
+            try {
+                const res = await fetch(`/api/mines/update/${mineId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, salary })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    toastr.success(data.message);
+                } else {
+                    toastr.error(data.message);
+                }
+            } catch (e) {
+                toastr.error('Hata oluştu.');
+            }
+        }
+
+        async function depositMoney() {
+            const amount = document.getElementById('inputDeposit').value;
+            if (amount <= 0) return;
+            
+            try {
+                const res = await fetch(`/api/mines/deposit/${mineId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: userData.id, amount })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    toastr.success(data.message);
+                    document.getElementById('inputDeposit').value = '';
+                    // Refresh data to update vault balance
+                    initPage();
+                } else {
+                    toastr.error(data.message);
+                }
+            } catch (e) {
+                toastr.error('Hata oluştu.');
+            }
+        }
+
+        async function withdrawStock() {
+            try {
+                const res = await fetch(`/api/mines/withdraw/${mineId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: userData.id })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    toastr.success(data.message);
+                    initPage();
+                } else {
+                    toastr.error(data.message);
+                }
+            } catch (e) {
+                toastr.error('Hata oluştu.');
+            }
+        }
+
+        // MODALS
+        function openResearchModal() {
+            document.getElementById('researchModal').classList.add('active');
+        }
+
+        function openUpgradeModal() {
+            const nextLevel = mineData.level + 1;
+            // Calculate Costs
+            const costMoney = nextLevel * 5000;
+            const costGold = nextLevel > 5 ? (nextLevel - 5) * 10 : 0;
+            
+            let html = '';
+            // Check if user has enough
+            const hasMoney = userData.money >= costMoney;
+            const hasGold = userData.gold >= costGold;
+
+            html += `<div class="req-badge ${hasMoney ? 'ok' : 'fail'}"><i class="fas fa-lira-sign"></i> ${costMoney}</div>`;
+            if (costGold > 0) html += `<div class="req-badge ${hasGold ? 'ok' : 'fail'}"><i class="fas fa-coins"></i> ${costGold}</div>`;
+            
+            document.getElementById('upgradeReqs').innerHTML = html;
+            document.getElementById('upgradeModal').classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        async function startResearch() {
+            closeModal('researchModal');
+            toastr.info('Araştırma başladı...');
+            
+            // Simulate timer
+            setTimeout(async () => {
+                try {
+                    const res = await fetch(`/api/mines/research/${mineId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: userData.id })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        toastr.success(data.message);
+                        initPage();
+                    } else {
+                        toastr.error(data.message);
+                    }
+                } catch (e) {
+                    toastr.error('Hata oluştu.');
+                }
+            }, 2000); // 2 seconds delay for effect
+        }
+
+        async function startUpgrade() {
+            closeModal('upgradeModal');
+            toastr.info('Yükseltme başladı...');
+            
+            setTimeout(async () => {
+                try {
+                    const res = await fetch(`/api/mines/upgrade/${mineId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: userData.id })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        toastr.success(data.message);
+                        initPage();
+                    } else {
+                        toastr.error(data.message);
+                    }
+                } catch (e) {
+                    toastr.error('Hata oluştu.');
+                }
+            }, 2000);
+        }
+
+        window.addEventListener('load', initPage);
+    </script>
+</body>
+</html>

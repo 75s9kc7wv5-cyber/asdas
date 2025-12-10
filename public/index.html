@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World of Siim - Giriş</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-overlay: rgba(0, 0, 0, 0.6);
+            --glass-bg: rgba(20, 20, 20, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent-red: #d50000;
+            --accent-green: #00c800;
+            --text-white: #ffffff;
+            --text-gray: #cccccc;
+            --font-main: 'Rajdhani', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: var(--font-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Arkaplan Görseli */
+        .bg-image {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            /* Savaş/Şehir Temalı Arkaplan */
+            background: url('https://images.unsplash.com/photo-1605806616949-1e87b487bc2a?q=80&w=1000&auto=format&fit=crop') no-repeat center center/cover;
+            z-index: -1;
+            filter: brightness(0.6);
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            /* Mobilde tam ekran hissi */
+            background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.8)); 
+        }
+
+        /* LOGO ALANI */
+        .logo-container {
+            margin-top: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            animation: fadeInDown 1s ease;
+        }
+        
+        /* CSS ile 3D Metalik Logo Efekti */
+        .game-logo {
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: #e0e0e0;
+            text-transform: uppercase;
+            line-height: 0.9;
+            text-shadow: 
+                0 1px 0 #ccc,
+                0 2px 0 #c9c9c9,
+                0 3px 0 #bbb,
+                0 4px 0 #b9b9b9,
+                0 5px 0 #aaa,
+                0 6px 1px rgba(0,0,0,.1),
+                0 0 5px rgba(0,0,0,.1),
+                0 1px 3px rgba(0,0,0,.3),
+                0 3px 5px rgba(0,0,0,.2),
+                0 5px 10px rgba(0,0,0,.25),
+                0 10px 10px rgba(0,0,0,.2),
+                0 20px 20px rgba(0,0,0,.15);
+            letter-spacing: 2px;
+        }
+        .game-logo span { color: #8b5a2b; /* Bronz/Bakır tonu */ }
+
+        /* DİL SEÇİMİ */
+        .lang-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .lang-title {
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+        .lang-grid {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .lang-btn {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            padding: 5px 10px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 60px;
+            transition: all 0.3s;
+            backdrop-filter: blur(5px);
+        }
+        .lang-btn:hover, .lang-btn.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #fff;
+            transform: translateY(-2px);
+        }
+        .lang-flag { width: 24px; height: 16px; margin-bottom: 3px; border-radius: 2px; object-fit: cover; }
+        .lang-name { font-size: 0.65rem; color: #ddd; font-weight: 600; }
+
+        /* İSTATİSTİK IZGARASI (STATS GRID) */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: auto; /* Alt butonları aşağı itmek için */
+        }
+
+        .stat-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 15px 5px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100px;
+            animation: fadeInUp 0.8s ease backwards;
+        }
+        /* Animasyon gecikmeleri */
+        .stat-card:nth-child(1) { animation-delay: 0.1s; }
+        .stat-card:nth-child(2) { animation-delay: 0.2s; }
+        .stat-card:nth-child(3) { animation-delay: 0.3s; }
+        .stat-card:nth-child(4) { animation-delay: 0.4s; }
+        .stat-card:nth-child(5) { animation-delay: 0.5s; }
+        .stat-card:nth-child(6) { animation-delay: 0.6s; }
+
+        .stat-icon { font-size: 1.5rem; margin-bottom: 5px; }
+        .stat-value { font-size: 1.6rem; font-weight: 700; color: #fff; line-height: 1.2; }
+        .stat-label { font-size: 0.7rem; color: var(--text-gray); font-weight: 600; }
+
+        /* İkon Renkleri */
+        .c-purple { color: #9b59b6; }
+        .c-blue { color: #3498db; }
+        .c-green { color: #2ecc71; }
+        .c-white { color: #fff; }
+
+        /* BUTONLAR */
+        .auth-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+            margin-top: 20px;
+        }
+
+        .btn-main {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-family: var(--font-main);
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #fff;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: transform 0.2s, filter 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .btn-main:active { transform: scale(0.98); }
+        
+        .btn-login { background-color: var(--accent-red); }
+        .btn-login:hover { background-color: #b00000; }
+        
+        .btn-register { background-color: var(--accent-green); }
+        .btn-register:hover { background-color: #00a000; }
+
+        /* Animasyonlar */
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-image"></div>
+
+    <div class="game-container">
+        
+        <div class="logo-container">
+            <div style="font-size: 1rem; color:#fff; letter-spacing: 3px; margin-bottom:-10px;">WORLD OF</div>
+            <div class="game-logo">SII<span>M</span></div>
+        </div>
+
+        <div class="lang-section">
+            <div class="lang-title">OYUN DİLİNİ SEÇİN</div>
+            <div class="lang-grid">
+                <div class="lang-btn active" onclick="selectLang(this)">
+                    <img src="https://flagcdn.com/w40/tr.png" class="lang-flag" alt="TR">
+                    <span class="lang-name">Türkçe</span>
+                </div>
+                <div class="lang-btn" onclick="selectLang(this)">
+                    <img src="https://flagcdn.com/w40/gb.png" class="lang-flag" alt="EN">
+                    <span class="lang-name">English</span>
+                </div>
+                <div class="lang-btn" onclick="selectLang(this)">
+                    <img src="https://flagcdn.com/w40/de.png" class="lang-flag" alt="DE">
+                    <span class="lang-name">Deutsch</span>
+                </div>
+                <div class="lang-btn" onclick="selectLang(this)">
+                    <img src="https://flagcdn.com/w40/fr.png" class="lang-flag" alt="FR">
+                    <span class="lang-name">Français</span>
+                </div>
+                <div class="lang-btn" onclick="selectLang(this)">
+                    <img src="https://flagcdn.com/w40/es.png" class="lang-flag" alt="ES">
+                    <span class="lang-name">Español</span>
+                </div>
+                <div class="lang-btn" onclick="selectLang(this)">
+                    <img src="https://flagcdn.com/w40/ru.png" class="lang-flag" alt="RU">
+                    <span class="lang-name">Русский</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <i class="fas fa-user stat-icon c-purple"></i>
+                <div class="stat-value count" data-target="23">0</div>
+                <div class="stat-label">Kayıtlı Oyuncu</div>
+            </div>
+
+            <div class="stat-card">
+                <i class="fas fa-globe-americas stat-icon c-blue"></i>
+                <div class="stat-value count" data-target="28">0</div>
+                <div class="stat-label">Dünya Nüfusu</div>
+            </div>
+
+            <div class="stat-card">
+                <i class="fas fa-circle stat-icon c-green" style="font-size: 0.8rem; margin-top:5px;"></i>
+                <div class="stat-value count" data-target="5">0</div>
+                <div class="stat-label">Çevrimiçi</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-value count" data-target="55">0</div>
+                <div class="stat-label">Üyeler</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-value count" data-target="239">0</div>
+                <div class="stat-label">Partiler</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-value count" data-target="490">0</div>
+                <div class="stat-label">İşletmeler</div>
+            </div>
+        </div>
+
+        <div class="auth-buttons" id="authButtons">
+            <button class="btn-main btn-login" onclick="window.location.href='login.html'">GİRİŞ YAP</button>
+            <button class="btn-main btn-register" onclick="window.location.href='register.html'">HESAP OLUŞTUR</button>
+        </div>
+
+    </div>
+
+    <script>
+        // Kullanıcı Kontrolü
+        const user = localStorage.getItem('simWorldUser');
+        if (user) {
+            const btnContainer = document.getElementById('authButtons');
+            btnContainer.innerHTML = `
+                <button class="btn-main btn-register" style="background: var(--accent-green);" onclick="window.location.href='home.html'">OYUNA DEVAM ET</button>
+                <button class="btn-main btn-login" style="background: #333; font-size: 0.9rem;" onclick="logout()">ÇIKIŞ YAP</button>
+            `;
+        }
+
+        function logout() {
+            localStorage.removeItem('simWorldUser');
+            window.location.reload();
+        }
+
+        // İstatistikleri Çek
+        fetch('/api/stats')
+            .then(res => res.json())
+            .then(data => {
+                const userCountEl = document.querySelector('.stat-value[data-target="23"]'); // İlk kart (Kayıtlı Oyuncu)
+                if(userCountEl) {
+                    userCountEl.setAttribute('data-target', data.count);
+                    userCountEl.innerText = '0';
+                    runCounter(userCountEl);
+                }
+            })
+            .catch(err => console.error("Stats error:", err));
+
+
+        // Dil Seçimi Fonksiyonu
+        function selectLang(element) {
+            // Tüm aktif sınıfları kaldır
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            // Tıklanana ekle
+            element.classList.add('active');
+        }
+
+        // Sayı Sayma Animasyonu (Sayaç)
+        function runCounter(counter) {
+            const speed = 200; // Animasyon hızı
+            const updateCount = () => {
+                const target = +counter.getAttribute('data-target');
+                const count = +counter.innerText;
+                
+                // Artış miktarı
+                const inc = Math.max(1, target / speed);
+
+                if (count < target) {
+                    counter.innerText = Math.ceil(count + inc);
+                    setTimeout(updateCount, 20);
+                } else {
+                    counter.innerText = target;
+                }
+            };
+            updateCount();
+        }
+
+        // Diğer sayaçları başlat (Statik olanlar)
+        document.querySelectorAll('.count').forEach(counter => {
+            // İlk kartı atla çünkü onu API'den güncelliyoruz
+            if(counter.getAttribute('data-target') !== "23") {
+                runCounter(counter);
+            }
+        });
+    </script>
+    <script src="js/loader-manager.js"></script>
+</body>
+</html>

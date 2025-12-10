@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim of World - Günlük İşler</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <link rel="stylesheet" href="css/global-menu.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d; --bg-card: #141414; --bg-input: #1a1a1a;
+            --accent: #00e5ff; --accent-green: #2ecc71; --accent-red: #e74c3c;
+            --accent-gold: #ffd700; --accent-purple: #9b59b6;
+            --text-white: #ffffff; --text-muted: #888; --border-color: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%; max-width: 450px; background-color: var(--bg-dark);
+            height: 100vh; display: flex; flex-direction: column; position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5); border-left: 1px solid #222; border-right: 1px solid #222;
+        }
+
+        /* HEADER */
+        /* Header styles removed, handled by header-manager.js */
+
+        /* MAIN */
+        main { flex: 1; padding: 15px; overflow-y: auto; padding-bottom: 80px; position: relative; }
+
+        .page-header { text-align: center; margin-bottom: 20px; animation: fadeInDown 0.5s; }
+        .page-title { font-size: 1.4rem; letter-spacing: 1px; color: #fff; text-transform: uppercase; font-weight: 800; }
+        .page-desc { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* AKTİF İŞ SAYACI (TOP PANEL) - REMOVED */
+        /* .active-job-panel styles removed */
+        
+        .active-job-status {
+            margin-top: 10px;
+            background: rgba(0, 229, 255, 0.05);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid var(--accent);
+        }
+        .aj-timer { font-size: 1.5rem; font-weight: 800; color: #fff; text-align: center; margin-bottom: 5px; }
+        .progress-bg { width: 100%; height: 8px; background: #333; border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; width: 0%; background: var(--accent); transition: width 1s linear; }
+
+        /* İŞ LİSTESİ */
+        .job-list { display: flex; flex-direction: column; gap: 15px; }
+
+        .job-card {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 10px; padding: 15px; position: relative; transition: all 0.2s;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .job-card.locked { opacity: 0.6; filter: grayscale(0.8); border-color: #333; pointer-events: none; }
+        .job-card.completed { border-color: var(--accent-green); background: rgba(46, 204, 113, 0.05); }
+        
+        .lock-overlay { position: absolute; top: 10px; right: 10px; color: var(--accent-red); font-size: 1.2rem; display: none; }
+        .job-card.locked .lock-overlay { display: block; }
+
+        .check-overlay { position: absolute; top: 10px; right: 10px; color: var(--accent-green); font-size: 1.5rem; display: none; }
+        .job-card.completed .check-overlay { display: block; }
+
+        /* Header (İkon + İsim) */
+        .jc-header { display: flex; align-items: center; gap: 12px; padding-bottom: 5px; border-bottom: 1px solid #222; }
+        .jc-icon { 
+            width: 45px; height: 45px; background: var(--bg-input); border-radius: 8px; 
+            display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--accent);
+            border: 1px solid #333;
+        }
+        .jc-info { flex: 1; }
+        .jc-info h3 { font-size: 1.1rem; font-weight: 700; margin: 0; color: #fff; }
+
+        /* Detaylar Satırı (Yanyana) */
+        .job-details-row { display: flex; gap: 15px; margin-top: 5px; }
+        
+        /* Badge Sistemi */
+        .badge-section { flex: 1; }
+        .badge-label { font-size: 0.65rem; color: #666; margin-bottom: 4px; font-weight:bold; letter-spacing:0.5px; }
+        .badge-group { display: flex; flex-wrap: wrap; gap: 6px; }
+        .badge { 
+            padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; 
+            display: flex; align-items: center; gap: 4px; border: 1px solid transparent;
+            background: rgba(255,255,255,0.05);
+        }
+
+        /* Özel Badge Renkleri */
+        /* Gereksinimler */
+        .badge-level { color: var(--accent-purple); border-color: rgba(155, 89, 182, 0.3); background: rgba(155, 89, 182, 0.1); }
+        .badge-health { color: var(--accent-red); border-color: rgba(231, 76, 60, 0.3); background: rgba(231, 76, 60, 0.1); }
+        .badge-energy { color: var(--accent-gold); border-color: rgba(255, 215, 0, 0.3); background: rgba(255, 215, 0, 0.1); }
+        
+        /* Ödüller */
+        .badge-money { color: var(--accent-green); border-color: rgba(46, 204, 113, 0.3); background: rgba(46, 204, 113, 0.1); }
+        .badge-xp { color: var(--accent); border-color: rgba(0, 229, 255, 0.3); background: rgba(0, 229, 255, 0.1); }
+        .badge-gold { color: var(--accent-gold); border-color: var(--accent-gold); background: rgba(255, 215, 0, 0.1); box-shadow: 0 0 5px rgba(255,215,0,0.2); }
+        .badge-diamond { color: var(--accent); border-color: var(--accent); background: rgba(0, 229, 255, 0.15); box-shadow: 0 0 5px rgba(0,229,255,0.2); }
+
+        /* Süre Badge */
+        .badge-time { color: #aaa; background: #222; border: 1px solid #333; }
+
+        /* Buton */
+        .btn-work {
+            width: 100%; padding: 12px; border: none; border-radius: 5px;
+            background: #222; color: #fff; font-family: 'Rajdhani'; font-weight: bold;
+            cursor: pointer; border: 1px solid var(--border-color); transition: 0.2s;
+            text-transform: uppercase; font-size: 0.9rem; margin-top: 5px;
+        }
+        .btn-work:hover:not(:disabled) { background: var(--accent); color: #000; border-color: var(--accent); }
+        .btn-work:disabled { cursor: not-allowed; opacity: 0.5; }
+        .job-card.completed .btn-work { display: none; }
+
+        /* MODAL & LOG */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; display: none; justify-content: center; align-items: center; animation: fadeIn 0.3s; }
+        .modal-content { 
+            background: #181818; width: 85%; padding: 25px; border-radius: 15px; 
+            border: 1px solid #444; text-align: center; border-top: 4px solid var(--accent-green);
+            box-shadow: 0 0 50px rgba(46, 204, 113, 0.2);
+            position: relative; overflow: hidden;
+        }
+        .modal-content::before {
+            content:''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(46, 204, 113, 0.1) 0%, transparent 70%);
+            animation: spin 10s linear infinite; pointer-events: none;
+        }
+        .m-title { font-size: 1.5rem; color: #fff; margin-bottom: 5px; font-weight: 800; }
+        .m-sub { font-size: 0.9rem; color: #aaa; margin-bottom: 20px; }
+        .reward-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .r-box { background: #111; padding: 10px; border-radius: 8px; border: 1px solid #333; }
+        .r-val { font-size: 1.2rem; font-weight: bold; color: #fff; display: block; }
+        .r-lbl { font-size: 0.7rem; color: #888; text-transform: uppercase; }
+        .m-btn { width: 100%; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; background: var(--accent-green); color: #000; font-size: 1rem; }
+
+        .history-section { margin-top: 25px; border-top: 1px solid #333; padding-top: 15px; }
+        .hist-title { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; }
+        .hist-list { font-size: 0.75rem; color: #aaa; display: flex; flex-direction: column; gap: 5px; max-height: 100px; overflow-y: auto; }
+        .hist-item { display: flex; justify-content: space-between; border-bottom: 1px solid #222; padding-bottom: 2px; }
+
+        /* BOTTOM NAV */
+        .bottom-nav { position: absolute; bottom: 0; width: 100%; background: #0a0a0a; border-top: 1px solid #333; display: flex; justify-content: space-around; padding: 10px 0; z-index: 10; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 0.75rem; cursor: pointer; }
+        .nav-item i { font-size: 1.4rem; margin-bottom: 3px; }
+        .nav-item.active { color: var(--accent); }
+
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideDown { from { opacity: 0; height: 0; margin: 0; } to { opacity: 1; height: auto; margin-bottom: 20px; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Header removed, injected by header-manager.js -->
+
+        <main>
+            
+            <div class="page-header">
+                <h1 class="page-title">GÜNLÜK İŞLER</h1>
+                <p class="page-desc">Günde 1 kez çalışarak kaynak kazan.</p>
+            </div>
+
+            <!-- İŞ LİSTESİ -->
+            <div class="job-list" id="jobListContainer">
+                <!-- JS ile dolacak -->
+            </div>
+
+        </main>
+
+        <!-- ÖDÜL MODALI -->
+        <div class="modal-overlay" id="rewardModal">
+            <div class="modal-content">
+                <i class="fas fa-trophy" style="font-size:3rem; color:var(--accent-gold); margin-bottom:10px;"></i>
+                <h3 class="m-title">GÖREV TAMAMLANDI!</h3>
+                <p class="m-sub" id="rewardMsg">Başarıyla çalıştın ve ödüllerini aldın.</p>
+                
+                <div class="reward-grid" id="rewardGrid">
+                    <!-- JS Dolduracak -->
+                </div>
+
+                <button class="m-btn" onclick="closeRewardModal()">HARİKA!</button>
+            </div>
+        </div>
+
+        <nav class="bottom-nav">
+            <div class="nav-item">
+                <i class="fas fa-chess-board"></i>
+                <span>Meydan</span>
+            </div>
+            <div class="nav-item active">
+                <i class="fas fa-calendar-check"></i>
+                <span>İşler</span>
+            </div>
+            <div class="nav-item">
+                <i class="fas fa-user"></i>
+                <span>Profil</span>
+            </div>
+        </nav>
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        // Toastr Ayarları
+        toastr.options = {
+            "closeButton": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "timeOut": "3000"
+        };
+
+        // --- OYUNCU VERİSİ ---
+        let user = {
+            id: 1, // Varsayılan ID, login sistemine göre değişmeli
+            money: 0,
+            gold: 0,
+            diamond: 0,
+            xp: 0,
+            health: 100,
+            energy: 100,
+            level: 1,
+            completedJobs: [] 
+        };
+
+        // --- İŞ VERİTABANI (Server'dan gelecek) ---
+        let jobs = [];
+
+        // --- SİSTEM DEĞİŞKENLERİ ---
+        let activeJob = null; 
+        let timerInterval = null;
+
+        // BAŞLAT
+        window.onload = () => {
+            // Kullanıcı ID'sini localStorage veya URL'den al
+            const storedUser = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (storedUser) {
+                user.id = storedUser.id;
+            } else {
+                // Eğer giriş yapılmamışsa login'e atabiliriz veya demo modunda kalabilir
+                // window.location.href = 'login.html';
+            }
+
+            fetchJobs();
+        };
+
+        function fetchJobs() {
+            fetch('/api/daily-jobs')
+                .then(res => res.json())
+                .then(data => {
+                    jobs = data;
+                    fetchStatus();
+                })
+                .catch(err => {
+                    console.error('Jobs fetch error:', err);
+                    toastr.error("İş listesi yüklenirken hata oluştu!");
+                });
+        }
+
+        function fetchStatus() {
+            fetch(`/api/daily-jobs/status/${user.id}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        user.completedJobs = data.completedJobs;
+                        
+                        // Aktif iş varsa
+                        if (data.activeJob) {
+                            activeJob = {
+                                id: data.activeJob.job_id,
+                                name: data.activeJob.name,
+                                totalTime: data.activeJob.totalTime,
+                                remainingTime: data.activeJob.remainingTime
+                            };
+
+                            // Eğer süre dolmuşsa otomatik tamamla
+                            if (activeJob.remainingTime <= 0) {
+                                completeJob();
+                            } else {
+                                renderJobs(); 
+                                runTimer(activeJob.remainingTime, activeJob.totalTime);
+                            }
+                        } else {
+                            renderJobs();
+                        }
+
+                        // Kullanıcı İstatistiklerini Güncelle
+                        /*
+                        const logList = document.getElementById('historyList');
+                        logList.innerHTML = '';
+                        data.logs.forEach(log => {
+                            const date = new Date(log.created_at);
+                            const timeStr = date.getHours() + ":" + (date.getMinutes()<10?'0':'') + date.getMinutes();
+                            const item = document.createElement('div');
+                            item.className = 'hist-item';
+                            item.innerHTML = `<span>${log.reward_text}</span><span>${timeStr}</span>`;
+                            logList.appendChild(item);
+                        });
+                        */
+
+                        // Kullanıcı İstatistiklerini Güncelle (Server'dan taze veri çekmek daha iyi olurdu ama şimdilik elimizdekilerle devam)
+                        fetchUserStats();
+                    } else {
+                        toastr.error(data.error || "Durum bilgisi alınamadı!");
+                    }
+                })
+                .catch(err => {
+                    console.error('Status fetch error:', err);
+                    toastr.error("Sunucu bağlantı hatası (Status)!");
+                });
+        }
+
+        function fetchUserStats() {
+            fetch(`/api/user-stats/${user.id}`)
+                .then(res => res.json())
+                .then(data => {
+                    user = { ...user, ...data };
+                    if(window.updateHeader) window.updateHeader(user);
+                    renderJobs();
+                });
+        }
+
+        // --- RENDER FONKSİYONLARI ---
+        // updateHeader removed, handled by header-manager.js
+
+        function renderJobs() {
+            const container = document.getElementById('jobListContainer');
+            container.innerHTML = '';
+
+            jobs.forEach(job => {
+                const isCompleted = user.completedJobs.includes(job.id);
+                const isLocked = user.level < job.minLevel;
+                const isActive = activeJob && activeJob.id === job.id;
+                const isWorkingOther = activeJob && activeJob.id !== job.id;
+                const canAfford = user.health >= job.costH && user.energy >= job.costE;
+                
+                let btnText = "ÇALIŞMAYA BAŞLA";
+                let btnDisabled = false;
+                let cardClass = "job-card";
+                let actionArea = "";
+
+                if (isLocked) {
+                    cardClass += " locked";
+                    btnText = `SEVİYE ${job.minLevel} GEREKLİ`;
+                    btnDisabled = true;
+                } else if (isCompleted) {
+                    cardClass += " completed";
+                    btnText = "BUGÜN YAPILDI ✓";
+                    btnDisabled = true;
+                } else if (isActive) {
+                    cardClass += " active-job-card";
+                    
+                    // Initial Timer Text
+                    let initText = "00:00";
+                    let initWidth = "0%";
+                    
+                    if (activeJob && activeJob.remainingTime) {
+                        const r = activeJob.remainingTime;
+                        const m = Math.floor(r / 60);
+                        const s = Math.floor(r % 60);
+                        initText = `${m<10?'0':''}${m}:${s<10?'0':''}${s}`;
+                        
+                        const total = activeJob.totalTime || job.time;
+                        const pct = Math.max(0, Math.min(100, ((total - r) / total) * 100));
+                        initWidth = pct + "%";
+                    }
+
+                    actionArea = `
+                        <div class="active-job-status">
+                            <div class="aj-timer" id="jobTimer-${job.id}">${initText}</div>
+                            <div class="progress-bg">
+                                <div class="progress-fill" id="jobProgress-${job.id}" style="width:${initWidth}"></div>
+                            </div>
+                            <div style="text-align:center; font-size:0.8rem; color:var(--accent); margin-top:5px;">ÇALIŞILIYOR...</div>
+                        </div>
+                    `;
+                } else if (isWorkingOther) {
+                    btnText = "BAŞKA İŞTE ÇALIŞIYORSUN";
+                    btnDisabled = true;
+                } else if (!canAfford) {
+                    btnText = "ENERJİ/CAN YETERSİZ";
+                    btnDisabled = true;
+                }
+
+                if (!isActive) {
+                    actionArea = `<button class="btn-work" ${btnDisabled ? 'disabled' : ''} onclick="startJob(${job.id})">${btnText}</button>`;
+                }
+
+                // Süreyi formatla
+                let timeDisplay = job.time + " sn";
+                if(job.time >= 60) timeDisplay = Math.floor(job.time/60) + " dk";
+
+                const html = `
+                    <div class="${cardClass}">
+                        <i class="fas fa-lock lock-overlay"></i>
+                        <i class="fas fa-check-circle check-overlay"></i>
+                        
+                        <div class="jc-header">
+                            <div class="jc-icon"><i class="fas ${job.icon}"></i></div>
+                            <div class="jc-info">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <h3>${job.name}</h3>
+                                    <span class="badge badge-time"><i class="fas fa-clock"></i> ${timeDisplay}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="job-details-row">
+                            <!-- Gereksinimler (BADGE SİSTEMİ) -->
+                            <div class="badge-section">
+                                <div class="badge-label">GEREKSİNİMLER</div>
+                                <div class="badge-group">
+                                    <span class="badge badge-level"><i class="fas fa-star"></i> Lv. ${job.minLevel}</span>
+                                    <span class="badge badge-health"><i class="fas fa-heart"></i> -${job.costH}</span>
+                                    <span class="badge badge-energy"><i class="fas fa-bolt"></i> -${job.costE}</span>
+                                </div>
+                            </div>
+
+                            <!-- Ödüller (BADGE SİSTEMİ) -->
+                            <div class="badge-section">
+                                <div class="badge-label">ÖDÜLLER</div>
+                                <div class="badge-group">
+                                    <span class="badge badge-money">+${job.reward.money}₺</span>
+                                    <span class="badge badge-xp">+${job.reward.xp} XP</span>
+                                    ${job.reward.gold ? `<span class="badge badge-gold">+${job.reward.gold} Altın</span>` : ''}
+                                    ${job.reward.diamond ? `<span class="badge badge-diamond">+${job.reward.diamond} Elmas</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+
+                        ${actionArea}
+                    </div>
+                `;
+                container.appendChild(stringToNode(html));
+            });
+        }
+
+        // Helper string to node
+        function stringToNode(html) {
+            const t = document.createElement('template');
+            t.innerHTML = html.trim();
+            return t.content.firstChild;
+        }
+
+        // --- İŞ MANTIĞI ---
+        function startJob(jobId) {
+            const job = jobs.find(j => j.id === jobId);
+            
+            if(activeJob) {
+                toastr.warning("Zaten bir işte çalışıyorsun!");
+                return;
+            }
+            
+            // Server Call
+            fetch('/api/daily-jobs/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id, jobId: jobId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    activeJob = {
+                        id: job.id,
+                        name: job.name,
+                        totalTime: job.time
+                    };
+
+                    // Update Stats Immediately
+                    if (data.newStats) {
+                        user = { ...user, ...data.newStats };
+                        if(window.updateHeader) window.updateHeader(user);
+                    }
+
+                    // UI Güncelle
+                    // document.getElementById('activeJobPanel').style.display = 'block'; // Removed
+                    // document.getElementById('activeJobTitle').innerText = job.name + " YAPILIYOR..."; // Removed
+                    renderJobs(); // Diğer butonları kilitle
+
+                    // Sayacı Başlat
+                    runTimer(job.time, job.time);
+                    toastr.success(data.message);
+                } else {
+                    toastr.error(data.message);
+                }
+            })
+            .catch(err => {
+                console.error('Start job error:', err);
+                toastr.error("İş başlatılamadı: Bağlantı hatası");
+            });
+        }
+
+        function runTimer(remainingSeconds, totalSeconds) {
+            if (!activeJob) return;
+            
+            const timerEl = document.getElementById(`jobTimer-${activeJob.id}`);
+            const progEl = document.getElementById(`jobProgress-${activeJob.id}`);
+            
+            // Clear existing
+            if (timerInterval) clearInterval(timerInterval);
+
+            let currentRemaining = parseFloat(remainingSeconds);
+            
+            const updateDisplay = () => {
+                if (currentRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    completeJob();
+                    return;
+                }
+                
+                const m = Math.floor(currentRemaining / 60);
+                const s = Math.floor(currentRemaining % 60);
+                if(timerEl) timerEl.innerText = `${m<10?'0':''}${m}:${s<10?'0':''}${s}`;
+                
+                const elapsed = totalSeconds - currentRemaining;
+                const pct = Math.max(0, Math.min(100, (elapsed / totalSeconds) * 100));
+                if(progEl) progEl.style.width = pct + "%";
+            };
+
+            // Immediate update
+            updateDisplay();
+
+            timerInterval = setInterval(() => {
+                currentRemaining -= 0.1; // 100ms tick
+                updateDisplay();
+            }, 100);
+        }
+
+        function completeJob() {
+            if (!activeJob) return;
+            if (!user.id) {
+                console.error("User ID missing in completeJob");
+                toastr.error("Kullanıcı kimliği bulunamadı!");
+                return;
+            }
+
+            fetch('/api/daily-jobs/complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id, jobId: activeJob.id })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const job = jobs.find(j => j.id === activeJob.id);
+                    
+                    // Update User Stats
+                    user = { ...user, ...data.newStats };
+                    user.completedJobs.push(job.id);
+
+                    // Temizlik
+                    activeJob = null;
+                    // document.getElementById('activeJobPanel').style.display = 'none'; // Removed
+                    
+                    if(window.updateHeader) window.updateHeader(user);
+                    renderJobs();
+                    
+                    // Log Ekle (UI için) - REMOVED
+                    // addLog(`${job.name} tamamlandı. +${job.reward.money}₺`);
+                    
+                    showRewardModal(job);
+                } else {
+                    console.error("Complete job failed:", data.message);
+                    toastr.error(data.message);
+                    // Reset UI if failed (maybe time sync issue)
+                    fetchStatus();
+                }
+            })
+            .catch(err => {
+                console.error('Complete job error:', err);
+                toastr.error("İş tamamlama hatası: Bağlantı sorunu");
+            });
+        }
+
+        // --- MODAL & LOG ---
+        function showRewardModal(job) {
+            const grid = document.getElementById('rewardGrid');
+            grid.innerHTML = '';
+
+            createRewardBox(grid, job.reward.money + " ₺", "PARA", "var(--accent-green)");
+            createRewardBox(grid, job.reward.xp + " XP", "TECRÜBE", "var(--accent)");
+            if(job.reward.gold) createRewardBox(grid, job.reward.gold + " ALTIN", "ALTIN", "var(--accent-gold)");
+            if(job.reward.diamond) createRewardBox(grid, job.reward.diamond + " ELMAS", "ELMAS", "var(--accent-cyan)");
+
+            document.getElementById('rewardMsg').innerText = `${job.name} işini başarıyla bitirdin.`;
+            document.getElementById('rewardModal').style.display = 'flex';
+        }
+
+        function createRewardBox(container, val, lbl, color) {
+            const div = document.createElement('div');
+            div.className = 'r-box';
+            div.innerHTML = `<span class="r-val" style="color:${color}">${val}</span><span class="r-lbl">${lbl}</span>`;
+            container.appendChild(div);
+        }
+
+        function closeRewardModal() {
+            document.getElementById('rewardModal').style.display = 'none';
+        }
+
+        /*
+        function addLog(msg) {
+            const list = document.getElementById('historyList');
+            const now = new Date();
+            const time = now.getHours() + ":" + (now.getMinutes()<10?'0':'') + now.getMinutes();
+            
+            const item = document.createElement('div');
+            item.className = 'hist-item';
+            item.innerHTML = `<span>${msg}</span><span>${time}</span>`;
+            
+            list.insertBefore(item, list.firstChild);
+        }
+        */
+
+    </script>
+    <script src="js/header-manager.js"></script>
+</body>
+</html>

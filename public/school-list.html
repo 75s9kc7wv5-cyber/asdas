@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim of World - Eğitim Merkezi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #161616;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-gold: #ffd700;
+            --accent-red: #e74c3c;
+            --accent-purple: #9b59b6;
+            --text-white: #ffffff;
+            --border-color: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/World_map_blank_without_borders.svg/2000px-World_map_blank_without_borders.svg.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        main {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+
+        .page-header { text-align: center; margin-bottom: 25px; animation: fadeInDown 0.6s ease; }
+        .page-title { font-size: 1.5rem; font-weight: 700; letter-spacing: 1px; margin-bottom: 5px; text-transform: uppercase; }
+        .page-desc { font-size: 0.85rem; color: #888; }
+
+        /* ACTIVE EDUCATION CARD */
+        .active-edu-card {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.1), rgba(0,0,0,0.8));
+            border: 1px solid var(--accent-green);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            text-align: center;
+            display: none; /* Hidden by default */
+            animation: slideUp 0.5s ease;
+        }
+        .active-edu-card.active { display: block; }
+        
+        .ae-title { font-size: 1.2rem; font-weight: bold; color: var(--accent-green); margin-bottom: 10px; }
+        .ae-timer { font-size: 2rem; font-weight: 900; color: #fff; margin: 10px 0; font-family: monospace; }
+        .ae-bar-bg { width: 100%; height: 8px; background: #333; border-radius: 4px; overflow: hidden; }
+        .ae-bar-fill { height: 100%; background: var(--accent-green); width: 0%; transition: width 1s linear; }
+
+        /* EDUCATION LIST */
+        .edu-list { display: flex; flex-direction: column; gap: 15px; }
+
+        .edu-card {
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s;
+            opacity: 0.5; /* Default locked look */
+            filter: grayscale(0.8);
+        }
+        
+        .edu-card.current {
+            opacity: 1;
+            filter: grayscale(0);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.1);
+        }
+        
+        .edu-card.completed {
+            opacity: 0.7;
+            filter: grayscale(0.5);
+            border-color: var(--accent-green);
+        }
+
+        .edu-icon {
+            width: 50px; height: 50px;
+            background: #222;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+            color: var(--accent-cyan);
+            border: 1px solid #444;
+        }
+
+        .edu-info { flex: 1; }
+        .edu-name { font-size: 1.1rem; font-weight: bold; color: #fff; }
+        .edu-range { font-size: 0.8rem; color: #888; margin-top: 2px; }
+        
+        .edu-action { }
+        
+        .btn-edu {
+            background: var(--accent-cyan);
+            color: #000;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Rajdhani';
+            transition: 0.2s;
+        }
+        .btn-edu:hover { box-shadow: 0 0 10px rgba(0, 229, 255, 0.4); }
+        .btn-edu:disabled { background: #444; color: #888; cursor: not-allowed; box-shadow: none; }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 1000;
+            display: none; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        .modal-overlay.active { display: flex; }
+        
+        .modal-content {
+            background: #181818; width: 85%; max-width: 400px; padding: 25px; border-radius: 10px;
+            border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-cyan);
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
+        }
+        
+        .m-icon { font-size: 3rem; color: var(--accent-cyan); margin-bottom: 10px; }
+        .m-title { font-size: 1.3rem; margin-bottom: 10px; color: #fff; font-weight: bold; }
+        .m-details { background: #222; padding: 10px; border-radius: 6px; margin-bottom: 20px; text-align: left; font-size: 0.9rem; color: #ccc; }
+        .m-row { display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .m-row:last-child { border: none; padding: 0; margin: 0; }
+        
+        .modal-btns { display: flex; gap: 10px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 1rem; }
+        .btn-confirm { background: var(--accent-green); color: #000; }
+        .btn-cancel { background: #333; color: #fff; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Header injected by header-manager.js -->
+
+        <main>
+            <div class="page-header">
+                <h1 class="page-title"><i class="fas fa-graduation-cap"></i> EĞİTİM MERKEZİ</h1>
+                <p class="page-desc">Akademik kariyerini geliştir, yeni ufuklara yelken aç.</p>
+            </div>
+
+            <!-- ACTIVE EDUCATION TIMER -->
+            <div class="active-edu-card" id="activeEduCard">
+                <div class="ae-title">EĞİTİM DEVAM EDİYOR</div>
+                <div class="ae-timer" id="eduTimer">00:00</div>
+                <div class="ae-bar-bg">
+                    <div class="ae-bar-fill" id="eduBar"></div>
+                </div>
+                <div style="margin-top:10px; font-size:0.9rem; color:#ccc;">Hedef: <span id="targetLevelDisplay">Seviye X</span></div>
+                
+                <!-- Speed Up Button -->
+                <div style="margin-top:15px;">
+                    <button id="btnSpeedUp" class="btn-edu" style="background:var(--accent-purple); color:#fff; border:1px solid #fff;" onclick="speedUpEducation()">
+                        <i class="fas fa-bolt"></i> Hızlandır (<span id="speedUpCost">0</span> Elmas)
+                    </button>
+                </div>
+            </div>
+
+            <!-- EDUCATION LIST -->
+            <div class="edu-list" id="eduList">
+                <!-- JS ile doldurulacak -->
+            </div>
+        </main>
+
+        <!-- CONFIRM MODAL -->
+        <div class="modal-overlay" id="confirmModal">
+            <div class="modal-content">
+                <i class="fas fa-book-reader m-icon"></i>
+                <h3 class="m-title">Eğitime Başla</h3>
+                
+                <div class="m-details">
+                    <div class="m-row">
+                        <span>Hedef Seviye:</span>
+                        <span id="mLevel" style="color:var(--text-white)">1</span>
+                    </div>
+                    <div class="m-row">
+                        <span>Süre:</span>
+                        <span id="mTime" style="color:var(--accent-cyan)">10 Sn</span>
+                    </div>
+                    <div class="m-row">
+                        <span>Maliyet:</span>
+                        <span id="mCost" style="color:var(--accent-gold)">-</span>
+                    </div>
+                </div>
+
+                <div class="modal-btns">
+                    <button class="m-btn btn-cancel" onclick="closeModal()">İPTAL</button>
+                    <button class="m-btn btn-confirm" id="confirmBtn" onclick="startEducation()">BAŞLAT</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SPEEDUP CONFIRM MODAL -->
+        <div class="modal-overlay" id="speedupModal">
+            <div class="modal-content" style="border-top-color: var(--accent-purple);">
+                <i class="fas fa-bolt m-icon" style="color: var(--accent-purple);"></i>
+                <h3 class="m-title">Eğitimi Hızlandır</h3>
+                
+                <div class="m-details">
+                    <p style="color:#ccc; margin-bottom:15px;">Eğitimi anında tamamlamak istiyor musunuz?</p>
+                    <div class="m-row">
+                        <span>Gereken Elmas:</span>
+                        <span id="mSpeedCost" style="color:var(--accent-cyan); font-weight:bold;">0</span>
+                    </div>
+                </div>
+
+                <div class="modal-btns">
+                    <button class="m-btn btn-cancel" onclick="closeSpeedupModal()">İPTAL</button>
+                    <button class="m-btn btn-confirm" style="background: var(--accent-purple); color:white;" onclick="confirmSpeedUp()">HIZLANDIR</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="js/loader-manager.js"></script>
+    <script src="js/header-manager.js"></script>
+    <script src="js/menu-manager.js"></script>
+
+    <script>
+        // Toastr Config
+        toastr.options = { "positionClass": "toast-top-right", "timeOut": "3000" };
+
+        const eduStages = [
+            { min: 1, max: 10, name: 'İlkokul', icon: 'fa-shapes' },
+            { min: 11, max: 20, name: 'Ortaokul', icon: 'fa-book' },
+            { min: 21, max: 30, name: 'Lise', icon: 'fa-school' },
+            { min: 31, max: 40, name: 'Önlisans', icon: 'fa-certificate' },
+            { min: 41, max: 50, name: 'Lisans', icon: 'fa-user-graduate' },
+            { min: 51, max: 60, name: 'Yüksek Lisans', icon: 'fa-scroll' },
+            { min: 61, max: 70, name: 'Doktora', icon: 'fa-microscope' },
+            { min: 71, max: 80, name: 'Post-Doc', icon: 'fa-atom' },
+            { min: 81, max: 90, name: 'Doçentlik', icon: 'fa-chalkboard-teacher' },
+            { min: 91, max: 100, name: 'Profesörlük', icon: 'fa-brain' }
+        ];
+
+        let userSkill = 1;
+        let activeEdu = null;
+        let timerInterval = null;
+
+        async function initPage() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) { window.location.href = 'login.html'; return; }
+
+            try {
+                const response = await fetch(`/api/education/status/${user.id}`);
+                const data = await response.json();
+                
+                userSkill = data.skill;
+                activeEdu = data.activeEdu;
+                
+                renderList();
+                
+                if (activeEdu) {
+                    startTimer(activeEdu.end_time, activeEdu.target_level);
+                }
+            } catch (error) {
+                console.error(error);
+                toastr.error('Veri yüklenemedi.');
+            }
+        }
+
+        function renderList() {
+            const container = document.getElementById('eduList');
+            container.innerHTML = '';
+
+            // Find current stage
+            const currentStageIndex = eduStages.findIndex(s => userSkill >= s.min && userSkill <= s.max);
+            
+            eduStages.forEach((stage, index) => {
+                const isCompleted = userSkill > stage.max;
+                const isCurrent = index === currentStageIndex || (index === 0 && userSkill === 0); // Handle 0 case if any
+                const isLocked = !isCompleted && !isCurrent;
+
+                let statusClass = 'locked';
+                if (isCompleted) statusClass = 'completed';
+                if (isCurrent) statusClass = 'current';
+
+                const card = document.createElement('div');
+                card.className = `edu-card ${statusClass}`;
+                
+                let btnHTML = '';
+                if (isCurrent) {
+                    if (activeEdu) {
+                        btnHTML = `<button class="btn-edu" disabled>Eğitimde</button>`;
+                    } else if (userSkill >= 100) {
+                        btnHTML = `<span style="color:var(--accent-gold); font-weight:bold;">Maksimum</span>`;
+                    } else {
+                        btnHTML = `<button class="btn-edu" onclick="openModal()">Eğitimi Başlat</button>`;
+                    }
+                } else if (isCompleted) {
+                    btnHTML = `<i class="fas fa-check" style="color:var(--accent-green)"></i>`;
+                } else {
+                    btnHTML = `<i class="fas fa-lock" style="color:#555"></i>`;
+                }
+
+                card.innerHTML = `
+                    <div class="edu-icon">
+                        <i class="fas ${stage.icon}"></i>
+                    </div>
+                    <div class="edu-info">
+                        <div class="edu-name">${stage.name}</div>
+                        <div class="edu-range">Seviye ${stage.min} - ${stage.max}</div>
+                        ${isCurrent ? `<div style="font-size:0.8rem; color:var(--accent-cyan)">Mevcut Seviye: ${userSkill}</div>` : ''}
+                    </div>
+                    <div class="edu-action">
+                        ${btnHTML}
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        function openModal() {
+            const nextLevel = userSkill + 1;
+            
+            // Calculate Cost (Same logic as server)
+            let costMoney = Math.floor(1000 * Math.pow(1.1, userSkill));
+            let costGold = 0;
+            let costDiamond = 0;
+            
+            if (userSkill >= 30) costGold = Math.floor((userSkill - 30) * 5) + 10;
+            if (userSkill >= 60) costDiamond = Math.floor((userSkill - 60) * 1) + 1;
+            
+            const duration = userSkill * 10; // Seconds
+
+            document.getElementById('mLevel').innerText = nextLevel;
+            document.getElementById('mTime').innerText = formatTime(duration);
+            
+            let costHtml = `<div style="display:flex; flex-direction:column; gap:5px;">
+                <span style="color:var(--accent-green)">${formatMoney(costMoney)} ₺</span>`;
+            
+            if (costGold > 0) costHtml += `<span style="color:var(--accent-gold)">${costGold} Altın</span>`;
+            if (costDiamond > 0) costHtml += `<span style="color:var(--accent-cyan)">${costDiamond} Elmas</span>`;
+            
+            costHtml += `</div>`;
+            
+            document.getElementById('mCost').innerHTML = costHtml;
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('confirmModal').classList.remove('active');
+        }
+
+        async function startEducation() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            closeModal();
+
+            try {
+                const response = await fetch('/api/education/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    toastr.success('Eğitim başladı!');
+                    activeEdu = { end_time: result.endTime, target_level: result.targetLevel };
+                    renderList();
+                    startTimer(result.endTime, result.targetLevel);
+                    
+                    // Update Header Stats if possible
+                    if(window.updateHeaderStats) window.updateHeaderStats();
+                } else {
+                    toastr.error(result.message || 'Başlatılamadı.');
+                }
+            } catch (error) {
+                console.error(error);
+                toastr.error('Hata oluştu.');
+            }
+        }
+
+        function startTimer(endTime, targetLevel) {
+            const card = document.getElementById('activeEduCard');
+            const timerEl = document.getElementById('eduTimer');
+            const barEl = document.getElementById('eduBar');
+            const targetEl = document.getElementById('targetLevelDisplay');
+            
+            card.classList.add('active');
+            targetEl.innerText = `Seviye ${targetLevel}`;
+            
+            // Calculate Speed Up Cost
+            const diamondCost = Math.ceil(targetLevel / 5) + 2;
+            document.getElementById('speedUpCost').innerText = diamondCost;
+
+            // Calculate total duration roughly for bar (current time to end time is remaining, but we need total for percentage)
+            // Since we don't have start time here easily without another fetch, let's approximate or just use remaining.
+            // Better: Server sends start time too, but for now let's just countdown.
+            // Visual bar will just fill from 0 to 100 based on remaining time? No, that looks backwards.
+            // Let's just show text countdown.
+            
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                const now = Date.now();
+                const diff = endTime - now;
+                
+                if (diff <= 0) {
+                    clearInterval(timerInterval);
+                    timerEl.innerText = "00:00";
+                    completeEducation();
+                    return;
+                }
+                
+                timerEl.innerText = formatTime(Math.ceil(diff / 1000));
+            }, 1000);
+        }
+
+        function speedUpEducation() {
+            const cost = document.getElementById('speedUpCost').innerText;
+            document.getElementById('mSpeedCost').innerText = cost;
+            document.getElementById('speedupModal').classList.add('active');
+        }
+
+        function closeSpeedupModal() {
+            document.getElementById('speedupModal').classList.remove('active');
+        }
+
+        async function confirmSpeedUp() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            closeSpeedupModal();
+
+            try {
+                const response = await fetch('/api/education/speedup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    toastr.success(result.message);
+                    // Timer will handle completion naturally or we can force it
+                    // Since we updated end_time on server, next tick of timer might not catch it immediately if we rely on local endTime variable.
+                    // We should force complete or reload status.
+                    // Let's just call completeEducation immediately as server said it's done (time is past).
+                    completeEducation();
+                } else {
+                    toastr.error(result.message);
+                }
+            } catch (error) {
+                console.error(error);
+                toastr.error('Hata oluştu.');
+            }
+        }
+
+        async function completeEducation() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            
+            try {
+                const response = await fetch('/api/education/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    toastr.success(`Tebrikler! Seviye ${result.newLevel} oldunuz.`, 'Eğitim Tamamlandı');
+                    document.getElementById('activeEduCard').classList.remove('active');
+                    activeEdu = null;
+                    userSkill = result.newLevel;
+                    renderList();
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        function formatMoney(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        window.addEventListener('load', initPage);
+    </script>
+</body>
+</html>
