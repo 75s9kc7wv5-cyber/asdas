@@ -2,9 +2,29 @@ const express = require('express');
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const path = require('path');
+const multer = require('multer');
+const fs = require('fs');
+const sharp = require('sharp');
 
 const app = express();
 const port = 3000;
+
+// Multer Config (Memory Storage for Processing)
+const storage = multer.memoryStorage();
+
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // Increased limit to 5MB since we compress it anyway
+    fileFilter: (req, file, cb) => {
+        const filetypes = /jpeg|jpg|png|gif/;
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+        if (mimetype && extname) {
+            return cb(null, true);
+        }
+        cb(new Error('Sadece resim dosyaları (jpeg, jpg, png, gif) yüklenebilir!'));
+    }
+});
 
 const db = mysql.createConnection({
     host: 'localhost',
@@ -18,6 +38,53 @@ db.connect((err) => {
         console.error('Database connection failed:', err);
     } else {
         console.log('Connected to database: simworld');
+        
+        // Create Notifications Table
+        const createNotifTable = `CREATE TABLE IF NOT EXISTS notifications (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            title VARCHAR(255) NOT NULL,
+            message TEXT,
+            type VARCHAR(50),
+            is_read BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )`;
+        
+        db.query(createNotifTable, (err) => {
+            if (err) console.error('Error creating notifications table:', err);
+            else console.log('Notifications table ready');
+        });
+
+        // Create Toxic Logs Table
+        const createToxicLogsTable = `CREATE TABLE IF NOT EXISTS toxic_logs (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            original_message TEXT,
+            filtered_message TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )`;
+
+        db.query(createToxicLogsTable, (err) => {
+            if (err) console.error('Error creating toxic_logs table:', err);
+            else console.log('Toxic Logs table ready');
+        });
+
+        // Create Profile Visits Table
+        const createProfileVisitsTable = `CREATE TABLE IF NOT EXISTS profile_visits (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            profile_id INT NOT NULL,
+            visitor_id INT NOT NULL,
+            visited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (profile_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (visitor_id) REFERENCES users(id) ON DELETE CASCADE
+        )`;
+
+        db.query(createProfileVisitsTable, (err) => {
+            if (err) console.error('Error creating profile_visits table:', err);
+            else console.log('Profile Visits table ready');
+        });
     }
 });
 
@@ -35,9 +102,15 @@ app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     const query = 'SELECT * FROM users WHERE username = ? AND password = ?';
     db.query(query, [username, password], (err, results) => {
-        if (err) return res.status(500).json({ message: 'Veritabanı hatası' });
+        if (err) {
+            console.error('Login DB Error:', err); // Hata detayını logla
+            return res.status(500).json({ message: 'Veritabanı hatası', error: err.message });
+        }
         if (results.length > 0) {
-            res.json({ user: results[0] });
+            const user = results[0];
+            // Update last_login
+            db.query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
+            res.json({ user: user });
         } else {
             res.status(401).json({ message: 'Kullanıcı adı veya şifre hatalı' });
         }
@@ -46,16 +119,149 @@ app.post('/api/login', (req, res) => {
 
 // Register Endpoint
 app.post('/api/register', (req, res) => {
-    const { username, password, email } = req.body;
-    const query = 'INSERT INTO users (username, password, email, money, energy, health) VALUES (?, ?, ?, 1000, 100, 100)';
-    db.query(query, [username, password, email], (err, result) => {
+    const { username, password } = req.body;
+    const defaultAvatar = 'uploads/avatars/default.png';
+    const query = 'INSERT INTO users (username, password, money, energy, health, avatar) VALUES (?, ?, 1000, 100, 100, ?)';
+    db.query(query, [username, password, defaultAvatar], (err, result) => {
         if (err) {
+            console.error("Register Error:", err);
             if (err.code === 'ER_DUP_ENTRY') {
-                return res.status(400).json({ message: 'Kullanıcı adı veya e-posta zaten kullanımda.' });
+                return res.status(400).json({ message: 'Kullanıcı adı zaten kullanımda.' });
             }
             return res.status(500).json({ message: 'Kayıt hatası.' });
         }
         res.json({ success: true, message: 'Kayıt başarılı!' });
+    });
+});
+
+// Profile Endpoint
+app.get('/api/profile/:id', (req, res) => {
+    const userId = req.params.id;
+    
+    // Fetch user basic info including last_login
+    const userQuery = 'SELECT id, username, created_at, last_login, education_skill, avatar, money, gold, diamond, level, license_hospital_level, license_farm_level, role FROM users WHERE id = ?';
+    
+    db.query(userQuery, [userId], (err, userResults) => {
+        if (err) return res.status(500).json({ message: 'Veritabanı hatası' });
+        if (userResults.length === 0) return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
+        
+        const user = userResults[0];
+        
+        // Calculate Online Status (Active in last 5 mins)
+        const now = new Date();
+        const lastLogin = user.last_login ? new Date(user.last_login) : new Date(0);
+        const diffMs = now - lastLogin;
+        const diffMins = Math.floor(diffMs / 60000);
+        user.is_online = diffMins < 5;
+
+        // Get mines details
+        const minesQuery = 'SELECT mine_type, name, level FROM player_mines WHERE user_id = ? ORDER BY level DESC';
+        db.query(minesQuery, [userId], (err, mineResults) => {
+            if (err) {
+                user.mines = [];
+                user.mines_count = 0;
+            } else {
+                user.mines = mineResults;
+                user.mines_count = mineResults.length;
+            }
+            
+            // Get Licenses
+            const licQuery = 'SELECT mine_type, level FROM licenses WHERE user_id = ?';
+            db.query(licQuery, [userId], (err, licResults) => {
+                user.licenses = licResults || [];
+                
+                // Add Hospital License manually if exists
+                if (user.license_hospital_level > 0) {
+                    user.licenses.push({ mine_type: 'hospital', level: user.license_hospital_level });
+                }
+                if (user.license_farm_level > 0) {
+                    user.licenses.push({ mine_type: 'farm', level: user.license_farm_level });
+                }
+
+                // Factories (placeholder for now)
+                user.factories_count = 0;
+
+                // Increment Profile Views
+                db.query('UPDATE users SET profile_views = profile_views + 1 WHERE id = ?', [userId]);
+                user.profile_views = (user.profile_views || 0) + 1;
+
+                // Record Visit
+                const visitorId = req.query.visitorId;
+                if (visitorId && visitorId != userId) {
+                    db.query('DELETE FROM profile_visits WHERE profile_id = ? AND visitor_id = ?', [userId, visitorId], () => {
+                        db.query('INSERT INTO profile_visits (profile_id, visitor_id) VALUES (?, ?)', [userId, visitorId]);
+                    });
+                }
+
+                // Calculate Achievements (Mock based on stats)
+                user.achievements = [];
+                if (user.money >= 1000000) user.achievements.push({ name: 'Milyoner', icon: 'fa-sack-dollar', desc: '1M Nakit' });
+                if (user.level >= 10) user.achievements.push({ name: 'Deneyimli', icon: 'fa-star', desc: 'Seviye 10' });
+                if (user.mines_count >= 5) user.achievements.push({ name: 'Madenci', icon: 'fa-hammer', desc: '5 Maden' });
+                if (user.education_skill >= 100) user.achievements.push({ name: 'Bilgin', icon: 'fa-graduation-cap', desc: '100 Eğitim' });
+
+                res.json(user);
+            });
+        });
+    });
+});
+
+// Get Profile Visitors
+app.get('/api/profile/:id/visitors', (req, res) => {
+    const userId = req.params.id;
+    const query = `
+        SELECT u.id, u.username, u.avatar, pv.visited_at 
+        FROM profile_visits pv
+        JOIN users u ON pv.visitor_id = u.id
+        WHERE pv.profile_id = ?
+        ORDER BY pv.visited_at DESC
+        LIMIT 5
+    `;
+    db.query(query, [userId], (err, results) => {
+        if (err) return res.status(500).json({ error: err });
+        res.json(results);
+    });
+});
+
+// Add Comment Endpoint
+app.post('/api/profile/:id/comment', (req, res) => {
+    const profileId = req.params.id;
+    const { authorId, message } = req.body;
+    
+    if (!message || message.length < 2) return res.status(400).json({ message: 'Mesaj çok kısa.' });
+
+    const query = 'INSERT INTO profile_comments (profile_user_id, author_user_id, message) VALUES (?, ?, ?)';
+    db.query(query, [profileId, authorId, message], (err) => {
+        if (err) return res.status(500).json({ message: 'Yorum eklenemedi.' });
+        res.json({ success: true });
+    });
+});
+
+// --- NOTIFICATIONS SYSTEM ---
+
+// Get Notifications
+app.get('/api/notifications/:userId', (req, res) => {
+    const userId = req.params.userId;
+    const query = 'SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 20';
+    db.query(query, [userId], (err, results) => {
+        if (err) return res.status(500).json({ error: err });
+        
+        // Count unread
+        const countQuery = 'SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0';
+        db.query(countQuery, [userId], (err, countRes) => {
+            const unreadCount = err ? 0 : countRes[0].count;
+            res.json({ notifications: results, unreadCount });
+        });
+    });
+});
+
+// Mark Notifications as Read
+app.post('/api/notifications/read', (req, res) => {
+    const { userId } = req.body;
+    const query = 'UPDATE notifications SET is_read = 1 WHERE user_id = ?';
+    db.query(query, [userId], (err) => {
+        if (err) return res.status(500).json({ success: false });
+        res.json({ success: true });
     });
 });
 
@@ -67,6 +273,133 @@ app.get('/api/stats', (req, res) => {
             return res.status(500).json({ count: 0 });
         }
         res.json({ count: results[0].count });
+    });
+});
+
+// Change Password Endpoint
+app.post('/api/user/change-password', (req, res) => {
+    const { userId, currentPass, newPass } = req.body;
+    
+    // Verify current password
+    const verifyQuery = 'SELECT id FROM users WHERE id = ? AND password = ?';
+    db.query(verifyQuery, [userId, currentPass], (err, results) => {
+        if (err) return res.status(500).json({ success: false, message: 'Veritabanı hatası' });
+        
+        if (results.length === 0) {
+            return res.json({ success: false, message: 'Mevcut şifre hatalı.' });
+        }
+        
+        // Update password
+        const updateQuery = 'UPDATE users SET password = ? WHERE id = ?';
+        db.query(updateQuery, [newPass, userId], (err) => {
+            if (err) return res.status(500).json({ success: false, message: 'Güncelleme hatası' });
+            res.json({ success: true, message: 'Şifre güncellendi.' });
+        });
+    });
+});
+
+// Change Username Endpoint
+app.post('/api/user/change-username', (req, res) => {
+    const { userId, newUsername } = req.body;
+    const COST = 100; // Diamond cost
+
+    if (!newUsername || newUsername.length < 3) {
+        return res.json({ success: false, message: 'Kullanıcı adı en az 3 karakter olmalı.' });
+    }
+
+    // 1. Check if username exists
+    db.query('SELECT id FROM users WHERE username = ?', [newUsername], (err, results) => {
+        if (err) return res.status(500).json({ success: false, message: 'DB Error' });
+        if (results.length > 0) return res.json({ success: false, message: 'Bu kullanıcı adı zaten alınmış.' });
+
+        // 2. Check Balance
+        db.query('SELECT diamond FROM users WHERE id = ?', [userId], (err, userRes) => {
+            if (err || userRes.length === 0) return res.status(500).json({ success: false, message: 'User Error' });
+            
+            const user = userRes[0];
+            if ((user.diamond || 0) < COST) {
+                return res.json({ success: false, message: `Yetersiz Elmas! Gereken: ${COST}` });
+            }
+
+            // 3. Deduct & Update
+            db.beginTransaction(err => {
+                if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
+
+                db.query('UPDATE users SET diamond = diamond - ? WHERE id = ?', [COST, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Balance Error' }));
+
+                    db.query('UPDATE users SET username = ? WHERE id = ?', [newUsername, userId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Update Error' }));
+
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                            res.json({ success: true, message: 'Kullanıcı adı değiştirildi!' });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Upload Avatar Endpoint
+app.post('/api/user/upload-avatar', (req, res) => {
+    upload.single('avatar')(req, res, async function (err) {
+        if (err instanceof multer.MulterError) {
+            return res.status(500).json({ success: false, message: err.message });
+        } else if (err) {
+            return res.status(500).json({ success: false, message: err.message });
+        }
+
+        if (!req.file) return res.status(400).json({ success: false, message: 'Dosya seçilmedi.' });
+
+        const userId = req.body.userId;
+        if (!userId) return res.status(400).json({ success: false, message: 'Kullanıcı ID eksik.' });
+
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        
+        // Determine output format and filename
+        let ext = path.extname(req.file.originalname).toLowerCase();
+        if (ext === '.jpeg') ext = '.jpg';
+        
+        const filename = 'avatar-' + uniqueSuffix + ext;
+        const uploadDir = path.join(__dirname, '../public/uploads/avatars');
+        const filepath = path.join(uploadDir, filename);
+        const dbPath = 'uploads/avatars/' + filename;
+
+        // Ensure directory exists
+        if (!fs.existsSync(uploadDir)){
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        try {
+            let pipeline = sharp(req.file.buffer, { animated: true });
+            
+            // Resize logic
+            pipeline = pipeline.resize(200, 200, { fit: 'cover' });
+
+            // Format specific optimization
+            if (ext === '.gif') {
+                pipeline = pipeline.gif({ reoptimise: true }); // Optimize GIF
+            } else if (ext === '.png') {
+                pipeline = pipeline.png({ quality: 80, compressionLevel: 8 });
+            } else {
+                pipeline = pipeline.jpeg({ quality: 80, mozjpeg: true });
+            }
+
+            await pipeline.toFile(filepath);
+
+            // Update Database
+            const query = 'UPDATE users SET avatar = ? WHERE id = ?';
+            db.query(query, [dbPath, userId], (err) => {
+                if (err) return res.status(500).json({ success: false, message: 'DB Update Error' });
+                res.json({ success: true, message: 'Avatar güncellendi!', avatarUrl: dbPath });
+            });
+
+        } catch (processErr) {
+            console.error('Image processing error:', processErr);
+            return res.status(500).json({ success: false, message: 'Resim işleme hatası.' });
+        }
     });
 });
 
@@ -161,6 +494,50 @@ app.post('/api/education/start', (req, res) => {
     });
 });
 
+// Speed Up Education
+app.post('/api/education/speedup', (req, res) => {
+    const { userId } = req.body;
+
+    const activeQuery = 'SELECT * FROM active_educations WHERE user_id = ?';
+    db.query(activeQuery, [userId], (err, activeRes) => {
+        if (err) return res.status(500).json({ success: false, message: 'DB Error' });
+        if (activeRes.length === 0) return res.json({ success: false, message: 'Aktif eğitim yok.' });
+
+        const edu = activeRes[0];
+        const diamondCost = Math.ceil(edu.target_level / 5) + 2;
+
+        const userQuery = 'SELECT diamond FROM users WHERE id = ?';
+        db.query(userQuery, [userId], (err, userRes) => {
+            if (err || userRes.length === 0) return res.status(500).json({ success: false, message: 'User not found' });
+
+            const user = userRes[0];
+            if ((user.diamond || 0) < diamondCost) {
+                return res.json({ success: false, message: `Yetersiz Elmas! Gereken: ${diamondCost}` });
+            }
+
+            db.beginTransaction(err => {
+                if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
+
+                const updateBalance = 'UPDATE users SET diamond = diamond - ? WHERE id = ?';
+                db.query(updateBalance, [diamondCost, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Balance Update Error' }));
+
+                    // Set end_time to now so it can be completed immediately
+                    const updateEdu = 'UPDATE active_educations SET end_time = ? WHERE id = ?';
+                    db.query(updateEdu, [Date.now(), edu.id], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Edu Update Error' }));
+
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                            res.json({ success: true, message: 'Eğitim hızlandırıldı!' });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
 // Complete Education
 app.post('/api/education/complete', (req, res) => {
     const { userId } = req.body;
@@ -192,6 +569,11 @@ app.post('/api/education/complete', (req, res) => {
                         const logMsg = `Eğitim Tamamlandı! Yeni Seviye: ${edu.target_level}`;
                         db.query('INSERT INTO user_logs (user_id, log_type, message) VALUES (?, ?, ?)', [userId, 'EDUCATION_COMPLETE', logMsg]);
                         
+                        // Notification
+                        const notifTitle = 'Eğitim Tamamlandı';
+                        const notifMsg = `Tebrikler! Eğitimini başarıyla tamamladın ve seviye ${edu.target_level} oldun.`;
+                        db.query('INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)', [userId, notifTitle, notifMsg, 'education']);
+
                         res.json({ success: true, newLevel: edu.target_level });
                     });
                 });
@@ -250,120 +632,134 @@ app.post('/api/mine', (req, res) => {
         const user = userRes[0];
         
         // AR-GE Seviyesini ve Rezervi Kontrol Et
-        const argeQuery = 'SELECT level, reserve FROM arge_levels WHERE user_id = ? AND mine_type = ?';
+        const argeQuery = 'SELECT level, reserve, last_collected FROM arge_levels WHERE user_id = ? AND mine_type = ?';
         db.query(argeQuery, [userId, mineType], (err, argeResults) => {
             if (err) return res.status(500).json({ success: false, message: 'Veritabanı hatası.' });
 
             const argeLevel = argeResults.length > 0 ? argeResults[0].level : 1;
             let currentReserve = argeResults.length > 0 ? (argeResults[0].reserve || 1000) : 1000;
+            const lastCollected = argeResults.length > 0 ? argeResults[0].last_collected : null;
 
-            // Tüketim Hesaplama (Seviye arttıkça düşer)
-            // Lv 1: 10 Energy, 10 Health
-            // Lv 10: ~5 Energy, ~5 Health
-            const consumption = Math.max(5, 10 - Math.floor((argeLevel - 1) * 0.5));
-            
-            if (user.energy < consumption) return res.json({ success: false, message: 'Yetersiz Enerji!' });
-            if (user.health < consumption) return res.json({ success: false, message: 'Sağlığın çok düşük!' });
-
-            // Şans Hesaplama: Başlangıç %30, her seviye +%5 (Max %75)
-            let baseChance = 0.30;
-            let chanceIncrease = (argeLevel - 1) * 0.05;
-            let totalChance = Math.min(baseChance + chanceIncrease, 0.75);
-
-            // Rezerv Etkisi: Rezerv %20'nin altındaysa şans yarıya düşer
-            const maxReserve = 5000 * argeLevel; // Yeni Kapasite Formülü
-            if (currentReserve < (maxReserve * 0.2)) {
-                totalChance *= 0.5;
-            }
-
-            const isSuccess = Math.random() < totalChance;
-            let amount = 0;
-
-            if (isSuccess) {
-                // Miktar Hesaplama
-                const minAmount = 1 + Math.floor((argeLevel - 1) / 2);
-                const maxAmount = 3 + (argeLevel - 1);
-                amount = Math.floor(Math.random() * (maxAmount - minAmount + 1)) + minAmount;
+            // Üretim Süresi Kontrolü
+            const settingsQuery = 'SELECT production_time FROM mine_settings WHERE mine_type = ?';
+            db.query(settingsQuery, [mineType], (err, settingsRes) => {
+                if (err) return res.status(500).json({ success: false, message: 'Ayar hatası.' });
                 
-                // Rezerv Düşüşü
-                currentReserve = Math.max(0, currentReserve - amount);
-            }
+                const productionTime = settingsRes.length > 0 ? settingsRes[0].production_time : 0;
+                
+                if (lastCollected) {
+                    const now = new Date();
+                    const diff = (now - new Date(lastCollected)) / 1000; // saniye
+                    if (diff < productionTime) {
+                        const remaining = Math.ceil(productionTime - diff);
+                        return res.json({ success: false, message: `Üretim devam ediyor. ${remaining} saniye beklemelisiniz.` });
+                    }
+                }
 
-            // XP & Level Logic
-            const xpGain = 2; // 2 XP per mining attempt
-            let currentLevel = user.level || 1;
-            let currentXp = (user.xp || 0) + xpGain;
-            let requiredXp = currentLevel * 100;
-            let leveledUp = false;
+                // Tüketim Hesaplama (Seviye arttıkça düşer)
+                // Lv 1: 10 Energy, 10 Health
+                // Lv 10: ~5 Energy, ~5 Health
+                const consumption = Math.max(5, 10 - Math.floor((argeLevel - 1) * 0.5));
+                
+                if (user.energy < consumption) return res.json({ success: false, message: 'Yetersiz Enerji!' });
+                if (user.health < consumption) return res.json({ success: false, message: 'Sağlığın çok düşük!' });
 
-            while (currentXp >= requiredXp) {
-                currentXp -= requiredXp;
-                currentLevel++;
-                requiredXp = currentLevel * 100;
-                leveledUp = true;
-            }
+                // Şans Hesaplama: Başlangıç %30, her seviye +%5 (Max %75)
+                let baseChance = 0.30;
+                let chanceIncrease = (argeLevel - 1) * 0.05;
+                let totalChance = Math.min(baseChance + chanceIncrease, 0.75);
 
-            // Transaction Başlat
-            db.beginTransaction(err => {
-                if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
+                // Rezerv Etkisi: Rezerv %20'nin altındaysa şans yarıya düşer
+                const maxReserve = 5000 * argeLevel; // Yeni Kapasite Formülü
+                if (currentReserve < (maxReserve * 0.2)) {
+                    totalChance *= 0.5;
+                }
 
-                // 1. Kullanıcıdan Enerji/Sağlık Düş, XP/Level Ekle
-                db.query('UPDATE users SET energy = energy - ?, health = health - ?, xp = ?, level = ? WHERE id = ?', 
-                    [consumption, consumption, currentXp, currentLevel, userId], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Update User Error' }));
+                const isSuccess = Math.random() < totalChance;
+                let amount = 0;
 
-                    // 2. Rezervi Güncelle (Eğer kayıt yoksa oluştur)
-                    const upsertArge = `
-                        INSERT INTO arge_levels (user_id, mine_type, level, reserve) 
-                        VALUES (?, ?, 1, ?) 
-                        ON DUPLICATE KEY UPDATE reserve = ?
-                    `;
-                    // Yeni rezerv değeri: isSuccess ise düştü, değilse aynı kaldı (veya az bir miktar düşebilir, şimdilik sadece bulursa düşsün)
-                    // Not: Kullanıcı hiç arge kaydı yoksa level 1 olarak insert edilir.
-                    // Default reserve 5000 for level 1
-                    const defaultReserve = 5000;
-                    const newReserveVal = isSuccess ? currentReserve : (argeResults.length > 0 ? argeResults[0].reserve : defaultReserve);
+                if (isSuccess) {
+                    // Miktar Hesaplama
+                    const minAmount = 1 + Math.floor((argeLevel - 1) / 2);
+                    const maxAmount = 3 + (argeLevel - 1);
+                    amount = Math.floor(Math.random() * (maxAmount - minAmount + 1)) + minAmount;
+                    
+                    // Rezerv Düşüşü
+                    currentReserve = Math.max(0, currentReserve - amount);
+                }
 
-                    db.query(upsertArge, [userId, mineType, defaultReserve, newReserveVal], (err) => {
-                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Update Reserve Error' }));
+                // XP & Level Logic
+                const xpGain = 2; // 2 XP per mining attempt
+                let currentLevel = user.level || 1;
+                let currentXp = (user.xp || 0) + xpGain;
+                let requiredXp = currentLevel * 100;
+                let leveledUp = false;
 
-                         if (isSuccess) {
-                            // 3. Envantere Ekle
-                            let itemKey = mineType;
-                            if (itemKey === 'gold') itemKey = 'gold_nugget';
+                while (currentXp >= requiredXp) {
+                    currentXp -= requiredXp;
+                    currentLevel++;
+                    requiredXp = currentLevel * 100;
+                    leveledUp = true;
+                }
 
-                            const invQuery = `
-                                INSERT INTO inventory (user_id, item_key, quantity) 
-                                VALUES (?, ?, ?) 
-                                ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)
-                            `;
-                            db.query(invQuery, [userId, itemKey, amount], (err) => {
-                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Inventory Error' }));
-                                
+                // Transaction Başlat
+                db.beginTransaction(err => {
+                    if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
+
+                    // 1. Kullanıcıdan Enerji/Sağlık Düş, XP/Level Ekle
+                    db.query('UPDATE users SET energy = energy - ?, health = health - ?, xp = ?, level = ? WHERE id = ?', 
+                        [consumption, consumption, currentXp, currentLevel, userId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Update User Error' }));
+
+                        // 2. AR-GE Güncelle (Rezerv ve Last Collected)
+                        const now = new Date();
+                        const upsertArge = `
+                            INSERT INTO arge_levels (user_id, mine_type, level, reserve, last_collected) 
+                            VALUES (?, ?, ?, ?, ?) 
+                            ON DUPLICATE KEY UPDATE reserve = ?, last_collected = ?
+                        `;
+                        
+                        db.query(upsertArge, [userId, mineType, argeLevel, currentReserve, now, currentReserve, now], (err) => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Update Arge Error' }));
+
+                            if (isSuccess) {
+                                // 3. Envantere Ekle
+                                let itemKey = mineType;
+                                if (itemKey === 'gold') itemKey = 'gold_nugget';
+
+                                const invQuery = `
+                                    INSERT INTO inventory (user_id, item_key, quantity) 
+                                    VALUES (?, ?, ?) 
+                                    ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)
+                                `;
+                                db.query(invQuery, [userId, itemKey, amount], (err) => {
+                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Inventory Error' }));
+                                    
+                                    db.commit(err => {
+                                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                                        res.json({ 
+                                            success: true, 
+                                            amount: amount, 
+                                            newEnergy: user.energy - consumption,
+                                            newHealth: user.health - consumption,
+                                            reserve: currentReserve
+                                        });
+                                    });
+                                });
+                            } else {
+                                // Başarısız ama enerji gitti
                                 db.commit(err => {
                                     if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
                                     res.json({ 
-                                        success: true, 
-                                        amount: amount, 
+                                        success: false, 
+                                        message: 'Maalesef, bu sefer bir şey bulamadın.',
                                         newEnergy: user.energy - consumption,
                                         newHealth: user.health - consumption,
-                                        reserve: newReserveVal
+                                        reserve: currentReserve
                                     });
                                 });
-                            });
-                         } else {
-                             // Başarısız ama enerji gitti
-                             db.commit(err => {
-                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                                res.json({ 
-                                    success: false, 
-                                    message: 'Maalesef, bu sefer bir şey bulamadın.',
-                                    newEnergy: user.energy - consumption,
-                                    newHealth: user.health - consumption,
-                                    reserve: newReserveVal
-                                });
-                            });
-                         }
+                            }
+                        });
                     });
                 });
             });
@@ -533,7 +929,7 @@ app.post('/api/arge/start', (req, res) => {
         }
 
         // 2. Get Current Level & Resources
-        const userQuery = 'SELECT money, gold FROM users WHERE id = ?';
+        const userQuery = 'SELECT money, gold, diamond, education_skill FROM users WHERE id = ?';
         db.query(userQuery, [userId], (err, userRes) => {
             if (err || userRes.length === 0) return res.status(500).json({ success: false, message: 'User Error' });
             
@@ -544,35 +940,32 @@ app.post('/api/arge/start', (req, res) => {
             db.query(mineQuery, [userId, mineType], (err, mineRes) => {
                 if (err) return res.status(500).json({ success: false, message: 'Mine DB Error' });
                 
-                const currentLevel = mineRes.length > 0 ? mineRes[0].level : 1;
+                const currentLevel = mineRes.length > 0 ? mineRes[0].level : 0;
                 const targetLevel = currentLevel + 1;
                 
                 if (currentLevel >= 10) {
                     return res.json({ success: false, message: 'Maksimum seviyeye ulaşıldı.' });
                 }
 
-                // Check License Level - REMOVED as per request
-                // const licenseQuery = 'SELECT level FROM licenses WHERE user_id = ? AND mine_type = ?';
-                // db.query(licenseQuery, [userId, mineType], (err, licenseRes) => {
-                    // if (err) return res.status(500).json({ success: false, message: 'License DB Error' });
-                    
-                    // const licenseLevel = licenseRes.length > 0 ? licenseRes[0].level : 0;
-                    
-                    // if (licenseLevel < targetLevel) {
-                    //     return res.json({ success: false, message: `Yetersiz Lisans! Bu madeni geliştirmek için ${targetLevel}. seviye lisans gerekiyor.` });
-                    // }
+                // Education Check
+                const userEdu = Number(user.education_skill) || 0;
+                const requiredEdu = targetLevel * 10;
 
-                    // Cost Calculation
-                    const costMoney = Math.floor(5000 * Math.pow(1.8, currentLevel - 1));
-                    const costGold = 50 * currentLevel;
-                    const costDiamond = currentLevel >= 5 ? (currentLevel - 4) * 2 : 0; // Example: Level 5 needs 2 diamonds, Level 6 needs 4...
+                if (userEdu < requiredEdu) {
+                    return res.json({ success: false, message: `Eğitim seviyeniz yetersiz. Gereken: ${requiredEdu} ve üzeri.` });
+                }
+
+                // Cost Calculation
+                    const costMoney = Math.floor(5000 * Math.pow(1.8, currentLevel));
+                    const costGold = 50 * targetLevel;
+                    const costDiamond = targetLevel >= 5 ? (targetLevel - 4) * 2 : 0;
                     
                     if (user.money < costMoney || user.gold < costGold || (user.diamond || 0) < costDiamond) {
                         return res.json({ success: false, message: 'Yetersiz kaynak.' });
                     }
                     
                     // Duration Calculation
-                    const durationSeconds = currentLevel * 60;
+                    const durationSeconds = targetLevel * 60;
                     // Use MySQL NOW() for consistency if possible, but here we use timestamp for JS compatibility in this file
                     // To be safe and consistent with the "server-side timer" request, let's stick to Date.now() which IS server time.
                     const endTime = Date.now() + (durationSeconds * 1000);
@@ -586,7 +979,7 @@ app.post('/api/arge/start', (req, res) => {
                             
                             const upsertQuery = `
                                 INSERT INTO arge_levels (user_id, mine_type, level, is_researching, research_end_time) 
-                                VALUES (?, ?, 1, 1, ?) 
+                                VALUES (?, ?, 0, 1, ?) 
                                 ON DUPLICATE KEY UPDATE is_researching = 1, research_end_time = ?
                             `;
                             
@@ -638,6 +1031,12 @@ app.post('/api/arge/finish', (req, res) => {
         
         db.query(updateQuery, [newLevel, userId, mineType], (err) => {
             if (err) return res.status(500).json({ success: false });
+            
+            // Notification
+            const notifTitle = 'Araştırma Tamamlandı';
+            const notifMsg = `${mineType.toUpperCase()} araştırması tamamlandı! Yeni Seviye: ${newLevel}`;
+            db.query('INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)', [userId, notifTitle, notifMsg, 'research']);
+            
             res.json({ success: true, newLevel: newLevel });
         });
     });
@@ -656,16 +1055,94 @@ app.get('/api/user-stats/:userId', (req, res) => {
             db.query('UPDATE users SET health = 100 WHERE id = ?', [userId], (err) => {
                 if (!err) {
                     // Remove from active treatments
-                    db.query('DELETE FROM hospital_active_treatments WHERE id = ?', [treatment.id]);
+                    db.query('DELETE FROM hospital_active_treatments WHERE id = ?', [treatment.id], (err) => {
+                        if (!err) {
+                            // Notification
+                            const notifTitle = 'Tedavi Tamamlandı';
+                            const notifMsg = 'Hastanede tedaviniz tamamlandı. Sağlığınız %100 oldu.';
+                            db.query('INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)', [userId, notifTitle, notifMsg, 'hospital']);
+                        }
+                    });
                 }
             });
         }
 
-        const query = 'SELECT money, gold, diamond, health, energy, level, license_hospital_level FROM users WHERE id = ?';
-        db.query(query, [userId], (err, results) => {
-            if (err) return res.status(500).json({ error: err });
-            if (results.length === 0) return res.status(404).json({ error: 'User not found' });
-            res.json(results[0]);
+        // Check for ACTIVE treatment
+        const activeTreatmentQuery = 'SELECT * FROM hospital_active_treatments WHERE user_id = ? AND end_time > NOW()';
+        db.query(activeTreatmentQuery, [userId], (err, activeTreatments) => {
+            const hasActiveTreatment = (!err && activeTreatments.length > 0);
+
+            const query = 'SELECT money, gold, diamond, health, energy, level, license_hospital_level, license_farm_level, education_skill, avatar, username FROM users WHERE id = ?';
+            db.query(query, [userId], (err, results) => {
+                if (err) return res.status(500).json({ error: err });
+                if (results.length === 0) return res.status(404).json({ error: 'User not found' });
+                
+                const userData = results[0];
+                userData.has_active_treatment = hasActiveTreatment;
+                
+                res.json(userData);
+            });
+        });
+    });
+});
+
+// Food Energy Values
+const FOOD_ENERGY = {
+    'bread': 5,
+    'salad': 5,
+    'canned_fruit': 5,
+    'rice_dish': 10,
+    'cake': 15,
+    'cooked_meat': 20,
+    'meat_dish': 25,
+    'energy_bar': 50
+};
+
+// Consume Food Endpoint
+app.post('/api/user/consume', (req, res) => {
+    const { userId, itemKey } = req.body;
+    
+    if (!userId || !itemKey) return res.status(400).json({ success: false, message: 'Eksik parametre.' });
+    
+    const energyGain = FOOD_ENERGY[itemKey];
+    if (!energyGain) return res.status(400).json({ success: false, message: 'Bu ürün tüketilemez.' });
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
+
+        // 1. Check User Energy & Inventory
+        db.query('SELECT energy FROM users WHERE id = ?', [userId], (err, users) => {
+            if (err || users.length === 0) return db.rollback(() => res.status(500).json({ success: false, message: 'Kullanıcı bulunamadı.' }));
+            
+            const currentEnergy = users[0].energy;
+            if (currentEnergy >= 100) {
+                return db.rollback(() => res.json({ success: false, message: 'Enerjiniz zaten dolu (100).' }));
+            }
+
+            db.query('SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?', [userId, itemKey], (err, inv) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Envanter hatası.' }));
+                
+                if (!inv || inv.length === 0 || inv[0].quantity < 1) {
+                    return db.rollback(() => res.json({ success: false, message: 'Envanterinizde bu üründen yok.' }));
+                }
+
+                // 2. Consume Item
+                db.query('UPDATE inventory SET quantity = quantity - 1 WHERE user_id = ? AND item_key = ?', [userId, itemKey], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Envanter güncellenemedi.' }));
+
+                    // 3. Add Energy (Cap at 100)
+                    const newEnergy = Math.min(100, currentEnergy + energyGain);
+                    
+                    db.query('UPDATE users SET energy = ? WHERE id = ?', [newEnergy, userId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Enerji güncellenemedi.' }));
+
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                            res.json({ success: true, message: `${energyGain} Enerji kazanıldı.`, newEnergy: newEnergy });
+                        });
+                    });
+                });
+            });
         });
     });
 });
@@ -680,7 +1157,20 @@ app.get('/api/licenses/:userId', (req, res) => {
         results.forEach(row => {
             licenses[row.mine_type] = row.level;
         });
-        res.json(licenses);
+        
+        // Fetch special licenses from users table
+        const userQuery = 'SELECT license_hospital_level, license_farm_level FROM users WHERE id = ?';
+        db.query(userQuery, [userId], (err, userRes) => {
+            if (!err && userRes.length > 0) {
+                if (userRes[0].license_hospital_level > 0) {
+                    licenses['hospital'] = userRes[0].license_hospital_level;
+                }
+                if (userRes[0].license_farm_level > 0) {
+                    licenses['farm'] = userRes[0].license_farm_level;
+                }
+            }
+            res.json(licenses);
+        });
     });
 });
 
@@ -688,6 +1178,20 @@ app.get('/api/licenses/:userId', (req, res) => {
 app.post('/api/licenses/buy', (req, res) => {
     const { userId, mineType } = req.body;
     
+    // Special handling for Farm License
+    // REMOVED: We now use the generic license table for individual farm licenses.
+    // If we want to keep a "General Farming License" we can keep this, but the UI now requests specific farm licenses.
+    // However, the UI might still request 'farm' if we didn't fully migrate.
+    // But since we updated the UI to fetch farm types and use their slugs (e.g. 'wheat', 'corn'),
+    // those will fall through to the generic handler below, which writes to the `licenses` table.
+    // This is exactly what we want for "veritabanına eklediğimiz tarlaların lisansları olsun".
+    
+    /* 
+    if (mineType === 'farm') {
+        // ... (old logic)
+    }
+    */
+
     // Special handling for Hospital License
     if (mineType === 'hospital') {
         const userQuery = 'SELECT money, gold, diamond, education_skill, license_hospital_level FROM users WHERE id = ?';
@@ -708,6 +1212,8 @@ app.post('/api/licenses/buy', (req, res) => {
             
             const userEdu = Number(user.education_skill) || 0;
             const requiredEdu = nextLevel * 10;
+
+            console.log(`[Hospital] License Buy Debug: UserEdu=${userEdu}, Required=${requiredEdu}, NextLevel=${nextLevel}`);
 
             if (userEdu < requiredEdu) {
                 return res.json({ success: false, message: `Eğitim seviyeniz yetersiz. Gereken: ${requiredEdu} ve üzeri.` });
@@ -765,6 +1271,8 @@ app.post('/api/licenses/buy', (req, res) => {
             const userEdu = Number(user.education_skill) || 0;
             const requiredEdu = nextLevel * 10;
 
+            console.log(`[Generic] License Buy Debug: UserEdu=${userEdu}, Required=${requiredEdu}, NextLevel=${nextLevel}, MineType=${mineType}`);
+
             if (userEdu < requiredEdu) {
                 return res.json({ success: false, message: `Eğitim seviyeniz yetersiz. Gereken: ${requiredEdu} ve üzeri.` });
             }
@@ -806,15 +1314,70 @@ app.post('/api/licenses/buy', (req, res) => {
 
 // --- MINES MANAGEMENT ENDPOINTS ---
 
+const FACTORY_RECIPES = {
+    'bakery': [
+        { id: 'bread', name: 'Ekmek', inputs: { wheat: 3, egg: 3 }, output: { bread: 1 } },
+        { id: 'cake', name: 'Kek', inputs: { wheat: 3, egg: 3, fruit: 3 }, output: { cake: 1 } }
+    ],
+    'ready_food': [
+        { id: 'salad', name: 'Salata', inputs: { vegetable: 3 }, output: { salad: 1 } },
+        { id: 'canned_fruit', name: 'Konserve Meyve', inputs: { fruit: 3 }, output: { canned_fruit: 1 } },
+        { id: 'cooked_meat', name: 'Pişmiş Et', inputs: { meat: 3, olive_oil: 1 }, output: { cooked_meat: 1 } },
+        { id: 'rice_dish', name: 'Pilav', inputs: { rice: 3, olive_oil: 1 }, output: { rice_dish: 1 } },
+        { id: 'meat_dish', name: 'Et Yemeği', inputs: { potato: 3, meat: 3, olive_oil: 1 }, output: { meat_dish: 1 } }
+    ],
+    'olive_oil': [
+        { id: 'olive_oil', name: 'Zeytinyağı', inputs: { olive: 3 }, output: { olive_oil: 1 } }
+    ],
+    'sweets': [
+        { id: 'energy_bar', name: 'Enerji Barı', inputs: { honey: 3, wheat: 3, fruit: 3, egg: 3, olive_oil: 1 }, output: { energy_bar: 1 } }
+    ],
+    'coal_plant': [
+        { id: 'coal_energy', name: 'Termik Enerji', inputs: { coal: 10 }, output: { energy: 1 } }
+    ],
+    'nuclear_plant': [
+        { id: 'nuclear_energy', name: 'Nükleer Enerji', inputs: { uranium: 1 }, output: { energy: 3 } }
+    ]
+};
+
+const FACTORY_INPUTS = {
+    'bakery': ['wheat', 'egg', 'fruit'],
+    'ready_food': ['vegetable', 'fruit', 'meat', 'olive_oil', 'rice', 'potato'],
+    'olive_oil': ['olive'],
+    'sweets': ['honey', 'wheat', 'fruit', 'egg', 'olive_oil'],
+    'coal_plant': ['coal'],
+    'nuclear_plant': ['uranium']
+};
+
 const MINE_TYPES = [
     { id: 'wood', name: 'Odun Kampı', reqLevel: 1, costMoney: 1000, costGold: 0, costDiamond: 0 },
     { id: 'stone', name: 'Taş Ocağı', reqLevel: 5, costMoney: 2000, costGold: 0, costDiamond: 0 },
     { id: 'iron', name: 'Demir Madeni', reqLevel: 15, costMoney: 5000, costGold: 10, costDiamond: 0 },
     { id: 'coal', name: 'Kömür Madeni', reqLevel: 20, costMoney: 8000, costGold: 20, costDiamond: 0 },
+    { id: 'sand', name: 'Kum Madeni', reqLevel: 25, costMoney: 9000, costGold: 25, costDiamond: 0 },
     { id: 'copper', name: 'Bakır Madeni', reqLevel: 30, costMoney: 10000, costGold: 30, costDiamond: 0 },
     { id: 'gold', name: 'Altın Madeni', reqLevel: 40, costMoney: 25000, costGold: 50, costDiamond: 5 },
     { id: 'oil', name: 'Petrol Kuyusu', reqLevel: 50, costMoney: 15000, costGold: 40, costDiamond: 10 },
-    { id: 'uranium', name: 'Uranyum Madeni', reqLevel: 80, costMoney: 50000, costGold: 100, costDiamond: 20 }
+    { id: 'uranium', name: 'Uranyum Madeni', reqLevel: 80, costMoney: 50000, costGold: 100, costDiamond: 20 },
+    // Factories
+    { id: 'lumber', name: 'Kereste Fabrikası', reqLevel: 5, costMoney: 5000, costGold: 0, costDiamond: 0 },
+    { id: 'brick', name: 'Tuğla Fabrikası', reqLevel: 8, costMoney: 8000, costGold: 0, costDiamond: 0 },
+    { id: 'glass', name: 'Cam Fabrikası', reqLevel: 12, costMoney: 12000, costGold: 5, costDiamond: 0 },
+    { id: 'concrete', name: 'Çimento Fabrikası', reqLevel: 15, costMoney: 15000, costGold: 10, costDiamond: 0 },
+    { id: 'steel', name: 'Çelik Fabrikası', reqLevel: 20, costMoney: 25000, costGold: 20, costDiamond: 0 },
+    { id: 'agricultural', name: 'Tarım Çiftliği', reqLevel: 1, costMoney: 2000, costGold: 0, costDiamond: 0 },
+    { id: 'animal', name: 'Hayvan Çiftliği', reqLevel: 3, costMoney: 3000, costGold: 0, costDiamond: 0 },
+    { id: 'bakery', name: 'Fırın ve Unlu Mamuller Tesisi', reqLevel: 5, costMoney: 5000, costGold: 0, costDiamond: 0 },
+    { id: 'ready_food', name: 'Hazır Yemek Üretim Tesisi', reqLevel: 8, costMoney: 8000, costGold: 0, costDiamond: 0 },
+    { id: 'olive_oil', name: 'Zeytinyağı Üretim Tesisi', reqLevel: 10, costMoney: 10000, costGold: 5, costDiamond: 0 },
+    { id: 'sweets', name: 'Tatlı & Şekerleme Üretim Tesisi', reqLevel: 12, costMoney: 12000, costGold: 5, costDiamond: 0 },
+    { id: 'weapon', name: 'Silah Fabrikası', reqLevel: 30, costMoney: 50000, costGold: 50, costDiamond: 10 },
+    { id: 'solar', name: 'Güneş Santrali', reqLevel: 50, costMoney: 100000, costGold: 100, costDiamond: 20 },
+    // Energy Plants
+    { id: 'wind_turbine', name: 'Rüzgar Türbini', reqLevel: 10, costMoney: 15000, costGold: 5, costDiamond: 0 },
+    { id: 'solar_plant', name: 'Güneş Enerjisi Santrali', reqLevel: 15, costMoney: 20000, costGold: 10, costDiamond: 0 },
+    { id: 'coal_plant', name: 'Kömür Enerji Santrali', reqLevel: 20, costMoney: 30000, costGold: 15, costDiamond: 0 },
+    { id: 'nuclear_plant', name: 'Nükleer Enerji Santrali', reqLevel: 50, costMoney: 100000, costGold: 50, costDiamond: 10 }
 ];
 
 // Get My Mines
@@ -829,7 +1392,8 @@ app.get('/api/mines/my/:userId', (req, res) => {
 // Get City Mines
 app.get('/api/mines/city', (req, res) => {
     const query = `
-        SELECT pm.*, u.username 
+        SELECT pm.*, u.username,
+        (SELECT COUNT(*) FROM mine_active_workers WHERE mine_id = pm.id AND end_time > NOW()) as current_workers
         FROM player_mines pm 
         JOIN users u ON pm.user_id = u.id 
         ORDER BY pm.salary DESC
@@ -911,7 +1475,15 @@ app.get('/api/mines/detail/:id', (req, res) => {
     db.query('DELETE FROM mine_active_workers WHERE end_time < DATE_SUB(NOW(), INTERVAL 1 HOUR)', (err) => {
         if (err) console.error('Cleanup Error:', err);
 
-        db.query('SELECT m.*, m.user_id as owner_id, u.username as owner_name FROM player_mines m LEFT JOIN users u ON m.user_id = u.id WHERE m.id = ?', [mineId], (err, results) => {
+        const query = `
+            SELECT m.*, m.raw_material_2, m.user_id as owner_id, u.username as owner_name, ms.production_time 
+            FROM player_mines m 
+            LEFT JOIN users u ON m.user_id = u.id 
+            LEFT JOIN mine_settings ms ON m.mine_type = ms.mine_type
+            WHERE m.id = ?
+        `;
+
+        db.query(query, [mineId], (err, results) => {
             if (err) {
                 console.error('DB Error in mine detail:', err);
                 return res.status(500).json({ success: false, message: 'DB Error' });
@@ -921,51 +1493,68 @@ app.get('/api/mines/detail/:id', (req, res) => {
             
             const mine = results[0];
 
-            // Fetch AR-GE Level
-            const argeQuery = 'SELECT level FROM arge_levels WHERE user_id = ? AND mine_type = ?';
-            db.query(argeQuery, [mine.owner_id, mine.mine_type], (err, argeRes) => {
-                const argeLevel = (argeRes && argeRes.length > 0) ? argeRes[0].level : 1;
-                
-                // Calculate Chance
-                const baseChance = 30;
-                const chanceIncrease = (argeLevel - 1) * 5;
-                const totalChance = Math.min(baseChance + chanceIncrease, 75);
+            // Fetch Active Workers Count
+            const countQuery = 'SELECT COUNT(*) as count FROM mine_active_workers WHERE mine_id = ? AND end_time > NOW()';
+            db.query(countQuery, [mineId], (err, countRes) => {
+                if (err) console.error('Count Error:', err);
+                mine.workers = countRes ? countRes[0].count : 0;
 
-                // Get Logs
-                const logQuery = `
-                    SELECT ml.*, u.username 
-                    FROM mine_logs ml 
-                    JOIN users u ON ml.user_id = u.id 
-                    WHERE ml.mine_id = ? 
-                    ORDER BY ml.created_at DESC 
-                    LIMIT 10
-                `;
-
-                db.query(logQuery, [mineId], (err, logs) => {
-                    if (err) {
-                        console.error('Logs Query Error:', err);
-                        return res.status(500).json({ success: false, message: 'Logs Error' });
-                    }
-
-                    // Get Active Workers (Active OR Current User's Pending)
-                    const workersQuery = `
-                        SELECT maw.*, u.username 
-                        FROM mine_active_workers maw 
-                        JOIN users u ON maw.user_id = u.id 
-                        WHERE maw.mine_id = ? AND (maw.end_time > NOW() OR maw.user_id = ?)
-                    `;
+                // Fetch AR-GE Level
+                const argeQuery = 'SELECT level FROM arge_levels WHERE user_id = ? AND mine_type = ?';
+                db.query(argeQuery, [mine.owner_id, mine.mine_type], (err, argeRes) => {
+                    const argeLevel = (argeRes && argeRes.length > 0) ? argeRes[0].level : 0;
                     
-                    db.query(workersQuery, [mineId, userId], (err, workers) => {
-                        if (err) {
-                            console.error('Workers Query Error:', err);
-                            return res.status(500).json({ success: false, message: 'Workers Error' });
-                        }
-                        
-                        // Add calculated fields to mine object
-                        mine.arge_level = argeLevel;
-                        mine.efficiency = totalChance;
+                    // Calculate Chance
+                    const baseChance = 30;
+                    const chanceIncrease = argeLevel * 10;
+                    const totalChance = Math.min(baseChance + chanceIncrease, 100);
 
-                        res.json({ success: true, mine, logs, workers });
+                    // Get Logs
+                    const logQuery = `
+                        SELECT ml.*, u.username 
+                        FROM mine_logs ml 
+                        JOIN users u ON ml.user_id = u.id 
+                        WHERE ml.mine_id = ? 
+                        ORDER BY ml.created_at DESC 
+                        LIMIT 10
+                    `;
+
+                    db.query(logQuery, [mineId], (err, logs) => {
+                        if (err) {
+                            console.error('Logs Query Error:', err);
+                            return res.status(500).json({ success: false, message: 'Logs Error' });
+                        }
+
+                        // Get Inventory
+                        db.query('SELECT item_key, amount FROM factory_inventory WHERE mine_id = ?', [mineId], (err, invRes) => {
+                            const inventory = {};
+                            if (invRes) {
+                                invRes.forEach(row => inventory[row.item_key] = row.amount);
+                            }
+                            mine.inventory = inventory;
+
+                            // Get Active Workers (Active OR Current User's Pending)
+                            const workersQuery = `
+                                SELECT maw.*, u.username, u.avatar,
+                                TIMESTAMPDIFF(SECOND, NOW(), maw.end_time) as remaining_seconds
+                                FROM mine_active_workers maw 
+                                JOIN users u ON maw.user_id = u.id 
+                                WHERE maw.mine_id = ? AND (maw.end_time > NOW() OR maw.user_id = ?)
+                            `;
+                            
+                            db.query(workersQuery, [mineId, userId], (err, workers) => {
+                                if (err) {
+                                    console.error('Workers Query Error:', err);
+                                    return res.status(500).json({ success: false, message: 'Workers Error' });
+                                }
+                                
+                                // Add calculated fields to mine object
+                                mine.arge_level = argeLevel;
+                                mine.efficiency = totalChance;
+
+                                res.json({ success: true, mine, logs, workers });
+                            });
+                        });
                     });
                 });
             });
@@ -1017,7 +1606,105 @@ app.post('/api/mines/deposit/:id', (req, res) => {
 // Withdraw Stock (Collect Resources)
 app.post('/api/mines/withdraw/:id', (req, res) => {
     const mineId = req.params.id;
-    const { userId } = req.body;
+    const { userId, amount, itemKey } = req.body; // Get amount and itemKey
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
+
+        const withdrawAmount = parseInt(amount);
+        if (!withdrawAmount || withdrawAmount <= 0) {
+            return db.rollback(() => res.json({ success: false, message: 'Geçersiz miktar.' }));
+        }
+
+        // Fetch Mine Info First
+        db.query('SELECT * FROM player_mines WHERE id = ?', [mineId], (err, mines) => {
+            if (err || mines.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Maden bulunamadı.' }));
+            const mine = mines[0];
+
+            // Helper function to process withdrawal
+            const processWithdrawal = (sourceType, currentStock, finalItemKey) => {
+                if (currentStock < withdrawAmount) {
+                    return db.rollback(() => res.json({ success: false, message: `Yetersiz stok. (Mevcut: ${currentStock})` }));
+                }
+
+                // Add to User Inventory
+                const invQuery = `
+                    INSERT INTO inventory (user_id, item_key, quantity) 
+                    VALUES (?, ?, ?) 
+                    ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)
+                `;
+                db.query(invQuery, [userId, finalItemKey, withdrawAmount], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Envanter hatası.' }));
+
+                    // Deduct from Source
+                    let updateQuery;
+                    let updateParams;
+
+                    if (sourceType === 'factory_inventory') {
+                        updateQuery = 'UPDATE factory_inventory SET amount = amount - ? WHERE mine_id = ? AND item_key = ?';
+                        updateParams = [withdrawAmount, mineId, finalItemKey];
+                    } else {
+                        updateQuery = 'UPDATE player_mines SET stock = stock - ? WHERE id = ?';
+                        updateParams = [withdrawAmount, mineId];
+                    }
+
+                    db.query(updateQuery, updateParams, (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Stok güncellenemedi.' }));
+
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                            res.json({ success: true, message: `${withdrawAmount} adet ${finalItemKey} envantere eklendi.` });
+                        });
+                    });
+                });
+            };
+
+            // 1. If itemKey is provided, try factory_inventory first
+            if (itemKey) {
+                db.query('SELECT amount FROM factory_inventory WHERE mine_id = ? AND item_key = ?', [mineId, itemKey], (err, results) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
+                    
+                    const factoryStock = (results.length > 0) ? results[0].amount : 0;
+
+                    if (factoryStock >= withdrawAmount) {
+                        // Withdraw from Factory Inventory
+                        processWithdrawal('factory_inventory', factoryStock, itemKey);
+                    } else {
+                        // Fallback: Check Legacy Stock if itemKey matches mine_type
+                        // Special case: gold -> gold_nugget (legacy)
+                        
+                        let isLegacyMatch = (itemKey === mine.mine_type);
+                        if (mine.mine_type === 'gold' && itemKey === 'gold_nugget') isLegacyMatch = true;
+
+                        if (isLegacyMatch) {
+                             if (mine.stock >= withdrawAmount) {
+                                 processWithdrawal('legacy', mine.stock, itemKey);
+                             } else {
+                                 // Total failure
+                                 return db.rollback(() => res.json({ success: false, message: `Yetersiz stok. (Fabrika: ${factoryStock}, Depo: ${mine.stock})` }));
+                             }
+                        } else {
+                             return db.rollback(() => res.json({ success: false, message: `Yetersiz stok. (Mevcut: ${factoryStock})` }));
+                        }
+                    }
+                });
+            } else {
+                // 2. Legacy Withdrawal (No itemKey provided)
+                let legacyItemKey = mine.mine_type;
+                if (legacyItemKey === 'gold') legacyItemKey = 'gold_nugget';
+                
+                processWithdrawal('legacy', mine.stock, legacyItemKey);
+            }
+        });
+    });
+});
+
+// Deposit Raw Material
+app.post('/api/mines/deposit-raw/:id', (req, res) => {
+    const mineId = req.params.id;
+    const { userId, amount, itemKey } = req.body;
+
+    if (!amount || amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
 
     db.beginTransaction(err => {
         if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
@@ -1025,33 +1712,100 @@ app.post('/api/mines/withdraw/:id', (req, res) => {
         db.query('SELECT * FROM player_mines WHERE id = ?', [mineId], (err, mines) => {
             if (err || mines.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Maden bulunamadı.' }));
             const mine = mines[0];
-            
-            if (mine.stock <= 0) return db.rollback(() => res.json({ success: false, message: 'Depo boş.' }));
-            
-            const amount = mine.stock;
-            let itemKey = mine.mine_type; // e.g. 'wood', 'stone'
-            
-            // Special case for Gold Mine -> Gold Nugget
-            if (itemKey === 'gold') {
-                itemKey = 'gold_nugget';
+
+            // Check if it's a new factory type
+            const allowedInputs = FACTORY_INPUTS[mine.mine_type];
+            if (allowedInputs) {
+                if (!allowedInputs.includes(itemKey)) {
+                    return db.rollback(() => res.json({ success: false, message: 'Bu fabrika bu hammaddeyi kabul etmiyor.' }));
+                }
+
+                // Check User Inventory
+                db.query('SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?', [userId, itemKey], (err, inv) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Envanter hatası.' }));
+                    if (!inv || inv.length === 0 || inv[0].quantity < amount) {
+                        return db.rollback(() => res.json({ success: false, message: 'Envanterinizde yeterli hammadde yok.' }));
+                    }
+
+                    // Deduct from User
+                    db.query('UPDATE inventory SET quantity = quantity - ? WHERE user_id = ? AND item_key = ?', [amount, userId, itemKey], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Envanter güncellenemedi.' }));
+
+                        // Add to Factory Inventory
+                        const upsert = `
+                            INSERT INTO factory_inventory (mine_id, item_key, amount) VALUES (?, ?, ?)
+                            ON DUPLICATE KEY UPDATE amount = amount + VALUES(amount)
+                        `;
+                        db.query(upsert, [mineId, itemKey, amount], (err) => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Fabrika deposu güncellenemedi.' }));
+
+                            db.commit(err => {
+                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                                res.json({ success: true, message: `${amount} adet ${itemKey} fabrikaya eklendi.` });
+                            });
+                        });
+                    });
+                });
+                return;
             }
 
-            // Add to Inventory
-            const invQuery = `
-                INSERT INTO inventory (user_id, item_key, quantity) 
-                VALUES (?, ?, ?) 
-                ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)
-            `;
-            db.query(invQuery, [userId, itemKey, amount], (err) => {
+            // Determine Target Column based on Mine Type and Item Key
+            let targetColumn = 'raw_material';
+            let validItem = false;
+            let requiredItemKey = itemKey; // Use provided key or infer
+
+            if (mine.mine_type === 'lumber') {
+                if (!requiredItemKey || requiredItemKey === 'wood') { requiredItemKey = 'wood'; validItem = true; targetColumn = 'raw_material'; }
+            } else if (mine.mine_type === 'brick') {
+                if (!requiredItemKey || requiredItemKey === 'stone') { requiredItemKey = 'stone'; validItem = true; targetColumn = 'raw_material'; }
+            } else if (mine.mine_type === 'glass') {
+                if (!requiredItemKey || requiredItemKey === 'sand') { requiredItemKey = 'sand'; validItem = true; targetColumn = 'raw_material'; }
+            } else if (mine.mine_type === 'concrete') {
+                if (requiredItemKey === 'sand') { validItem = true; targetColumn = 'raw_material'; }
+                else if (requiredItemKey === 'stone') { validItem = true; targetColumn = 'raw_material_2'; }
+            } else if (mine.mine_type === 'steel') {
+                if (requiredItemKey === 'iron') { validItem = true; targetColumn = 'raw_material'; }
+                else if (requiredItemKey === 'coal') { validItem = true; targetColumn = 'raw_material_2'; }
+            } else {
+                 // Fallback or other types
+                 return db.rollback(() => res.json({ success: false, message: 'Bu tesis hammadde kabul etmiyor veya türü bilinmiyor.' }));
+            }
+
+            if (!validItem) {
+                return db.rollback(() => res.json({ success: false, message: 'Bu fabrika için geçersiz hammadde.' }));
+            }
+
+            // Check Capacity (Separate for each slot)
+            // raw_capacity applies to EACH slot individually
+            const currentAmount = mine[targetColumn] || 0;
+            const maxCapacity = mine.raw_capacity || 1000;
+
+            if (currentAmount + amount > maxCapacity) {
+                return db.rollback(() => res.json({ success: false, message: `Depo kapasitesi yetersiz. (Mevcut: ${currentAmount}, Kapasite: ${maxCapacity})` }));
+            }
+
+            // Check User Inventory
+            db.query('SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?', [userId, requiredItemKey], (err, inv) => {
                 if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Envanter hatası.' }));
+                
+                const userQty = (inv && inv.length > 0) ? inv[0].quantity : 0;
+                if (userQty < amount) {
+                    return db.rollback(() => res.json({ success: false, message: `Envanterde yeterli ${requiredItemKey} yok.` }));
+                }
 
-                // Clear Stock
-                db.query('UPDATE player_mines SET stock = 0 WHERE id = ?', [mineId], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Stok sıfırlanamadı.' }));
+                // Deduct from Inventory
+                db.query('UPDATE inventory SET quantity = quantity - ? WHERE user_id = ? AND item_key = ?', [amount, userId, requiredItemKey], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Envanter güncellenemedi.' }));
 
-                    db.commit(err => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                        res.json({ success: true, message: `${amount} adet ürün envantere eklendi.` });
+                    // Add to Mine Raw Material
+                    const updateQuery = `UPDATE player_mines SET ${targetColumn} = COALESCE(${targetColumn}, 0) + ? WHERE id = ?`;
+                    db.query(updateQuery, [amount, mineId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Fabrika deposu güncellenemedi.' }));
+
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                            res.json({ success: true, message: `${amount} adet ${requiredItemKey} eklendi.` });
+                        });
                     });
                 });
             });
@@ -1126,7 +1880,7 @@ app.post('/api/mines/upgrade/:id', (req, res) => {
                 db.query('UPDATE users SET money = money - ?, gold = gold - ? WHERE id = ?', [costMoney, costGold, userId], (err) => {
                     if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kaynak düşülemedi.' }));
 
-                    db.query('UPDATE player_mines SET level = level + 1 WHERE id = ?', [mineId], (err) => {
+                    db.query('UPDATE player_mines SET level = level + 1, raw_capacity = COALESCE(raw_capacity, 1000) + 500, product_capacity = COALESCE(product_capacity, 500) + 200 WHERE id = ?', [mineId], (err) => {
                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Seviye arttırılamadı.' }));
 
                         db.commit(err => {
@@ -1943,6 +2697,11 @@ app.post('/api/bank-accounts/deposit-collect', (req, res) => {
                             [userId, dep.bank_id, accountId, 'deposit_collect', totalReturn, 'Mevduat Tahsilatı'], (err) => {
                                 if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log error' }));
 
+                                // Notification
+                                const notifTitle = 'Mevduat Vadesi Doldu';
+                                const notifMsg = `Mevduat hesabınızdan ${totalReturn} para tahsil edildi.`;
+                                db.query('INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)', [userId, notifTitle, notifMsg, 'bank']);
+
                                 db.commit(err => {
                                     if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
                                     res.json({ success: true, message: 'Mevduat tahsil edildi.' });
@@ -2648,6 +3407,11 @@ app.post('/api/daily-jobs/complete', (req, res) => {
                         db.query('INSERT INTO completed_daily_jobs (user_id, job_id, completed_at) VALUES (?, ?, ?)', [userId, jobId, today], (err) => {
                             if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log completed error' }));
 
+                            // Notification
+                            const notifTitle = 'Günlük İş Tamamlandı';
+                            const notifMsg = `${job.name} işini tamamladınız. Ödüller hesabınıza eklendi.`;
+                            db.query('INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)', [userId, notifTitle, notifMsg, 'job']);
+
                             // Get Updated User Stats
                             db.query('SELECT money, xp, gold, diamond, level FROM users WHERE id = ?', [userId], (err, users) => {
                                 if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Get stats error' }));
@@ -2686,6 +3450,48 @@ app.post('/api/admin/update-user', (req, res) => {
     db.query(query, [money, gold, diamond, energy, health, level, id], (err, result) => {
         if (err) return res.status(500).json({ success: false, error: err });
         res.json({ success: true });
+    });
+});
+
+// Add Item to User Inventory (Admin)
+app.post('/api/admin/add-item', (req, res) => {
+    const { userId, itemKey, amount } = req.body;
+    const qty = parseInt(amount);
+
+    if (!userId || !itemKey || isNaN(qty) || qty <= 0) {
+        return res.json({ success: false, message: 'Geçersiz veri.' });
+    }
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
+
+        // Check if user exists
+        db.query('SELECT username FROM users WHERE id = ?', [userId], (err, users) => {
+            if (err || users.length === 0) return db.rollback(() => res.json({ success: false, message: 'Kullanıcı bulunamadı.' }));
+            const username = users[0].username;
+
+            // Add to Inventory
+            const query = `
+                INSERT INTO inventory (user_id, item_key, quantity) 
+                VALUES (?, ?, ?) 
+                ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)
+            `;
+            
+            db.query(query, [userId, itemKey, qty], (err) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Envanter güncellenemedi.' }));
+
+                // Log Action
+                const logMsg = `Admin tarafından ${qty} adet ${itemKey} eklendi.`;
+                db.query('INSERT INTO user_logs (user_id, log_type, message) VALUES (?, ?, ?)', [userId, 'admin_add_item', logMsg], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log hatası.' }));
+
+                    db.commit(err => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                        res.json({ success: true, message: `${username} adlı kullanıcıya ${qty} adet ${itemKey} eklendi.` });
+                    });
+                });
+            });
+        });
     });
 });
 
@@ -2773,6 +3579,7 @@ app.post('/api/mines/start', (req, res) => {
         const query = `
             SELECT u.energy, u.health, u.education_skill, m.id as mine_id, m.max_workers, m.reserve, m.salary, m.vault, m.mine_type, m.stock, m.level, m.user_id as owner_id,
             (SELECT level FROM arge_levels WHERE user_id = m.user_id AND mine_type = m.mine_type) as arge_level,
+            (SELECT production_time FROM mine_settings WHERE mine_type = m.mine_type) as production_time,
             (SELECT COUNT(*) FROM mine_active_workers WHERE mine_id = m.id AND end_time > NOW()) as current_workers,
             (SELECT COUNT(*) FROM mine_active_workers WHERE user_id = ? AND end_time > NOW()) as any_active_workers
             FROM users u, player_mines m
@@ -2784,7 +3591,9 @@ app.post('/api/mines/start', (req, res) => {
             if (results.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Kullanıcı veya Maden bulunamadı.' }));
 
             const data = results[0];
-            const { energy, health, education_skill, max_workers, current_workers, any_active_workers, reserve, salary, vault, arge_level, stock, level } = data;
+            const { energy, health, education_skill, max_workers, current_workers, any_active_workers, reserve, salary, vault, arge_level, stock, level, production_time } = data;
+            
+            console.log(`[Mining Start] User: ${userId}, Mine: ${mineId}, Type: ${data.mine_type}, ProdTime: ${production_time}`);
 
             // 2. Checks
             const ENERGY_COST = 10;
@@ -2797,47 +3606,154 @@ app.post('/api/mines/start', (req, res) => {
             if (reserve <= 0) return db.rollback(() => res.json({ success: false, message: 'Maden rezervi tükenmiş!' }));
             if (stock >= MAX_STOCK) return db.rollback(() => res.json({ success: false, message: 'Maden deposu dolu! Üretim yapılamaz.' }));
             
-            // Vault Check (Estimated Max Cost)
-            const userSkill = education_skill || 1;
-            const { max } = getBaseProductionRange(userSkill);
-            const currentArge = arge_level || 1;
-            const multiplier = 1.0 + (currentArge - 1) * 0.1;
-            const maxProduction = Math.ceil(max * multiplier);
-            const estimatedCost = maxProduction * salary;
+            // Raw Material Check (Only for Factories)
+            // Factories consume raw materials to produce goods.
+            // Assuming 'mine_type' distinguishes factories.
+            // If it's a factory (e.g. lumber mill), check for raw material (wood).
+            // For now, let's assume all player_mines are factories that need raw materials EXCEPT mines (gold, coal etc which extract from reserve).
+            // But the prompt says "3 odun harcanıp 1 tahta elde edilecek". This implies a conversion.
+            // Let's check if raw_material column exists and is sufficient.
+            
+            // We need to fetch raw_material from player_mines.
+            // The query above already fetches some fields, let's add raw_material.
+            
+            // Re-query with raw_material and raw_material_2
+            db.query('SELECT raw_material, raw_material_2 FROM player_mines WHERE id = ?', [mineId], (err, rawRes) => {
+                 if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Raw Material Check Error' }));
+                 
+                 const raw1 = rawRes[0].raw_material || 0;
+                 const raw2 = rawRes[0].raw_material_2 || 0;
 
-            if (vault < estimatedCost) {
-                return db.rollback(() => res.json({ success: false, message: 'Maden kasasında maaş için yeterli bakiye yok!' }));
-            }
+                 // Calculate Production Amount
+                 const userSkill = education_skill || 0;
+                 const range = getBaseProductionRange(userSkill);
+                 const currentArge = arge_level || 1;
+                 const multiplier = 1.0 + (currentArge - 1) * 0.1;
+                 
+                 // Random amount within range * multiplier
+                 const baseAmount = Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
+                 const productionAmount = Math.max(1, Math.floor(baseAmount * multiplier));
+                 
+                 console.log(`[Mining Start] User: ${userId}, Mine: ${mineId}, Skill: ${userSkill}, Range: ${range.min}-${range.max}, Base: ${baseAmount}, Mult: ${multiplier}, Final: ${productionAmount}`);
 
-            // Capacity Check
-            if (current_workers >= (max_workers || 5)) {
-                return db.rollback(() => res.json({ success: false, message: 'Maden kapasitesi dolu! (' + current_workers + '/' + (max_workers || 5) + ')' }));
-            }
+                 // Determine Requirements
+                 let req1 = 0;
+                 let req2 = 0;
+                 let raw1Name = 'Hammadde';
+                 let raw2Name = 'Hammadde 2';
+                 let productKey = null;
+                 let recipeInputs = null;
 
-            // 3. Deduct Energy/Health
-            db.query('UPDATE users SET energy = energy - ?, health = health - ? WHERE id = ?', [ENERGY_COST, HEALTH_COST, userId], (err) => {
-                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User Update Error' }));
+                 // Check if it's a new factory type
+                 const recipes = FACTORY_RECIPES[data.mine_type];
+                 if (recipes) {
+                     const recipeId = req.body.recipeId;
+                     const recipe = recipes.find(r => r.id === recipeId) || recipes[0]; // Default to first if not specified
+                     
+                     if (!recipe) return db.rollback(() => res.json({ success: false, message: 'Geçersiz reçete.' }));
+                     
+                     productKey = Object.keys(recipe.output)[0]; // e.g. 'bread'
+                     recipeInputs = recipe.inputs; // { wheat: 3, egg: 3 }
+                     
+                     // We need to check factory_inventory for these inputs
+                     // We need to query factory_inventory first
+                     db.query('SELECT item_key, amount FROM factory_inventory WHERE mine_id = ?', [mineId], (err, invRes) => {
+                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Inventory Check Error' }));
+                         
+                         const inventory = {};
+                         invRes.forEach(row => inventory[row.item_key] = row.amount);
+                         
+                         // Check requirements
+                         for (const [key, val] of Object.entries(recipeInputs)) {
+                             const required = val * productionAmount;
+                             if ((inventory[key] || 0) < required) {
+                                 return db.rollback(() => res.json({ success: false, message: `Yetersiz hammadde: ${key} (${required} gerekli)` }));
+                             }
+                         }
+                         
+                         // Proceed to deduct
+                         proceedWithProduction(recipeInputs, productKey, productionAmount, true);
+                     });
+                     return; // Exit main flow, continue in callback
+                 }
 
-                // 4. Add to Active Workers (Duration: 1 minute)
-                const WORK_DURATION_MINUTES = 1;
-                const endTime = new Date(Date.now() + WORK_DURATION_MINUTES * 60000);
-                
-                db.query('INSERT INTO mine_active_workers (mine_id, user_id, end_time) VALUES (?, ?, ?)', [mineId, userId, endTime], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Active Worker Error' }));
+                 // Legacy Logic for old factories
+                 if (data.mine_type === 'lumber') { req1 = productionAmount * 3; raw1Name = 'Odun'; }
+                 else if (data.mine_type === 'brick') { req1 = productionAmount * 3; raw1Name = 'Taş'; }
+                 else if (data.mine_type === 'glass') { req1 = productionAmount * 3; raw1Name = 'Kum'; }
+                 else if (data.mine_type === 'concrete') { req1 = productionAmount * 3; req2 = productionAmount * 3; raw1Name = 'Kum'; raw2Name = 'Taş'; }
+                 else if (data.mine_type === 'steel') { req1 = productionAmount * 3; req2 = productionAmount * 3; raw1Name = 'Demir'; raw2Name = 'Kömür'; }
+                 else {
+                     req1 = 0; 
+                 }
 
-                    db.commit(err => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                        
-                        res.json({ 
-                            success: true, 
-                            message: 'Çalışma başladı! 1 dakika sonra üretimi toplayabilirsin.',
-                            newEnergy: energy - ENERGY_COST,
-                            newHealth: health - HEALTH_COST,
-                            workEndTime: endTime
-                        });
+                 if (req1 > 0 && raw1 < req1) {
+                     return db.rollback(() => res.json({ success: false, message: `Fabrikada yeterli ${raw1Name} yok! (${req1} gerekli, ${raw1} mevcut)` }));
+                 }
+                 if (req2 > 0 && raw2 < req2) {
+                     return db.rollback(() => res.json({ success: false, message: `Fabrikada yeterli ${raw2Name} yok! (${req2} gerekli, ${raw2} mevcut)` }));
+                 }
+                 
+                 proceedWithProduction(null, null, productionAmount, false);
+
+                 function proceedWithProduction(inputs, pKey, amount, isNewFactory) {
+                    // Vault Check (Estimated Max Cost)
+                    const { max } = getBaseProductionRange(userSkill);
+                    const maxProduction = Math.ceil(max * multiplier);
+                    const estimatedCost = maxProduction * salary; 
+
+                    if (vault < estimatedCost) {
+                        return db.rollback(() => res.json({ success: false, message: `Fabrika kasasında maaş için yeterli bakiye yok! (Tahmini: ${estimatedCost} ₺)` }));
+                    }
+
+                    // Capacity Check
+                    if (current_workers >= (max_workers || 5)) {
+                        return db.rollback(() => res.json({ success: false, message: 'Maden kapasitesi dolu! (' + current_workers + '/' + (max_workers || 5) + ')' }));
+                    }
+
+                    // 3. Deduct Energy/Health AND Raw Material
+                    db.query('UPDATE users SET energy = energy - ?, health = health - ? WHERE id = ?', [ENERGY_COST, HEALTH_COST, userId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User Update Error' }));
+
+                        const afterDeduct = () => {
+                            // 4. Add to Active Workers (Duration: Dynamic)
+                            const durationSeconds = production_time || 60;
+                            const endTime = new Date(Date.now() + durationSeconds * 1000);
+                            
+                            db.query('INSERT INTO mine_active_workers (mine_id, user_id, end_time, amount, product_key) VALUES (?, ?, ?, ?, ?)', [mineId, userId, endTime, amount, pKey], (err) => {
+                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Active Worker Error' }));
+                                
+                                db.commit(err => {
+                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                                    res.json({ success: true, message: `İş başı yapıldı! (Tahmini Üretim: ${amount})`, endTime: endTime });
+                                });
+                            });
+                        };
+
+                        if (isNewFactory) {
+                            // Deduct from factory_inventory
+                            const queries = [];
+                            for (const [key, val] of Object.entries(inputs)) {
+                                const required = val * amount;
+                                queries.push(new Promise((resolve, reject) => {
+                                    db.query('UPDATE factory_inventory SET amount = amount - ? WHERE mine_id = ? AND item_key = ?', [required, mineId, key], (err) => {
+                                        if (err) reject(err);
+                                        else resolve();
+                                    });
+                                }));
+                            }
+                            Promise.all(queries).then(afterDeduct).catch(err => db.rollback(() => res.status(500).json({ success: false, message: 'Inventory Update Error' })));
+                        } else {
+                            // Deduct Raw Material (Legacy)
+                            db.query('UPDATE player_mines SET raw_material = raw_material - ?, raw_material_2 = raw_material_2 - ? WHERE id = ?', [req1, req2, mineId], (err) => {
+                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Raw Material Update Error' }));
+                                afterDeduct();
+                            });
+                        }
                     });
-                });
+                 }
             });
+
         });
     });
 });
@@ -2855,7 +3771,14 @@ app.post('/api/mines/collect', (req, res) => {
             if (workers.length === 0) return db.rollback(() => res.json({ success: false, message: 'Aktif çalışma bulunamadı.' }));
 
             const worker = workers[0];
-            if (new Date() < new Date(worker.end_time)) {
+            console.log('[Mining Collect] Worker Object:', worker);
+            
+            // Grace period of 5 seconds
+            const now = new Date();
+            const endTime = new Date(worker.end_time);
+            const gracePeriod = 5000; 
+
+            if (now.getTime() < (endTime.getTime() - gracePeriod)) {
                 return db.rollback(() => res.json({ success: false, message: 'Çalışma henüz bitmedi!' }));
             }
 
@@ -2874,24 +3797,27 @@ app.post('/api/mines/collect', (req, res) => {
                 const data = results[0];
                 const { education_skill, owner_id, level, salary, vault, reserve, arge_level } = data;
 
-                // 3. Calculate Production based on Education & AR-GE
-                const userSkill = education_skill || 1;
-                const { min, max } = getBaseProductionRange(userSkill);
-                const baseAmount = Math.floor(Math.random() * (max - min + 1)) + min;
-                
-                // AR-GE Multiplier
-                const currentArge = arge_level || 1;
-                const multiplier = 1.0 + (currentArge - 1) * 0.1;
-                
-                const amount = Math.round(baseAmount * multiplier);
+                // 3. Get Production Amount from Worker Record
+                const amount = worker.amount || 1;
+                let productKey = worker.product_key; // Get product key
+
+                // Fallback for missing productKey
+                if (!productKey && FACTORY_RECIPES[data.mine_type]) {
+                    const recipes = FACTORY_RECIPES[data.mine_type];
+                    if (recipes && recipes.length > 0) {
+                        productKey = Object.keys(recipes[0].output)[0];
+                        console.log(`[Mining Collect] Recovered productKey: ${productKey} for mine type: ${data.mine_type}`);
+                    }
+                }
+
+                console.log(`[Mining Collect] User: ${userId}, Mine: ${mineId}, Worker Amount: ${worker.amount}, Final Amount: ${amount}, Product: ${productKey}`);
                 
                 // 4. Calculate Earnings
                 const totalEarnings = amount * salary;
-                // const isOwner = (userId == owner_id); // Removed owner check for salary
                 
                 // Check vault for everyone (including owner)
                 if (vault < totalEarnings) {
-                    return db.rollback(() => res.json({ success: false, message: 'Maden kasasında yeterli para yok!' }));
+                    return db.rollback(() => res.json({ success: false, message: `Fabrika kasasında yeterli maaş yok! (${totalEarnings} ₺ gerekli)` }));
                 }
 
                 // 5. Updates
@@ -2902,18 +3828,292 @@ app.post('/api/mines/collect', (req, res) => {
                 db.query('UPDATE users SET money = money + ? WHERE id = ?', [userMoneyChange, userId], (err) => {
                     if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User Update Error' }));
 
-                    // Update Mine (Stock, Reserve, Vault)
-                    db.query('UPDATE player_mines SET stock = stock + ?, reserve = GREATEST(0, reserve - ?), vault = vault + ? WHERE id = ?', 
-                        [amount, amount, vaultChange, mineId], (err) => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Mine Update Error' }));
+                    // Update Mine Stock or Factory Inventory
+                    let updateStockQuery;
+                    let updateStockParams;
+
+                    if (productKey) {
+                        // Update factory_inventory for specific product
+                        updateStockQuery = `
+                            INSERT INTO factory_inventory (mine_id, item_key, amount) 
+                            VALUES (?, ?, ?) 
+                            ON DUPLICATE KEY UPDATE amount = amount + ?
+                        `;
+                        updateStockParams = [mineId, productKey, amount, amount];
+                    } else {
+                        // Legacy: Update player_mines stock
+                        updateStockQuery = 'UPDATE player_mines SET stock = stock + ? WHERE id = ?';
+                        updateStockParams = [amount, mineId];
+                    }
+
+                    db.query(updateStockQuery, updateStockParams, (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Stock Update Error' }));
+
+                        // Update Vault
+                        db.query('UPDATE player_mines SET vault = vault + ? WHERE id = ?', [vaultChange, mineId], (err) => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Vault Update Error' }));
+
+                            // Log Transaction
+                            const logQuery = 'INSERT INTO mine_logs (mine_id, user_id, amount, earnings, product_key) VALUES (?, ?, ?, ?, ?)';
+                            db.query(logQuery, [mineId, userId, amount, totalEarnings, productKey], (err) => {
+                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log Error' }));
+
+                                // Remove Active Worker
+                                db.query('DELETE FROM mine_active_workers WHERE id = ?', [worker.id], (err) => {
+                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Delete Worker Error' }));
+
+                                    db.commit(err => {
+                                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                                        
+                                        res.json({ 
+                                            success: true, 
+                                            message: `Üretim Tamamlandı! +${amount} ${productKey || 'Ürün'}, +${totalEarnings} ₺ Kazanç.`,
+                                            amount: amount,
+                                            salary: totalEarnings,
+                                            newReserve: reserve // No change
+                                        });
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// --- RANCH MANAGEMENT DETAILS ---
+
+// Ranch Details
+app.get('/api/ranches/detail/:id', (req, res) => {
+    const ranchId = req.params.id;
+    const userId = req.query.userId || 0;
+    console.log('Requesting ranch detail for ID:', ranchId, 'User:', userId);
+
+    // Cleanup old workers first
+    db.query('DELETE FROM ranch_active_workers WHERE end_time < DATE_SUB(NOW(), INTERVAL 1 HOUR)', (err) => {
+        if (err) console.error('Cleanup Error:', err);
+
+        const query = `
+            SELECT pr.*, rt.name as ranch_name, rt.slug as ranch_type, rt.image_path, u.username as owner_name,
+            COALESCE(rs.production_time, 60) as production_time
+            FROM player_ranches pr 
+            JOIN ranch_types rt ON pr.ranch_type_id = rt.id
+            LEFT JOIN users u ON pr.user_id = u.id 
+            LEFT JOIN ranch_settings rs ON rt.slug = rs.ranch_type
+            WHERE pr.id = ?
+        `;
+
+        db.query(query, [ranchId], (err, results) => {
+            if (err) {
+                console.error('DB Error in ranch detail:', err);
+                return res.status(500).json({ success: false, message: 'DB Error' });
+            }
+            if (results.length === 0) return res.status(404).json({ success: false, message: 'Çiftlik bulunamadı.' });
+            
+            const ranch = results[0];
+
+            // Fetch Active Workers Count
+            const countQuery = 'SELECT COUNT(*) as count FROM ranch_active_workers WHERE ranch_id = ? AND end_time > NOW()';
+            db.query(countQuery, [ranchId], (err, countRes) => {
+                if (err) console.error('Count Error:', err);
+                ranch.workers = countRes ? countRes[0].count : 0;
+
+                // Get Logs
+                const logQuery = `
+                    SELECT rl.*, u.username 
+                    FROM ranch_logs rl 
+                    JOIN users u ON rl.user_id = u.id 
+                    WHERE rl.ranch_id = ? 
+                    ORDER BY rl.created_at DESC 
+                    LIMIT 10
+                `;
+
+                db.query(logQuery, [ranchId], (err, logs) => {
+                    if (err) {
+                        console.error('Logs Query Error:', err);
+                        return res.status(500).json({ success: false, message: 'Logs Error' });
+                    }
+
+                    // Parse amount from message if missing (for old logs)
+                    logs.forEach(log => {
+                        if ((!log.amount || log.amount === 0) && log.message) {
+                            const match = log.message.match(/Üretim: \+(\d+)/);
+                            if (match) {
+                                log.amount = parseInt(match[1]);
+                            }
+                        }
+                    });
+
+                    // Get Active Workers
+                    const workersQuery = `
+                        SELECT raw.*, u.username, u.avatar,
+                        TIMESTAMPDIFF(SECOND, NOW(), raw.end_time) as remaining_seconds
+                        FROM ranch_active_workers raw 
+                        JOIN users u ON raw.user_id = u.id 
+                        WHERE raw.ranch_id = ? AND (raw.end_time > NOW() OR raw.user_id = ?)
+                    `;
+                    
+                    db.query(workersQuery, [ranchId, userId], (err, workers) => {
+                        if (err) {
+                            console.error('Workers Query Error:', err);
+                            return res.status(500).json({ success: false, message: 'Workers Error' });
+                        }
+                        
+                        res.json({ success: true, ranch, logs, workers });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Start Working on a Ranch
+app.post('/api/ranches/start', (req, res) => {
+    const { userId, ranchId } = req.body;
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
+
+        // 1. Get User & Ranch Data
+        const query = `
+            SELECT u.energy, u.health, u.education_skill, pr.id as ranch_id, pr.max_workers, pr.reserve, pr.salary, pr.vault, pr.stock, pr.level, pr.user_id as owner_id,
+            rt.slug as ranch_type,
+            COALESCE(rs.production_time, 60) as production_time,
+            (SELECT COUNT(*) FROM ranch_active_workers WHERE ranch_id = pr.id AND end_time > NOW()) as current_workers,
+            (SELECT COUNT(*) FROM ranch_active_workers WHERE user_id = ? AND end_time > NOW()) as any_active_workers
+            FROM users u, player_ranches pr
+            JOIN ranch_types rt ON pr.ranch_type_id = rt.id
+            LEFT JOIN ranch_settings rs ON rt.slug = rs.ranch_type
+            WHERE u.id = ? AND pr.id = ?
+        `;
+
+        db.query(query, [userId, userId, ranchId], (err, results) => {
+            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
+            if (results.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Kullanıcı veya Çiftlik bulunamadı.' }));
+
+            const data = results[0];
+            const { energy, health, education_skill, max_workers, current_workers, any_active_workers, reserve, salary, vault, stock, level, production_time } = data;
+            
+            // 2. Checks
+            const ENERGY_COST = 10;
+            const HEALTH_COST = 5;
+            const MAX_STOCK = level * 1000;
+
+            if (any_active_workers > 0) return db.rollback(() => res.json({ success: false, message: 'Zaten bir işte çalışıyorsun! Önce onu tamamla.' }));
+            if (energy < ENERGY_COST) return db.rollback(() => res.json({ success: false, message: 'Yetersiz Enerji!' }));
+            if (health < HEALTH_COST) return db.rollback(() => res.json({ success: false, message: 'Sağlığın çok düşük!' }));
+            if (reserve <= 0) return db.rollback(() => res.json({ success: false, message: 'Çiftlik rezervi tükenmiş!' }));
+            if (stock >= MAX_STOCK) return db.rollback(() => res.json({ success: false, message: 'Çiftlik deposu dolu! Üretim yapılamaz.' }));
+            
+            // Calculate Production Amount
+            const userSkill = education_skill || 0;
+            const range = getBaseProductionRange(userSkill);
+            const multiplier = 1.0; // No AR-GE for ranches yet
+            
+            const baseAmount = Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
+            let productionAmount = Math.max(1, Math.floor(baseAmount * multiplier));
+            
+            // Determine Feed Cost Ratio
+            let feedCostPerUnit = 1;
+            if (data.ranch_type === 'sheep' || data.ranch_type === 'cow' || data.ranch_type === 'bee') {
+                feedCostPerUnit = 3;
+            }
+
+            // Check Reserve (Feed)
+            const maxProductionByFeed = Math.floor(reserve / feedCostPerUnit);
+            if (productionAmount > maxProductionByFeed) {
+                productionAmount = maxProductionByFeed;
+            }
+
+            if (productionAmount <= 0) {
+                return db.rollback(() => res.json({ success: false, message: 'Yetersiz Yem (Rezerv)!' }));
+            }
+            
+            const totalFeedCost = productionAmount * feedCostPerUnit;
+
+            // Vault Check
+            const estimatedCost = Math.ceil(range.max * multiplier) * salary; 
+            if (vault < estimatedCost) {
+                return db.rollback(() => res.json({ success: false, message: `Çiftlik kasasında maaş için yeterli bakiye yok! (Tahmini: ${estimatedCost} ₺)` }));
+            }
+
+            if (current_workers >= (max_workers || 5)) {
+                return db.rollback(() => res.json({ success: false, message: 'Çiftlik kapasitesi dolu!' }));
+            }
+
+            // 3. Deduct Energy/Health AND Reserve (Feed)
+            db.query('UPDATE users SET energy = energy - ?, health = health - ? WHERE id = ?', [ENERGY_COST, HEALTH_COST, userId], (err) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User Update Error' }));
+
+                db.query('UPDATE player_ranches SET reserve = reserve - ? WHERE id = ?', [totalFeedCost, ranchId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Reserve Update Error' }));
+
+                    // 4. Add to Active Workers (Duration: Dynamic)
+                    const durationSeconds = production_time || 60;
+                    const endTime = new Date(Date.now() + durationSeconds * 1000);
+                    
+                    db.query('INSERT INTO ranch_active_workers (ranch_id, user_id, end_time, amount) VALUES (?, ?, ?, ?)', [ranchId, userId, endTime, productionAmount], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Active Worker Error' }));
+                        
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                            res.json({ success: true, message: `İş başı yapıldı! (Tahmini Üretim: ${productionAmount})`, endTime: endTime });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Collect Reward from Ranch
+app.post('/api/ranches/collect', (req, res) => {
+    const { userId, ranchId } = req.body;
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
+
+        // 1. Check Active Worker
+        db.query('SELECT * FROM ranch_active_workers WHERE user_id = ? AND ranch_id = ?', [userId, ranchId], (err, workers) => {
+            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
+            if (workers.length === 0) return db.rollback(() => res.json({ success: false, message: 'Aktif çalışma bulunamadı.' }));
+
+            const worker = workers[0];
+            
+            // Check Time
+            if (new Date() < new Date(worker.end_time)) {
+                return db.rollback(() => res.json({ success: false, message: 'İş henüz bitmedi.' }));
+            }
+
+            const amount = worker.amount;
+
+            // 2. Get Ranch Info
+            db.query('SELECT * FROM player_ranches WHERE id = ?', [ranchId], (err, ranches) => {
+                if (err || ranches.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Çiftlik bulunamadı.' }));
+                const ranch = ranches[0];
+                
+                const salaryPerUnit = ranch.salary || 0;
+                const totalEarnings = amount * salaryPerUnit;
+
+                // 3. Update User Money (Salary)
+                db.query('UPDATE users SET money = money + ? WHERE id = ?', [totalEarnings, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User Money Error' }));
+
+                    // 4. Update Ranch (Stock +, Vault -)
+                    db.query('UPDATE player_ranches SET stock = stock + ?, vault = vault - ? WHERE id = ?', 
+                        [amount, totalEarnings, ranchId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Ranch Update Error' }));
 
                         // Log Transaction
-                        const logQuery = 'INSERT INTO mine_logs (mine_id, user_id, amount, earnings) VALUES (?, ?, ?, ?)';
-                        db.query(logQuery, [mineId, userId, amount, totalEarnings], (err) => {
+                        const logQuery = 'INSERT INTO ranch_logs (ranch_id, user_id, message, amount) VALUES (?, ?, ?, ?)';
+                        const message = `Üretim: +${amount}, Kazanç: ${totalEarnings} ₺`;
+                        db.query(logQuery, [ranchId, userId, message, amount], (err) => {
                             if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log Error' }));
 
                             // Remove Active Worker
-                            db.query('DELETE FROM mine_active_workers WHERE id = ?', [worker.id], (err) => {
+                            db.query('DELETE FROM ranch_active_workers WHERE id = ?', [worker.id], (err) => {
                                 if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Delete Worker Error' }));
 
                                 db.commit(err => {
@@ -2923,9 +4123,1263 @@ app.post('/api/mines/collect', (req, res) => {
                                         success: true, 
                                         message: `Üretim Tamamlandı! +${amount} Üretim, +${totalEarnings} ₺ Kazanç.`,
                                         amount: amount,
-                                        salary: totalEarnings,
-                                        newReserve: Math.max(0, reserve - amount)
+                                        salary: totalEarnings
                                     });
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// --- FARM SYSTEM (COPIED FROM RANCH) ---
+
+// Get Farm Counts
+app.get('/api/farms/counts', (req, res) => {
+    const query = `
+        SELECT ft.slug, COUNT(pf.id) as count 
+        FROM farm_types ft 
+        LEFT JOIN player_farms pf ON ft.id = pf.farm_type_id 
+        GROUP BY ft.slug
+    `;
+    
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error('Farm counts error:', err);
+            return res.status(500).json({});
+        }
+        
+        const counts = {};
+        results.forEach(row => {
+            counts[row.slug] = row.count;
+        });
+        
+        res.json(counts);
+    });
+});
+
+// Get User Farms
+app.get('/api/farms/my/:userId', (req, res) => {
+    const userId = req.params.userId;
+    const query = `
+        SELECT pf.id as farm_id, ft.slug as id, ft.name, 1 as count 
+        FROM player_farms pf 
+        JOIN farm_types ft ON pf.farm_type_id = ft.id 
+        WHERE pf.user_id = ?
+    `;
+    
+    db.query(query, [userId], (err, results) => {
+        if (err) {
+            console.error('My farms error:', err);
+            return res.status(500).json([]);
+        }
+        res.json(results);
+    });
+});
+
+// Get Farm Detail
+app.get('/api/farms/detail/:id', (req, res) => {
+    const farmId = req.params.id;
+    const userId = req.query.userId || 0;
+    console.log('Requesting farm detail for ID:', farmId, 'User:', userId);
+
+    // Cleanup old workers first
+    db.query('DELETE FROM farm_active_workers WHERE end_time < DATE_SUB(NOW(), INTERVAL 1 HOUR)', (err) => {
+        if (err) console.error('Cleanup Error:', err);
+
+        const query = `
+            SELECT pf.*, ft.name as farm_name, ft.slug as farm_type, ft.image_path, u.username as owner_name,
+            COALESCE(ft.production_time, 60) as production_time
+            FROM player_farms pf 
+            JOIN farm_types ft ON pf.farm_type_id = ft.id
+            LEFT JOIN users u ON pf.user_id = u.id 
+            WHERE pf.id = ?
+        `;
+
+        db.query(query, [farmId], (err, results) => {
+            if (err) {
+                console.error('DB Error in farm detail:', err);
+                return res.status(500).json({ success: false, message: 'DB Error' });
+            }
+            if (results.length === 0) return res.status(404).json({ success: false, message: 'Tarla bulunamadı.' });
+            
+            const farm = results[0];
+
+            // Fetch Active Workers Count
+            const countQuery = 'SELECT COUNT(*) as count FROM farm_active_workers WHERE farm_id = ? AND end_time > NOW()';
+            db.query(countQuery, [farmId], (err, countRes) => {
+                if (err) console.error('Count Error:', err);
+                farm.workers = countRes ? countRes[0].count : 0;
+
+                // Get Logs
+                const logQuery = `
+                    SELECT fl.*, u.username 
+                    FROM farm_logs fl 
+                    JOIN users u ON fl.user_id = u.id 
+                    WHERE fl.farm_id = ? 
+                    ORDER BY fl.created_at DESC 
+                    LIMIT 10
+                `;
+
+                db.query(logQuery, [farmId], (err, logs) => {
+                    if (err) {
+                        console.error('Logs Query Error:', err);
+                        return res.status(500).json({ success: false, message: 'Logs Error' });
+                    }
+
+                    // Parse amount from message if missing
+                    logs.forEach(log => {
+                        if ((!log.amount || log.amount === 0) && log.message) {
+                            const match = log.message.match(/Üretim: \+(\d+)/);
+                            if (match) {
+                                log.amount = parseInt(match[1]);
+                            }
+                        }
+                    });
+
+                    // Get Active Workers
+                    const workersQuery = `
+                        SELECT faw.*, u.username, u.avatar,
+                        TIMESTAMPDIFF(SECOND, NOW(), faw.end_time) as remaining_seconds
+                        FROM farm_active_workers faw 
+                        JOIN users u ON faw.user_id = u.id 
+                        WHERE faw.farm_id = ? AND (faw.end_time > NOW() OR faw.user_id = ?)
+                    `;
+                    
+                    db.query(workersQuery, [farmId, userId], (err, workers) => {
+                        if (err) {
+                            console.error('Workers Query Error:', err);
+                            return res.status(500).json({ success: false, message: 'Workers Error' });
+                        }
+                        
+                        res.json({ success: true, farm, logs, workers });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Start Working on a Farm
+app.post('/api/farms/start', (req, res) => {
+    const { userId, farmId } = req.body;
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
+
+        // 1. Get User & Farm Data
+        const query = `
+            SELECT u.energy, u.health, u.education_skill, pf.id as farm_id, pf.max_workers, pf.reserve, pf.salary, pf.vault, pf.stock, pf.level, pf.user_id as owner_id,
+            ft.slug as farm_type,
+            COALESCE(ft.production_time, 60) as production_time,
+            (SELECT COUNT(*) FROM farm_active_workers WHERE farm_id = pf.id AND end_time > NOW()) as current_workers,
+            (SELECT COUNT(*) FROM farm_active_workers WHERE user_id = ? AND end_time > NOW()) as any_active_workers
+            FROM users u, player_farms pf
+            JOIN farm_types ft ON pf.farm_type_id = ft.id
+            WHERE u.id = ? AND pf.id = ?
+        `;
+
+        db.query(query, [userId, userId, farmId], (err, results) => {
+            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
+            if (results.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Kullanıcı veya Tarla bulunamadı.' }));
+
+            const data = results[0];
+            const { energy, health, education_skill, max_workers, current_workers, any_active_workers, reserve, salary, vault, stock, level, production_time } = data;
+            
+            // 2. Checks
+            const ENERGY_COST = 10;
+            const HEALTH_COST = 5;
+            const MAX_STOCK = level * 1000;
+
+            if (any_active_workers > 0) return db.rollback(() => res.json({ success: false, message: 'Zaten bir işte çalışıyorsun! Önce onu tamamla.' }));
+            if (energy < ENERGY_COST) return db.rollback(() => res.json({ success: false, message: 'Yetersiz Enerji!' }));
+            if (health < HEALTH_COST) return db.rollback(() => res.json({ success: false, message: 'Sağlığın çok düşük!' }));
+            if (reserve <= 0) return db.rollback(() => res.json({ success: false, message: 'Tarla tohum deposu tükenmiş!' }));
+            if (stock >= MAX_STOCK) return db.rollback(() => res.json({ success: false, message: 'Tarla deposu dolu! Üretim yapılamaz.' }));
+            
+            // Calculate Production Amount
+            const userSkill = education_skill || 0;
+            const range = getBaseProductionRange(userSkill);
+            const multiplier = 1.0; 
+            
+            const baseAmount = Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
+            let productionAmount = Math.max(1, Math.floor(baseAmount * multiplier));
+            
+            // Determine Seed Cost Ratio
+            let seedCostPerUnit = 1;
+            const farmType = data.farm_type;
+            
+            if (farmType === 'wheat' || farmType === 'corn' || farmType === 'potato') {
+                seedCostPerUnit = 1;
+            } else if (farmType === 'vegetable' || farmType === 'fruit') {
+                seedCostPerUnit = 2;
+            } else if (farmType === 'rice' || farmType === 'olive') {
+                seedCostPerUnit = 3;
+            }
+
+            // Check Reserve (Seed)
+            const maxProductionBySeed = Math.floor(reserve / seedCostPerUnit);
+            if (productionAmount > maxProductionBySeed) {
+                productionAmount = maxProductionBySeed;
+            }
+
+            if (productionAmount <= 0) {
+                return db.rollback(() => res.json({ success: false, message: 'Yetersiz Tohum (Rezerv)!' }));
+            }
+            
+            const totalSeedCost = productionAmount * seedCostPerUnit;
+
+            // Vault Check
+            const estimatedCost = Math.ceil(range.max * multiplier) * salary; 
+            if (vault < estimatedCost) {
+                return db.rollback(() => res.json({ success: false, message: `Tarla kasasında maaş için yeterli bakiye yok! (Tahmini: ${estimatedCost} ₺)` }));
+            }
+
+            if (current_workers >= (max_workers || 5)) {
+                return db.rollback(() => res.json({ success: false, message: 'Tarla kapasitesi dolu!' }));
+            }
+
+            // 3. Deduct Energy/Health AND Reserve (Seed)
+            db.query('UPDATE users SET energy = energy - ?, health = health - ? WHERE id = ?', [ENERGY_COST, HEALTH_COST, userId], (err) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User Update Error' }));
+
+                db.query('UPDATE player_farms SET reserve = reserve - ? WHERE id = ?', [totalSeedCost, farmId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Reserve Update Error' }));
+
+                    // 4. Add to Active Workers
+                    const durationSeconds = production_time || 60;
+                    const endTime = new Date(Date.now() + durationSeconds * 1000);
+                    
+                    db.query('INSERT INTO farm_active_workers (farm_id, user_id, end_time, amount, seed_cost) VALUES (?, ?, ?, ?, ?)', [farmId, userId, endTime, productionAmount, totalSeedCost], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Active Worker Error' }));
+                        
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                            res.json({ success: true, message: `İş başı yapıldı! (Tahmini Üretim: ${productionAmount})`, endTime: endTime });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Collect Reward from Farm
+app.post('/api/farms/collect', (req, res) => {
+    const { userId, farmId } = req.body;
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
+
+        // 1. Check Active Worker
+        db.query('SELECT * FROM farm_active_workers WHERE user_id = ? AND farm_id = ?', [userId, farmId], (err, workers) => {
+            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
+            if (workers.length === 0) return db.rollback(() => res.json({ success: false, message: 'Aktif çalışma bulunamadı.' }));
+
+            const worker = workers[0];
+            
+            // Check Time
+            if (new Date() < new Date(worker.end_time)) {
+                return db.rollback(() => res.json({ success: false, message: 'İş henüz bitmedi.' }));
+            }
+
+            const amount = worker.amount;
+            const seedCost = worker.seed_cost || 0; // Get seed cost from worker record
+
+            // 2. Get Farm Info
+            db.query('SELECT pf.*, ft.slug as farm_type_slug FROM player_farms pf JOIN farm_types ft ON pf.farm_type_id = ft.id WHERE pf.id = ?', [farmId], (err, farms) => {
+                if (err || farms.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Tarla bulunamadı.' }));
+                const farm = farms[0];
+                
+                const salaryPerUnit = farm.salary || 0;
+                const totalEarnings = amount * salaryPerUnit;
+
+                // 3. Update User Money (Salary)
+                db.query('UPDATE users SET money = money + ? WHERE id = ?', [totalEarnings, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User Money Error' }));
+
+                    // 4. Update Farm (Stock +, Vault -)
+                    // Note: Reserve was already deducted at start.
+                    db.query('UPDATE player_farms SET stock = stock + ?, vault = vault - ? WHERE id = ?', 
+                        [amount, totalEarnings, farmId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Farm Update Error' }));
+
+                        // Log Transaction
+                        const logQuery = 'INSERT INTO farm_logs (farm_id, user_id, message, amount) VALUES (?, ?, ?, ?)';
+                        const message = `Üretim: +${amount}, Tüketilen Tohum: ${seedCost}, Kazanç: ${totalEarnings} ₺`;
+                        db.query(logQuery, [farmId, userId, message, amount], (err) => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log Error' }));
+
+                            // Remove Active Worker
+                            db.query('DELETE FROM farm_active_workers WHERE id = ?', [worker.id], (err) => {
+                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Delete Worker Error' }));
+
+                                db.commit(err => {
+                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                                    
+                                    res.json({ 
+                                        success: true, 
+                                        message: `Üretim Tamamlandı! +${amount} Üretim, +${totalEarnings} ₺ Kazanç.`,
+                                        amount: amount,
+                                        salary: totalEarnings
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// --- CHAT SYSTEM ---
+
+// Update Farm Settings
+app.post('/api/farms/update/:id', (req, res) => {
+    const farmId = req.params.id;
+    const { userId, name, salary } = req.body;
+
+    db.query('UPDATE player_farms SET name = ?, salary = ? WHERE id = ? AND user_id = ?', 
+        [name, salary, farmId, userId], (err, result) => {
+        if (err) return res.status(500).json({ success: false, message: 'Database error' });
+        if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Tarla bulunamadı veya yetkiniz yok.' });
+        
+        res.json({ success: true, message: 'Tarla ayarları güncellendi.' });
+    });
+});
+
+// Deposit Money to Farm Vault
+app.post('/api/farms/deposit/:id', (req, res) => {
+    const farmId = req.params.id;
+    const { userId, amount } = req.body;
+
+    if (amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
+
+        db.query('SELECT money FROM users WHERE id = ?', [userId], (err, users) => {
+            if (err || users.length === 0) return db.rollback(() => res.status(500).json({ success: false, message: 'User Error' }));
+            
+            const userMoney = users[0].money;
+            if (userMoney < amount) return db.rollback(() => res.json({ success: false, message: 'Yetersiz bakiye.' }));
+
+            db.query('UPDATE users SET money = money - ? WHERE id = ?', [amount, userId], (err) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Para çekilemedi.' }));
+
+                db.query('UPDATE player_farms SET vault = vault + ? WHERE id = ?', [amount, farmId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kasa güncellenemedi.' }));
+
+                    db.commit(err => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                        res.json({ success: true, message: `${amount} ₺ kasaya yatırıldı.` });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Withdraw Product from Farm Stock
+app.post('/api/farms/withdraw-product/:id', (req, res) => {
+    const farmId = req.params.id;
+    const { userId, amount } = req.body;
+
+    if (amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
+
+        db.query('SELECT pf.*, ft.slug as type_slug FROM player_farms pf JOIN farm_types ft ON pf.farm_type_id = ft.id WHERE pf.id = ?', [farmId], (err, farms) => {
+            if (err || farms.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Tarla bulunamadı.' }));
+            
+            const farm = farms[0];
+            if (farm.stock < amount) return db.rollback(() => res.json({ success: false, message: 'Yetersiz stok.' }));
+
+            const productKey = farm.type_slug; // e.g., 'wheat', 'corn'
+
+            db.query('UPDATE player_farms SET stock = stock - ? WHERE id = ?', [amount, farmId], (err) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Stok güncellenemedi.' }));
+
+                // Check if item exists in inventory
+                db.query('SELECT * FROM inventory WHERE user_id = ? AND item_key = ?', [userId, productKey], (err, items) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Envanter hatası.' }));
+
+                    let invQuery;
+                    let invParams;
+
+                    if (items.length > 0) {
+                        invQuery = 'UPDATE inventory SET quantity = quantity + ? WHERE user_id = ? AND item_key = ?';
+                        invParams = [amount, userId, productKey];
+                    } else {
+                        invQuery = 'INSERT INTO inventory (user_id, item_key, quantity) VALUES (?, ?, ?)';
+                        invParams = [userId, productKey, amount];
+                    }
+
+                    db.query(invQuery, invParams, (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Envanter güncellenemedi.' }));
+
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                            res.json({ success: true, message: `${amount} adet ürün envantere çekildi.` });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Deposit Seed to Farm Reserve
+app.post('/api/farms/deposit-seed/:id', (req, res) => {
+    const farmId = req.params.id;
+    const { userId, amount, itemKey } = req.body; // itemKey should be 'seed'
+
+    if (!amount || amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
+
+        db.query('SELECT * FROM player_farms WHERE id = ?', [farmId], (err, farms) => {
+            if (err || farms.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Tarla bulunamadı.' }));
+            const farm = farms[0];
+
+            // Check Capacity (Reserve Capacity)
+            const maxCapacity = (farm.level || 1) * 10000;
+            const currentAmount = farm.reserve || 0;
+
+            if (currentAmount + amount > maxCapacity) {
+                return db.rollback(() => res.json({ success: false, message: `Depo kapasitesi yetersiz. (Mevcut: ${currentAmount}, Kapasite: ${maxCapacity})` }));
+            }
+
+            // Check User Inventory for Seed
+            const seedKey = itemKey || 'seed';
+            db.query('SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?', [userId, seedKey], (err, inv) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Envanter hatası.' }));
+                
+                const userQty = (inv && inv.length > 0) ? inv[0].quantity : 0;
+                if (userQty < amount) {
+                    return db.rollback(() => res.json({ success: false, message: `Envanterde yeterli ${seedKey} yok.` }));
+                }
+
+                // Deduct from Inventory
+                db.query('UPDATE inventory SET quantity = quantity - ? WHERE user_id = ? AND item_key = ?', [amount, userId, seedKey], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Envanter güncellenemedi.' }));
+
+                    // Add to Farm Reserve
+                    db.query('UPDATE player_farms SET reserve = reserve + ? WHERE id = ?', [amount, farmId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Tarla deposu güncellenemedi.' }));
+
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                            res.json({ success: true, message: `${amount} adet tohum eklendi.` });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Upgrade Farm
+app.post('/api/farms/upgrade/:id', (req, res) => {
+    const farmId = req.params.id;
+    const { userId } = req.body;
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
+
+        db.query('SELECT * FROM player_farms WHERE id = ?', [farmId], (err, farms) => {
+            if (err || farms.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Tarla bulunamadı.' }));
+            const farm = farms[0];
+            
+            const nextLevel = farm.level + 1;
+            const costMoney = nextLevel * 5000;
+
+            db.query('SELECT money FROM users WHERE id = ?', [userId], (err, users) => {
+                if (err || users.length === 0) return db.rollback(() => res.status(500).json({ success: false, message: 'User Error' }));
+                const user = users[0];
+
+                if (user.money < costMoney) {
+                    return db.rollback(() => res.json({ success: false, message: `Yetersiz bakiye. Gerekli: ${costMoney} ₺` }));
+                }
+
+                // Deduct Money
+                db.query('UPDATE users SET money = money - ? WHERE id = ?', [costMoney, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Para çekilemedi.' }));
+
+                    // Upgrade Farm
+                    // Increase capacity and max_workers
+                    const newCapacity = farm.capacity + 50; // Example increment
+                    const newMaxWorkers = farm.max_workers + 1; // Example increment
+
+                    db.query('UPDATE player_farms SET level = ?, capacity = ?, max_workers = ? WHERE id = ?', 
+                        [nextLevel, newCapacity, newMaxWorkers, farmId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Tarla yükseltilemedi.' }));
+
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                            res.json({ success: true, message: `Tarla Seviye ${nextLevel} oldu!` });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// --- CHAT SYSTEM ---
+
+const toxicWords = [
+    // Turkish
+    'aptal', 'salak', 'gerizekalı', 'mal', 'öküz', 'yavşak', 'piç', 'amk', 'aq', 'sik', 'siktir', 'yarrak', 'oç', 'kaşar', 'fahişe',
+    // English
+    'idiot', 'stupid', 'fuck', 'shit', 'bitch', 'asshole', 'dick', 'cunt', 'bastard', 'whore'
+];
+
+function filterMessage(text) {
+    let filtered = text;
+    let isToxic = false;
+    
+    toxicWords.forEach(word => {
+        const regex = new RegExp(`\\b${word}\\b`, 'gi');
+        if (regex.test(filtered)) {
+            isToxic = true;
+            filtered = filtered.replace(regex, '****');
+        }
+    });
+    
+    return { filtered, isToxic };
+}
+
+// Get Messages
+app.get('/api/chat/messages', (req, res) => {
+    const channel = req.query.channel || 'global';
+    const limit = 50; // Fixed limit to 50
+
+    // Subquery to get the last 50 messages, then order them by created_at ASC for display
+    const query = `
+        SELECT * FROM (
+            SELECT cm.id, cm.message, cm.channel, cm.created_at, cm.is_deleted, u.username, u.level, u.id as user_id, u.avatar, u.role
+            FROM chat_messages cm
+            JOIN users u ON cm.user_id = u.id
+            WHERE cm.channel = ?
+            ORDER BY cm.created_at DESC
+            LIMIT ?
+        ) as sub
+        ORDER BY sub.created_at ASC
+    `;
+
+    db.query(query, [channel, limit], (err, results) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        
+        // Filter deleted messages content
+        const processed = results.map(msg => {
+            if (msg.is_deleted) {
+                msg.message = "Bu mesaj admin tarafından silindi.";
+            }
+            return msg;
+        });
+        
+        res.json(processed);
+    });
+});
+
+// Auto-delete old messages every hour
+setInterval(() => {
+    const deleteQuery = "DELETE FROM chat_messages WHERE created_at < NOW() - INTERVAL 24 HOUR";
+    db.query(deleteQuery, (err, result) => {
+        if (err) {
+            console.error('Chat cleanup error:', err);
+        } else if (result.affectedRows > 0) {
+            console.log(`Cleaned up ${result.affectedRows} old chat messages.`);
+        }
+    });
+}, 60 * 60 * 1000); // Run every hour
+
+// Send Message
+app.post('/api/chat/send', (req, res) => {
+    const { userId, message, channel } = req.body;
+    
+    if (!userId || !message) return res.status(400).json({ success: false, message: 'Eksik veri.' });
+    if (message.length > 255) return res.status(400).json({ success: false, message: 'Mesaj çok uzun (Max 255 karakter).' });
+
+    // 1. Check Mute Status
+    db.query('SELECT mute_expires_at FROM users WHERE id = ?', [userId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, message: 'DB Error' });
+        
+        if (results.length > 0 && results[0].mute_expires_at) {
+            const now = new Date();
+            const expires = new Date(results[0].mute_expires_at);
+            
+            if (expires > now) {
+                const diffMs = expires - now;
+                
+                // Format MM:SS or HH:MM:SS
+                const totalSeconds = Math.floor(diffMs / 1000);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                
+                const pad = (num) => num.toString().padStart(2, '0');
+                let timeStr = `${pad(minutes)}:${pad(seconds)}`;
+                if (hours > 0) timeStr = `${pad(hours)}:${timeStr}`;
+
+                return res.status(403).json({ success: false, message: `Admin tarafından susturuldunuz, kalan süre: ${timeStr}` });
+            }
+        }
+
+        // 2. Filter Toxic
+        const { filtered, isToxic } = filterMessage(message);
+
+        if (isToxic) {
+            const logQuery = 'INSERT INTO toxic_logs (user_id, original_message, filtered_message) VALUES (?, ?, ?)';
+            db.query(logQuery, [userId, message, filtered], (err) => {
+                if (err) console.error('Toxic Log Error:', err);
+            });
+        }
+
+        // 3. Insert Message
+        const query = 'INSERT INTO chat_messages (user_id, message, channel) VALUES (?, ?, ?)';
+        db.query(query, [userId, filtered, channel || 'global'], (err, result) => {
+            if (err) return res.status(500).json({ success: false, error: err });
+            res.json({ success: true, messageId: result.insertId });
+        });
+    });
+});
+
+// Report Message
+app.post('/api/chat/report', (req, res) => {
+    const { messageId, reporterId, reason } = req.body;
+    const query = 'INSERT INTO message_reports (message_id, reporter_id, reason) VALUES (?, ?, ?)';
+    db.query(query, [messageId, reporterId, reason], (err) => {
+        if (err) return res.status(500).json({ success: false, message: 'Rapor hatası' });
+        res.json({ success: true, message: 'Mesaj raporlandı.' });
+    });
+});
+
+// Admin: Get Reports
+app.get('/api/admin/reports', (req, res) => {
+    const query = `
+        SELECT mr.id, mr.reason, mr.created_at, 
+               cm.message, cm.id as message_id, cm.user_id as sender_id,
+               u.username as sender_name,
+               r.username as reporter_name
+        FROM message_reports mr
+        JOIN chat_messages cm ON mr.message_id = cm.id
+        JOIN users u ON cm.user_id = u.id
+        JOIN users r ON mr.reporter_id = r.id
+        WHERE cm.is_deleted = 0
+        ORDER BY mr.created_at DESC
+    `;
+    db.query(query, (err, results) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        res.json(results);
+    });
+});
+
+// Admin: Delete Message
+app.post('/api/admin/delete-message', (req, res) => {
+    const { messageId } = req.body;
+    db.query('UPDATE chat_messages SET is_deleted = 1 WHERE id = ?', [messageId], (err) => {
+        if (err) return res.status(500).json({ success: false, message: 'Silme hatası' });
+        res.json({ success: true, message: 'Mesaj silindi.' });
+    });
+});
+
+// Admin: Get Mine Settings
+app.get('/api/admin/mine-settings', (req, res) => {
+    db.query('SELECT * FROM mine_settings', (err, results) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        
+        // Merge with MINE_TYPES to ensure all are listed
+        const settings = MINE_TYPES.map(type => {
+            const setting = results.find(r => r.mine_type === type.id);
+            return {
+                mine_type: type.id,
+                name: type.name,
+                production_time: setting ? setting.production_time : 60 // Default 60s
+            };
+        });
+        
+        res.json(settings);
+    });
+});
+
+// Admin: Update Mine Settings
+app.post('/api/admin/mine-settings', (req, res) => {
+    const { mineType, duration } = req.body;
+    const query = 'INSERT INTO mine_settings (mine_type, production_time) VALUES (?, ?) ON DUPLICATE KEY UPDATE production_time = ?';
+    db.query(query, [mineType, duration, duration], (err) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        res.json({ success: true });
+    });
+});
+
+// Admin: Get Ranch Settings
+app.get('/api/admin/ranch-settings', (req, res) => {
+    db.query('SELECT * FROM ranch_settings', (err, results) => {
+        if (err) return res.status(500).json({ success: false, message: 'DB Error' });
+        res.json(results);
+    });
+});
+
+// Admin: Update Ranch Settings
+app.post('/api/admin/ranch-settings', (req, res) => {
+    const { ranchType, productionTime } = req.body;
+    const query = 'INSERT INTO ranch_settings (ranch_type, production_time) VALUES (?, ?) ON DUPLICATE KEY UPDATE production_time = ?';
+    db.query(query, [ranchType, productionTime, productionTime], (err) => {
+        if (err) return res.status(500).json({ success: false, message: 'Update Error' });
+        res.json({ success: true, message: 'Ayarlar güncellendi.' });
+    });
+});
+
+// Admin: Get Farm Settings
+app.get('/api/admin/farm-settings', (req, res) => {
+    db.query('SELECT * FROM farm_types', (err, results) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        res.json(results);
+    });
+});
+
+// Admin: Update Farm Settings
+app.post('/api/admin/farm-settings', (req, res) => {
+    const { id, productionTime } = req.body;
+    const query = 'UPDATE farm_types SET production_time = ? WHERE id = ?';
+    db.query(query, [productionTime, id], (err) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        res.json({ success: true });
+    });
+});
+
+// Admin: Mute User
+app.post('/api/admin/mute-user', (req, res) => {
+    const { userId, durationMinutes } = req.body;
+    
+    const expiresAt = new Date(Date.now() + durationMinutes * 60000);
+    
+    db.query('UPDATE users SET mute_expires_at = ? WHERE id = ?', [expiresAt, userId], (err) => {
+        if (err) return res.status(500).json({ success: false, message: 'Mute hatası' });
+        
+        // Send Notification
+        const notifQuery = 'INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)';
+        const message = `Admin tarafından ${durationMinutes} dakika susturuldunuz.`;
+        
+        db.query(notifQuery, [userId, 'Susturuldunuz', message, 'warning'], (err) => {
+            if (err) console.error('Notification Error:', err);
+            res.json({ success: true, message: `Kullanıcı ${durationMinutes} dakika susturuldu.` });
+        });
+    });
+});
+
+// Admin Toxic Logs
+
+// Admin Toxic Logs
+app.get('/api/admin/toxic-logs', (req, res) => {
+    const query = `
+        SELECT tl.*, u.username 
+        FROM toxic_logs tl 
+        JOIN users u ON tl.user_id = u.id 
+        ORDER BY tl.created_at DESC 
+        LIMIT 100
+    `;
+    db.query(query, (err, results) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        res.json(results);
+    });
+});
+
+// --- AUTO-COLLECT SYSTEM ---
+setInterval(() => {
+    const query = `
+        SELECT maw.id as worker_id, maw.user_id, maw.mine_id, maw.amount, maw.product_key,
+               m.salary, m.vault, m.mine_type, m.user_id as owner_id
+        FROM mine_active_workers maw
+        JOIN player_mines m ON maw.mine_id = m.id
+        WHERE maw.end_time <= NOW()
+    `;
+
+    db.query(query, (err, results) => {
+        if (err) return console.error('Auto-Collect Query Error:', err);
+        
+        results.forEach(job => {
+            const amount = job.amount || 1;
+            const totalEarnings = amount * job.salary;
+            let productKey = job.product_key;
+
+            // Fallback for missing productKey
+            if (!productKey && FACTORY_RECIPES[job.mine_type]) {
+                const recipes = FACTORY_RECIPES[job.mine_type];
+                if (recipes && recipes.length > 0) {
+                    productKey = Object.keys(recipes[0].output)[0];
+                }
+            }
+
+            // Check Vault
+            if (job.vault < totalEarnings) {
+                // Vault empty, skip.
+                return;
+            }
+
+            db.beginTransaction(err => {
+                if (err) return console.error('Auto-Collect Transaction Error:', err);
+
+                // 1. Pay User
+                db.query('UPDATE users SET money = money + ? WHERE id = ?', [totalEarnings, job.user_id], (err) => {
+                    if (err) return db.rollback(() => console.error('Auto-Collect User Update Error:', err));
+
+                    // 2. Update Mine (Stock/Inventory +amount, Vault -Salary)
+                    let updateStockQuery;
+                    let updateStockParams;
+
+                    if (productKey) {
+                        updateStockQuery = `
+                            INSERT INTO factory_inventory (mine_id, item_key, amount) 
+                            VALUES (?, ?, ?) 
+                            ON DUPLICATE KEY UPDATE amount = amount + ?
+                        `;
+                        updateStockParams = [job.mine_id, productKey, amount, amount];
+                    } else {
+                        updateStockQuery = 'UPDATE player_mines SET stock = stock + ? WHERE id = ?';
+                        updateStockParams = [amount, job.mine_id];
+                    }
+
+                    db.query(updateStockQuery, updateStockParams, (err) => {
+                        if (err) return db.rollback(() => console.error('Auto-Collect Stock Update Error:', err));
+
+                        // Update Vault
+                        db.query('UPDATE player_mines SET vault = vault - ? WHERE id = ?', [totalEarnings, job.mine_id], (err) => {
+                            if (err) return db.rollback(() => console.error('Auto-Collect Vault Update Error:', err));
+
+                            // 3. Log
+                            const logQuery = 'INSERT INTO mine_logs (mine_id, user_id, amount, earnings, product_key) VALUES (?, ?, ?, ?, ?)';
+                            db.query(logQuery, [job.mine_id, job.user_id, amount, totalEarnings, productKey], (err) => {
+                                if (err) return db.rollback(() => console.error('Auto-Collect Log Error:', err));
+
+                                // 4. Delete Worker
+                                db.query('DELETE FROM mine_active_workers WHERE id = ?', [job.worker_id], (err) => {
+                                    if (err) return db.rollback(() => console.error('Auto-Collect Delete Error:', err));
+
+                                    // 5. Notification
+                                    const notifTitle = 'Üretim Tamamlandı';
+                                    const notifMsg = `Otomatik toplama: +${amount} ${productKey || 'Ürün'}, +${totalEarnings} ₺ Kazanç.`;
+                                    db.query('INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)', [job.user_id, notifTitle, notifMsg, 'production'], (err) => {
+                                        
+                                        db.commit(err => {
+                                            if (err) return db.rollback(() => console.error('Auto-Collect Commit Error:', err));
+                                            // Success
+                                        });
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+}, 2000); // Run every 2 seconds
+
+// --- Farm System Endpoints ---
+
+// Get Available Farm Types
+app.get('/api/farm-types', (req, res) => {
+    db.query('SELECT * FROM farm_types', (err, results) => {
+        if (err) return res.status(500).json({ message: 'Veritabanı hatası' });
+        res.json(results);
+    });
+});
+
+// Get My Farms
+app.get('/api/my-farms', (req, res) => {
+    const userId = req.query.user_id;
+    if (!userId) return res.status(400).json({ message: 'User ID required' });
+
+    const query = `
+        SELECT pf.*, ft.name, ft.image_path, ft.slug, ft.description
+        FROM player_farms pf
+        JOIN farm_types ft ON pf.farm_type_id = ft.id
+        WHERE pf.user_id = ?
+    `;
+    db.query(query, [userId], (err, results) => {
+        if (err) return res.status(500).json({ message: 'Veritabanı hatası' });
+        res.json(results);
+    });
+});
+
+// Buy Farm
+app.post('/api/buy-farm', (req, res) => {
+    const { user_id, farm_type_id } = req.body;
+    
+    // 1. Get Farm Type Info
+    db.query('SELECT * FROM farm_types WHERE id = ?', [farm_type_id], (err, types) => {
+        if (err) return res.status(500).json({ message: 'Veritabanı hatası' });
+        if (types.length === 0) return res.status(404).json({ message: 'Çiftlik türü bulunamadı' });
+        
+        const farmType = types[0];
+
+        // 2. Get User Info (Money & License)
+        db.query('SELECT money, license_farm_level FROM users WHERE id = ?', [user_id], (err, users) => {
+            if (err) return res.status(500).json({ message: 'Veritabanı hatası' });
+            if (users.length === 0) return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
+
+            const user = users[0];
+
+            // Checks
+            if (user.money < farmType.price) {
+                return res.status(400).json({ message: 'Yetersiz bakiye!' });
+            }
+            
+            // Check specific license for this farm type (using slug)
+            // We need to check the 'licenses' table for this user and farmType.slug
+            db.query('SELECT level FROM licenses WHERE user_id = ? AND mine_type = ?', [user_id, farmType.slug], (err, licRes) => {
+                if (err) return res.status(500).json({ message: 'Lisans kontrol hatası' });
+                
+                const currentLevel = licRes.length > 0 ? licRes[0].level : 0;
+                
+                // Changed: Only require level 1 license regardless of farmType.license_req
+                if (currentLevel < 1) {
+                    return res.status(400).json({ message: `Yetersiz lisans seviyesi! Gereken: ${farmType.name} Lisansı Lv. 1` });
+                }
+
+                // Transaction
+                db.beginTransaction(err => {
+                    if (err) return res.status(500).json({ message: 'İşlem hatası' });
+
+                    // Deduct Money
+                    db.query('UPDATE users SET money = money - ? WHERE id = ?', [farmType.price, user_id], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ message: 'Para düşülemedi' }));
+
+                        // Add Farm
+                        db.query('INSERT INTO player_farms (user_id, farm_type_id) VALUES (?, ?)', [user_id, farm_type_id], (err) => {
+                            if (err) return db.rollback(() => res.status(500).json({ message: 'Çiftlik eklenemedi' }));
+
+                            db.commit(err => {
+                                if (err) return db.rollback(() => res.status(500).json({ message: 'Commit hatası' }));
+                                res.json({ success: true, message: `${farmType.name} başarıyla satın alındı!` });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// --- Ranch System Endpoints ---
+
+// Update Ranch Settings
+app.post('/api/ranches/update/:id', (req, res) => {
+    const ranchId = req.params.id;
+    const { name, salary } = req.body;
+    
+    db.query('UPDATE player_ranches SET name = ?, salary = ? WHERE id = ?', [name, salary, ranchId], (err) => {
+        if (err) return res.status(500).json({ success: false, message: 'Güncelleme hatası.' });
+        res.json({ success: true, message: 'Ayarlar güncellendi.' });
+    });
+});
+
+// Deposit Money to Ranch Vault
+app.post('/api/ranches/deposit/:id', (req, res) => {
+    const ranchId = req.params.id;
+    const { userId, amount } = req.body;
+    
+    if (amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
+
+        db.query('SELECT money FROM users WHERE id = ?', [userId], (err, users) => {
+            if (err || users.length === 0) return db.rollback(() => res.status(500).json({ success: false, message: 'Kullanıcı bulunamadı.' }));
+            if (users[0].money < amount) return db.rollback(() => res.json({ success: false, message: 'Yetersiz bakiye.' }));
+
+            db.query('UPDATE users SET money = money - ? WHERE id = ?', [amount, userId], (err) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Para çekilemedi.' }));
+
+                db.query('UPDATE player_ranches SET vault = vault + ? WHERE id = ?', [amount, ranchId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kasa güncellenemedi.' }));
+
+                    db.commit(err => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                        res.json({ success: true, message: 'Para yatırıldı.' });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Withdraw Product from Ranch
+app.post('/api/ranches/withdraw/:id', (req, res) => {
+    const ranchId = req.params.id;
+    const { userId, amount } = req.body;
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
+
+        db.query('SELECT pr.*, rt.slug FROM player_ranches pr JOIN ranch_types rt ON pr.ranch_type_id = rt.id WHERE pr.id = ?', [ranchId], (err, ranches) => {
+            if (err || ranches.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Çiftlik bulunamadı.' }));
+            const ranch = ranches[0];
+            
+            if (ranch.stock <= 0) return db.rollback(() => res.json({ success: false, message: 'Depo boş.' }));
+            
+            const withdrawAmount = parseInt(amount);
+            if (!withdrawAmount || withdrawAmount <= 0) return db.rollback(() => res.json({ success: false, message: 'Geçersiz miktar.' }));
+            if (ranch.stock < withdrawAmount) return db.rollback(() => res.json({ success: false, message: `Depoda yeterli stok yok. (Mevcut: ${ranch.stock})` }));
+            
+            // Determine Item Key
+            let itemKey = 'egg'; // Default
+            if (ranch.slug === 'chicken') itemKey = 'egg';
+            else if (ranch.slug === 'sheep') itemKey = 'wool';
+            else if (ranch.slug === 'cow') itemKey = 'meat'; // Changed from milk to meat
+            else if (ranch.slug === 'bee') itemKey = 'honey';
+
+            // Add to Inventory
+            const invQuery = `
+                INSERT INTO inventory (user_id, item_key, quantity) 
+                VALUES (?, ?, ?) 
+                ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)
+            `;
+            db.query(invQuery, [userId, itemKey, withdrawAmount], (err) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Envanter hatası.' }));
+
+                // Deduct Stock
+                db.query('UPDATE player_ranches SET stock = stock - ? WHERE id = ?', [withdrawAmount, ranchId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Stok güncellenemedi.' }));
+
+                    db.commit(err => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                        res.json({ success: true, message: `${withdrawAmount} adet ürün envantere eklendi.` });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Deposit Feed to Ranch (Reserve)
+app.post('/api/ranches/deposit-feed/:id', (req, res) => {
+    const ranchId = req.params.id;
+    const { userId, amount, itemKey } = req.body; // itemKey should be 'feed'
+
+    if (!amount || amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
+
+        db.query('SELECT * FROM player_ranches WHERE id = ?', [ranchId], (err, ranches) => {
+            if (err || ranches.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Çiftlik bulunamadı.' }));
+            const ranch = ranches[0];
+
+            // Check Capacity (Reserve Capacity)
+            // Assuming reserve capacity is level * 10000 (as defined in frontend)
+            const maxCapacity = (ranch.level || 1) * 10000;
+            const currentAmount = ranch.reserve || 0;
+
+            if (currentAmount + amount > maxCapacity) {
+                return db.rollback(() => res.json({ success: false, message: `Depo kapasitesi yetersiz. (Mevcut: ${currentAmount}, Kapasite: ${maxCapacity})` }));
+            }
+
+            // Check User Inventory for Feed
+            const feedKey = itemKey || 'feed';
+            db.query('SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?', [userId, feedKey], (err, inv) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Envanter hatası.' }));
+                
+                const userQty = (inv && inv.length > 0) ? inv[0].quantity : 0;
+                if (userQty < amount) {
+                    return db.rollback(() => res.json({ success: false, message: `Envanterde yeterli ${feedKey} yok.` }));
+                }
+
+                // Deduct from Inventory
+                db.query('UPDATE inventory SET quantity = quantity - ? WHERE user_id = ? AND item_key = ?', [amount, userId, feedKey], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Envanter güncellenemedi.' }));
+
+                    // Add to Ranch Reserve
+                    db.query('UPDATE player_ranches SET reserve = reserve + ? WHERE id = ?', [amount, ranchId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Çiftlik deposu güncellenemedi.' }));
+
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                            res.json({ success: true, message: `${amount} adet yem eklendi.` });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Upgrade Ranch
+app.post('/api/ranches/upgrade/:id', (req, res) => {
+    const ranchId = req.params.id;
+    const { userId } = req.body;
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
+
+        db.query('SELECT * FROM player_ranches WHERE id = ?', [ranchId], (err, ranches) => {
+            if (err || ranches.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Çiftlik bulunamadı.' }));
+            const ranch = ranches[0];
+            
+            const nextLevel = ranch.level + 1;
+            const costMoney = nextLevel * 5000;
+
+            db.query('SELECT money FROM users WHERE id = ?', [userId], (err, users) => {
+                if (err || users.length === 0) return db.rollback(() => res.status(500).json({ success: false, message: 'User Error' }));
+                const user = users[0];
+
+                if (user.money < costMoney) {
+                    return db.rollback(() => res.json({ success: false, message: 'Yetersiz bakiye.' }));
+                }
+
+                db.query('UPDATE users SET money = money - ? WHERE id = ?', [costMoney, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Para düşülemedi.' }));
+
+                    db.query('UPDATE player_ranches SET level = level + 1, max_workers = max_workers + 1 WHERE id = ?', [ranchId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Seviye arttırılamadı.' }));
+
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                            res.json({ success: true, message: `Çiftlik Seviye ${nextLevel} oldu!` });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Get My Ranches
+app.get('/api/ranches/my/:userId', (req, res) => {
+    const userId = req.params.userId;
+    const query = `
+        SELECT pr.id as ranch_id, pr.*, rt.name as type_name, rt.slug as id, rt.image_path, rt.description
+        FROM player_ranches pr
+        JOIN ranch_types rt ON pr.ranch_type_id = rt.id
+        WHERE pr.user_id = ?
+    `;
+    db.query(query, [userId], (err, results) => {
+        if (err) return res.status(500).json({ message: 'Veritabanı hatası' });
+        res.json(results);
+    });
+});
+
+// Get Ranch Counts
+app.get('/api/ranches/counts', (req, res) => {
+    const query = `
+        SELECT rt.slug, COUNT(pr.id) as count
+        FROM ranch_types rt
+        LEFT JOIN player_ranches pr ON rt.id = pr.ranch_type_id
+        GROUP BY rt.id, rt.slug
+    `;
+    db.query(query, (err, results) => {
+        if (err) return res.status(500).json({ message: 'Veritabanı hatası' });
+        
+        const counts = {};
+        results.forEach(row => {
+            counts[row.slug] = row.count;
+        });
+        res.json(counts);
+    });
+});
+
+// Get City Farms (All player farms)
+app.get('/api/city-farms', (req, res) => {
+    const query = `
+        SELECT pf.*, ft.name as type_name, ft.slug, ft.image_path, u.username
+        FROM player_farms pf
+        JOIN farm_types ft ON pf.farm_type_id = ft.id
+        JOIN users u ON pf.user_id = u.id
+        ORDER BY pf.created_at DESC
+        LIMIT 50
+    `;
+    db.query(query, (err, results) => {
+        if (err) return res.status(500).json({ message: 'Veritabanı hatası' });
+        res.json(results);
+    });
+});
+
+// Get City Ranches (All player ranches)
+app.get('/api/ranches/city', (req, res) => {
+    const query = `
+        SELECT pr.id as ranch_id, pr.*, rt.name as type_name, rt.slug as type, rt.image_path, u.username
+        FROM player_ranches pr
+        JOIN ranch_types rt ON pr.ranch_type_id = rt.id
+        JOIN users u ON pr.user_id = u.id
+        ORDER BY pr.created_at DESC
+        LIMIT 50
+    `;
+    db.query(query, (err, results) => {
+        if (err) return res.status(500).json({ message: 'Veritabanı hatası' });
+        res.json(results);
+    });
+});
+
+// Buy Ranch
+app.post('/api/ranches/buy', (req, res) => {
+    const { userId, ranchType } = req.body; // ranchType is slug (e.g. 'chicken')
+
+    // 1. Get Ranch Type Info
+    db.query('SELECT * FROM ranch_types WHERE slug = ?', [ranchType], (err, types) => {
+        if (err) return res.status(500).json({ message: 'Veritabanı hatası' });
+        if (types.length === 0) return res.status(404).json({ message: 'Çiftlik türü bulunamadı' });
+        
+        const rType = types[0];
+
+        // 2. Get User Info
+        db.query('SELECT money, gold, diamond FROM users WHERE id = ?', [userId], (err, users) => {
+            if (err) return res.status(500).json({ message: 'Veritabanı hatası' });
+            if (users.length === 0) return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
+
+            const user = users[0];
+
+            // Checks
+            if (user.money < rType.price) return res.status(400).json({ message: 'Yetersiz bakiye (Para)!' });
+            if ((user.gold || 0) < (rType.gold_price || 0)) return res.status(400).json({ message: 'Yetersiz bakiye (Altın)!' });
+            if ((user.diamond || 0) < (rType.diamond_price || 0)) return res.status(400).json({ message: 'Yetersiz bakiye (Elmas)!' });
+            
+            // License Check (Specific License)
+            db.query('SELECT level FROM licenses WHERE user_id = ? AND mine_type = ?', [userId, ranchType], (err, licRes) => {
+                if (err) return res.status(500).json({ message: 'Lisans kontrol hatası' });
+                
+                const licenseLevel = licRes.length > 0 ? licRes[0].level : 0;
+
+                // Check if user already has this ranch type
+                db.query('SELECT COUNT(*) as count FROM player_ranches WHERE user_id = ? AND ranch_type_id = ?', [userId, rType.id], (err, countRes) => {
+                    if (err) return res.status(500).json({ message: 'Veritabanı hatası (Ranch Count)' });
+                    
+                    const ranchCount = countRes[0].count;
+                    let reqLevel = rType.license_req || 1;
+
+                    // If user has NO ranch of this type, Level 1 is enough
+                    if (ranchCount === 0) {
+                        reqLevel = 1;
+                    }
+
+                    if (licenseLevel < reqLevel) {
+                        return res.status(400).json({ message: `Bu çiftliği almak için ${rType.name} Lisansı (Sv. ${reqLevel}) gerekiyor!` });
+                    }
+
+                    // Transaction
+                    db.beginTransaction(err => {
+                        if (err) return res.status(500).json({ message: 'İşlem hatası' });
+
+                        // Deduct Resources
+                        const updateQuery = 'UPDATE users SET money = money - ?, gold = gold - ?, diamond = diamond - ? WHERE id = ?';
+                        db.query(updateQuery, [rType.price, rType.gold_price || 0, rType.diamond_price || 0, userId], (err) => {
+                            if (err) return db.rollback(() => res.status(500).json({ message: 'Ödeme alınamadı' }));
+
+                            // Add Ranch
+                            db.query('INSERT INTO player_ranches (user_id, ranch_type_id, reserve) VALUES (?, ?, 0)', [userId, rType.id], (err) => {
+                                if (err) return db.rollback(() => res.status(500).json({ message: 'Çiftlik eklenemedi' }));
+
+                                db.commit(err => {
+                                    if (err) return db.rollback(() => res.status(500).json({ message: 'Commit hatası' }));
+                                    res.json({ success: true, message: `${rType.name} başarıyla satın alındı!` });
                                 });
                             });
                         });

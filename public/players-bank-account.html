@@ -621,7 +621,7 @@
 
         document.getElementById('bankBalance').innerText = fmt(accountData.balance) + " ₺";
         document.getElementById('ibanDisplay').innerText = accountData.iban || '----';
-        document.getElementById('usernameDisplay').innerText = username;
+        document.getElementById('usernameDisplay').innerHTML = `<a href="profile.html?id=${userId}" style="color:var(--accent-cyan); text-decoration:none;">${username}</a>`;
 
         document.getElementById('interestRateDisplay').innerText = '%' + accountData.interest_rate;
         document.getElementById('loanRateDisplay').innerText = '%' + accountData.loan_rate;

@@ -1,5 +1,1847 @@
+nohup: ignoring input
 Server running at http://localhost:3000
 Connected to database: simworld
 Hospitals table ready
 Hospital Treatments table ready
 Hospital Active Treatments table ready
+Notifications table ready
+Toxic Logs table ready
+Profile Visits table ready
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97600.00',
+    stock: 24,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97600.00',
+    stock: 24,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97600.00',
+    stock: 24,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+[Mining Start] User: 3, Mine: 19, Type: sweets, ProdTime: 5
+[Mining Start] User: 3, Mine: 19, Skill: 14, Range: 2-5, Base: 2, Mult: 1, Final: 2
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97600.00',
+    stock: 24,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97400.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+[Mining Start] User: 3, Mine: 19, Type: sweets, ProdTime: 5
+[Mining Start] User: 3, Mine: 19, Skill: 14, Range: 2-5, Base: 3, Mult: 1, Final: 3
+[Mining Collect] Worker Object: {
+  id: 161,
+  mine_id: 19,
+  user_id: 3,
+  end_time: 2025-12-15T00:28:07.000Z,
+  production_amount: 1,
+  amount: 3,
+  product_key: 'energy_bar'
+}
+[Mining Collect] User: 3, Mine: 19, Worker Amount: 3, Final Amount: 3, Product: energy_bar
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97100.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97100.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97100.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97100.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97100.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97100.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97100.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97100.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97100.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97100.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97100.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97100.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97100.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97100.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]
+Requesting mine detail for ID: 19 User: 3
+Mine detail results: [
+  {
+    id: 19,
+    user_id: 3,
+    mine_type: 'sweets',
+    level: 1,
+    reserve: 10000,
+    created_at: 2025-12-14T21:53:18.000Z,
+    name: "test's Tatlı & Şekerleme Üretim Tesisi",
+    salary: 100,
+    vault: '97100.00',
+    stock: 26,
+    workers: 0,
+    max_workers: 5,
+    raw_capacity: 1000,
+    product_capacity: 500,
+    raw_material: 0,
+    raw_material_2: 0,
+    owner_id: 3,
+    owner_name: 'test',
+    production_time: 5
+  }
+]

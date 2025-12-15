@@ -28,22 +28,29 @@
     color: #7f8c8d;
     cursor: pointer;
     transition: all 0.3s ease;
-    width: 25%; /* 4 eleman olduğu için */
+    flex: 1; /* Eşit dağılım için flex-grow kullan */
     height: 100%;
     -webkit-tap-highlight-color: transparent;
     text-decoration: none;
+    min-width: 0; /* Flexbox taşmasını önlemek için */
+    padding: 0 2px; /* Çok sıkışık olmaması için */
 }
 
 .nav-icon {
-    font-size: 1.4rem;
+    font-size: 1.2rem; /* İkonları biraz küçült, çok eleman var */
     margin-bottom: 4px;
     transition: transform 0.2s;
 }
 
 .nav-label {
-    font-size: 0.7rem;
+    font-size: 0.6rem; /* Yazıları biraz küçült */
     font-weight: 600;
     text-transform: uppercase;
+    white-space: nowrap; /* Yazıların alt satıra geçmesini engelle */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    text-align: center;
 }
 
 /* Aktif Durum */

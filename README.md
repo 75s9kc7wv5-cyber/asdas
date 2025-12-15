@@ -1,4 +1,4 @@
-# Sim of World - Geliştirme Dokümantasyonu
+Geliştirme Dokümantasyonu
 
 Bu proje, "Sim of World" adlı web tabanlı bir strateji ve simülasyon oyununun geliştirme dosyalarını içerir. Proje, **Node.js (Express)** backend ve **MySQL** veritabanı üzerinde çalışan kapsamlı bir ekonomi ve yönetim simülasyonudur.
 
@@ -92,7 +92,7 @@ Maden rezervi tükendiğinde "Rezerv Araştırması" yapılarak rezerv yenilenir
 
 ## 🏭 Fabrika, Pazar ve Meclis (Frontend / Prototip)
 
-Bu sistemlerin arayüzleri (`factory.html`, `market.html`, `meclis.html`) hazırlanmış olup, backend entegrasyonları veya `game-engine.js` üzerinden istemci taraflı mantıkları geliştirilme aşamasındadır.
+Bu sistemlerin arayüzleri (`factory.html`, `market.html`, `council.html`) hazırlanmış olup, backend entegrasyonları veya `game-engine.js` üzerinden istemci taraflı mantıkları geliştirilme aşamasındadır.
 *   **Fabrika:** Hammadde -> Ürün dönüşümü.
 *   **Pazar:** Dinamik fiyatlı ticaret borsası.
 *   **Meclis:** Oylama ve yasa teklifleri.

@@ -174,6 +174,7 @@
         .color-stone { color: #95a5a6; }
         .color-iron { color: #e67e22; }
         .color-coal { color: #34495e; }
+        .color-sand { color: #e1c699; }
         .color-copper { color: #d35400; }
         .color-gold { color: #f1c40f; }
         .color-oil { color: #2c3e50; }
@@ -240,20 +241,44 @@
         toastr.options = { "positionClass": "toast-top-right", "timeOut": "3000" };
 
         const mineTypes = [
-            { id: 'wood', name: 'Odun Kampı', icon: 'fa-tree', color: 'color-wood', reqLevel: 1, costMoney: 1000, costGold: 0, costDiamond: 0 },
-            { id: 'stone', name: 'Taş Ocağı', icon: 'fa-cubes', color: 'color-stone', reqLevel: 5, costMoney: 2000, costGold: 0, costDiamond: 0 },
-            { id: 'iron', name: 'Demir Madeni', icon: 'fa-hammer', color: 'color-iron', reqLevel: 15, costMoney: 5000, costGold: 10, costDiamond: 0 },
-            { id: 'coal', name: 'Kömür Madeni', icon: 'fa-fire', color: 'color-coal', reqLevel: 20, costMoney: 8000, costGold: 20, costDiamond: 0 },
-            { id: 'copper', name: 'Bakır Madeni', icon: 'fa-bolt', color: 'color-copper', reqLevel: 30, costMoney: 10000, costGold: 30, costDiamond: 0 },
-            { id: 'gold', name: 'Altın Madeni', icon: 'fa-coins', color: 'color-gold', reqLevel: 40, costMoney: 25000, costGold: 50, costDiamond: 5 },
-            { id: 'oil', name: 'Petrol Kuyusu', icon: 'fa-oil-can', color: 'color-oil', reqLevel: 50, costMoney: 15000, costGold: 40, costDiamond: 10 },
-            { id: 'uranium', name: 'Uranyum Madeni', icon: 'fa-radiation', color: 'color-uranium', reqLevel: 80, costMoney: 50000, costGold: 100, costDiamond: 20 }
+            { id: 'wood', category: 'basic', name: 'Odun Kampı', icon: 'fa-tree', color: 'color-wood', reqLevel: 1, costMoney: 1000, costGold: 0, costDiamond: 0 },
+            { id: 'stone', category: 'basic', name: 'Taş Ocağı', icon: 'fa-cubes', color: 'color-stone', reqLevel: 5, costMoney: 2000, costGold: 0, costDiamond: 0 },
+            { id: 'iron', category: 'industrial', name: 'Demir Madeni', icon: 'fa-hammer', color: 'color-iron', reqLevel: 15, costMoney: 5000, costGold: 10, costDiamond: 0 },
+            { id: 'coal', category: 'industrial', name: 'Kömür Madeni', icon: 'fa-fire', color: 'color-coal', reqLevel: 20, costMoney: 8000, costGold: 20, costDiamond: 0 },
+            { id: 'sand', category: 'basic', name: 'Kum Madeni', icon: 'fa-hourglass-half', color: 'color-sand', reqLevel: 25, costMoney: 9000, costGold: 25, costDiamond: 0 },
+            { id: 'copper', category: 'industrial', name: 'Bakır Madeni', icon: 'fa-bolt', color: 'color-copper', reqLevel: 30, costMoney: 10000, costGold: 30, costDiamond: 0 },
+            { id: 'gold', category: 'precious', name: 'Altın Madeni', icon: 'fa-coins', color: 'color-gold', reqLevel: 40, costMoney: 25000, costGold: 50, costDiamond: 5 },
+            { id: 'oil', category: 'precious', name: 'Petrol Kuyusu', icon: 'fa-oil-can', color: 'color-oil', reqLevel: 50, costMoney: 15000, costGold: 40, costDiamond: 10 },
+            { id: 'uranium', category: 'precious', name: 'Uranyum Madeni', icon: 'fa-radiation', color: 'color-uranium', reqLevel: 80, costMoney: 50000, costGold: 100, costDiamond: 20 }
         ];
 
         let userMines = [];
         let userData = {};
         let userLicenses = {};
         let selectedMine = null;
+
+        // Get Category or Type from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const category = urlParams.get('category');
+        const typeFilter = urlParams.get('type');
+
+        // Update Title
+        if (typeFilter) {
+            const mType = mineTypes.find(t => t.id === typeFilter);
+            if (mType) {
+                const pageTitle = document.querySelector('.page-title');
+                if(pageTitle) pageTitle.innerText = mType.name.toUpperCase();
+            }
+        } else if (category) {
+            const catNames = {
+                'basic': 'TEMEL KAYNAKLAR',
+                'industrial': 'ENDÜSTRİYEL MADENLER',
+                'precious': 'DEĞERLİ & ENERJİ'
+            };
+            const title = catNames[category] || 'MADENLER';
+            const pageTitle = document.querySelector('.page-title');
+            if(pageTitle) pageTitle.innerText = title;
+        }
 
         async function initPage() {
             const user = JSON.parse(localStorage.getItem('simWorldUser'));
@@ -308,7 +333,15 @@
             const container = document.getElementById('myMinesList');
             container.innerHTML = '';
 
-            mineTypes.forEach(type => {
+            // Filter mineTypes based on category or type
+            let filteredTypes = mineTypes;
+            if (typeFilter) {
+                filteredTypes = mineTypes.filter(t => t.id === typeFilter);
+            } else if (category) {
+                filteredTypes = mineTypes.filter(t => t.category === category);
+            }
+
+            filteredTypes.forEach(type => {
                 const owned = userMines.find(m => m.mine_type === type.id);
                 
                 const card = document.createElement('div');
@@ -318,7 +351,7 @@
                 if (owned) {
                     btnHTML = `
                         <button class="btn-action btn-manage" onclick="location.href='mine-management.html?id=${owned.id}'">YÖNET</button>
-                        <button class="btn-action btn-work" onclick="location.href='mines-detail.html?id=${owned.id}'" style="margin-top:5px; background:var(--accent-gold); color:#000;">ÇALIŞ</button>
+                        <button class="btn-action btn-work" onclick="location.href='mine-work.html?id=${owned.id}'" style="margin-top:5px; background:var(--accent-gold); color:#000;">ÇALIŞ</button>
                     `;
                 } else {
                     btnHTML = `<button class="btn-action btn-buy" onclick="openBuyModal('${type.id}')">SATIN AL</button>`;
@@ -342,19 +375,28 @@
             const container = document.getElementById('cityMinesList');
             container.innerHTML = '';
 
-            if (mines.length === 0) {
-                container.innerHTML = '<div style="text-align:center; color:#666; padding:20px;">Henüz hiç maden kurulmamış.</div>';
+            // Filter mines based on category or type
+            let filteredMines = mines;
+            if (typeFilter) {
+                filteredMines = mines.filter(m => m.mine_type === typeFilter);
+            } else if (category) {
+                const allowedTypes = mineTypes.filter(t => t.category === category).map(t => t.id);
+                filteredMines = mines.filter(m => allowedTypes.includes(m.mine_type));
+            }
+
+            if (filteredMines.length === 0) {
+                container.innerHTML = '<div style="text-align:center; color:#666; padding:20px;">Bu kategoride henüz maden yok.</div>';
                 return;
             }
 
-            mines.forEach(mine => {
+            filteredMines.forEach(mine => {
                 const type = mineTypes.find(t => t.id === mine.mine_type);
                 if (!type) return;
 
                 const card = document.createElement('div');
                 card.className = 'mine-card';
                 card.style.cursor = 'pointer';
-                card.onclick = () => location.href = `mines-detail.html?id=${mine.id}`;
+                card.onclick = () => location.href = `mine-work.html?id=${mine.id}`;
 
                 card.innerHTML = `
                     <div class="mine-icon ${type.color}">
@@ -362,8 +404,8 @@
                     </div>
                     <div class="mine-info">
                         <div class="mine-name">${mine.name || type.name} <span style="font-size:0.8rem; color:#666;">(${type.name})</span></div>
-                        <div class="mine-desc">Sahibi: <span style="color:var(--accent-cyan)">${mine.username}</span></div>
-                        <div class="mine-stats">Seviye: ${mine.level} | Rezerv: ${mine.reserve}% | Maaş: <span style="color:var(--accent-gold)">${mine.salary} ₺</span></div>
+                        <div class="mine-desc"><b>Sahibi:</b> <a href="profile.html?id=${mine.user_id}" style="color:var(--accent-cyan); text-decoration:none;">${mine.username}</a></div>
+                        <div class="mine-stats"><span style="color:var(--accent-gold)">Seviye: ${mine.level}</span> <span style="color:#fff">|</span> <span style="color:var(--accent-red)">Kapasite: ${mine.current_workers}/${mine.max_workers || 5}</span> <span style="color:#fff">|</span> Maaş: <span style="color:var(--accent-green)">${mine.salary} ₺</span></div>
                     </div>
                 `;
                 container.appendChild(card);
@@ -390,7 +432,7 @@
             html += `<div class="req-badge ${hasSkill ? 'ok' : 'fail'}"><i class="fas fa-graduation-cap"></i> Lv. ${selectedMine.reqLevel}</div>`;
             
             // License
-            html += `<div class="req-badge ${hasLicense ? 'ok' : 'fail'}"><i class="fas fa-id-card"></i> Lisans</div>`;
+            html += `<div class="req-badge ${hasLicense ? 'ok' : 'fail'}"><i class="fas fa-id-card"></i> ${selectedMine.name} Lisansı</div>`;
             
             // Money
             html += `<div class="req-badge ${hasMoney ? 'ok' : 'fail'}"><i class="fas fa-lira-sign"></i> ${selectedMine.costMoney}</div>`;

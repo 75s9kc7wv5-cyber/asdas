@@ -15,6 +15,22 @@
     link.href = 'css/header-style.css';
     document.head.appendChild(link);
 
+    // Inject Global Menu CSS
+    const gmLink = document.createElement('link');
+    gmLink.rel = 'stylesheet';
+    gmLink.href = 'css/global-menu.css';
+    document.head.appendChild(gmLink);
+
+    // Inject Global Menu JS
+    const gmScript = document.createElement('script');
+    gmScript.src = 'js/global-menu.js';
+    document.head.appendChild(gmScript);
+
+    // Inject Bottom Menu JS (Standardize Menu System)
+    const menuScript = document.createElement('script');
+    menuScript.src = 'js/menu-manager.js';
+    document.head.appendChild(menuScript);
+
     // 3. Create Header HTML
     const headerHTML = `
     <header class="game-header-v2" id="gameHeader">
@@ -22,6 +38,13 @@
         <div class="gh-top">
             <a href="index.html" class="gh-logo">SIM <span>OF WORLD</span></a>
             <div style="display:flex; align-items:center;">
+                <div class="gh-avatar" onclick="location.href='profile.html?id=${userId}'" style="cursor:pointer; margin-right:10px; display:flex; align-items:center;">
+                    <img id="headerAvatar" src="" style="width:32px; height:32px; border-radius:50%; border:1px solid #444; object-fit:cover;">
+                </div>
+                <div class="gh-notif-btn" onclick="toggleNotifications()">
+                    <i class="fas fa-bell"></i>
+                    <span class="gh-notif-badge" id="notifBadge" style="display:none">0</span>
+                </div>
                 <div class="gh-level-badge">
                     <i class="fas fa-crown"></i>
                     <span id="headerLevel">Lv. ...</span>
@@ -32,15 +55,15 @@
 
         <div class="gh-currencies">
             <div class="gh-curr-item">
-                <i class="fas fa-wallet gc-money"></i>
+                <img src="icons/inventory-icon/money.png" style="width: 24px; height: 24px; margin-bottom: 2px; object-fit: contain;" alt="Para">
                 <span class="gh-curr-val" id="headerMoney">...</span>
             </div>
             <div class="gh-curr-item">
-                <i class="fas fa-coins gc-gold"></i>
+                <img src="icons/inventory-icon/gold.png" style="width: 24px; height: 24px; margin-bottom: 2px; object-fit: contain;" alt="Altın">
                 <span class="gh-curr-val" id="headerGold">...</span>
             </div>
             <div class="gh-curr-item">
-                <i class="fas fa-gem gc-diamond"></i>
+                <img src="icons/inventory-icon/diamond.png" style="width: 24px; height: 24px; margin-bottom: 2px; object-fit: contain;" alt="Elmas">
                 <span class="gh-curr-val" id="headerDiamond">...</span>
             </div>
         </div>
@@ -64,6 +87,17 @@
         </div>
 
     </header>
+
+    <!-- Notification Modal -->
+    <div id="notifModal" class="notif-modal" style="display:none;">
+        <div class="notif-header">
+            <h3>Bildirimler</h3>
+            <span onclick="toggleNotifications()" style="cursor:pointer"><i class="fas fa-times"></i></span>
+        </div>
+        <div id="notifList" class="notif-list">
+            <div style="padding:20px; text-align:center; color:#666;">Yükleniyor...</div>
+        </div>
+    </div>
     `;
 
     // Insert Header at the beginning of body
@@ -111,6 +145,16 @@
         if(data.diamond !== undefined) document.getElementById('headerDiamond').innerText = fmt(data.diamond);
         if(data.level !== undefined) document.getElementById('headerLevel').innerText = "Lv. " + data.level;
 
+        // Avatar Güncelleme
+        const avatarImg = document.getElementById('headerAvatar');
+        if (avatarImg) {
+            if (data.avatar) {
+                avatarImg.src = data.avatar;
+            } else {
+                avatarImg.src = 'uploads/avatars/default.png';
+            }
+        }
+
         // Barların güncellenmesi
         if(data.health !== undefined) {
             document.getElementById('barHealth').style.width = data.health + "%";
@@ -140,14 +184,14 @@
     // --- GLOBAL MENU LOGIC (Merged) ---
     const menuPages = [
         { href: 'bank.html', icon: 'fas fa-university', label: 'Banka' },
-        { href: 'envanter.html', icon: 'fas fa-briefcase', label: 'Envanter' },
+        { href: 'inventory.html', icon: 'fas fa-briefcase', label: 'Envanter' },
         { href: 'factory.html', icon: 'fas fa-industry', label: 'Fabrikalar' },
         { href: 'hospital.html', icon: 'fas fa-hospital-alt', label: 'Hastane' },
         { href: 'market.html', icon: 'fas fa-shopping-basket', label: 'Pazar' },
-        { href: 'meclis.html', icon: 'fas fa-landmark', label: 'Meclis' },
-        { href: 'mines.html', icon: 'fas fa-coins', label: 'Madenler' },
+        { href: 'council.html', icon: 'fas fa-landmark', label: 'Meclis' },
+        { href: 'mine-list.html', icon: 'fas fa-coins', label: 'Madenler' },
         { href: 'licence.html', icon: 'fas fa-id-card', label: 'Lisanslar' },
-        { href: 'arge.html', icon: 'fas fa-flask', label: 'AR-GE Merkezi' },
+        { href: 'research.html', icon: 'fas fa-flask', label: 'AR-GE Merkezi' },
         { href: 'Untitled-1.html', icon: 'fas fa-hammer', label: 'Manuel Maden' },
         { href: 'admin.html', icon: 'fas fa-user-shield', label: 'Admin Paneli' }
     ];
@@ -234,5 +278,91 @@
     } else {
         buildMenu();
     }
+
+    // --- NOTIFICATIONS LOGIC ---
+    let isNotifOpen = false;
+
+    window.toggleNotifications = function() {
+        const modal = document.getElementById('notifModal');
+        if (!modal) return;
+        
+        isNotifOpen = !isNotifOpen;
+        modal.style.display = isNotifOpen ? 'flex' : 'none';
+        
+        if (isNotifOpen) {
+            fetchNotifications();
+            markNotificationsRead();
+        }
+    };
+
+    async function fetchNotifications() {
+        try {
+            const response = await fetch(`/api/notifications/${userId}`);
+            const data = await response.json();
+            
+            renderNotifications(data.notifications);
+            updateBadge(data.unreadCount);
+        } catch (e) {
+            console.error('Notif fetch error:', e);
+        }
+    }
+
+    function renderNotifications(list) {
+        const container = document.getElementById('notifList');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        if (!list || list.length === 0) {
+            container.innerHTML = '<div style="padding:20px; text-align:center; color:#666;">Bildirim yok.</div>';
+            return;
+        }
+        
+        list.forEach(n => {
+            const div = document.createElement('div');
+            div.className = `notif-item ${n.is_read ? '' : 'unread'}`;
+            
+            const date = new Date(n.created_at);
+            const timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            div.innerHTML = `
+                <div class="notif-title">${n.title}</div>
+                <div class="notif-msg">${n.message}</div>
+                <div class="notif-time">${timeStr}</div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function updateBadge(count) {
+        const badge = document.getElementById('notifBadge');
+        if (!badge) return;
+        
+        if (count > 0) {
+            badge.style.display = 'block';
+            badge.innerText = count > 9 ? '9+' : count;
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    async function markNotificationsRead() {
+        try {
+            await fetch('/api/notifications/read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId })
+            });
+            // Badge will be cleared on next fetch or manually here
+            setTimeout(() => updateBadge(0), 1000);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    // Initial Fetch
+    fetchNotifications();
+    // Poll every 30 seconds
+    setInterval(fetchNotifications, 30000);
 
 })();

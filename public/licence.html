@@ -193,6 +193,8 @@
             <div class="tabs">
                 <button class="tab-btn active" onclick="switchTab('mine', this)">Maden</button>
                 <button class="tab-btn" onclick="switchTab('factory', this)">Fabrika</button>
+                <button class="tab-btn" onclick="switchTab('farm', this)">Tarla</button>
+                <button class="tab-btn" onclick="switchTab('ranch', this)">Çiftlik</button>
                 <button class="tab-btn" onclick="switchTab('business', this)">İşletme</button>
             </div>
 
@@ -204,12 +206,22 @@
 
             <!-- FABRİKA LİSANSLARI -->
             <div class="license-list" id="factoryList">
-                <div style="text-align:center; padding:20px; color:#666;">Fabrika lisansları yakında eklenecek.</div>
+                <!-- JS ile doldurulacak -->
+            </div>
+
+            <!-- TARLA LİSANSLARI -->
+            <div class="license-list" id="farmList">
+                <!-- JS ile doldurulacak -->
             </div>
 
             <!-- İŞLETME LİSANSLARI -->
             <div class="license-list" id="businessList">
                 <!-- Hastane Lisansı vb. -->
+            </div>
+
+            <!-- ÇİFTLİKLER LİSANSLARI -->
+            <div class="license-list" id="ranchList">
+                <!-- JS ile doldurulacak -->
             </div>
         </main>
 
@@ -258,20 +270,46 @@
         };
 
         const minesData = [
-            { id: 'wood', name: 'Odun Kampı', icon: 'https://cdn-icons-png.flaticon.com/512/2965/2965567.png' },
-            { id: 'stone', name: 'Taş Ocağı', icon: 'https://cdn-icons-png.flaticon.com/512/6660/6660085.png' },
-            { id: 'iron', name: 'Demir Madeni', icon: 'https://cdn-icons-png.flaticon.com/512/7396/7396136.png' },
-            { id: 'coal', name: 'Kömür Madeni', icon: 'https://cdn-icons-png.flaticon.com/512/2163/2163291.png' },
-            { id: 'oil', name: 'Petrol Kuyusu', icon: 'https://cdn-icons-png.flaticon.com/512/2933/2933900.png' },
-            { id: 'diamond', name: 'Elmas Madeni', icon: 'https://cdn-icons-png.flaticon.com/512/4248/4248369.png' },
-            { id: 'uranium', name: 'Uranyum Madeni', icon: 'https://cdn-icons-png.flaticon.com/512/3055/3055350.png' },
-            { id: 'copper', name: 'Bakır Madeni', icon: 'https://cdn-icons-png.flaticon.com/512/3655/3655599.png' },
-            { id: 'gold', name: 'Altın Madeni', icon: 'https://cdn-icons-png.flaticon.com/512/2535/2535561.png' }
+            { id: 'wood', name: 'Odun Kampı', icon: 'icons/mine-icon/wood.png' },
+            { id: 'stone', name: 'Taş Ocağı', icon: 'icons/mine-icon/stone.png' },
+            { id: 'iron', name: 'Demir Madeni', icon: 'icons/mine-icon/iron.png' },
+            { id: 'coal', name: 'Kömür Madeni', icon: 'icons/mine-icon/coal.png' },
+            { id: 'sand', name: 'Kum Madeni', icon: 'icons/mine-icon/sand.png' },
+            { id: 'oil', name: 'Petrol Kuyusu', icon: 'icons/mine-icon/oil-barrel.png' },
+            { id: 'diamond', name: 'Elmas Madeni', icon: 'icons/inventory-icon/diamond.png' },
+            { id: 'uranium', name: 'Uranyum Madeni', icon: 'icons/mine-icon/uranium.png' },
+            { id: 'copper', name: 'Bakır Madeni', icon: 'icons/mine-icon/copper.png' },
+            { id: 'gold', name: 'Altın Madeni', icon: 'icons/mine-icon/gold-nugget.png' }
+        ];
+
+        const factoryData = [
+            { id: 'lumber', name: 'Kereste Fabrikası', icon: 'icons/factory-icon/wood-plank.png' },
+            { id: 'brick', name: 'Tuğla Fabrikası', icon: 'icons/factory-icon/brick.png' },
+            { id: 'glass', name: 'Cam Fabrikası', icon: 'icons/factory-icon/window.png' },
+            { id: 'concrete', name: 'Çimento Fabrikası', icon: 'icons/factory-icon/cement.png' },
+            { id: 'steel', name: 'Çelik Fabrikası', icon: 'icons/factory-icon/steel.png' },
+            { id: 'agricultural', name: 'Tarım Çiftliği', icon: 'fa-seedling' },
+            { id: 'animal', name: 'Hayvan Çiftliği', icon: 'fa-paw' },
+            { id: 'bakery', name: 'Fırın ve Unlu Mamuller Tesisi', icon: 'icons/factory-icon/food-factory.png' },
+            { id: 'ready_food', name: 'Hazır Yemek Üretim Tesisi', icon: 'icons/factory-icon/food-factory.png' },
+            { id: 'olive_oil', name: 'Zeytinyağı Üretim Tesisi', icon: 'icons/factory-icon/food-factory.png' },
+            { id: 'sweets', name: 'Tatlı & Şekerleme Üretim Tesisi', icon: 'icons/factory-icon/food-factory.png' },
+            { id: 'weapon', name: 'Silah Fabrikası', icon: 'fa-crosshairs' },
+            { id: 'wind_turbine', name: 'Rüzgar Türbini', icon: 'icons/energy-factory-icon/wind-turbine.png' },
+            { id: 'solar_plant', name: 'Güneş Enerjisi Santrali', icon: 'icons/energy-factory-icon/solar-panel.png' },
+            { id: 'coal_plant', name: 'Kömür Enerji Santrali', icon: 'icons/energy-factory-icon/fossil-fuel.png' },
+            { id: 'nuclear_plant', name: 'Nükleer Enerji Santrali', icon: 'icons/energy-factory-icon/nuclear-plant.png' }
         ];
 
         const businessData = [
-            { id: 'hospital', name: 'Hastane İşletmesi', icon: 'https://cdn-icons-png.flaticon.com/512/4320/4320371.png' },
-            { id: 'bank', name: 'Banka Açma Lisansı', icon: 'https://cdn-icons-png.flaticon.com/512/2830/2830284.png' }
+            { id: 'hospital', name: 'Hastane İşletmesi', icon: 'fa-hospital' },
+            { id: 'bank', name: 'Banka Açma Lisansı', icon: 'fa-university' }
+        ];
+
+        let ranchData = [];
+
+        let farmData = [
+            { id: 'farm', name: 'Çiftçilik Lisansı', icon: 'fa-tractor' }
         ];
 
         const eduStages = [
@@ -300,6 +338,141 @@
             }
 
             try {
+                // Get Farm Types for Licenses
+                const farmTypesRes = await fetch('/api/farm-types');
+                if (farmTypesRes.ok) {
+                    const farmTypes = await farmTypesRes.json();
+                    // Map farm types to license format if needed, or just use them directly
+                    // For now, we keep the generic 'farm' license as the base requirement, 
+                    // but if we want specific licenses for each farm type, we would map them here.
+                    // However, the user asked to add "tarlaların lisansları" (plural).
+                    // Let's assume we want to show licenses corresponding to farm types.
+                    // But currently the system uses a single 'license_farm_level' for all farms.
+                    // If the user wants specific licenses for each farm type (e.g. Wheat License, Corn License),
+                    // we would need to change the DB structure.
+                    // Based on previous context, we have a single 'license_farm_level'.
+                    // So 'farmData' with a single entry is correct for the current backend logic.
+                    // BUT, if the user wants to SEE the farm types listed in the license menu, 
+                    // maybe they mean they want to see which farm requires which license level?
+                    // Or maybe they want separate licenses?
+                    // "tarla menüsünde veritabanına eklediğimiz tarlaların lisansları olsun"
+                    // "Let there be licenses of the farms we added to the database in the field menu"
+                    // This likely means listing the farm types and their required license levels, 
+                    // OR treating them as separate licenses.
+                    // Given we just added `license_farm_level` (singular) to users table, 
+                    // it's a single skill tree.
+                    // So we should probably list the farms under the "Tarla" tab, showing what level they unlock at.
+                    // OR, maybe the user wants to buy licenses for specific farms?
+                    // "tarla satın alırken bu lisans gerekli olsun" -> "this license" (singular/specific).
+                    // If we have `license_farm_level`, it's a general farming skill.
+                    // Let's stick to the single "Çiftçilik Lisansı" which unlocks all farms at various levels.
+                    // I will update the UI to show which farms are unlocked at which level in the description or similar.
+                    // Wait, the user said "tarlaların lisansları olsun" (plural).
+                    // Maybe they want to see "Buğday Lisansı", "Mısır Lisansı" etc?
+                    // But we only have `license_farm_level`.
+                    // If I add them as separate items in `farmData`, they will all try to update `license_farm_level`?
+                    // No, that would be confusing.
+                    // Let's assume the user wants to see the list of farms and their requirements in the license tab,
+                    // essentially showing what the "Çiftçilik Lisansı" unlocks.
+                    // OR, they might want to change the system to have specific licenses.
+                    // Given the previous prompt "tarla satın alırken bu lisans gerekli olsun" (singular implied by "bu lisans"),
+                    // I will stick to the single license but maybe enhance the display.
+                    
+                    // Actually, looking at `farm-list.html`, it says "Gereken Lisans: Lv. X".
+                    // So we have one license type "Çiftçilik Lisansı" with levels.
+                    // The current `farmData` has only one item: `{ id: 'farm', name: 'Çiftçilik Lisansı', ... }`.
+                    // This seems correct for a single tiered license.
+                    // If the user wants "tarlaların lisansları" (plural), maybe they want to see the list of farms?
+                    // But this is the *License* page.
+                    // Let's keep it as is for now, but maybe fetch farm types to show them as "Unlockable Content"?
+                    // Or maybe the user thinks each farm has its own license?
+                    // "veritabanına eklediğimiz tarlaların lisansları olsun"
+                    // "Let the licenses of the farms we added to the database be in the field menu"
+                    // This might mean: For every farm type in DB, show a license card.
+                    // But we don't have columns for `license_wheat_level`, `license_corn_level` etc.
+                    // We only have `license_farm_level`.
+                    // So if I add them, they would all have to map to the same DB column or we need new columns.
+                    // Since I cannot easily add dynamic columns to DB without a migration script and user approval,
+                    // I will assume they want to see the *single* farming license that covers them all.
+                    
+                    // However, to be safe and responsive to "veritabanına eklediğimiz tarlaların",
+                    // I will fetch the farm types and maybe list them as "Available Farms" under the license?
+                    // Or maybe I should just ensure the "Çiftçilik Lisansı" is prominent.
+                    
+                    // Re-reading: "tarla menüsünde" -> "in the field menu".
+                    // This is `licence.html` (License Menu) or `farm-list.html` (Field Menu)?
+                    // The user is currently in `licence.html`.
+                    // "tarla menüsünde ... tarlaların lisansları olsun"
+                    // Maybe they mean in `farm-list.html`?
+                    // But the previous prompt was "licence.html sayfasına ilgili tarla lisanslarını ekle".
+                    // And I added one "Çiftçilik Lisansı".
+                    // Now they say "veritabanına eklediğimiz tarlaların lisansları olsun".
+                    // This implies multiple.
+                    // If I have to support multiple licenses (one per farm type), I would need a table `player_licenses` or similar.
+                    // We have a `licenses` table!
+                    // `create table licenses (user_id int, mine_type varchar(50), level int)`
+                    // So we CAN have multiple licenses!
+                    // `mine_type` can be 'wheat', 'corn', etc.
+                    // So, I should fetch farm types, and for each farm type, create a license entry in `farmData`.
+                    // And when buying, send `mineType: 'wheat'` etc.
+                    // AND update `server.js` to handle these types (generic handler might work).
+                    // BUT `server.js` currently has a special block for `farm` type updating `users.license_farm_level`.
+                    // If I switch to individual licenses, I should use the `licenses` table instead of `users` column.
+                    // The `licenses` table is generic.
+                    // So, plan:
+                    // 1. Fetch farm types from API.
+                    // 2. Populate `farmData` with these types (id: slug, name: name + ' Lisansı').
+                    // 3. In `server.js`, the generic `/api/licenses/buy` handler writes to `licenses` table if it's not 'hospital' or 'farm'.
+                    // 4. Wait, I just added a special block for 'farm' in `server.js`.
+                    // If I want individual licenses, I should remove that special block or make it only for a "General Farming License" if that exists.
+                    // If the user wants "tarlaların lisansları" (plural), they probably want individual licenses.
+                    // "Buğday Lisansı", "Mısır Lisansı"...
+                    // Let's try to implement individual licenses using the `licenses` table.
+                    
+                    // Step 1: Fetch farm types and populate `farmData`.
+                    // Filter out ranch types (chicken, cow, sheep, bee) from farmData
+                    // Assuming ranch types are identified by their slugs or we can filter by checking if they are in ranchData
+                    // But ranchData is hardcoded above.
+                    // Let's just filter out known ranch slugs if they come from farm-types API (which they shouldn't if API is correct, but just in case)
+                    // Actually, the user said "tarla menüsünde çiftlik lisansları olmasın".
+                    // "Tarla" tab is `farmList`. "Çiftlik" tab is `ranchList`.
+                    // The user might be seeing ranch licenses in the farm tab?
+                    // Ah, `farmTypes` API might be returning ranches too if they are in the same table?
+                    // Let's check `farm_types` table.
+                    // If `farm_types` contains ranches, we need to filter them out.
+                    // Based on previous `check_farm_types.js` output:
+                    // id: 1, name: 'Tavuk Çiftliği', slug: 'chicken_farm'
+                    // id: 2, name: 'İnek Çiftliği', slug: 'cow_farm'
+                    // ...
+                    // id: 5, name: 'Buğday Tarlası', slug: 'wheat'
+                    // So YES, `farm_types` contains BOTH ranches and farms.
+                    // We need to separate them.
+                    // Ranches seem to have '_farm' suffix in slug or we can list them.
+                    // Or better, we can check if the name contains "Çiftliği" vs "Tarlası" / "Bahçesi"?
+                    // Or hardcode the ranch slugs to exclude.
+                    const ranchSlugs = ['chicken_farm', 'cow_farm', 'sheep_farm', 'bee_farm'];
+                    
+                    farmData = farmTypes
+                        .filter(f => !ranchSlugs.includes(f.slug)) // Exclude ranches from Farm tab
+                        .map(f => ({
+                            id: f.slug, // e.g. 'wheat'
+                            name: f.name + ' Lisansı',
+                            icon: f.image_path || 'fa-tractor'
+                        }));
+
+                    // Populate Ranch Data (Animals)
+                    ranchData = farmTypes
+                        .filter(f => ranchSlugs.includes(f.slug))
+                        .map(f => ({
+                            id: f.slug,
+                            name: f.name + ' Lisansı',
+                            icon: f.image_path || 'fa-paw'
+                        }));
+                    // If we want to use DB for ranches too, we should update `ranchData` here.
+                    // But the user specifically asked to fix the "Tarla" menu.
+                    // So I will just fix `farmData`.
+                }
+
                 // Get Licenses
                 const response = await fetch(`/api/licenses/${user.id}`);
                 userLicenses = await response.json();
@@ -309,6 +482,8 @@
                 const stats = await statsRes.json();
                 if(stats) {
                     if (stats.license_hospital_level) userLicenses['hospital'] = stats.license_hospital_level;
+                    // We might still keep the general farm license if needed, but for now let's rely on the dynamic ones
+                    // if (stats.license_farm_level) userLicenses['farm'] = stats.license_farm_level;
                     userEducationSkill = stats.education_skill || 1;
                 }
 
@@ -366,10 +541,10 @@
             const requiredStageIndex = nextLevel - 1;
             const requiredStageName = eduStages[requiredStageIndex] ? eduStages[requiredStageIndex].name + " Mezunu" : "Yüksek Eğitim";
             const requiredEduSkill = nextLevel * 10;
-            pendingReqEdu = requiredEduSkill + 1;
+            pendingReqEdu = requiredEduSkill;
             
             if(elEdu) {
-                if (userEducationSkill > requiredEduSkill) {
+                if (userEducationSkill >= requiredEduSkill) {
                     elEdu.style.color = 'var(--accent-green)';
                     elEdu.innerHTML = `<i class="fas fa-check"></i> ${requiredStageName}`;
                 } else {
@@ -410,7 +585,10 @@
 
         function renderLicenses() {
             renderList('mineList', minesData);
+            renderList('factoryList', factoryData);
+            renderList('ranchList', ranchData);
             renderList('businessList', businessData);
+            renderList('farmList', farmData);
         }
 
         function renderList(containerId, dataList) {
@@ -427,7 +605,7 @@
                 // Target Level 1 -> Need > 10 (Finished Primary)
                 // Target Level 2 -> Need > 20 (Finished Middle)
                 const requiredEduSkill = nextLevel * 10;
-                const hasRequiredEdu = userEducationSkill > requiredEduSkill;
+                const hasRequiredEdu = userEducationSkill >= requiredEduSkill;
                 
                 // Find stage name for display
                 // Stage 1 (1-10) is index 0. Target Level 1 needs Stage 1 finished.
@@ -465,19 +643,26 @@
                     } else {
                         actionHTML = `
                             <div class="cost-box">
-                                <div class="cost-badge cost-money"><i class="fas fa-wallet"></i> ${formatMoney(cost.money)}</div>
-                                ${cost.gold > 0 ? `<div class="cost-badge cost-gold"><i class="fas fa-coins"></i> ${cost.gold}</div>` : ''}
-                                ${cost.diamond > 0 ? `<div class="cost-badge cost-diamond" style="color: #3498db; border-color: #3498db;"><i class="fas fa-gem"></i> ${cost.diamond}</div>` : ''}
+                                <div class="cost-badge cost-money"><img src="icons/inventory-icon/money.png" style="width:16px;height:16px;vertical-align:middle;"> ${formatMoney(cost.money)}</div>
+                                ${cost.gold > 0 ? `<div class="cost-badge cost-gold"><img src="icons/inventory-icon/gold.png" style="width:16px;height:16px;vertical-align:middle;"> ${cost.gold}</div>` : ''}
+                                ${cost.diamond > 0 ? `<div class="cost-badge cost-diamond" style="color: #3498db; border-color: #3498db;"><img src="icons/inventory-icon/diamond.png" style="width:16px;height:16px;vertical-align:middle;"> ${cost.diamond}</div>` : ''}
                             </div>
                             <button class="${btnClass}" onclick="openModal('${item.id}', '${item.name}', ${currentLevel})">${btnText}</button>
                         `;
                     }
                 }
 
+                let iconHTML = '';
+                if (item.icon.startsWith('http') || item.icon.includes('/')) {
+                    iconHTML = `<img src="${item.icon}" class="lc-icon" alt="${item.name}">`;
+                } else {
+                    iconHTML = `<div class="lc-icon" style="display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:var(--accent-cyan);"><i class="fas ${item.icon}"></i></div>`;
+                }
+
                 card.innerHTML = `
                     <div class="lc-header">
                         <div class="lc-info">
-                            <img src="${item.icon}" class="lc-icon" alt="${item.name}">
+                            ${iconHTML}
                             <div class="lc-name">${item.name}</div>
                         </div>
                         <div class="lc-level">Lv. ${currentLevel}</div>

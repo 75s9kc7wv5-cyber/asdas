@@ -1,18 +1,47 @@
 const minesData = [
-    { id: 'wood', name: 'Ormancılık Teknikleri', desc: 'Ağaç kesim ve işleme hızını artırır.', icon: 'fa-tree', colorClass: 'c-wood' },
-    { id: 'stone', name: 'Taş Kırma Teknolojisi', desc: 'Taş ocağı verimliliğini artırır.', icon: 'fa-cubes', colorClass: 'c-stone' },
-    { id: 'iron', name: 'Demir Eritme Fırınları', desc: 'Demir cevheri işleme kapasitesini yükseltir.', icon: 'fa-cube', colorClass: 'c-iron' },
-    { id: 'coal', name: 'Kömür Ayrıştırma', desc: 'Daha kaliteli kömür çıkarımı sağlar.', icon: 'fa-fire', colorClass: 'c-coal' },
-    { id: 'oil', name: 'Petrol Sondajı', desc: 'Petrol kuyusu pompa hızını artırır.', icon: 'fa-oil-can', colorClass: 'c-oil' },
-    { id: 'copper', name: 'Bakır İletkenliği', desc: 'Bakır madeni üretimini optimize eder.', icon: 'fa-layer-group', colorClass: 'c-copper' },
-    { id: 'gold', name: 'Altın Eleme Sistemi', desc: 'Altın tozlarını daha verimli ayrıştırır.', icon: 'fa-coins', colorClass: 'c-gold' },
+    { id: 'wood', name: 'Ormancılık Teknikleri', desc: 'Ağaç kesim ve işleme hızını artırır.', image: 'icons/mine-icon/wood.png', colorClass: 'c-wood' },
+    { id: 'stone', name: 'Taş Kırma Teknolojisi', desc: 'Taş ocağı verimliliğini artırır.', image: 'icons/mine-icon/stone.png', colorClass: 'c-stone' },
+    { id: 'iron', name: 'Demir Eritme Fırınları', desc: 'Demir cevheri işleme kapasitesini yükseltir.', image: 'icons/mine-icon/iron.png', colorClass: 'c-iron' },
+    { id: 'coal', name: 'Kömür Ayrıştırma', desc: 'Daha kaliteli kömür çıkarımı sağlar.', image: 'icons/mine-icon/coal.png', colorClass: 'c-coal' },
+    { id: 'sand', name: 'Kum Eleme Teknolojisi', desc: 'Kum madeni verimliliğini artırır.', image: 'icons/mine-icon/sand.png', colorClass: 'c-sand' },
+    { id: 'oil', name: 'Petrol Sondajı', desc: 'Petrol kuyusu pompa hızını artırır.', image: 'icons/mine-icon/oil-barrel.png', colorClass: 'c-oil' },
+    { id: 'copper', name: 'Bakır İletkenliği', desc: 'Bakır madeni üretimini optimize eder.', image: 'icons/mine-icon/copper.png', colorClass: 'c-copper' },
+    { id: 'gold', name: 'Altın Eleme Sistemi', desc: 'Altın tozlarını daha verimli ayrıştırır.', image: 'icons/mine-icon/gold-nugget.png', colorClass: 'c-gold' },
     { id: 'diamond', name: 'Elmas Kesim Lazerleri', desc: 'Elmas çıkarma hasarını azaltır.', icon: 'fa-gem', colorClass: 'c-diamond' },
-    { id: 'uranium', name: 'Uranyum Zenginleştirme', desc: 'Nükleer yakıt üretimini artırır.', icon: 'fa-radiation', colorClass: 'c-uranium' }
+    { id: 'uranium', name: 'Uranyum Zenginleştirme', desc: 'Nükleer yakıt üretimini artırır.', image: 'icons/mine-icon/uranium.png', colorClass: 'c-uranium' }
 ];
 
+const factoriesData = [
+    { id: 'lumber', name: 'Kereste İşleme', desc: 'Kereste üretim verimliliğini artırır.', image: 'icons/factory-icon/wood-plank.png', colorClass: 'c-wood' },
+    { id: 'brick', name: 'Tuğla Fırınları', desc: 'Tuğla pişirme süresini kısaltır.', image: 'icons/factory-icon/brick.png', colorClass: 'c-stone' },
+    { id: 'glass', name: 'Cam Üfleme', desc: 'Cam üretim kalitesini artırır.', image: 'icons/factory-icon/window.png', colorClass: 'c-sand' },
+    { id: 'concrete', name: 'Çimento Karışımı', desc: 'Çimento üretimini optimize eder.', image: 'icons/factory-icon/cement.png', colorClass: 'c-stone' },
+    { id: 'steel', name: 'Çelik Alaşımları', desc: 'Çelik üretim dayanıklılığını artırır.', image: 'icons/factory-icon/steel.png', colorClass: 'c-iron' },
+    { id: 'agricultural', name: 'Modern Tarım', desc: 'Tarım ürünleri verimini artırır.', icon: 'fa-tractor', colorClass: 'c-wood' },
+    { id: 'animal', name: 'Hayvancılık', desc: 'Hayvansal üretim hızını artırır.', icon: 'fa-egg', colorClass: 'c-wood' },
+    { id: 'food', name: 'Gıda İşleme', desc: 'Gıda paketleme hızını artırır.', icon: 'fa-burger', colorClass: 'c-wood' },
+    { id: 'weapon', name: 'Silah Teknolojisi', desc: 'Silah üretim hassasiyetini artırır.', icon: 'fa-jet-fighter', colorClass: 'c-iron' },
+    { id: 'solar', name: 'Güneş Panelleri', desc: 'Enerji üretim verimliliğini artırır.', icon: 'fa-solar-panel', colorClass: 'c-gold' }
+];
+
+let currentTab = 'mines';
 let argeData = {};
 let activeTimers = {};
 let selectedResearchId = null;
+let userEducationSkill = 0;
+
+const eduStages = [
+    { name: "İlkokul", max: 10 },
+    { name: "Ortaokul", max: 20 },
+    { name: "Lise", max: 30 },
+    { name: "Üniversite", max: 40 },
+    { name: "Yüksek Lisans", max: 50 },
+    { name: "Doktora", max: 60 },
+    { name: "Doçent", max: 70 },
+    { name: "Profesör", max: 80 },
+    { name: "Ord. Profesör", max: 90 },
+    { name: "Bilim İnsanı", max: 100 }
+];
 
 async function initArgePage() {
     const user = JSON.parse(localStorage.getItem('simWorldUser'));
@@ -29,6 +58,17 @@ async function initArgePage() {
     // Show loading state
     const container = document.getElementById('researchList');
     if (container) container.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">Veriler yükleniyor...</div>';
+
+    // Get User Stats for Education
+    try {
+        const statsRes = await fetch(`/api/user-stats/${user.id}`);
+        const stats = await statsRes.json();
+        if (stats) {
+            userEducationSkill = stats.education_skill || 0;
+        }
+    } catch (e) {
+        console.error("Stats fetch error", e);
+    }
 
     await getCurrentArgeData(user.id);
 }
@@ -62,29 +102,41 @@ async function loadArgeFromDatabase(userId) {
     return getCurrentArgeData(userId);
 }
 
+function switchTab(tab) {
+    currentTab = tab;
+    
+    // Update UI
+    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    
+    renderArgeList();
+}
+
 function renderArgeList() {
     const container = document.getElementById('researchList');
     if (!container) return;
     
     container.innerHTML = '';
 
-    if (!minesData || minesData.length === 0) {
+    const dataList = currentTab === 'mines' ? minesData : factoriesData;
+
+    if (!dataList || dataList.length === 0) {
         container.innerHTML = '<div style="text-align:center;">Görüntülenecek araştırma yok.</div>';
         return;
     }
 
-    minesData.forEach(mine => {
-        const mineArge = argeData[mine.id] || { level: 1, is_researching: 0, research_end_time: null };
+    dataList.forEach(mine => {
+        const mineArge = argeData[mine.id] || { level: 0, is_researching: 0, research_end_time: null };
         const level = mineArge.level;
         const isMaxed = level >= 10;
         const nextLevel = level + 1;
         
         // Stats
-        const bonus = (level - 1) * 5; // +5% per level above 1
+        const bonus = level * 10; // +10% per level
 
         // Cost
-        const costMoney = Math.floor(5000 * Math.pow(1.8, level - 1));
-        const duration = level * 60;
+        const costMoney = Math.floor(5000 * Math.pow(1.8, level));
+        const duration = (level + 1) * 60;
 
         const card = document.createElement('div');
         card.className = 'research-card';
@@ -112,16 +164,23 @@ function renderArgeList() {
         } else {
             actionHTML = `
                 <button class="btn-research" onclick="openModal('${mine.id}')">
-                    <span>Geliştir (Sv. ${nextLevel})</span>
+                    <span>${level === 0 ? 'Başlat' : 'Geliştir'} (Sv. ${nextLevel})</span>
                     <small>Detaylar <i class="fas fa-chevron-right"></i></small>
                 </button>
             `;
         }
 
+        let iconHtml = '';
+        if (mine.image) {
+            iconHtml = `<img src="${mine.image}" alt="${mine.name}" style="width: 32px; height: 32px;">`;
+        } else {
+            iconHtml = `<i class="fas ${mine.icon}"></i>`;
+        }
+
         card.innerHTML = `
             <div class="r-top">
                 <div class="r-icon-box ${mine.colorClass}">
-                    <i class="fas ${mine.icon}"></i>
+                    ${iconHtml}
                 </div>
                 <div class="r-info">
                     <div class="r-title">
@@ -143,16 +202,23 @@ function renderArgeList() {
 
 function openModal(mineId) {
     selectedResearchId = mineId;
-    const mine = minesData.find(m => m.id === mineId);
-    const mineArge = argeData[mineId] || { level: 1 };
-    const level = mineArge.level;
     
-    const costMoney = Math.floor(5000 * Math.pow(1.8, level - 1));
-    const costGold = 50 * level;
-    const costDiamond = level >= 5 ? (level - 4) * 2 : 0;
+    let mine = minesData.find(m => m.id === mineId);
+    if (!mine) mine = factoriesData.find(m => m.id === mineId);
+    
+    if (!mine) return;
 
-    const duration = level * 60;
-    const bonus = 5; // +5% per level
+    const mineArge = argeData[mineId] || { level: 0 };
+    const level = mineArge.level;
+    const nextLevel = level + 1;
+    
+    const costMoney = Math.floor(5000 * Math.pow(1.8, level));
+    const costGold = 50 * nextLevel;
+    const costDiamond = nextLevel >= 5 ? (nextLevel - 4) * 2 : 0;
+
+    const duration = nextLevel * 60;
+    const bonus = 10; // +10% per level
+    const requiredEdu = nextLevel * 10;
 
     document.getElementById('mTitle').innerText = mine.name;
     document.getElementById('mTime').innerText = formatTime(duration);
@@ -166,15 +232,41 @@ function openModal(mineId) {
     }
     costText += `</div>`;
 
-    document.getElementById('mCost').innerHTML = costText;
-    document.getElementById('mEffect').innerText = `+%${bonus} Verimlilik`;
+    // Education Requirement
+    let eduColor = userEducationSkill >= requiredEdu ? 'var(--accent-green)' : 'var(--accent-red)';
+    let eduIcon = userEducationSkill >= requiredEdu ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
+    
+    // Find stage name
+    const stage = eduStages.find(s => s.max === requiredEdu);
+    const stageName = stage ? stage.name + " Mezunu" : requiredEdu + ". Seviye";
+
+    let eduHtml = `
+        <div class="m-row">
+            <span>Gereken Eğitim:</span>
+            <span style="color:${eduColor}">${eduIcon} ${stageName}</span>
+        </div>
+    `;
+
+    // Insert Edu HTML before Cost
+    const detailsContainer = document.querySelector('.m-details');
+    
+    detailsContainer.innerHTML = `
+        <div class="m-row">
+            <span>Süre:</span>
+            <span id="mTime" style="color:var(--accent-cyan)">${formatTime(duration)}</span>
+        </div>
+        ${eduHtml}
+        <div class="m-row">
+            <span>Maliyet:</span>
+            <span id="mCost">${costText}</span>
+        </div>
+        <div class="m-row">
+            <span>Etki:</span>
+            <span id="mEffect" style="color:var(--accent-green)">+%${bonus} Verimlilik</span>
+        </div>
+    `;
 
     document.getElementById('confirmModal').style.display = 'flex';
-}
-
-function closeModal() {
-    document.getElementById('confirmModal').style.display = 'none';
-    selectedResearchId = null;
 }
 
 async function startResearch() {
@@ -182,13 +274,24 @@ async function startResearch() {
     
     const user = JSON.parse(localStorage.getItem('simWorldUser'));
     const mineType = selectedResearchId;
+    const mineArge = argeData[mineType] || { level: 0 };
+    const nextLevel = mineArge.level + 1;
+    const requiredEdu = nextLevel * 10;
+
+    if (userEducationSkill < requiredEdu) {
+        const stage = eduStages.find(s => s.max === requiredEdu);
+        const stageName = stage ? stage.name + " Mezunu" : requiredEdu + ". Seviye";
+        toastr.error(`Eğitim seviyeniz yetersiz! Gereken: ${stageName}`, 'Hata');
+        closeModal();
+        return;
+    }
     
     try {
         const result = await saveToDatabase('/api/arge/start', { userId: user.id, mineType: mineType });
         
         if (result.success) {
             // Update local data immediately to reflect UI change
-            if (!argeData[mineType]) argeData[mineType] = { level: 1 };
+            if (!argeData[mineType]) argeData[mineType] = { level: 0 };
             argeData[mineType].is_researching = 1;
             argeData[mineType].research_end_time = result.endTime;
             
@@ -215,6 +318,33 @@ async function startResearch() {
         console.error(error);
         toastr.error('Bir hata oluştu.', 'Hata');
     }
+}
+
+async function finishResearch(mineType) {
+    const user = JSON.parse(localStorage.getItem('simWorldUser'));
+    
+    try {
+        const result = await saveToDatabase('/api/arge/finish', { userId: user.id, mineType: mineType });
+        
+        if (result.success) {
+            // Update local data
+            if (!argeData[mineType]) argeData[mineType] = { level: 0 };
+            argeData[mineType].level = result.newLevel;
+            argeData[mineType].is_researching = 0;
+            argeData[mineType].research_end_time = null;
+            
+            toastr.success('Araştırma Tamamlandı! Seviye Atladı.', 'Tebrikler');
+            
+            renderArgeList();
+        }
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+function closeModal() {
+    document.getElementById('confirmModal').style.display = 'none';
+    selectedResearchId = null;
 }
 
 function updateResearchTimer(mineType, endTime, totalDurationSeconds) {
@@ -247,28 +377,6 @@ function updateResearchTimer(mineType, endTime, totalDurationSeconds) {
     
     update();
     activeTimers[mineType] = setInterval(update, 1000);
-}
-
-async function finishResearch(mineType) {
-    const user = JSON.parse(localStorage.getItem('simWorldUser'));
-    
-    try {
-        const result = await saveToDatabase('/api/arge/finish', { userId: user.id, mineType: mineType });
-        
-        if (result.success) {
-            // Update local data
-            if (!argeData[mineType]) argeData[mineType] = { level: 1 };
-            argeData[mineType].level = result.newLevel;
-            argeData[mineType].is_researching = 0;
-            argeData[mineType].research_end_time = null;
-            
-            toastr.success('Araştırma Tamamlandı! Seviye Atladı.', 'Tebrikler');
-            
-            renderArgeList();
-        }
-    } catch (error) {
-        console.error(error);
-    }
 }
 
 function formatMoney(num) {

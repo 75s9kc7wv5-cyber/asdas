@@ -151,19 +151,29 @@
         }
         .inv-card:hover::before { opacity: 1; }
 
+        /* İkon Kutusu Güncelleme */
         .inv-icon-box {
-            width: 45px; height: 45px;
+            width: 50px; height: 50px;
             background: var(--bg-lighter);
             border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 1.5rem;
             border: 1px solid var(--border-color);
             flex-shrink: 0;
+            padding: 5px;
+        }
+        .inv-icon-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
+        }
+        .inv-icon-box i {
+            font-size: 1.5rem;
         }
         .inv-info h4 { font-size: 0.95rem; margin-bottom: 3px; }
         .inv-info p { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
 
-        /* İkon Renkleri */
+        /* İkon Renkleri (FontAwesome için) */
         .ic-wood { color: #d35400; }
         .ic-stone { color: #95a5a6; }
         .ic-iron { color: #bdc3c7; }
@@ -173,6 +183,21 @@
         .ic-gold { color: var(--accent-gold); }
         .ic-copper { color: #e67e22; }
         .ic-uranium { color: #27ae60; }
+        .ic-sand { color: #e1c699; }
+
+        /* MODAL */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; display: none; justify-content: center; align-items: center; animation: fadeIn 0.3s; }
+        .modal-content { background: #181818; width: 85%; max-width: 350px; padding: 25px; border-radius: 12px; border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-cyan); position: relative; }
+        .m-close { position: absolute; top: 10px; right: 15px; color: #666; font-size: 1.2rem; cursor: pointer; }
+        .m-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 15px; color: #fff; }
+        .m-desc { color: #aaa; font-size: 0.9rem; margin-bottom: 20px; }
+        .m-energy-val { font-size: 1.5rem; font-weight: 800; color: var(--accent-green); margin: 10px 0; }
+        .m-btns { display: flex; gap: 10px; }
+        .m-btn { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 0.9rem; }
+        .btn-confirm { background: var(--accent-green); color: #fff; }
+        .btn-cancel { background: #333; color: #fff; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
     </style>
 </head>
@@ -198,24 +223,76 @@
             </div>
 
             <div class="inventory-list" id="inventoryList">
-                </div>
+            </div>
         </main>
 
+        <!-- FOOD MODAL -->
+        <div class="modal-overlay" id="foodModal">
+            <div class="modal-content">
+                <div class="m-close" onclick="closeFoodModal()"><i class="fas fa-times"></i></div>
+                <div id="foodModalContent">
+                    <!-- Dynamic Content -->
+                </div>
+            </div>
+        </div>
+
     </div>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 
     <script>
+        toastr.options = { "positionClass": "toast-top-right", "timeOut": "3000" };
+
         // Konfigürasyon
         const itemConfig = {
-            wood: { name: 'Odun', icon: 'fa-tree', color: 'ic-wood', tab: 'kaynaklar' },
-            stone: { name: 'Taş', icon: 'fa-gem', color: 'ic-stone', tab: 'kaynaklar' },
-            iron: { name: 'Demir', icon: 'fa-cube', color: 'ic-iron', tab: 'kaynaklar' },
-            coal: { name: 'Kömür', icon: 'fa-fire', color: 'ic-coal', tab: 'kaynaklar' },
-            oil: { name: 'Petrol', icon: 'fa-oil-can', color: 'ic-oil', tab: 'kaynaklar' },
-            diamond: { name: 'Elmas', icon: 'fa-gem', color: 'ic-diamond', tab: 'kaynaklar' },
-            uranium: { name: 'Uranyum', icon: 'fa-radiation', color: 'ic-uranium', tab: 'kaynaklar' },
-            gold: { name: 'Altın', icon: 'fa-coins', color: 'ic-gold', tab: 'kaynaklar' },
-            gold_nugget: { name: 'Altın Parçası', icon: 'fa-gem', color: 'ic-gold', tab: 'kaynaklar' },
-            copper: { name: 'Bakır', icon: 'fa-layer-group', color: 'ic-copper', tab: 'kaynaklar' }
+            wood: { name: 'Odun', image: 'icons/mine-icon/wood.png', tab: 'kaynaklar' },
+            stone: { name: 'Taş', image: 'icons/mine-icon/stone.png', tab: 'kaynaklar' },
+            iron: { name: 'Demir', image: 'icons/mine-icon/iron.png', tab: 'kaynaklar' },
+            coal: { name: 'Kömür', image: 'icons/mine-icon/coal.png', tab: 'kaynaklar' },
+            oil: { name: 'Petrol', image: 'icons/mine-icon/oil-barrel.png', tab: 'kaynaklar' },
+            diamond: { name: 'Elmas', image: 'icons/inventory-icon/diamond.png', tab: 'kaynaklar' },
+            uranium: { name: 'Uranyum', image: 'icons/mine-icon/uranium.png', tab: 'kaynaklar' },
+            energy: { name: 'Elektrik', image: 'icons/energy-factory-icon/battery.png', tab: 'kaynaklar' },
+            gold: { name: 'Altın', image: 'icons/inventory-icon/gold.png', tab: 'kaynaklar' },
+            gold_nugget: { name: 'Altın Parçası', image: 'icons/mine-icon/gold-nugget.png', tab: 'kaynaklar' },
+            copper: { name: 'Bakır', image: 'icons/mine-icon/copper.png', tab: 'kaynaklar' },
+            sand: { name: 'Kum', image: 'icons/mine-icon/sand.png', tab: 'kaynaklar' },
+            lumber: { name: 'Tahta', image: 'icons/factory-icon/wood-plank.png', tab: 'kaynaklar' },
+            brick: { name: 'Tuğla', image: 'icons/factory-icon/brick.png', tab: 'kaynaklar' },
+            glass: { name: 'Cam', image: 'icons/factory-icon/window.png', tab: 'kaynaklar' },
+            concrete: { name: 'Çimento', image: 'icons/factory-icon/cement.png', tab: 'kaynaklar' },
+            steel: { name: 'Çelik', image: 'icons/factory-icon/steel.png', tab: 'kaynaklar' },
+            seed: { name: 'Tohum', image: 'icons/ranch-icon/seed.png', tab: 'kaynaklar' },
+            feed: { name: 'Yem', image: 'icons/ranch-icon/sack.png', tab: 'kaynaklar' },
+            wool: { name: 'Yün', image: 'icons/ranch-icon/wool.png', tab: 'kaynaklar' },
+            egg: { name: 'Yumurta', image: 'icons/ranch-icon/egg.png', tab: 'gidalar' },
+            meat: { name: 'Et', image: 'icons/ranch-icon/beef.png', tab: 'gidalar' },
+            honey: { name: 'Bal', image: 'icons/ranch-icon/honey.png', tab: 'gidalar' },
+            wheat: { name: 'Buğday', image: 'icons/farm-icon/wheat.png', tab: 'gidalar' },
+            corn: { name: 'Mısır', image: 'icons/farm-icon/corn.png', tab: 'gidalar' },
+            potato: { name: 'Patates', image: 'icons/farm-icon/potato.png', tab: 'gidalar' },
+            vegetable: { name: 'Sebze', image: 'icons/farm-icon/vegetables.png', tab: 'gidalar' },
+            fruit: { name: 'Meyve', image: 'icons/farm-icon/fruit.png', tab: 'gidalar' },
+            rice: { name: 'Pirinç', image: 'icons/farm-icon/rice.png', tab: 'gidalar' },
+            olive: { name: 'Zeytin', image: 'icons/farm-icon/olive.png', tab: 'gidalar' },
+            
+            // New Factory Products (With Energy)
+            bread: { name: 'Ekmek', image: 'icons/food-factory/bread.png', tab: 'gidalar', energy: 5 },
+            cake: { name: 'Pasta', image: 'icons/food-factory/cupcake.png', tab: 'gidalar', energy: 15 },
+            salad: { name: 'Salata', image: 'icons/food-factory/salad.png', tab: 'gidalar', energy: 5 },
+            canned_fruit: { name: 'Konserve Meyve', image: 'icons/food-factory/fruit-canned.png', tab: 'gidalar', energy: 5 },
+            cooked_meat: { name: 'Pişmiş Et', image: 'icons/food-factory/steak.png', tab: 'gidalar', energy: 20 },
+            rice_dish: { name: 'Pilav', image: 'icons/food-factory/rice.png', tab: 'gidalar', energy: 10 },
+            meat_dish: { name: 'Et Yemeği', image: 'icons/food-factory/steak-food.png', tab: 'gidalar', energy: 25 },
+            olive_oil: { name: 'Zeytinyağı', image: 'icons/food-factory/olive-oil.png', tab: 'gidalar' },
+            energy_bar: { name: 'Enerji Barı', image: 'icons/food-factory/energy-bar.png', tab: 'gidalar', energy: 50 },
+
+            // Military / Other
+            weapon: { name: 'Silah', icon: 'fa-crosshairs', color: 'ic-iron', tab: 'diger' },
+            ammo: { name: 'Mermi', icon: 'fa-burn', color: 'ic-gold', tab: 'diger' },
+            helmet: { name: 'Kask', icon: 'fa-hard-hat', color: 'ic-green', tab: 'diger' }
         };
 
         let currentInventory = {};
@@ -231,6 +308,14 @@
             try {
                 const response = await fetch(`/api/inventory/${user.id}`);
                 const data = await response.json();
+                
+                // API'den gelen dizi formatını objeye çevir (eğer dizi geliyorsa)
+                // API response formatı: [{item_key: 'wood', quantity: 10}, ...] olabilir.
+                // Mevcut kodda `currentInventory = data` denmiş, demek ki API obje dönüyor: { wood: 10, stone: 5 }
+                // Ancak check_inventory_columns.js çıktısına göre tablo yapısı key-value.
+                // Server.js'deki /api/inventory/:userId endpointine bakmak lazım.
+                // Eğer server.js obje dönüyorsa sorun yok.
+                
                 currentInventory = data;
                 
                 // İlk açılışta aktif sekmeyi render et
@@ -268,10 +353,6 @@
             const list = document.getElementById('inventoryList');
             list.innerHTML = ''; // Temizle
 
-            // Config'deki itemleri tara, eğer envanterde varsa ve tab eşleşiyorsa ekle
-            // Ayrıca envanterde olup config'de olmayanları da (varsayılan ikonla) ekleyebiliriz veya sadece configdekileri.
-            // Şimdilik config üzerinden gidelim.
-            
             let hasItems = false;
 
             Object.keys(itemConfig).forEach(key => {
@@ -279,14 +360,24 @@
                 if (config.tab === tabName) {
                     const qty = currentInventory[key] || 0;
                     
-                    // Sadece 0'dan büyükse veya her zaman göstermek istiyorsak:
-                    // Şimdilik hepsini gösterelim, 0 olsa bile.
-                    
                     const card = document.createElement('div');
                     card.className = 'inv-card';
+                    
+                    // Add click handler if it has energy
+                    if (config.energy) {
+                        card.onclick = () => openFoodModal(key);
+                    }
+
+                    let iconHtml = '';
+                    if (config.image) {
+                        iconHtml = `<img src="${config.image}" alt="${config.name}">`;
+                    } else {
+                        iconHtml = `<i class="fas ${config.icon} ${config.color}"></i>`;
+                    }
+
                     card.innerHTML = `
                         <div class="inv-icon-box">
-                            <i class="fas ${config.icon} ${config.color}"></i>
+                            ${iconHtml}
                         </div>
                         <div class="inv-info">
                             <h4>${config.name}</h4>
@@ -297,9 +388,99 @@
                     hasItems = true;
                 }
             });
-
-            if (!hasItems && tabName !== 'kaynaklar') {
+            
+            if (!hasItems) {
                 list.innerHTML = '<div style="grid-column: span 2; text-align: center; color: #666; padding: 20px;">Bu kategoride eşya yok.</div>';
+            }
+        }
+
+        // --- FOOD MODAL LOGIC ---
+        let selectedFoodKey = null;
+
+        function openFoodModal(key) {
+            const config = itemConfig[key];
+            if (!config || !config.energy) return;
+            
+            const qty = currentInventory[key] || 0;
+            if (qty <= 0) {
+                toastr.warning('Envanterinizde bu üründen yok.');
+                return;
+            }
+
+            selectedFoodKey = key;
+            const modal = document.getElementById('foodModal');
+            const content = document.getElementById('foodModalContent');
+            
+            let iconHtml = '';
+            if (config.image) {
+                iconHtml = `<img src="${config.image}" alt="${config.name}" style="width:60px; height:60px; margin-bottom:10px;">`;
+            } else {
+                iconHtml = `<i class="fas ${config.icon} ${config.color}" style="font-size:3rem; margin-bottom:10px;"></i>`;
+            }
+
+            content.innerHTML = `
+                ${iconHtml}
+                <h3 class="m-title">${config.name.toUpperCase()}</h3>
+                <p class="m-desc">Bu besini tüketerek enerji kazanabilirsiniz.</p>
+                <div class="m-energy-val">+${config.energy} ENERJİ</div>
+                <p style="color:#888; font-size:0.8rem; margin-bottom:15px;">Stok: ${qty}</p>
+                
+                <div class="m-btns">
+                    <button class="m-btn btn-cancel" onclick="closeFoodModal()">İPTAL</button>
+                    <button class="m-btn btn-confirm" onclick="consumeFood()">YE</button>
+                </div>
+            `;
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeFoodModal() {
+            document.getElementById('foodModal').style.display = 'none';
+            selectedFoodKey = null;
+        }
+
+        async function consumeFood() {
+            if (!selectedFoodKey) return;
+            
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) return;
+
+            try {
+                const res = await fetch('/api/user/consume', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, itemKey: selectedFoodKey })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    toastr.success(data.message);
+                    
+                    // Update Local Inventory
+                    if (currentInventory[selectedFoodKey]) {
+                        currentInventory[selectedFoodKey]--;
+                    }
+                    
+                    // Refresh Modal or Close if 0
+                    if (currentInventory[selectedFoodKey] > 0) {
+                        openFoodModal(selectedFoodKey); // Refresh UI (stock count)
+                    } else {
+                        closeFoodModal();
+                    }
+                    
+                    // Refresh List
+                    const activeTab = document.querySelector('.tab-btn.active');
+                    if (activeTab) {
+                        const tabName = activeTab.getAttribute('onclick').match(/'([^']+)'/)[1];
+                        renderItems(tabName);
+                    }
+
+                } else {
+                    toastr.error(data.message);
+                }
+            } catch (e) {
+                console.error(e);
+                toastr.error('Bir hata oluştu.');
             }
         }
 

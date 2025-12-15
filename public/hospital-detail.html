@@ -304,7 +304,7 @@
             document.getElementById('hospitalInfo').innerHTML = `
                 <div class="h-level-badge">SEVİYE ${h.level}</div>
                 <div class="h-name">${h.name}</div>
-                <div class="h-owner"><i class="fas fa-user-md"></i> Sahibi: ${h.owner_name}</div>
+                <div class="h-owner"><i class="fas fa-user-md"></i> Sahibi: <a href="profile.html?id=${h.owner_id}" style="color:var(--accent-cyan); text-decoration:none;">${h.owner_name}</a></div>
                 <div class="h-stats">
                     <div class="h-stat">
                         <i class="fas fa-bed" style="color:var(--accent-cyan)"></i> 
@@ -369,7 +369,7 @@
                             <i class="fas fa-procedures bed-icon"></i>
                             <div class="bed-label">Yatak ${i}</div>
                             <div class="bed-timer" id="timer-bed-${i}" data-end="${endTime}">${timeStr}</div>
-                            <div class="bed-user">${treatment.username}</div>
+                            <div class="bed-user"><a href="profile.html?id=${treatment.user_id}" style="color:var(--accent-cyan); text-decoration:none;">${treatment.username}</a></div>
                             ${treatment.user_id === currentUser.id ? '<div style="font-size:0.7rem; color:var(--accent-green); margin-top:5px;">(SİZ)</div>' : ''}
                         </div>
                     `;

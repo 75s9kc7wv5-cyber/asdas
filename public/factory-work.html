@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim of World - Fabrika Üretim</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    
+    <style>
+        #toast-container { z-index: 999999 !important; }
+        :root {
+            --bg-dark: #0a0a0a; 
+            --bg-card: #141414; 
+            --bg-input: #1a1a1a;
+            --accent: #e74c3c; /* Fabrika Teması: Endüstriyel Kırmızı */
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71; 
+            --accent-gold: #ffd700;
+            --text-white: #ffffff; 
+            --text-muted: #888; 
+            --border-color: #222;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%; max-width: 450px; background-color: var(--bg-dark);
+            height: 100vh; display: flex; flex-direction: column; position: relative;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5); border-left: 1px solid #111; border-right: 1px solid #111;
+        }
+
+        /* HEADER */
+        header { background-color: rgba(10,10,10,0.9); backdrop-filter: blur(10px); padding: 10px; border-bottom: 1px solid var(--border-color); }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .logo { font-size: 1.2rem; font-weight: 700; }
+        .stat-box { background: var(--bg-input); padding: 5px 10px; border-radius: 4px; font-size: 0.9rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 5px; }
+        .status-bars { display: flex; gap: 5px; }
+        .bar-item { background: var(--bg-input); padding: 4px; border-radius: 15px; font-size: 0.75rem; flex: 1; text-align: center; font-weight: bold; }
+
+        /* MAIN */
+        main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
+
+        /* FABRİKA KARTI (HERO) */
+        .factory-hero {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.15), var(--bg-card));
+            border: 1px solid var(--accent); border-radius: 16px;
+            padding: 20px; margin-bottom: 20px; position: relative;
+            display: flex; align-items: center; gap: 15px;
+            box-shadow: 0 0 20px rgba(231, 76, 60, 0.1);
+        }
+        
+        .fh-icon-box {
+            width: 60px; height: 60px; background: rgba(0,0,0,0.3); border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; border: 1px solid var(--accent);
+            font-size: 2rem; color: var(--accent);
+        }
+        
+        .fh-info { flex: 1; }
+        .fh-name { font-size: 1.2rem; font-weight: 800; color: #fff; margin-bottom: 2px; text-transform: uppercase; }
+        .fh-owner { font-size: 0.8rem; color: var(--text-muted); }
+        .fh-level { 
+            position: absolute; top: 15px; right: 15px; 
+            background: var(--accent); color: #000; font-weight: 700; 
+            padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;
+        }
+
+        /* İSTATİSTİKLER (GRID) */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px; }
+        
+        .stat-card {
+            background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 8px;
+            padding: 10px; text-align: center;
+        }
+        .stat-card i { color: var(--text-muted); font-size: 1rem; margin-bottom: 5px; }
+        .stat-label { display: block; font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px; }
+        .stat-val { font-size: 1rem; font-weight: 700; color: #fff; }
+        
+        .text-gold { color: var(--accent-gold); }
+        .text-green { color: var(--accent-green); }
+        .text-cyan { color: var(--accent-cyan); }
+
+        /* ÜRETİM SLOTLARI */
+        .section-header { 
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; 
+            border-bottom: 1px solid #222; padding-bottom: 5px;
+        }
+        .sh-title { font-size: 1rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+        .sh-capacity { font-size: 0.8rem; color: var(--text-muted); background: #1a1a1a; padding: 2px 8px; border-radius: 10px; border: 1px solid #333; }
+
+        /* GÜNCELLENEN KISIM: 3 SÜTUNLU GRID */
+        .slots-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 25px; }
+
+        .slot-card {
+            background: rgba(20,20,20,0.8); border: 1px solid #333; border-radius: 8px;
+            padding: 10px 5px; text-align: center; position: relative; overflow: hidden;
+            transition: all 0.2s; cursor: pointer; min-height: 120px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        
+        /* Boş Slot */
+        .slot-empty:hover { border-color: var(--accent-green); background: rgba(46, 204, 113, 0.05); }
+        .slot-empty .slot-icon { font-size: 1.5rem; color: #333; margin-bottom: 5px; }
+        .slot-empty .slot-text { color: var(--accent-green); font-weight: 700; font-size: 0.8rem; line-height: 1.2; }
+
+        /* Dolu (Başka Oyuncu) */
+        .slot-occupied { border-color: #444; opacity: 0.7; cursor: not-allowed; }
+        .slot-occupied .slot-avatar { width: 35px; height: 35px; border-radius: 50%; border: 2px solid #555; margin-bottom: 5px; }
+        .slot-occupied .slot-text { color: #666; font-size: 0.7rem; }
+
+        /* Çalışıyor (Ben) */
+        .slot-working { border-color: var(--accent); background: rgba(231, 76, 60, 0.05); cursor: default; }
+        .slot-working .slot-icon { color: var(--accent); animation: pulse 1.5s infinite; font-size: 1.5rem; margin-bottom: 5px; }
+        .slot-timer-text { font-size: 0.9rem; font-weight: 800; color: #fff; margin-bottom: 5px; }
+        
+        /* Progress Bar */
+        .slot-progress-bg { 
+            width: 90%; height: 4px; background: #333; border-radius: 2px; 
+            overflow: hidden;
+        }
+        .slot-progress-fill { 
+            height: 100%; width: 0%; background: var(--accent); 
+            transition: width 1s linear; 
+        }
+
+        /* LOGLAR */
+        .log-container { background: var(--bg-card); border-radius: 10px; padding: 15px; border: 1px solid var(--border-color); }
+        .log-list { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .log-item { display: flex; justify-content: space-between; font-size: 0.8rem; color: #aaa; border-bottom: 1px solid #222; padding-bottom: 4px; }
+        .log-time { color: #555; font-size: 0.75rem; }
+
+        /* MODAL */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; display: none; justify-content: center; align-items: center; animation: fadeIn 0.3s; }
+        .modal-content { background: #181818; width: 85%; padding: 25px; border-radius: 12px; border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent); }
+        .m-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 15px; color: #fff; }
+        .m-desc { color: #aaa; font-size: 0.9rem; margin-bottom: 20px; }
+        .m-btns { display: flex; gap: 10px; }
+        .m-btn { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 0.9rem; }
+        .btn-confirm { background: var(--accent); color: #fff; }
+        .btn-cancel { background: #333; color: #fff; }
+
+        /* BOTTOM NAV */
+        .bottom-nav { position: absolute; bottom: 0; width: 100%; background: #0a0a0a; border-top: 1px solid #333; display: flex; justify-content: space-around; padding: 10px 0; z-index: 10; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 0.75rem; cursor: pointer; }
+        .nav-item i { font-size: 1.4rem; margin-bottom: 3px; }
+        .nav-item.active { color: var(--accent-cyan); }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+       
+
+        <main>
+            <!-- FABRİKA KARTI -->
+            <div class="factory-hero">
+                <div class="fh-icon-box">
+                    <i class="fas fa-industry"></i>
+                </div>
+                <div class="fh-info">
+                    <div class="fh-name">DEMİR ÇELİK A.Ş.</div>
+                    <div class="fh-owner">Sahibi: Lord Enes</div>
+                </div>
+                <div class="fh-level">Lv. 3</div>
+            </div>
+
+            <!-- İSTATİSTİKLER -->
+            <div class="stats-grid">
+                <div class="stat-card" style="grid-column: span 2;">
+                    <div class="stat-label">ÜRETİLEN ÜRÜN</div>
+                    <div class="stat-val text-gold" id="statProduct">Yükleniyor...</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">ÜRETİM MAAŞI</div>
+                    <div class="stat-val text-gold" id="statSalary">2.500 ₺</div>
+                    <div style="font-size: 0.6rem; color: #666; margin-top: 2px;">(Üretilen * Maaş = Kazanç)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">ÜRETİM SÜRESİ</div>
+                    <div class="stat-val text-cyan" id="statTime">60 Sn</div>
+                </div>
+                
+                <!-- Dynamic Raw Material Stats -->
+                <div id="rawMaterialStats" style="display: contents;">
+                    <div class="stat-card">
+                        <div class="stat-label">HAMMADDE DEPOSU</div>
+                        <div class="stat-val" id="statReserve">850 / 1000</div>
+                    </div>
+                </div>
+
+                <!-- Dynamic Product Stats -->
+                <div id="productStats" style="display: contents;">
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">İŞÇİ KAPASİTESİ</div>
+                    <div class="stat-val text-green" id="statWorkers">120 / 500</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">VERİMLİLİK</div>
+                    <div class="stat-val text-gold" id="efficiencyVal">%100</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">TAHMİNİ ÜRETİM</div>
+                    <div class="stat-val text-cyan" id="estProduction">5-10 Adet</div>
+                </div>
+            </div>
+
+            <!-- ÜRETİM HATTI -->
+            <div class="section-header">
+                <div class="sh-title"><i class="fas fa-cogs"></i> ÜRETİM HATTI</div>
+                <div class="sh-capacity">Kapasite: <span id="workerCount">0</span>/<span id="maxWorkerCount">6</span></div>
+            </div>
+
+            <div class="slots-container" id="slotsGrid">
+                <!-- JS ile Doldurulacak -->
+            </div>
+
+            <!-- LOGLAR -->
+            <div class="log-container">
+                <div class="sh-title" style="font-size:0.8rem; margin-bottom:10px;">ÜRETİM KAYITLARI</div>
+                <div class="log-list" id="logList">
+                    <div class="log-item">
+                        <span>Ahmet Y. üretim yaptı (+5 Demir)</span>
+                        <span class="log-time">10:42</span>
+                    </div>
+                    <div class="log-item">
+                        <span>Mehmet K. üretim yaptı (+5 Demir)</span>
+                        <span class="log-time">10:40</span>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- ONAY MODALI -->
+        <div class="modal-overlay" id="workModal">
+            <div class="modal-content">
+                <i class="fas fa-hard-hat" style="font-size:3rem; color:var(--accent); margin-bottom:15px;"></i>
+                <h3 class="m-title">İŞ BAŞI YAP</h3>
+                <p class="m-desc">Bu fabrikada çalışmak için <strong>10 Enerji</strong> harcayacaksınız. Karşılığında <strong>2.500 ₺</strong> maaş ve üretim tecrübesi kazanacaksınız.</p>
+                
+                <div id="recipeSelection" style="margin: 15px 0; text-align: left; display: none;">
+                    <label style="color: #aaa; font-size: 0.9rem; display: block; margin-bottom: 5px;">Üretilecek Ürün:</label>
+                    <select id="recipeSelect" style="width: 100%; padding: 10px; background: #222; color: #fff; border: 1px solid #444; border-radius: 5px;">
+                        <!-- Options will be populated by JS -->
+                    </select>
+                    <div id="recipeReqs" style="margin-top: 10px; font-size: 0.85rem; color: #888;"></div>
+                </div>
+
+                <div class="m-btns">
+                    <button class="m-btn btn-cancel" onclick="closeModal()">VAZGEÇ</button>
+                    <button class="m-btn btn-confirm" onclick="startProduction()">ÇALIŞ</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="js/loader-manager.js"></script>
+    <script src="js/header-manager.js"></script>
+
+    <script>
+        toastr.options = { "positionClass": "toast-top-right", "timeOut": "3000" };
+
+        let factoryId = null;
+        let factoryData = null;
+        let factoryWorkers = [];
+        let factoryLogs = [];
+        let userData = null;
+        let selectedSlotId = null;
+        let productionInterval = null;
+        let activeTimers = {};
+        let selectedRecipeId = null;
+
+        const factoryRecipes = {
+            'bakery': [
+                { id: 'bread', name: 'Ekmek', inputs: { wheat: 3, egg: 3 }, output: { bread: 1 } },
+                { id: 'cake', name: 'Kek', inputs: { wheat: 3, egg: 3, fruit: 3 }, output: { cake: 1 } }
+            ],
+            'ready_food': [
+                { id: 'salad', name: 'Salata', inputs: { vegetable: 3 }, output: { salad: 1 } },
+                { id: 'canned_fruit', name: 'Konserve Meyve', inputs: { fruit: 3 }, output: { canned_fruit: 1 } },
+                { id: 'cooked_meat', name: 'Pişmiş Et', inputs: { meat: 3, olive_oil: 1 }, output: { cooked_meat: 1 } },
+                { id: 'rice_dish', name: 'Pilav', inputs: { rice: 3, olive_oil: 1 }, output: { rice_dish: 1 } },
+                { id: 'meat_dish', name: 'Et Yemeği', inputs: { potato: 3, meat: 3, olive_oil: 1 }, output: { meat_dish: 1 } }
+            ],
+            'olive_oil': [
+                { id: 'olive_oil', name: 'Zeytinyağı', inputs: { olive: 3 }, output: { olive_oil: 1 } }
+            ],
+            'sweets': [
+                { id: 'energy_bar', name: 'Enerji Barı', inputs: { honey: 3, wheat: 3, fruit: 3, egg: 3, olive_oil: 1 }, output: { energy_bar: 1 } }
+            ],
+            'wind_turbine': [
+                { id: 'wind_energy', name: 'Rüzgar Enerjisi', inputs: {}, output: { energy: 1 } }
+            ],
+            'solar_plant': [
+                { id: 'solar_energy', name: 'Güneş Enerjisi', inputs: {}, output: { energy: 1 } }
+            ],
+            'coal_plant': [
+                { id: 'coal_energy', name: 'Termik Enerji', inputs: { coal: 10 }, output: { energy: 1 } }
+            ],
+            'nuclear_plant': [
+                { id: 'nuclear_energy', name: 'Nükleer Enerji', inputs: { uranium: 1 }, output: { energy: 3 } }
+            ]
+        };
+
+        // BAŞLANGIÇ
+        window.onload = async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            factoryId = urlParams.get('id');
+
+            if (!factoryId) {
+                toastr.error('Fabrika ID bulunamadı.');
+                setTimeout(() => window.location.href = 'factory-list.html', 2000);
+                return;
+            }
+
+            await loadUserData();
+            await loadFactoryData();
+            
+            // Auto-refresh every 10 seconds
+            setInterval(loadFactoryData, 10000);
+        };
+
+        async function loadUserData() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) { window.location.href = 'login.html'; return; }
+
+            try {
+                const res = await fetch('/api/login', { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({ username: user.username, password: user.password }) 
+                });
+                const data = await res.json();
+                if (data.user) {
+                    userData = data.user;
+                    updateUserHeader();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function loadFactoryData() {
+            try {
+                const user = JSON.parse(localStorage.getItem('simWorldUser'));
+                const res = await fetch(`/api/mines/detail/${factoryId}?userId=${user.id}`);
+                const response = await res.json();
+                
+                if (!response.success) {
+                    toastr.error('Fabrika verisi alınamadı.');
+                    return;
+                }
+
+                factoryData = response.mine;
+                factoryWorkers = response.workers || [];
+                factoryLogs = response.logs || [];
+
+                renderFactoryHero();
+                renderStats();
+                renderSlots();
+                renderLogs();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function updateUserHeader() {
+            if (userData) {
+                document.getElementById('userMoney').innerText = userData.money.toLocaleString();
+            }
+        }
+
+        function renderFactoryHero() {
+            document.querySelector('.fh-name').innerText = factoryData.name || 'Bilinmeyen Fabrika';
+            document.querySelector('.fh-owner').innerText = `Sahibi: ${factoryData.owner_name}`;
+            document.querySelector('.fh-level').innerText = `Lv. ${factoryData.level}`;
+            
+            // Icon logic based on type
+            const iconBox = document.querySelector('.fh-icon-box');
+            let iconClass = 'fa-industry';
+            
+            const type = factoryData.mine_type;
+            if (type === 'lumber') iconClass = 'fa-tree';
+            else if (type === 'brick') iconClass = 'fa-cubes';
+            else if (type === 'iron') iconClass = 'fa-hammer';
+            else if (type === 'coal') iconClass = 'fa-fire';
+            else if (type === 'oil') iconClass = 'fa-oil-can';
+            else if (type === 'gold') {
+                iconBox.innerHTML = `<img src="icons/inventory-icon/gold.png" style="width:64px;height:64px;object-fit:contain;">`;
+                return;
+            }
+            else if (type === 'diamond') {
+                iconBox.innerHTML = `<img src="icons/inventory-icon/diamond.png" style="width:64px;height:64px;object-fit:contain;">`;
+                return;
+            }
+            else if (type === 'wind_turbine') {
+                iconBox.innerHTML = `<img src="icons/energy-factory-icon/wind-turbine.png" style="width:64px;height:64px;object-fit:contain;">`;
+                return;
+            }
+            else if (type === 'solar_plant') {
+                iconBox.innerHTML = `<img src="icons/energy-factory-icon/solar-panel.png" style="width:64px;height:64px;object-fit:contain;">`;
+                return;
+            }
+            else if (type === 'coal_plant') {
+                iconBox.innerHTML = `<img src="icons/energy-factory-icon/fossil-fuel.png" style="width:64px;height:64px;object-fit:contain;">`;
+                return;
+            }
+            else if (type === 'nuclear_plant') {
+                iconBox.innerHTML = `<img src="icons/energy-factory-icon/nuclear-plant.png" style="width:64px;height:64px;object-fit:contain;">`;
+                return;
+            }
+            else if (type === 'stone') iconClass = 'fa-mountain';
+            else if (type === 'sand') iconClass = 'fa-hourglass-half';
+            else if (type === 'copper') iconClass = 'fa-bolt';
+            else if (type === 'uranium') iconClass = 'fa-radiation';
+            else if (type === 'glass') iconClass = 'fa-wine-glass';
+            else if (type === 'concrete') iconClass = 'fa-building';
+            else if (type === 'steel') iconClass = 'fa-hard-hat';
+            else if (type === 'agricultural') iconClass = 'fa-wheat';
+            else if (type === 'animal') iconClass = 'fa-paw';
+            else if (type === 'food') iconClass = 'fa-utensils';
+            else if (type === 'bakery') iconClass = 'fa-bread-slice';
+            else if (type === 'ready_food') iconClass = 'fa-utensils';
+            else if (type === 'olive_oil') iconClass = 'fa-bottle-droplet';
+            else if (type === 'sweets') iconClass = 'fa-candy-cane';
+            else if (type === 'weapon') iconClass = 'fa-crosshairs';
+            else if (type === 'solar') iconClass = 'fa-solar-panel';
+            
+            iconBox.innerHTML = `<i class="fas ${iconClass}"></i>`; 
+        }
+
+        function renderStats() {
+            // Resource Map for Raw Materials
+            const resourceMap = {
+                'lumber': { raw: [{ name: 'Odun', key: 'wood' }] },
+                'brick': { raw: [{ name: 'Taş', key: 'stone' }] },
+                'glass': { raw: [{ name: 'Kum', key: 'sand' }] },
+                'concrete': { raw: [{ name: 'Kum', key: 'sand' }, { name: 'Taş', key: 'stone' }] },
+                'steel': { raw: [{ name: 'Demir', key: 'iron' }, { name: 'Kömür', key: 'coal' }] },
+                'bakery': { raw: [{ name: 'Buğday', key: 'wheat' }, { name: 'Yumurta', key: 'egg' }, { name: 'Meyve', key: 'fruit' }] },
+                'ready_food': { raw: [{ name: 'Sebze', key: 'vegetable' }, { name: 'Meyve', key: 'fruit' }, { name: 'Et', key: 'meat' }, { name: 'Zeytinyağı', key: 'olive_oil' }, { name: 'Pirinç', key: 'rice' }, { name: 'Patates', key: 'potato' }] },
+                'olive_oil': { raw: [{ name: 'Zeytin', key: 'olive' }] },
+                'sweets': { raw: [{ name: 'Bal', key: 'honey' }, { name: 'Buğday', key: 'wheat' }, { name: 'Meyve', key: 'fruit' }, { name: 'Yumurta', key: 'egg' }, { name: 'Zeytinyağı', key: 'olive_oil' }] },
+                'wind_turbine': { raw: [] },
+                'solar_plant': { raw: [] },
+                'coal_plant': { raw: [{ name: 'Kömür', key: 'coal' }] },
+                'nuclear_plant': { raw: [{ name: 'Uranyum', key: 'uranium' }] }
+            };
+
+            // Product Name
+            const typeMap = {
+                'lumber': 'Tahta', 'iron': 'Demir', 'gold': 'Altın', 'diamond': 'Elmas',
+                'oil': 'Petrol', 'coal': 'Kömür', 'stone': 'Taş', 'brick': 'Tuğla',
+                'sand': 'Kum', 'copper': 'Bakır', 'uranium': 'Uranyum', 'glass': 'Cam',
+                'concrete': 'Çimento', 'steel': 'Çelik', 'agricultural': 'Ekin',
+                'animal': 'Hayvan', 'food': 'Yemek', 'weapon': 'Silah', 'solar': 'Enerji',
+                'bakery': 'Ekmek', 'ready_food': 'Konserve', 'olive_oil': 'Zeytinyağı', 'sweets': 'Enerji Barı',
+                'wind_turbine': 'Elektrik', 'solar_plant': 'Elektrik', 'coal_plant': 'Elektrik', 'nuclear_plant': 'Elektrik'
+            };
+            const productName = factoryData ? (typeMap[factoryData.mine_type] || 'Ürün') : 'Ürün';
+            document.getElementById('statProduct').innerText = productName;
+
+            document.getElementById('statSalary').innerText = `${factoryData.salary} ₺`; // Maaş
+            
+            let t = factoryData.production_time || 60;
+            let tStr = t < 60 ? `${t} Sn` : (t % 60 === 0 ? `${t/60} Dk` : `${Math.floor(t/60)} Dk ${t%60} Sn`);
+            document.getElementById('statTime').innerText = tStr; // Süre
+
+            // --- RAW MATERIAL STATS ---
+            const rawContainer = document.getElementById('rawMaterialStats');
+            if (rawContainer) {
+                rawContainer.innerHTML = '';
+                const config = resourceMap[factoryData.mine_type];
+                
+                if (config && config.raw) {
+                    config.raw.forEach(r => {
+                        let val = 0;
+                        // Check inventory first
+                        if (factoryData.inventory && factoryData.inventory[r.key] !== undefined) {
+                            val = factoryData.inventory[r.key];
+                        } else {
+                            // Fallback for legacy columns
+                            if (factoryData.mine_type === 'lumber' && r.key === 'wood') val = factoryData.raw_material || 0;
+                            else if (factoryData.mine_type === 'brick' && r.key === 'stone') val = factoryData.raw_material || 0;
+                            else if (factoryData.mine_type === 'glass' && r.key === 'sand') val = factoryData.raw_material || 0;
+                            else if (factoryData.mine_type === 'concrete') {
+                                if (r.key === 'sand') val = factoryData.raw_material || 0;
+                                if (r.key === 'stone') val = factoryData.raw_material_2 || 0;
+                            }
+                            else if (factoryData.mine_type === 'steel') {
+                                if (r.key === 'iron') val = factoryData.raw_material || 0;
+                                if (r.key === 'coal') val = factoryData.raw_material_2 || 0;
+                            }
+                        }
+                        
+                        const cap = factoryData.raw_capacity || 1000;
+                        
+                        rawContainer.innerHTML += `
+                            <div class="stat-card">
+                                <div class="stat-label">${r.name.toUpperCase()} DEPOSU</div>
+                                <div class="stat-val">${val} / ${cap}</div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    // Fallback for others
+                    const val = factoryData.raw_material || 0;
+                    const cap = factoryData.raw_capacity || 1000;
+                    rawContainer.innerHTML = `
+                        <div class="stat-card">
+                            <div class="stat-label">HAMMADDE DEPOSU</div>
+                            <div class="stat-val">${val} / ${cap}</div>
+                        </div>
+                    `;
+                }
+            }
+
+            // --- PRODUCT STATS ---
+            const productContainer = document.getElementById('productStats');
+            if (productContainer) {
+                productContainer.innerHTML = '';
+                // Ürün stokları gizlendi
+            }
+            
+            const currentWorkerCount = factoryWorkers.length;
+            const maxWorkers = factoryData.max_workers || 6;
+            document.getElementById('statWorkers').innerText = `${currentWorkerCount} / ${maxWorkers}`; // İşçiler
+            
+            // Efficiency
+            const efficiency = factoryData.efficiency || 100;
+            document.getElementById('efficiencyVal').innerText = `%${efficiency}`;
+            
+            // Estimated Production
+            // Need user education skill. userData is loaded.
+            const userSkill = userData ? (userData.education_skill || 0) : 0;
+            const range = getProductionRange(userSkill);
+            
+            // Apply efficiency multiplier logic from backend if needed, or just show base range
+            // Backend: amount = base * (1 + (arge-1)*0.1)
+            // We have factoryData.arge_level
+            const argeLevel = factoryData.arge_level || 1;
+            const multiplier = 1.0 + (argeLevel - 1) * 0.1;
+            
+            const minEst = Math.floor(range.min * multiplier);
+            const maxEst = Math.ceil(range.max * multiplier);
+            
+            document.getElementById('estProduction').innerText = `${minEst}-${maxEst} Adet`;
+
+            document.getElementById('workerCount').innerText = currentWorkerCount;
+            document.getElementById('maxWorkerCount').innerText = maxWorkers;
+        }
+
+        function getProductionRange(skill) {
+            if (skill < 10) return { min: 1, max: 3 };
+            if (skill < 20) return { min: 2, max: 5 };
+            if (skill < 30) return { min: 3, max: 7 };
+            if (skill < 40) return { min: 4, max: 9 };
+            if (skill < 50) return { min: 5, max: 12 };
+            if (skill < 60) return { min: 7, max: 15 };
+            if (skill < 70) return { min: 9, max: 18 };
+            if (skill < 80) return { min: 12, max: 22 };
+            if (skill < 90) return { min: 15, max: 26 };
+            return { min: 20, max: 35 };
+        }
+
+        function renderLogs() {
+            const logList = document.getElementById('logList');
+            logList.innerHTML = '';
+            
+            if (factoryLogs.length === 0) {
+                logList.innerHTML = '<div class="log-item" style="justify-content:center;">Kayıt yok</div>';
+                return;
+            }
+
+            const typeMap = {
+                'lumber': 'Tahta', 'iron': 'Demir', 'gold': 'Altın', 'diamond': 'Elmas',
+                'oil': 'Petrol', 'coal': 'Kömür', 'stone': 'Taş', 'brick': 'Tuğla',
+                'sand': 'Kum', 'copper': 'Bakır', 'uranium': 'Uranyum', 'glass': 'Cam',
+                'concrete': 'Beton', 'steel': 'Çelik', 'agricultural': 'Ekin',
+                'animal': 'Hayvan', 'food': 'Yemek', 'weapon': 'Silah', 'solar': 'Enerji',
+                'bakery': 'Ekmek', 'ready_food': 'Konserve', 'olive_oil': 'Zeytinyağı', 'sweets': 'Enerji Barı'
+            };
+            
+            const productNames = {
+                'bread': 'Ekmek', 'cake': 'Kek', 'salad': 'Salata', 'canned_fruit': 'Konserve Meyve',
+                'cooked_meat': 'Pişmiş Et', 'rice_dish': 'Pilav', 'meat_dish': 'Et Yemeği',
+                'olive_oil': 'Zeytinyağı', 'energy_bar': 'Enerji Barı',
+                'wood': 'Odun', 'stone': 'Taş', 'iron': 'Demir', 'coal': 'Kömür', 'sand': 'Kum',
+                'copper': 'Bakır', 'gold_nugget': 'Altın', 'oil_barrel': 'Petrol', 'diamond': 'Elmas',
+                'lumber': 'Tahta', 'brick': 'Tuğla', 'glass': 'Cam', 'concrete': 'Beton', 'steel': 'Çelik',
+                'wheat': 'Buğday', 'egg': 'Yumurta', 'fruit': 'Meyve', 'vegetable': 'Sebze', 'meat': 'Et',
+                'rice': 'Pirinç', 'potato': 'Patates', 'olive': 'Zeytin', 'honey': 'Bal'
+            };
+
+            const defaultProductName = factoryData ? (typeMap[factoryData.mine_type] || 'Ürün') : 'Ürün';
+            
+            factoryLogs.forEach(log => {
+                const div = document.createElement('div');
+                div.className = 'log-item';
+                
+                // Format time
+                const date = new Date(log.created_at);
+                const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                const amount = (log.amount !== undefined && log.amount !== null) ? log.amount : '?';
+                const pName = (log.product_key && productNames[log.product_key]) ? productNames[log.product_key] : defaultProductName;
+
+                div.innerHTML = `
+                    <span>
+                        <a href="profile.html?id=${log.user_id}" style="color:var(--accent-cyan); text-decoration:none; font-weight:bold;">
+                            #${log.user_id} - ${log.username}
+                        </a>
+                        <span style="color:#aaa"> <span style="color:var(--accent-gold); font-weight:bold;">+${amount}</span> ${pName} üretimi yaptı</span>
+                    </span>
+                    <span class="log-time">${timeStr}</span>
+                `;
+                logList.appendChild(div);
+            });
+        }
+
+        function renderSlots() {
+            const grid = document.getElementById('slotsGrid');
+            grid.innerHTML = '';
+
+            const maxSlots = factoryData.max_workers || 6;
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+
+            for (let i = 0; i < maxSlots; i++) {
+                const worker = factoryWorkers[i];
+                const div = document.createElement('div');
+                div.className = 'slot-card';
+
+                if (!worker) {
+                    div.classList.add('slot-empty');
+                    div.onclick = () => openWorkModal(i);
+                    div.innerHTML = `
+                        <i class="fas fa-plus-circle slot-icon"></i>
+                        <div class="slot-text">TIKLA<br>ÇALIŞ</div>
+                    `;
+                    grid.appendChild(div);
+                } else {
+                    const isMe = worker.user_id === user.id;
+                    let remaining = worker.remaining_seconds;
+                    if (remaining === undefined || remaining < 0) remaining = 0;
+                    
+                    // Avatar & Username for everyone
+                    let content = `
+                        <img src="${worker.avatar || 'uploads/avatars/default.png'}" class="slot-avatar" style="width:40px; height:40px; border-radius:50%; margin-bottom:5px; border:2px solid ${isMe ? 'var(--accent)' : '#444'}">
+                        <div class="slot-text" style="font-size:0.8rem; font-weight:bold; color:#fff; margin-bottom:2px;">${worker.username}</div>
+                        <div class="slot-timer-text" id="timer-${worker.user_id}" style="color:${isMe ? 'var(--accent-cyan)' : '#888'}; font-size:0.9rem;">${remaining}s</div>
+                    `;
+
+                    if (isMe) {
+                        div.classList.add('slot-working');
+                        content += `
+                            <div class="slot-progress-bg" style="margin-top:5px; width:80%;">
+                                <div class="slot-progress-fill" id="prog-${worker.user_id}" style="width: 100%"></div>
+                            </div>
+                        `;
+                    } else {
+                        div.classList.add('slot-occupied');
+                    }
+                    
+                    div.innerHTML = content;
+                    grid.appendChild(div);
+
+                    // Start timer AFTER adding to DOM
+                    startSlotTimer(worker.user_id, remaining, factoryData.production_time || 60, isMe);
+                }
+            }
+        }
+
+        function startSlotTimer(userId, remaining, total, isMe) {
+            if (activeTimers[userId]) clearInterval(activeTimers[userId]);
+
+            const timerEl = document.getElementById(`timer-${userId}`);
+            const progEl = document.getElementById(`prog-${userId}`);
+            
+            if (!timerEl) return;
+            
+            let current = remaining;
+            
+            // Initial UI Update
+            timerEl.innerText = `${current}s`;
+            if (progEl && isMe) {
+                const pct = (current / total) * 100;
+                progEl.style.width = `${pct}%`;
+            }
+
+            // If time is already up
+            if (current <= 0 && isMe) {
+                timerEl.innerText = "Toplanıyor...";
+                if (progEl) progEl.style.width = "0%";
+                setTimeout(attemptCollection, 500);
+                return;
+            }
+            
+            const interval = setInterval(() => {
+                current--;
+                
+                if (current < 0) {
+                    clearInterval(activeTimers[userId]);
+                    delete activeTimers[userId];
+                    if (isMe) {
+                        timerEl.innerText = "Toplanıyor...";
+                        if (progEl) progEl.style.width = "0%";
+                        setTimeout(attemptCollection, 500); 
+                    } else {
+                        loadFactoryData();
+                    }
+                    return;
+                }
+                
+                if (timerEl) timerEl.innerText = `${current}s`;
+                if (progEl && isMe) {
+                    const pct = (current / total) * 100;
+                    progEl.style.width = `${pct}%`;
+                }
+            }, 1000);
+            
+            activeTimers[userId] = interval;
+        }
+
+        async function attemptCollection() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            console.log("Attempting collection for user:", user.id);
+            try {
+                const res = await fetch('/api/mines/collect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, mineId: factoryId })
+                });
+                
+                // Check if response is OK and JSON
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                
+                const data = await res.json();
+                console.log("Collection response:", data);
+                
+                if (data.success) {
+                    toastr.success(data.message);
+                } else {
+                    if (data.message === 'Çalışma henüz bitmedi!') {
+                        console.log("Server says not finished, retrying in 1s...");
+                        setTimeout(attemptCollection, 1000);
+                        return;
+                    }
+                    
+                    if (data.message === 'Aktif çalışma bulunamadı.') {
+                        toastr.success('Üretim tamamlandı (Otomatik Toplandı).');
+                    } else {
+                        toastr.error(data.message);
+                    }
+                }
+            } catch (e) {
+                console.error("Collection error:", e);
+                toastr.error('İşlem sırasında bir hata oluştu.');
+            } finally {
+                loadFactoryData();
+                loadUserData();
+            }
+        }
+
+        // --- MODAL İŞLEMLERİ ---
+        function openWorkModal(slotIndex) {
+            // Check if user is already working
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            const isWorking = factoryWorkers.some(w => w.user_id === user.id);
+            
+            if (isWorking) {
+                toastr.warning('Zaten bu fabrikada çalışıyorsunuz.');
+                return;
+            }
+
+            document.querySelector('.m-desc').innerHTML = `Bu fabrikada çalışmak için <strong>10 Enerji</strong> harcayacaksınız. Karşılığında <strong>${factoryData.salary} ₺</strong> maaş kazanacaksınız.`;
+            
+            // Recipe Selection Logic
+            const recipes = factoryRecipes[factoryData.mine_type];
+            const recipeDiv = document.getElementById('recipeSelection');
+            const recipeSelect = document.getElementById('recipeSelect');
+            
+            if (recipes && recipes.length > 0) {
+                recipeDiv.style.display = 'block';
+                recipeSelect.innerHTML = '';
+                
+                recipes.forEach(r => {
+                    const opt = document.createElement('option');
+                    opt.value = r.id;
+                    opt.innerText = r.name;
+                    recipeSelect.appendChild(opt);
+                });
+                
+                // Trigger change to show reqs
+                updateRecipeReqs();
+                recipeSelect.onchange = updateRecipeReqs;
+            } else {
+                recipeDiv.style.display = 'none';
+                selectedRecipeId = null;
+            }
+
+            document.getElementById('workModal').style.display = 'flex';
+        }
+
+        function updateRecipeReqs() {
+            const recipes = factoryRecipes[factoryData.mine_type];
+            const selectedId = document.getElementById('recipeSelect').value;
+            const recipe = recipes.find(r => r.id === selectedId);
+            selectedRecipeId = selectedId;
+            
+            if (recipe) {
+                let reqHtml = 'Gerekenler: ';
+                const inputs = [];
+                for (const [key, val] of Object.entries(recipe.inputs)) {
+                    // Translate key if possible or use key
+                    const nameMap = {
+                        wheat: 'Buğday', egg: 'Yumurta', fruit: 'Meyve', vegetable: 'Sebze',
+                        meat: 'Et', olive_oil: 'Zeytinyağı', rice: 'Pirinç', potato: 'Patates',
+                        olive: 'Zeytin', honey: 'Bal'
+                    };
+                    inputs.push(`${val} ${nameMap[key] || key}`);
+                }
+                reqHtml += inputs.join(', ');
+                document.getElementById('recipeReqs').innerText = reqHtml;
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('workModal').style.display = 'none';
+        }
+
+        // --- ÜRETİM MANTIĞI ---
+        async function startProduction() {
+            closeModal();
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+
+            try {
+                const body = { userId: user.id, mineId: factoryId };
+                if (selectedRecipeId) {
+                    body.recipeId = selectedRecipeId;
+                }
+
+                const res = await fetch('/api/mines/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                
+                const result = await res.json();
+                
+                if (result.success) {
+                    toastr.success(result.message);
+                    loadFactoryData();
+                    loadUserData(); // Update energy/money
+                } else {
+                    toastr.error(result.message);
+                }
+            } catch (e) {
+                console.error(e);
+                toastr.error('Bir hata oluştu.');
+            }
+        }
+
+    </script>
+</body>
+</html>

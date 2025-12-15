@@ -1,16 +1,17 @@
 // Global menu script for Sim of World
 (() => {
   const pages = [
+    { href: 'profile.html', icon: 'fas fa-user', label: 'Profilim', dynamic: true },
     { href: 'bank.html', icon: 'fas fa-university', label: 'Banka' },
-    { href: 'envanter.html', icon: 'fas fa-briefcase', label: 'Envanter' },
+    { href: 'inventory.html', icon: 'fas fa-briefcase', label: 'Envanter' },
     { href: 'daily-job.html', icon: 'fas fa-calendar-check', label: 'Günlük İşler' },
     { href: 'factory.html', icon: 'fas fa-industry', label: 'Fabrikalar' },
-    { href: 'school-list.html', icon: 'fas fa-graduation-cap', label: 'Eğitim' },
+    { href: 'education.html', icon: 'fas fa-graduation-cap', label: 'Eğitim' },
     { href: 'hospital.html', icon: 'fas fa-hospital-alt', label: 'Hastane' },
     { href: 'market.html', icon: 'fas fa-shopping-basket', label: 'Pazar' },
-    { href: 'meclis.html', icon: 'fas fa-landmark', label: 'Meclis' },
-    { href: 'mines.html', icon: 'fas fa-coins', label: 'Madenler' },
-    { href: 'Untitled-1.html', icon: 'fas fa-hammer', label: 'Manuel Maden' },
+    { href: 'council.html', icon: 'fas fa-landmark', label: 'Meclis' },
+    { href: 'mine-list.html', icon: 'fas fa-coins', label: 'Madenler' },
+    { href: 'settings.html', icon: 'fas fa-cog', label: 'Ayarlar' },
     { href: 'admin.html', icon: 'fas fa-user-shield', label: 'Admin Paneli' }
   ];
 
@@ -31,11 +32,21 @@
 
     document.body.appendChild(overlay);
 
+    // Get user for profile link
+    const userStr = localStorage.getItem('simWorldUser');
+    const user = userStr ? JSON.parse(userStr) : null;
+
     const list = overlay.querySelector('.global-menu-list');
     pages.forEach(p => {
       const a = document.createElement('a');
       a.className = 'global-menu-item';
-      a.href = p.href;
+      
+      if (p.href === 'profile.html' && user) {
+          a.href = `profile.html?id=${user.id}`;
+      } else {
+          a.href = p.href;
+      }
+
       a.innerHTML = `<div class="global-menu-icon"><i class="${p.icon}"></i></div><div>
                       <div class="global-menu-label">${p.label}</div>
                     </div>`;

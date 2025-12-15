@@ -103,31 +103,214 @@
             .user-table td:last-child { border-bottom: none; justify-content: center; }
             .user-table td::before { content: attr(data-label); font-weight: bold; color: #aaa; text-transform: uppercase; font-size: 0.8rem; }
         }
+
+        /* CUSTOM SELECT */
+        .custom-select-wrapper { position: relative; user-select: none; width: 100%; }
+        .custom-select { position: relative; display: flex; flex-direction: column; }
+        .custom-select__trigger {
+            position: relative; display: flex; align-items: center; justify-content: space-between;
+            padding: 10px; font-size: 1rem; font-weight: 300; color: #fff;
+            background: #111; border: 1px solid #444; border-radius: 5px; cursor: pointer;
+        }
+        .custom-options {
+            position: absolute; display: block; top: 100%; left: 0; right: 0;
+            border: 1px solid #444; border-top: 0; background: #111;
+            transition: all 0.3s; opacity: 0; visibility: hidden; pointer-events: none;
+            z-index: 10; max-height: 250px; overflow-y: auto;
+        }
+        .custom-select.open .custom-options { opacity: 1; visibility: visible; pointer-events: all; }
+        .custom-option {
+            position: relative; display: flex; align-items: center; padding: 10px;
+            font-size: 0.9rem; font-weight: 300; color: #fff; cursor: pointer;
+            transition: all 0.2s; border-bottom: 1px solid #222;
+        }
+        .custom-option:hover { background-color: #333; }
+        .custom-option.selected { background-color: #222; }
+        .option-icon { width: 24px; height: 24px; margin-right: 10px; object-fit: contain; }
+        .option-fa { width: 24px; text-align: center; margin-right: 10px; font-size: 1.2rem; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Admin Paneli - Oyuncu Yönetimi</h1>
+        <h1>Admin Paneli</h1>
         
-        <table class="user-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Kullanıcı Adı</th>
-                    <th>Para</th>
-                    <th>Altın</th>
-                    <th>Elmas</th>
-                    <th>Enerji</th>
-                    <th>Sağlık</th>
-                    <th>Seviye</th>
-                    <th>İşlem</th>
-                </tr>
-            </thead>
-            <tbody id="userList">
-                <!-- Users will be loaded here -->
-            </tbody>
-        </table>
+        <div style="margin-bottom: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            <button onclick="showTab('users')" class="btn-edit" style="background: var(--accent-cyan);">Oyuncular</button>
+            <button onclick="showTab('toxic')" class="btn-edit" style="background: var(--accent-red);">Toksik Logları</button>
+            <button onclick="showTab('reports')" class="btn-edit" style="background: var(--accent-gold);">Raporlar</button>
+            <button onclick="showTab('inventory')" class="btn-edit" style="background: var(--accent-green);">Envanter Ekle</button>
+            <button onclick="showTab('settings')" class="btn-edit" style="background: #9b59b6; color: white;">Üretim Süreleri</button>
+        </div>
+
+        <!-- INVENTORY TAB -->
+        <div id="tab-inventory" style="display: none;">
+            <h2 style="margin-bottom: 15px; color: var(--accent-green);">Oyuncuya Eşya Ekle</h2>
+            <div style="background: var(--bg-card); padding: 20px; border-radius: 10px; border: 1px solid var(--border-color); max-width: 500px; margin: 0 auto;">
+                <div class="form-group">
+                    <label class="form-label">Oyuncu ID</label>
+                    <input type="number" id="invUserId" class="form-input" placeholder="Örn: 1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Eşya (Item Key)</label>
+                    <!-- Custom Select Structure -->
+                    <div class="custom-select-wrapper">
+                        <div class="custom-select">
+                            <div class="custom-select__trigger">
+                                <span id="selectedItemText">Seçiniz...</span>
+                                <div class="arrow"></div>
+                            </div>
+                            <div class="custom-options" id="itemOptions">
+                                <!-- Options will be populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="invItemKey">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Miktar</label>
+                    <input type="number" id="invAmount" class="form-input" placeholder="Örn: 100">
+                </div>
+                <button class="m-btn" style="background: var(--accent-green); color: #000; width: 100%;" onclick="addItemToUser()">EKLE</button>
+            </div>
+        </div>
+
+        <!-- SETTINGS TAB -->
+        <div id="tab-settings" style="display: none;">
+            <h2 style="margin-bottom: 15px; color: #9b59b6;">Maden ve Fabrika Üretim Süreleri</h2>
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th>Maden Tipi</th>
+                        <th>Süre (Saniye)</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody id="settingsList">
+                    <!-- Settings will be loaded here -->
+                </tbody>
+            </table>
+
+            <h2 style="margin-bottom: 15px; color: #f1c40f; margin-top: 30px;">Enerji Santrali Üretim Süreleri</h2>
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th>Santral Tipi</th>
+                        <th>Süre (Saniye)</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody id="energySettingsList">
+                    <!-- Energy Settings will be loaded here -->
+                </tbody>
+            </table>
+
+            <h2 style="margin-bottom: 15px; color: #e67e22; margin-top: 30px;">Çiftlik Üretim Süreleri</h2>
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th>Çiftlik Tipi</th>
+                        <th>Süre (Saniye)</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody id="ranchSettingsList">
+                    <!-- Ranch Settings will be loaded here -->
+                </tbody>
+            </table>
+
+            <h2 style="margin-bottom: 15px; color: #2ecc71; margin-top: 30px;">Tarla Üretim Süreleri</h2>
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th>Tarla Tipi</th>
+                        <th>Süre (Saniye)</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody id="farmSettingsList">
+                    <!-- Farm Settings will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- USERS TAB -->
+        <div id="tab-users">
+            <h2 style="margin-bottom: 15px; color: var(--accent-cyan);">Oyuncu Yönetimi</h2>
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Kullanıcı Adı</th>
+                        <th>Para</th>
+                        <th>Altın</th>
+                        <th>Elmas</th>
+                        <th>Enerji</th>
+                        <th>Sağlık</th>
+                        <th>Seviye</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody id="userList">
+                    <!-- Users will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TOXIC LOGS TAB -->
+        <div id="tab-toxic" style="display: none;">
+            <h2 style="margin-bottom: 15px; color: var(--accent-red);">Toksik Mesaj Logları</h2>
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Kullanıcı</th>
+                        <th>Orijinal Mesaj</th>
+                        <th>Filtrelenmiş</th>
+                        <th>Tarih</th>
+                    </tr>
+                </thead>
+                <tbody id="toxicList">
+                    <!-- Logs will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- REPORTS TAB -->
+        <div id="tab-reports" style="display: none;">
+            <h2 style="margin-bottom: 15px; color: var(--accent-gold);">Mesaj Raporları</h2>
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Raporlayan</th>
+                        <th>Gönderen</th>
+                        <th>Mesaj</th>
+                        <th>Sebep</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody id="reportList">
+                    <!-- Reports will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MUTE MODAL -->
+    <div class="modal-overlay" id="muteModal">
+        <div class="modal-content">
+            <h3 style="color:#fff; margin-bottom:20px;">Kullanıcıyı Sustur</h3>
+            <input type="hidden" id="muteUserId">
+            <div class="form-group">
+                <label class="form-label">Süre (Dakika)</label>
+                <input type="number" id="muteDuration" class="form-input" value="60">
+            </div>
+            <div class="m-btns">
+                <button class="m-btn" style="background:#444; color:#fff;" onclick="closeMuteModal()">İptal</button>
+                <button class="m-btn" style="background:var(--accent-red); color:#fff;" onclick="confirmMute()">Sustur</button>
+            </div>
+        </div>
     </div>
 
     <!-- EDIT MODAL -->
@@ -338,6 +521,283 @@
             }
         }
 
+        async function loadSettings() {
+            try {
+                const response = await fetch(`/api/admin/mine-settings?t=${Date.now()}`);
+                const settings = await response.json();
+                
+                const tbody = document.getElementById('settingsList');
+                const energyBody = document.getElementById('energySettingsList');
+                tbody.innerHTML = '';
+                energyBody.innerHTML = '';
+                
+                const energyTypes = ['wind_turbine', 'solar_plant', 'coal_plant', 'nuclear_plant'];
+
+                settings.forEach(s => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td data-label="Maden Tipi" style="text-transform:capitalize;">${s.name || s.mine_type} <br><small style="color:#888">(${s.mine_type})</small></td>
+                        <td data-label="Süre">
+                            <input type="number" id="dur-${s.mine_type}" value="${s.production_time}" class="form-input" style="width:80px;">
+                        </td>
+                        <td data-label="İşlem">
+                            <button class="btn-edit" onclick="saveSetting('${s.mine_type}')">Kaydet</button>
+                        </td>
+                    `;
+                    
+                    if (energyTypes.includes(s.mine_type)) {
+                        energyBody.appendChild(tr);
+                    } else {
+                        tbody.appendChild(tr);
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading settings:', error);
+            }
+        }
+
+        async function saveSetting(type) {
+            const duration = document.getElementById(`dur-${type}`).value;
+            try {
+                const res = await fetch('/api/admin/mine-settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mineType: type, duration })
+                });
+                if (res.ok) {
+                    toastr.success('Süre güncellendi.');
+                } else {
+                    toastr.error('Hata oluştu.');
+                }
+            } catch (e) { console.error(e); }
+        }
+        async function loadFarmSettings() {
+            try {
+                const response = await fetch(`/api/admin/farm-settings?t=${Date.now()}`);
+                const settings = await response.json();
+                
+                const tbody = document.getElementById('farmSettingsList');
+                tbody.innerHTML = '';
+                
+                settings.forEach(s => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td data-label="Tarla Tipi" style="text-transform:capitalize;">${s.name}</td>
+                        <td data-label="Süre">
+                            <input type="number" id="fdur-${s.id}" value="${s.production_time || 60}" class="form-input" style="width:80px;">
+                        </td>
+                        <td data-label="İşlem">
+                            <button class="btn-edit" onclick="saveFarmSetting(${s.id})">Kaydet</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Error loading farm settings:', error);
+            }
+        }
+
+        async function saveFarmSetting(id) {
+            const duration = document.getElementById(`fdur-${id}`).value;
+            try {
+                const res = await fetch('/api/admin/farm-settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id, productionTime: duration })
+                });
+                if (res.ok) {
+                    toastr.success('Süre güncellendi.');
+                } else {
+                    toastr.error('Hata oluştu.');
+                }
+            } catch (e) { console.error(e); }
+        }
+        function showTab(tabName) {
+            document.getElementById('tab-users').style.display = 'none';
+            document.getElementById('tab-toxic').style.display = 'none';
+            document.getElementById('tab-reports').style.display = 'none';
+            document.getElementById('tab-settings').style.display = 'none';
+            document.getElementById('tab-inventory').style.display = 'none';
+            
+            document.getElementById('tab-' + tabName).style.display = 'block';
+            
+            if (tabName === 'toxic') loadToxicLogs();
+            if (tabName === 'reports') loadReports();
+            if (tabName === 'settings') {
+                loadSettings();
+                loadRanchSettings();
+                loadFarmSettings();
+            }
+        }
+
+        async function loadRanchSettings() {
+            try {
+                const response = await fetch(`/api/admin/ranch-settings?t=${Date.now()}`);
+                const settings = await response.json();
+                
+                const tbody = document.getElementById('ranchSettingsList');
+                tbody.innerHTML = '';
+                
+                settings.forEach(s => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td data-label="Çiftlik Tipi" style="text-transform:capitalize;">${s.ranch_type}</td>
+                        <td data-label="Süre">
+                            <input type="number" id="rdur-${s.ranch_type}" value="${s.production_time}" class="form-input" style="width:80px;">
+                        </td>
+                        <td data-label="İşlem">
+                            <button class="btn-edit" onclick="saveRanchSetting('${s.ranch_type}')">Kaydet</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Error loading ranch settings:', error);
+            }
+        }
+
+        async function saveRanchSetting(type) {
+            const duration = document.getElementById(`rdur-${type}`).value;
+            try {
+                const res = await fetch('/api/admin/ranch-settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ranchType: type, productionTime: duration })
+                });
+                if (res.ok) {
+                    toastr.success('Süre güncellendi.');
+                } else {
+                    toastr.error('Hata oluştu.');
+                }
+            } catch (e) {
+                console.error(e);
+                toastr.error('Hata oluştu.');
+            }
+        }
+
+        async function addItemToUser() {
+            const userId = document.getElementById('invUserId').value;
+            const itemKey = document.getElementById('invItemKey').value;
+            const amount = document.getElementById('invAmount').value;
+
+            if (!userId || !amount) return toastr.warning('Lütfen tüm alanları doldurun.');
+
+            try {
+                const res = await fetch('/api/admin/add-item', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, itemKey, amount })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    toastr.success(data.message);
+                    document.getElementById('invUserId').value = '';
+                    document.getElementById('invAmount').value = '';
+                } else {
+                    toastr.error(data.message);
+                }
+            } catch (e) {
+                console.error(e);
+                toastr.error('Sunucu hatası.');
+            }
+        }
+
+        async function loadReports() {
+            try {
+                const response = await fetch('/api/admin/reports');
+                const reports = await response.json();
+                
+                const tbody = document.getElementById('reportList');
+                tbody.innerHTML = '';
+                
+                reports.forEach(rep => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td data-label="ID">#${rep.id}</td>
+                        <td data-label="Raporlayan">${rep.reporter_name}</td>
+                        <td data-label="Gönderen">${rep.sender_name}</td>
+                        <td data-label="Mesaj">${rep.message}</td>
+                        <td data-label="Sebep">${rep.reason}</td>
+                        <td data-label="İşlem">
+                            <button class="btn-edit" style="background:var(--accent-red); color:#fff;" onclick="deleteMessage(${rep.message_id})">Sil</button>
+                            <button class="btn-edit" style="background:#555; color:#fff;" onclick="openMuteModal(${rep.sender_id})">Mute</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Error loading reports:', error);
+            }
+        }
+
+        async function deleteMessage(msgId) {
+            if (!confirm('Mesajı silmek istediğinize emin misiniz?')) return;
+            try {
+                const response = await fetch('/api/admin/delete-message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messageId: msgId })
+                });
+                if (response.ok) {
+                    toastr.success('Mesaj silindi.');
+                    loadReports();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function openMuteModal(userId) {
+            document.getElementById('muteUserId').value = userId;
+            document.getElementById('muteModal').style.display = 'flex';
+        }
+
+        function closeMuteModal() {
+            document.getElementById('muteModal').style.display = 'none';
+        }
+
+        async function confirmMute() {
+            const userId = document.getElementById('muteUserId').value;
+            const duration = document.getElementById('muteDuration').value;
+            
+            try {
+                const response = await fetch('/api/admin/mute-user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, durationMinutes: duration })
+                });
+                if (response.ok) {
+                    toastr.success('Kullanıcı susturuldu.');
+                    closeMuteModal();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadToxicLogs() {
+            try {
+                const response = await fetch('/api/admin/toxic-logs');
+                const logs = await response.json();
+                
+                const tbody = document.getElementById('toxicList');
+                tbody.innerHTML = '';
+                
+                logs.forEach(log => {
+                    const date = new Date(log.created_at).toLocaleString('tr-TR');
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td data-label="ID">#${log.id}</td>
+                        <td data-label="Kullanıcı">${log.username} (ID: ${log.user_id})</td>
+                        <td data-label="Orijinal" style="color: #e74c3c;">${log.original_message}</td>
+                        <td data-label="Filtrelenmiş" style="color: #2ecc71;">${log.filtered_message}</td>
+                        <td data-label="Tarih">${date}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Error loading logs:', error);
+                toastr.error('Loglar yüklenemedi.');
+            }
+        }
+
         function closeDetailsModal() {
             document.getElementById('detailsModal').style.display = 'none';
         }
@@ -391,5 +851,102 @@
     </script>
     <script src="js/header-manager.js"></script>
     <script src="js/menu-manager.js"></script>
+    <script>
+        // --- CUSTOM SELECT LOGIC ---
+        const adminItems = [
+            { key: 'wood', name: 'Odun', img: 'icons/mine-icon/wood.png' },
+            { key: 'stone', name: 'Taş', img: 'icons/mine-icon/stone.png' },
+            { key: 'iron', name: 'Demir', img: 'icons/mine-icon/iron.png' },
+            { key: 'coal', name: 'Kömür', img: 'icons/mine-icon/coal.png' },
+            { key: 'gold', name: 'Altın', img: 'icons/inventory-icon/gold.png' },
+            { key: 'diamond', name: 'Elmas', img: 'icons/inventory-icon/diamond.png' },
+            { key: 'oil', name: 'Petrol', img: 'icons/mine-icon/oil-barrel.png' },
+            { key: 'uranium', name: 'Uranyum', img: 'icons/mine-icon/uranium.png' },
+            { key: 'copper', name: 'Bakır', img: 'icons/mine-icon/copper.png' },
+            { key: 'sand', name: 'Kum', img: 'icons/mine-icon/sand.png' },
+            { key: 'gold_nugget', name: 'Altın Parçası', img: 'icons/mine-icon/gold-nugget.png' },
+            
+            { key: 'lumber', name: 'Tahta', img: 'icons/factory-icon/wood-plank.png' },
+            { key: 'brick', name: 'Tuğla', img: 'icons/factory-icon/brick.png' },
+            { key: 'glass', name: 'Cam', img: 'icons/factory-icon/window.png' },
+            { key: 'concrete', name: 'Beton', img: 'icons/factory-icon/cement.png' },
+            { key: 'steel', name: 'Çelik', img: 'icons/factory-icon/steel.png' },
+            
+            { key: 'wheat', name: 'Buğday', img: 'icons/farm-icon/wheat.png' },
+            { key: 'egg', name: 'Yumurta', img: 'icons/ranch-icon/egg.png' },
+            { key: 'fruit', name: 'Meyve', img: 'icons/farm-icon/fruit.png' },
+            { key: 'vegetable', name: 'Sebze', img: 'icons/farm-icon/vegetables.png' },
+            { key: 'meat', name: 'Et', img: 'icons/ranch-icon/beef.png' },
+            { key: 'olive_oil', name: 'Zeytinyağı', img: 'icons/food-factory/olive-oil.png' },
+            { key: 'rice', name: 'Pirinç', img: 'icons/farm-icon/rice.png' },
+            { key: 'potato', name: 'Patates', img: 'icons/farm-icon/potato.png' },
+            { key: 'olive', name: 'Zeytin', img: 'icons/farm-icon/olive.png' },
+            { key: 'honey', name: 'Bal', img: 'icons/ranch-icon/honey.png' },
+            
+            { key: 'bread', name: 'Ekmek', img: 'icons/food-factory/bread.png' },
+            { key: 'cake', name: 'Pasta', img: 'icons/food-factory/cupcake.png' },
+            { key: 'salad', name: 'Salata', img: 'icons/food-factory/salad.png' },
+            { key: 'canned_fruit', name: 'Konserve Meyve', img: 'icons/food-factory/fruit-canned.png' },
+            { key: 'cooked_meat', name: 'Pişmiş Et', img: 'icons/food-factory/steak.png' },
+            { key: 'rice_dish', name: 'Pilav', img: 'icons/food-factory/rice.png' },
+            { key: 'meat_dish', name: 'Et Yemeği', img: 'icons/food-factory/steak-food.png' },
+            { key: 'energy_bar', name: 'Enerji Barı', img: 'icons/food-factory/energy-bar.png' },
+            
+            { key: 'weapon', name: 'Silah', icon: 'fa-crosshairs', color: '#fff' },
+            { key: 'ammo', name: 'Mermi', icon: 'fa-burn', color: '#ffd700' },
+            { key: 'helmet', name: 'Kask', icon: 'fa-hard-hat', color: '#2ecc71' }
+        ];
+
+        function initCustomSelect() {
+            const wrapper = document.querySelector('.custom-select-wrapper');
+            const select = wrapper.querySelector('.custom-select');
+            const trigger = wrapper.querySelector('.custom-select__trigger');
+            const optionsContainer = wrapper.querySelector('.custom-options');
+            const hiddenInput = document.getElementById('invItemKey');
+            const selectedText = document.getElementById('selectedItemText');
+
+            // Populate Options
+            adminItems.forEach(item => {
+                const option = document.createElement('div');
+                option.className = 'custom-option';
+                option.dataset.value = item.key;
+                
+                let iconHtml = '';
+                if (item.img) {
+                    iconHtml = `<img src="${item.img}" class="option-icon">`;
+                } else if (item.icon) {
+                    iconHtml = `<i class="fas ${item.icon} option-fa" style="color:${item.color || '#fff'}"></i>`;
+                }
+
+                option.innerHTML = `${iconHtml} <span>${item.name} (${item.key})</span>`;
+                
+                option.addEventListener('click', () => {
+                    hiddenInput.value = item.key;
+                    selectedText.innerHTML = `${iconHtml} <span>${item.name}</span>`;
+                    select.classList.remove('open');
+                    
+                    document.querySelectorAll('.custom-option').forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
+                });
+
+                optionsContainer.appendChild(option);
+            });
+
+            // Toggle Dropdown
+            trigger.addEventListener('click', () => {
+                select.classList.toggle('open');
+            });
+
+            // Close on click outside
+            window.addEventListener('click', (e) => {
+                if (!select.contains(e.target)) {
+                    select.classList.remove('open');
+                }
+            });
+        }
+
+        // Initialize on load
+        window.addEventListener('load', initCustomSelect);
+    </script>
 </body>
 </html>

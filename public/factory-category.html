@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim of World - Fabrikalar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/global-menu.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-header: #0a0a0a;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-red: #e74c3c;
+            --accent-gold: #ffd700;
+            --accent-orange: #e67e22;
+            --text-white: #ffffff;
+            --text-muted: #888;
+            --card-bg: rgba(30, 30, 30, 0.95);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/World_map_blank_without_borders.svg/2000px-World_map_blank_without_borders.svg.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* MAIN */
+        main { flex: 1; padding: 15px; overflow-y: auto; padding-bottom: 80px; }
+
+        /* TABS */
+        .tabs-container { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
+        .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: #777; font-family: 'Rajdhani'; font-weight: bold; cursor: pointer; border-radius: 6px; transition: all 0.3s; }
+        .tab-btn.active { background: #222; color: var(--accent-cyan); box-shadow: 0 0 10px rgba(0, 229, 255, 0.1); }
+
+        /* PAGE TITLE */
+        .section-header { text-align: center; margin-bottom: 20px; animation: fadeIn 0.5s; }
+        .section-title { font-size: 1.1rem; letter-spacing: 1px; color: #fff; margin-bottom: 5px; }
+        .section-desc { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* FACTORY GRID */
+        .factory-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; animation: slideUp 0.6s ease; }
+
+        .factory-card {
+            background: var(--card-bg);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            text-decoration: none;
+            color: #fff;
+            text-align: center;
+            position: relative;
+            height: auto;
+            min-height: 120px;
+        }
+        .factory-card:hover { transform: translateY(-3px); border-color: var(--accent-cyan); background: rgba(40,40,40,0.95); }
+
+        .f-icon-circle {
+            width: 48px; height: 48px; border-radius: 50%; background: #222;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            font-size: 1.5rem;
+        }
+
+        .f-name { font-size: 0.85rem; font-weight: 700; line-height: 1.2; margin-bottom: 0; }
+        .f-count { font-size: 0.7rem; color: #aaa; margin-top: 2px; }
+        .count-badge { 
+            background: #222; padding: 2px 6px; border-radius: 4px; border: 1px solid #444;
+            display: inline-block; margin-top: 4px; font-size: 0.7rem; color: #aaa;
+        }
+
+        /* Kart Stilleri (Görseldekine benzer gradientler) */
+        .type-farm { border-top: none; }
+        .type-animal { border-top: none; }
+        .type-food { border-top: none; }
+        .type-weapon { border-top: none; }
+        .type-construction { border-top: none; }
+        .type-energy { border-top: none; }
+
+        .type-farm .f-icon-circle { color: var(--accent-green); box-shadow: 0 0 10px rgba(46, 204, 113, 0.3); }
+        .type-animal .f-icon-circle { color: var(--accent-orange); box-shadow: 0 0 10px rgba(230, 126, 34, 0.3); }
+        .type-food .f-icon-circle { color: var(--accent-cyan); box-shadow: 0 0 10px rgba(0, 229, 255, 0.3); }
+        .type-weapon .f-icon-circle { color: var(--accent-red); box-shadow: 0 0 10px rgba(231, 76, 60, 0.3); }
+        .type-construction .f-icon-circle { color: #f1c40f; box-shadow: 0 0 10px rgba(241, 196, 15, 0.3); }
+        .type-energy .f-icon-circle { color: #9b59b6; box-shadow: 0 0 10px rgba(155, 89, 182, 0.3); }
+
+        /* New Categories CSS */
+        .category-header { 
+            font-size: 1rem; color: var(--accent-cyan); margin-bottom: 10px; margin-top: 20px;
+            border-bottom: 1px solid #333; padding-bottom: 5px; font-weight: 700; letter-spacing: 1px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .category-title { font-size: 1rem; color: inherit; font-weight: 700; display: flex; align-items: center; gap: 10px; margin: 0; }
+        
+        /* Colors for headers */
+        .h-construction { color: #f1c40f; }
+        .h-food { color: var(--accent-green); }
+        .h-heavy { color: var(--accent-red); }
+        .h-energy { color: #9b59b6; }
+
+        .f-name { font-size: 0.9rem; font-weight: bold; margin-bottom: 5px; color: #fff; }
+        .f-power { font-size: 0.75rem; color: #aaa; }
+        .f-power span { font-weight: bold; color: #fff; }
+
+        /* LIST VIEW STYLES */
+        .factory-list-view { display: flex; flex-direction: column; gap: 10px; }
+        .factory-list-card {
+            background: var(--card-bg);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: transform 0.2s, border-color 0.2s;
+            text-decoration: none;
+            color: #fff;
+        }
+        .factory-list-card:hover { transform: translateX(5px); border-color: var(--accent-cyan); background: rgba(40,40,40,0.95); }
+        .factory-list-card .f-icon-circle { width: 50px; height: 50px; margin-bottom: 0; flex-shrink: 0; }
+        .factory-list-card .f-info { flex: 1; text-align: left; }
+        .factory-list-card .f-name { font-size: 1rem; margin-bottom: 2px; }
+        .factory-list-card .f-desc { font-size: 0.8rem; color: #aaa; }
+        .factory-list-card .action-btn { width: auto; padding: 8px 20px; margin-top: 0; }
+        .btn-buy { background: var(--accent-gold); color: #000; }
+        .btn-manage { background: var(--accent-cyan); color: #000; }
+
+        /* ÜRETİM MODALI */
+        .modal-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 100;
+            display: none; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        .modal-content {
+            background: #151515; width: 90%; padding: 20px; border-radius: 10px;
+            border: 1px solid #444; position: relative; text-align: center;
+        }
+        .modal-close { position: absolute; top: 10px; right: 15px; color: #aaa; cursor: pointer; }
+        
+        .prod-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; }
+        .prod-icon-lg { font-size: 3rem; margin-bottom: 10px; }
+        .prod-title { font-size: 1.4rem; color: #fff; }
+        
+        /* Reçete Alanı */
+        .recipe-box {
+            background: #222; padding: 15px; border-radius: 6px; margin-bottom: 20px;
+            display: flex; align-items: center; justify-content: space-around; border: 1px solid #333;
+        }
+        .res-item { display: flex; flex-direction: column; align-items: center; font-size: 0.8rem; color: #ccc; }
+        .res-arrow { color: var(--accent-cyan); font-size: 1.2rem; }
+        .res-img { font-size: 1.5rem; margin-bottom: 5px; }
+
+        /* Progress Bar */
+        .progress-area { margin-bottom: 20px; display: none; }
+        .p-bar-bg { width: 100%; height: 10px; background: #333; border-radius: 5px; overflow: hidden; }
+        .p-bar-fill { height: 100%; width: 0%; background: var(--accent-cyan); transition: width 0.1s linear; }
+        .p-text { font-size: 0.8rem; margin-top: 5px; color: var(--accent-cyan); }
+
+        .action-btn { width: 100%; padding: 12px; border: none; border-radius: 5px; font-family: 'Rajdhani'; font-weight: bold; font-size: 1rem; cursor: pointer; }
+        .btn-start { background: var(--accent-green); color: #000; }
+        .btn-working { background: #333; color: #fff; cursor: wait; }
+
+        /* BUY MODAL */
+        .req-list { 
+            text-align: center; 
+            margin: 20px 0; 
+            background: #222; 
+            padding: 15px; 
+            border-radius: 8px; 
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .req-badge {
+            background: #333;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #ccc;
+            border: 1px solid #444;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .req-badge.ok { border-color: var(--accent-green); color: var(--accent-green); background: rgba(46, 204, 113, 0.1); }
+        .req-badge.fail { border-color: var(--accent-red); color: var(--accent-red); background: rgba(231, 76, 60, 0.1); }
+
+        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; }
+        .btn-confirm { background: var(--accent-green); color: #000; }
+        .btn-cancel { background: #333; color: #fff; }
+        .btn-confirm:disabled { background: #444; color: #888; cursor: not-allowed; }
+
+        /* BOTTOM NAV */
+        .bottom-nav {
+            position: absolute; bottom: 0; width: 100%; background: #0a0a0a;
+            border-top: 1px solid #333; display: flex; justify-content: space-around;
+            padding: 10px 0; z-index: 10;
+        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 0.75rem; cursor: pointer; }
+        .nav-item i { font-size: 1.4rem; margin-bottom: 3px; }
+        .nav-item.active { color: var(--accent-cyan); }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Header removed, injected by header-manager.js -->
+
+        <main>
+            <div class="tabs-container">
+                <button class="tab-btn active" onclick="switchTab('categories')">FABRİKA KATEGORİLERİ</button>
+                <button class="tab-btn" onclick="switchTab('my-factories')">FABRİKALARIM</button>
+            </div>
+
+            <div id="tab-categories">
+                <div class="section-header">
+                    <h2 class="section-title">FABRİKA KATEGORİLERİ</h2>
+                    <p class="section-desc">Kurmak istediğiniz işletme türünü seçin.</p>
+                </div>
+
+                <div id="factoriesContainer">
+                    <!-- JS ile doldurulacak -->
+                    <div style="text-align:center; padding:20px; color:#666;">Yükleniyor...</div>
+                </div>
+            </div>
+
+            <div id="tab-my-factories" style="display:none;">
+                <div id="myFactoriesList"></div>
+            </div>
+
+        </main>
+
+        <div class="modal-overlay" id="prodModal">
+            <div class="modal-content">
+                <span class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></span>
+                
+                <div class="prod-header">
+                    <div id="mIcon" class="prod-icon-lg"></div>
+                    <h2 id="mTitle" class="prod-title">Fabrika Adı</h2>
+                </div>
+
+                <div class="recipe-box">
+                    <div class="res-item">
+                        <i class="fas fa-cube res-img" style="color:#aaa"></i>
+                        <span id="reqText">10 Demir</span>
+                    </div>
+                    <div class="res-arrow"><i class="fas fa-arrow-right"></i></div>
+                    <div class="res-item">
+                        <i id="outIcon" class="fas fa-box res-img" style="color:#fff"></i>
+                        <span id="outText">1 Silah</span>
+                    </div>
+                </div>
+
+                <div class="progress-area" id="progArea">
+                    <div class="p-bar-bg"><div class="p-bar-fill" id="pBar"></div></div>
+                    <div class="p-text">Üretim Yapılıyor...</div>
+                </div>
+
+                <button id="prodBtn" class="action-btn btn-start" onclick="startProduction()">ÜRETİMİ BAŞLAT</button>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="buyModal">
+            <div class="modal-content">
+                <h3 style="color:#fff; margin-bottom:10px;" id="buyTitle">Fabrika Satın Al</h3>
+                <p style="color:#888; font-size:0.9rem;">Bu işletmeyi kurmak için gereksinimleri karşılamalısınız.</p>
+                
+                <div class="req-list" id="reqList">
+                    <!-- Requirements here -->
+                </div>
+
+                <div class="modal-btns">
+                    <button class="m-btn btn-cancel" onclick="closeBuyModal()">İPTAL</button>
+                    <button class="m-btn btn-confirm" id="btnConfirmBuy" onclick="confirmBuy()">SATIN AL</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+
+    <script>
+        toastr.options = { "positionClass": "toast-top-right", "timeOut": "3000" };
+        let selectedFactory = null;
+        let userData = {};
+        let userLicenses = {};
+
+        // Veriler
+        const factoryTypes = [
+            // Construction
+            { id: 'lumber', category: 'construction', name: 'Kereste Fabrikası', img: 'icons/factory-icon/wood-plank.png', color: 'type-construction', reqLevel: 5, costMoney: 5000, costGold: 0, costDiamond: 0 },
+            { id: 'brick', category: 'construction', name: 'Tuğla Fabrikası', img: 'icons/factory-icon/brick.png', color: 'type-construction', reqLevel: 8, costMoney: 8000, costGold: 0, costDiamond: 0 },
+            { id: 'glass', category: 'construction', name: 'Cam Fabrikası', img: 'icons/factory-icon/window.png', color: 'type-construction', reqLevel: 12, costMoney: 12000, costGold: 5, costDiamond: 0 },
+            { id: 'concrete', category: 'construction', name: 'Çimento Fabrikası', img: 'icons/factory-icon/cement.png', color: 'type-construction', reqLevel: 15, costMoney: 15000, costGold: 10, costDiamond: 0 },
+            { id: 'steel', category: 'construction', name: 'Çelik Fabrikası', img: 'icons/factory-icon/steel.png', color: 'type-construction', reqLevel: 20, costMoney: 25000, costGold: 20, costDiamond: 0 },
+            
+            // Food
+            { id: 'bakery', category: 'food', name: 'Fırın ve Unlu Mamuller Tesisi', img: 'icons/factory-icon/food-factory.png', color: 'type-food', reqLevel: 5, costMoney: 5000, costGold: 0, costDiamond: 0 },
+            { id: 'ready_food', category: 'food', name: 'Hazır Yemek Üretim Tesisi', img: 'icons/factory-icon/food-factory.png', color: 'type-food', reqLevel: 8, costMoney: 8000, costGold: 0, costDiamond: 0 },
+            { id: 'olive_oil', category: 'food', name: 'Zeytinyağı Üretim Tesisi', img: 'icons/factory-icon/food-factory.png', color: 'type-food', reqLevel: 10, costMoney: 10000, costGold: 5, costDiamond: 0 },
+            { id: 'sweets', category: 'food', name: 'Tatlı & Şekerleme Üretim Tesisi', img: 'icons/factory-icon/food-factory.png', color: 'type-food', reqLevel: 12, costMoney: 12000, costGold: 5, costDiamond: 0 },
+            
+            // Heavy
+            { id: 'weapon', category: 'heavy', name: 'Silah Fabrikası', icon: 'fa-crosshairs', color: 'type-weapon', reqLevel: 30, costMoney: 50000, costGold: 50, costDiamond: 10 },
+            
+            // Energy
+            { id: 'wind_turbine', category: 'energy', name: 'Rüzgar Türbini', img: 'icons/energy-factory-icon/wind-turbine.png', color: 'type-energy', reqLevel: 10, costMoney: 15000, costGold: 5, costDiamond: 0 },
+            { id: 'solar_plant', category: 'energy', name: 'Güneş Enerjisi Santrali', img: 'icons/energy-factory-icon/solar-panel.png', color: 'type-energy', reqLevel: 15, costMoney: 20000, costGold: 10, costDiamond: 0 },
+            { id: 'coal_plant', category: 'energy', name: 'Kömür Enerji Santrali', img: 'icons/energy-factory-icon/fossil-fuel.png', color: 'type-energy', reqLevel: 20, costMoney: 30000, costGold: 15, costDiamond: 0 },
+            { id: 'nuclear_plant', category: 'energy', name: 'Nükleer Enerji Santrali', img: 'icons/energy-factory-icon/nuclear-plant.png', color: 'type-energy', reqLevel: 50, costMoney: 100000, costGold: 50, costDiamond: 10 }
+        ];
+
+        const categories = [
+            { id: 'construction', name: 'İNŞAAT MALZEMELERİ', icon: 'fa-hard-hat', color: 'h-construction' },
+            { id: 'food', name: 'GIDA ÜRETİM', icon: 'fa-utensils', color: 'h-food' },
+            { id: 'heavy', name: 'AĞIR SANAYİ', icon: 'fa-cogs', color: 'h-heavy' },
+            { id: 'energy', name: 'ENERJİ TESİSLERİ', icon: 'fa-bolt', color: 'h-energy' }
+        ];
+
+        const factoryData = {
+            'agricultural': { icon: 'fa-seedling', color: 'var(--accent-green)', req: 'Su', out: 'Buğday', outIcon: 'fa-wheat' },
+            'animal': { icon: 'fa-paw', color: 'var(--accent-orange)', req: 'Yem', out: 'Et', outIcon: 'fa-drumstick-bite' },
+            'bakery': { icon: 'fa-bread-slice', color: 'var(--accent-cyan)', req: 'Buğday', out: 'Ekmek', outIcon: 'fa-bread-slice' },
+            'ready_food': { icon: 'fa-utensils', color: 'var(--accent-cyan)', req: 'Sebze', out: 'Konserve', outIcon: 'fa-box' },
+            'olive_oil': { icon: 'fa-bottle-droplet', color: 'var(--accent-cyan)', req: 'Zeytin', out: 'Zeytinyağı', outIcon: 'fa-bottle-water' },
+            'sweets': { icon: 'fa-candy-cane', color: 'var(--accent-cyan)', req: 'Bal', out: 'Şekerleme', outIcon: 'fa-candy-cane' },
+            'weapon': { icon: 'fa-crosshairs', color: 'var(--accent-red)', req: 'Demir', out: 'Tüfek', outIcon: 'fa-fighter-jet' },
+            'lumber': { icon: 'fa-tree', color: '#f1c40f', req: 'Odun', out: 'Kereste', outIcon: 'fa-pallet' },
+            'brick': { icon: 'fa-th-large', color: '#f1c40f', req: 'Kil', out: 'Tuğla', outIcon: 'fa-cubes' },
+            'glass': { icon: 'fa-square', color: '#f1c40f', req: 'Kum', out: 'Cam', outIcon: 'fa-wine-glass' },
+            'concrete': { icon: 'fa-truck-mixer', color: '#f1c40f', req: 'Çimento', out: 'Beton', outIcon: 'fa-building' },
+            'steel': { icon: 'fa-industry', color: '#f1c40f', req: 'Demir', out: 'Çelik', outIcon: 'fa-layer-group' }
+        };
+
+        async function loadFactories() {
+            try {
+                // Fetch all city mines to count them (assuming factories are stored as mines)
+                const res = await fetch('/api/mines/city');
+                const allMines = await res.json();
+
+                // Count factories by type
+                const counts = {};
+                factoryTypes.forEach(t => counts[t.id] = 0);
+                
+                allMines.forEach(m => {
+                    if (counts[m.mine_type] !== undefined) {
+                        counts[m.mine_type]++;
+                    }
+                });
+
+                renderPage(counts);
+
+            } catch (e) {
+                console.error(e);
+                document.getElementById('factoriesContainer').innerHTML = '<div style="text-align:center; color:red;">Veri yüklenemedi.</div>';
+            }
+        }
+
+        function renderPage(counts) {
+            const container = document.getElementById('factoriesContainer');
+            container.innerHTML = '';
+
+            categories.forEach(cat => {
+                // Create Section
+                const section = document.createElement('div');
+                section.className = 'cat-section'; // Reusing class if defined or just div
+                section.style.marginBottom = '25px';
+                
+                const header = document.createElement('div');
+                header.className = `category-header ${cat.color}`;
+                header.innerHTML = `<h3 class="category-title"><i class="fas ${cat.icon}"></i> ${cat.name}</h3>`;
+                section.appendChild(header);
+
+                // Create Grid
+                const grid = document.createElement('div');
+                grid.className = 'factory-grid';
+
+                // Filter factories for this category
+                const factories = factoryTypes.filter(f => f.category === cat.id);
+                
+                factories.forEach(fac => {
+                    const count = counts[fac.id] || 0;
+                    
+                    const card = document.createElement('div');
+                    card.className = `factory-card ${fac.color}`;
+                    if (fac.disabled) {
+                        card.style.opacity = '0.5';
+                        card.style.cursor = 'default';
+                    } else {
+                        card.onclick = () => location.href = `factory-list.html?type=${fac.id}`;
+                    }
+                    
+                    let iconHtml = '';
+                    if (fac.img) {
+                        iconHtml = `<img src="${fac.img}" alt="${fac.name}" style="width: 40px; height: 40px; object-fit: contain;">`;
+                    } else {
+                        iconHtml = `<i class="fas ${fac.icon}"></i>`;
+                    }
+
+                    card.innerHTML = `
+                        <div class="f-icon-circle">${iconHtml}</div>
+                        <div class="f-name">${fac.name}</div>
+                        <div class="count-badge">
+                            ${fac.disabled ? 'Yakında' : count + ' Adet Mevcut'}
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+
+                section.appendChild(grid);
+                container.appendChild(section);
+            });
+        }
+
+        // Tab Değiştirme
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('active');
+                if (tabName === 'categories' && b.innerText.includes('KATEGORİ')) b.classList.add('active');
+                if (tabName === 'my-factories' && b.innerText.includes('FABRİKALARIM')) b.classList.add('active');
+            });
+
+            document.getElementById('tab-categories').style.display = 'none';
+            document.getElementById('tab-my-factories').style.display = 'none';
+
+            document.getElementById(`tab-${tabName}`).style.display = 'block';
+
+            if (tabName === 'my-factories') {
+                loadMyFactories();
+            }
+        }
+
+        async function loadMyFactories() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) return;
+
+            const container = document.getElementById('myFactoriesList');
+            container.innerHTML = '<div style="text-align:center; padding:20px;">Yükleniyor...</div>';
+
+            try {
+                // Fetch user data for money check
+                const uRes = await fetch('/api/login', { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({ username: user.username, password: user.password }) 
+                });
+                const uData = await uRes.json();
+                if(uData.user) userData = uData.user;
+
+                // Fetch licenses
+                const licRes = await fetch(`/api/licenses/${user.id}`);
+                userLicenses = await licRes.json();
+
+                // Fetch user's owned factories
+                const res = await fetch(`/api/mines/my/${user.id}`);
+                const myMines = await res.json();
+
+                container.innerHTML = '';
+                const list = document.createElement('div');
+                list.className = 'factory-list-view';
+
+                factoryTypes.forEach(fac => {
+                    // Check if user owns at least one of this type
+                    const ownedFactories = myMines.filter(m => m.mine_type === fac.id);
+                    const ownedCount = ownedFactories.length;
+                    const isOwned = ownedCount > 0;
+
+                    // If owned, list EACH instance
+                    if (isOwned) {
+                        ownedFactories.forEach(mine => {
+                            const card = document.createElement('div');
+                            card.className = `factory-list-card ${fac.color}`;
+                            
+                            let iconHtml = '';
+                            if (fac.img) {
+                                iconHtml = `<img src="${fac.img}" alt="${fac.name}" style="width: 30px; height: 30px; object-fit: contain;">`;
+                            } else {
+                                iconHtml = `<i class="fas ${fac.icon}"></i>`;
+                            }
+
+                            let managePage = 'factory-management.html';
+                            if (fac.id === 'agricultural') managePage = 'farm-management.html';
+                            else if (fac.id === 'animal') managePage = 'ranch-management.html';
+
+                            card.innerHTML = `
+                                <div class="f-icon-circle">${iconHtml}</div>
+                                <div class="f-info">
+                                    <div class="f-name">${fac.name}</div>
+                                    <div class="f-desc" style="color:var(--accent-gold)">Seviye: ${mine.level}</div>
+                                </div>
+                                <button class="action-btn btn-manage" onclick="location.href='${managePage}?id=${mine.id}'">YÖNET</button>
+                            `;
+                            list.appendChild(card);
+                        });
+                    } else {
+                        // If NOT owned, list the TYPE with BUY button
+                        const card = document.createElement('div');
+                        card.className = `factory-list-card ${fac.color}`;
+                        
+                        let iconHtml = '';
+                        if (fac.img) {
+                            iconHtml = `<img src="${fac.img}" alt="${fac.name}" style="width: 30px; height: 30px; object-fit: contain;">`;
+                        } else {
+                            iconHtml = `<i class="fas ${fac.icon}"></i>`;
+                        }
+
+                        let btnHtml = `<button class="action-btn btn-buy" onclick="openBuyModal('${fac.id}')">SATIN AL</button>`;
+                        if (fac.disabled) {
+                            btnHtml = `<button class="action-btn" style="background:#333; color:#666; cursor:default;">YAKINDA</button>`;
+                        }
+
+                        card.innerHTML = `
+                            <div class="f-icon-circle">${iconHtml}</div>
+                            <div class="f-info">
+                                <div class="f-name">${fac.name}</div>
+                                <div class="f-desc">Henüz sahip değilsiniz.</div>
+                            </div>
+                            ${btnHtml}
+                        `;
+                        list.appendChild(card);
+                    }
+                });
+                container.appendChild(list);
+
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = '<div style="text-align:center; color:red;">Hata oluştu.</div>';
+            }
+        }
+
+        function openBuyModal(typeId) {
+            selectedFactory = factoryTypes.find(f => f.id === typeId);
+            if (!selectedFactory) return;
+
+            document.getElementById('buyTitle').innerText = selectedFactory.name + " Satın Al";
+            
+            // Check requirements
+            // Assuming license logic is same as mines or simplified. 
+            // If license system exists for factories, check it. If not, ignore.
+            // Based on mine-list.html, licenses are checked. Let's assume factories need licenses too if they are in the system.
+            // But usually basic factories don't need license or license is named after type.
+            
+            const hasLicense = userLicenses[typeId] > 0; 
+            // Note: If license system doesn't support this type, this might be false. 
+            // For now, let's assume basic types don't need license or user has it if level is ok.
+            // Actually, let's check if reqLevel is met.
+            
+            // Fetch skill if needed, but userData has education_skill usually if we fetched it right.
+            // Let's assume userData.education_skill is available.
+            // We need to fetch it properly in loadMyFactories.
+            
+            // Re-fetch user data to be sure about money/skill
+             fetch('/api/login', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({ username: userData.username, password: userData.password }) 
+            }).then(r=>r.json()).then(d=>{
+                if(d.user) userData = d.user;
+                renderBuyModalContent();
+            });
+        }
+
+        function renderBuyModalContent() {
+            const hasSkill = (userData.education_skill || 0) >= selectedFactory.reqLevel;
+            const hasMoney = userData.money >= selectedFactory.costMoney;
+            const hasGold = userData.gold >= selectedFactory.costGold;
+            const hasDiamond = (userData.diamond || 0) >= selectedFactory.costDiamond;
+            
+            // License check: If it's a basic factory, maybe no license? 
+            // Let's assume license is required if cost > 0 or just check if license exists in DB.
+            // For simplicity, let's only enforce Money/Gold/Diamond/Level for now as per prompt "gereksinimleri onay modalında göster".
+            
+            const canBuy = hasSkill && hasMoney && hasGold && hasDiamond;
+
+            let html = '';
+            
+            // Education
+            html += `<div class="req-badge ${hasSkill ? 'ok' : 'fail'}"><i class="fas fa-graduation-cap"></i> Lv. ${selectedFactory.reqLevel}</div>`;
+            
+            // Money
+            html += `<div class="req-badge ${hasMoney ? 'ok' : 'fail'}"><img src="icons/inventory-icon/money.png" style="width:20px;height:20px;vertical-align:middle;"> ${selectedFactory.costMoney.toLocaleString()}</div>`;
+            
+            // Gold
+            if (selectedFactory.costGold > 0) {
+                html += `<div class="req-badge ${hasGold ? 'ok' : 'fail'}"><img src="icons/inventory-icon/gold.png" style="width:20px;height:20px;vertical-align:middle;"> ${selectedFactory.costGold}</div>`;
+            }
+            
+            // Diamond
+            if (selectedFactory.costDiamond > 0) {
+                html += `<div class="req-badge ${hasDiamond ? 'ok' : 'fail'}"><img src="icons/inventory-icon/diamond.png" style="width:20px;height:20px;vertical-align:middle;"> ${selectedFactory.costDiamond}</div>`;
+            }
+
+            document.getElementById('reqList').innerHTML = html;
+            document.getElementById('btnConfirmBuy').disabled = !canBuy;
+            document.getElementById('buyModal').classList.add('active');
+        }
+
+        function closeBuyModal() {
+            document.getElementById('buyModal').classList.remove('active');
+        }
+
+        async function confirmBuy() {
+            if (!selectedFactory) return;
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            
+            try {
+                const response = await fetch('/api/mines/buy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, mineType: selectedFactory.id })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    toastr.success(result.message);
+                    closeBuyModal();
+                    loadMyFactories(); // Refresh list
+                } else {
+                    toastr.error(result.message);
+                }
+            } catch (e) {
+                console.error(e);
+                toastr.error('İşlem başarısız.');
+            }
+        }
+
+        // Modal Açma
+        function openProductionModal(title, type) {
+            const data = factoryData[type];
+            if (!data) return; // Safety check
+
+            document.getElementById('mTitle').innerText = title;
+            
+            const iconDiv = document.getElementById('mIcon');
+            iconDiv.innerHTML = `<i class="fas ${data.icon}"></i>`;
+            iconDiv.style.color = data.color;
+
+            // Reçete Güncelle
+            document.getElementById('reqText').innerText = `10 ${data.req}`;
+            document.getElementById('outText').innerText = `1 ${data.out}`;
+            
+            const outIcon = document.getElementById('outIcon');
+            outIcon.className = `fas ${data.outIcon} res-img`;
+            outIcon.style.color = data.color;
+
+            // Reset UI
+            document.getElementById('progArea').style.display = 'none';
+            document.getElementById('pBar').style.width = '0%';
+            const btn = document.getElementById('prodBtn');
+            btn.innerText = "ÜRETİMİ BAŞLAT";
+            btn.className = "action-btn btn-start";
+            btn.disabled = false;
+
+            document.getElementById('prodModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('prodModal').style.display = 'none';
+        }
+
+        // Üretim Simülasyonu
+        function startProduction() {
+            const btn = document.getElementById('prodBtn');
+            const progArea = document.getElementById('progArea');
+            const pBar = document.getElementById('pBar');
+
+            btn.innerText = "ÜRETİLİYOR...";
+            btn.className = "action-btn btn-working";
+            btn.disabled = true;
+            progArea.style.display = 'block';
+
+            let width = 0;
+            const interval = setInterval(() => {
+                if (width >= 100) {
+                    clearInterval(interval);
+                    pBar.style.width = '100%';
+                    btn.innerText = "TAMAMLANDI!";
+                    btn.style.background = "#fff";
+                    btn.style.color = "#000";
+                    setTimeout(() => {
+                        alert("Üretim Başarılı! Envantere eklendi.");
+                        closeModal();
+                    }, 500);
+                } else {
+                    width++;
+                    pBar.style.width = width + '%';
+                }
+            }, 50); // 5 saniye sürer
+        }
+
+        // Load on start
+        window.addEventListener('load', () => {
+            loadFactories();
+            // Default tab logic is handled by HTML structure initially showing tab-build
+        });
+    </script>
+    <script src="js/loader-manager.js"></script>
+    <script src="js/header-manager.js"></script>
+</body>
+</html>

@@ -206,7 +206,7 @@
         <header>
             <div class="top-bar">
                 <div class="logo">SIM <span>OF WORLD</span></div>
-                <div class="stat-box"><i class="fas fa-wallet"></i> <span id="userMoney">6.979.173</span></div>
+                <div class="stat-box"><img src="icons/inventory-icon/money.png" style="width:20px;height:20px;vertical-align:middle;"> <span id="userMoney">6.979.173</span></div>
             </div>
             <div class="status-bars">
                 <div class="bar-item" style="color:#e74c3c;"><i class="fas fa-heart"></i> %100</div>
@@ -264,7 +264,7 @@
 
                             <div class="buy-price-row">
                                 <div class="bp-item" style="color:var(--accent-green)">50.000 ₺ <span style="font-size:0.7rem; color:#aaa;">(+5.000 Vergi)</span></div>
-                                <div class="bp-item" style="color:var(--accent-gold)">500 <i class="fas fa-coins"></i></div>
+                                <div class="bp-item" style="color:var(--accent-gold)">500 <img src="icons/inventory-icon/gold.png" style="width:16px;height:16px;vertical-align:middle;"></div>
                             </div>
 
                             <button class="btn-buy" onclick="openBuyModal()">SATIN AL VE İŞLETMEYE BAŞLA</button>
@@ -431,7 +431,7 @@
                     </div>
                     <div class="cc-info">
                         <div class="cc-title">${h.name}</div>
-                        <div class="cc-owner">Sahibi: ${h.owner_name}</div>
+                        <div class="cc-owner">Sahibi: <a href="profile.html?id=${h.owner_id}" style="color:var(--accent-cyan); text-decoration:none;">${h.owner_name}</a></div>
                         <div class="cc-details">
                             <span class="cc-tag"><i class="fas fa-heart" style="color:var(--accent-red)"></i> %100</span>
                             <span class="cc-tag"><i class="fas fa-clock"></i> ${duration} dk</span>

@@ -70,6 +70,12 @@
         .page-title i { color: var(--accent-purple); margin-right: 5px; }
         .page-desc { font-size: 0.85rem; color: #888; }
 
+        /* TABS */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
+        .tab { flex: 1; text-align: center; padding: 10px; cursor: pointer; border-radius: 6px; font-weight: bold; color: #888; transition: all 0.3s; font-size: 0.9rem; }
+        .tab.active { background: var(--accent-purple); color: #fff; }
+        .tab:hover:not(.active) { background: #222; color: #fff; }
+
         /* ARGE LİSTESİ */
         .research-list { display: flex; flex-direction: column; gap: 15px; }
 
@@ -146,6 +152,7 @@
         .c-stone { color: var(--accent-gray); border-color: var(--accent-gray); box-shadow: 0 0 5px rgba(149, 165, 166, 0.2); }
         .c-iron { color: #bdc3c7; border-color: #bdc3c7; }
         .c-coal { color: var(--accent-red); border-color: var(--accent-red); box-shadow: 0 0 5px rgba(231, 76, 60, 0.2); }
+        .c-sand { color: #e1c699; border-color: #e1c699; box-shadow: 0 0 5px rgba(225, 198, 153, 0.2); }
         .c-copper { color: var(--accent-orange); border-color: var(--accent-orange); }
         .c-oil { color: #d35400; border-color: #d35400; }
         .c-gold { color: var(--accent-gold); border-color: var(--accent-gold); box-shadow: 0 0 5px rgba(255, 215, 0, 0.2); }
@@ -189,6 +196,12 @@
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* TABS */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
+        .tab { flex: 1; text-align: center; padding: 10px; cursor: pointer; border-radius: 6px; font-weight: bold; color: #888; transition: all 0.3s; font-size: 0.9rem; }
+        .tab.active { background: var(--accent-purple); color: #fff; }
+        .tab:hover:not(.active) { background: #222; color: #fff; }
+
     </style>
 </head>
 <body>
@@ -200,6 +213,12 @@
             <div class="page-header">
                 <h1 class="page-title"><i class="fas fa-microscope"></i> AR-GE MERKEZİ</h1>
                 <p class="page-desc">Maden teknolojilerini geliştir, verimliliği artır.</p>
+            </div>
+
+            <!-- TABS -->
+            <div class="tabs">
+                <div class="tab active" id="tab-mines" onclick="switchTab('mines')">MADENLER</div>
+                <div class="tab" id="tab-factories" onclick="switchTab('factories')">FABRİKALAR</div>
             </div>
 
             <div class="research-list" id="researchList">
@@ -238,9 +257,8 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-    <script src="js/arge.js"></script>
+    <script src="js/research.js"></script>
     <script src="js/loader-manager.js"></script>
     <script src="js/header-manager.js"></script>
-    <script src="js/menu-manager.js"></script>
 </body>
 </html>

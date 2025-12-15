@@ -8,11 +8,12 @@
     // 2. Define Menu Items
     const menuItems = [
         { label: 'Meydan', icon: 'fa-chess-board', href: 'home.html' },
+        { label: 'Sohbet', icon: 'fa-comments', href: 'chat.html' },
         { label: 'İşler', icon: 'fa-calendar-check', href: 'daily-job.html' },
-        { label: 'Fabrika', icon: 'fa-industry', href: 'factory.html' },
-        { label: 'Eğitim', icon: 'fa-graduation-cap', href: 'school-list.html' },
-        { label: 'AR-GE', icon: 'fa-flask', href: 'arge.html' },
-        { label: 'Harita', icon: 'fa-map-marked-alt', href: 'mines.html' }
+        { label: 'Fabrika', icon: 'fa-industry', href: 'factory-category.html' },
+        { label: 'Eğitim', icon: 'fa-graduation-cap', href: 'education.html' },
+        { label: 'AR-GE', icon: 'fa-flask', href: 'research.html' },
+        { label: 'Harita', icon: 'fa-map-marked-alt', href: 'mines-category.html' }
     ];
 
     // 3. Determine Active Page
@@ -32,7 +33,14 @@
         if (page === item.href) {
             isActive = true;
         }
-        // Eğer anasayfa ise ve page boşsa veya index.html ise (gerçi login var ama)
+        // Özel Durum: mine-list.html, mine-work.html, mine-management.html ise Harita (mines-category.html) aktif olsun
+        if ((page === 'mine-list.html' || page === 'mine-work.html' || page === 'mine-management.html') && item.href === 'mines-category.html') {
+            isActive = true;
+        }
+        // Özel Durum: factory sayfaları için Fabrika aktif olsun
+        if ((page === 'factory-list.html' || page === 'factory-work.html' || page === 'factory-management.html') && item.href === 'factory-category.html') {
+            isActive = true;
+        }
         
         navHTML += `
             <a href="${item.href}" class="nav-item ${isActive ? 'active' : ''}" onclick="menuClick(this)">
@@ -46,7 +54,9 @@
 
     // 5. Inject HTML at the end of body
     function injectMenu() {
-        if (document.querySelector('.bottom-nav')) return; // Prevent duplicate
+        // Remove existing menus to prevent duplicates (Fix for double menu issue)
+        const existingMenus = document.querySelectorAll('.bottom-nav');
+        existingMenus.forEach(m => m.remove());
 
         document.body.insertAdjacentHTML('beforeend', navHTML);
 
@@ -58,6 +68,7 @@
         const gameContainer = document.querySelector('.game-container');
         if (gameContainer) {
             const spacer = document.createElement('div');
+            spacer.className = 'layout-spacer';
             spacer.style.height = '80px';
             spacer.style.width = '100%';
             spacer.style.flexShrink = '0'; // Prevent shrinking
