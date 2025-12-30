@@ -65,6 +65,7 @@
         document.body.style.paddingBottom = '80px'; 
 
         // Game Container Spacer (for flex layouts)
+        /* 
         const gameContainer = document.querySelector('.game-container');
         if (gameContainer) {
             const spacer = document.createElement('div');
@@ -74,6 +75,7 @@
             spacer.style.flexShrink = '0'; // Prevent shrinking
             gameContainer.appendChild(spacer);
         }
+        */
     }
 
     if (document.body) {

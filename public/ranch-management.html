@@ -279,7 +279,10 @@
                 <i class="fas fa-hammer" style="font-size:3rem; color:var(--accent-gold); margin-bottom:10px;"></i>
                 <h3 class="m-title">Seviye Yükselt</h3>
                 <p class="m-desc">Kapasiteyi ve üretim hızını artırmak için çiftliği geliştir.</p>
-                <span class="m-price" id="uPrice">1.000.000 ₺</span>
+                
+                <div id="upgradeCosts" style="text-align:left; background:#111; padding:10px; border-radius:8px; margin-bottom:15px; font-size:0.9rem;">
+                    <!-- Dynamic Content -->
+                </div>
                 
                 <div class="m-btns">
                     <button class="m-btn btn-cancel" onclick="closeModal('upgradeModal')">İPTAL</button>
@@ -328,21 +331,25 @@
         // Resource Configuration
         const resourceMap = {
             'chicken': { 
+                name: 'Tavuk Çiftliği',
                 main: 'icons/ranch-icon/chicken.png',
                 raw: [{ name: 'Yem', key: 'feed', icon: 'icons/ranch-icon/sack.png' }],
                 prod: { name: 'Yumurta', key: 'egg', icon: 'icons/ranch-icon/egg.png' }
             },
             'sheep': { 
+                name: 'Koyun Çiftliği',
                 main: 'icons/ranch-icon/sheep.png',
                 raw: [{ name: 'Yem', key: 'feed', icon: 'icons/ranch-icon/sack.png' }],
                 prod: { name: 'Yün', key: 'wool', icon: 'icons/ranch-icon/wool.png' }
             },
             'cow': { 
+                name: 'İnek Çiftliği',
                 main: 'icons/ranch-icon/cow.png',
                 raw: [{ name: 'Yem', key: 'feed', icon: 'icons/ranch-icon/sack.png' }],
                 prod: { name: 'Et', key: 'meat', icon: 'icons/ranch-icon/beef.png' }
             },
             'bee': { 
+                name: 'Arı Kovanı',
                 main: 'icons/ranch-icon/bee.png',
                 raw: [], 
                 prod: { name: 'Bal', key: 'honey', icon: 'icons/ranch-icon/honey.png' }
@@ -353,7 +360,17 @@
             loadFactoryData();
         };
 
+        let upgradeInfo = null;
+        let upgradeTimerInterval = null;
+        let userLicenses = {};
+
         function loadFactoryData() {
+            // Fetch Licenses
+            fetch(`/api/licenses/${user.id}`)
+                .then(res => res.json())
+                .then(data => { userLicenses = data; })
+                .catch(e => console.error('License fetch error:', e));
+
             fetch(`/api/ranches/detail/${ranchId}?userId=${user.id}`)
                 .then(res => res.json())
                 .then(data => {
@@ -371,22 +388,31 @@
                     }
 
                     factory = {
-                        name: m.name || m.ranch_name || 'Çiftlik', // Use custom name if available
+                        name: m.name || m.ranch_name || 'Çiftlik', 
+                        ranch_name: m.ranch_name,
                         level: m.level,
                         wage: m.salary,
-                        raw: m.reserve || 0, // Using reserve as feed storage for now
-                        rawCap: m.level * 10000, // Example capacity
+                        raw: m.reserve || 0, 
+                        rawCap: m.capacity || m.level * 10000, 
                         prod: m.stock || 0, 
-                        prodCap: m.level * 5000,
-                        upgradeCost: (m.level + 1) * 5000, 
-                        upgradeTime: 10, 
+                        prodCap: (m.capacity || m.level * 5000) / 2,
                         workers: m.workers,
                         maxWorkers: m.max_workers,
-                        efficiency: 100, // Ranches might not have efficiency yet
+                        efficiency: 100, 
                         productionTime: m.production_time || 60,
                         vault: m.vault || 0,
                         type: m.ranch_type
                     };
+
+                    // Get Upgrade Info
+                    fetch(`/api/ranches/upgrade-info/${ranchId}?userId=${user.id}`)
+                        .then(res => res.json())
+                        .then(upData => {
+                            if(upData.success) {
+                                upgradeInfo = upData;
+                                updateUpgradeUI();
+                            }
+                        });
 
                     fetchUser();
 
@@ -399,19 +425,98 @@
                 .catch(err => console.error(err));
         }
 
-        function fetchUser() {
-             fetch('/api/login', { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: user.username, password: user.password }) 
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(data.user) {
-                    user = data.user;
-                    localStorage.setItem('simWorldUser', JSON.stringify(user));
+        function updateUpgradeUI() {
+            if (!upgradeInfo) return;
+
+            const ranch = upgradeInfo.ranch;
+            const next = upgradeInfo.nextLevel;
+
+            document.getElementById('curLvl').innerText = ranch.level;
+            
+            if (upgradeInfo.maxLevel) {
+                document.getElementById('nextLvl').innerText = "MAX";
+                document.getElementById('upgradeBtn').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('nextLvl').innerText = next.level;
+
+            const btn = document.getElementById('upgradeBtn');
+            const prog = document.getElementById('upgradeProgress');
+            
+            if (ranch.isUpgrading) {
+                btn.style.display = 'none';
+                prog.style.display = 'block';
+                startTimer(ranch.timeLeft, next.duration);
+            } else {
+                btn.style.display = 'flex';
+                prog.style.display = 'none';
+                btn.innerText = `YÜKSELT (Seviye ${next.level})`;
+            }
+        }
+
+        function startTimer(timeLeft, totalDuration) {
+            if (upgradeTimerInterval) clearInterval(upgradeTimerInterval);
+            
+            const bar = document.getElementById('upBar');
+            const txt = document.getElementById('upTimer');
+
+            if (!bar || !txt) return;
+
+            const update = () => {
+                if (timeLeft <= 0) {
+                    clearInterval(upgradeTimerInterval);
+                    completeUpgrade();
+                    return;
                 }
-            });
+                
+                let percent = 0;
+                if (totalDuration > 0) {
+                    percent = ((totalDuration - timeLeft) / totalDuration) * 100;
+                }
+                bar.style.width = percent + "%";
+                
+                const min = Math.floor(timeLeft / 60);
+                const sec = timeLeft % 60;
+                txt.innerText = `Geliştiriliyor... ${min}dk ${sec}sn`;
+                
+                timeLeft--;
+            };
+
+            update();
+            upgradeTimerInterval = setInterval(update, 1000);
+        }
+
+        function completeUpgrade() {
+            fetch(`/api/ranches/complete-upgrade/${ranchId}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        toastr.success(data.message);
+                        loadFactoryData();
+                    } else {
+                        if(data.message && data.message.includes('Henüz')) {
+                            setTimeout(loadFactoryData, 2000);
+                        } else {
+                            toastr.error(data.message);
+                        }
+                    }
+                })
+                .catch(err => console.error(err));
+        }
+
+        function fetchUser() {
+            return fetch(`/api/user-stats/${user.id}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data) {
+                        user.money = data.money;
+                        user.gold = data.gold;
+                        user.diamond = data.diamond;
+                        localStorage.setItem('simWorldUser', JSON.stringify(user));
+                    }
+                    return data;
+                });
         }
 
         function updateUI() {
@@ -450,12 +555,6 @@
 
             // Product
             grid.innerHTML += createCardHTML('prod', config.prod, factory.prod, factory.prodCap, 'pull');
-
-
-            document.getElementById('curLvl').innerText = factory.level;
-            document.getElementById('nextLvl').innerText = factory.level + 1;
-            document.getElementById('uPrice').innerText = fmt(factory.upgradeCost) + " ₺";
-            document.getElementById('upgradeBtn').innerText = `YÜKSELT (${fmt(factory.upgradeCost)} ₺)`;
         }
 
         function createCardHTML(type, item, amount, cap, action) {
@@ -484,7 +583,7 @@
             list.innerHTML = '';
             
             if(!logs || logs.length === 0) {
-                list.innerHTML = '<div class="log-item" style="justify-content:center;">Kayıt yok.</div>';
+                list.innerHTML = '<div style="text-align:center; color:#555; font-size:0.8rem;">Henüz kayıt yok.</div>';
                 return;
             }
 
@@ -493,24 +592,25 @@
             };
             const productName = factory.type ? (typeMap[factory.type] || 'Ürün') : 'Ürün';
 
-            logs.forEach(log => {
-                const date = new Date(log.created_at);
-                const timeStr = date.toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'});
-                // const amount = (log.amount !== undefined && log.amount !== null) ? log.amount : '?';
-                // Log message usually contains the amount text
+            logs.forEach(l => {
+                const item = document.createElement('div');
+                item.className = 'log-item';
+                item.style.alignItems = 'center';
                 
-                const div = document.createElement('div');
-                div.className = 'log-item';
-                div.innerHTML = `
-                    <span>
-                        <a href="profile.html?id=${log.user_id}" style="color:var(--accent-cyan); text-decoration:none; font-weight:bold;">
-                            #${log.user_id} - ${log.username}
-                        </a>
-                        <span style="color:#aaa"> - ${log.message}</span>
-                    </span>
-                    <span class="log-time">${timeStr}</span>
+                const avatarUrl = l.avatar || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
+                const amount = l.amount || 0;
+
+                // Format: #id - username (level Level) (+ amount product) üretti
+                const logText = `#${l.user_id} - ${l.username} (${l.level || 1} Level) <span style="color:var(--accent-green)">(+ ${amount} ${productName})</span> üretti`;
+
+                item.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <img src="${avatarUrl}" style="width:24px; height:24px; border-radius:50%; object-fit:cover; border:1px solid #333;">
+                        <span>${logText}</span>
+                    </div>
+                    <span class="log-time">${new Date(l.created_at).toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'})}</span>
                 `;
-                list.appendChild(div);
+                list.appendChild(item);
             });
         }
 
@@ -616,38 +716,118 @@
         }
 
         // --- GELİŞTİRME ---
-        function openUpgradeModal() { document.getElementById('upgradeModal').style.display = 'flex'; }
+        function openUpgradeModal() { 
+            if(!upgradeInfo || upgradeInfo.maxLevel) return;
+            
+            Promise.all([
+                fetchUser(),
+                fetch(`/api/licenses/${user.id}`).then(res => res.json())
+            ]).then(([userData, licensesData]) => {
+                userLicenses = licensesData || {};
+
+                const costs = upgradeInfo.nextLevel.costs;
+                const nextLvl = upgradeInfo.nextLevel.level;
+                
+                // Lisans Kontrolü
+                const licenseKey = factory.type; // e.g. 'chicken'
+                const config = resourceMap[licenseKey];
+                const licenseName = config ? config.name : (factory.ranch_name || 'Çiftlik');
+                const requiredLicenseText = `${nextLvl}. Seviye ${licenseName} Lisansı`;
+                
+                const userLicenseLevel = userLicenses[licenseKey] || 0;
+                const hasLicense = userLicenseLevel >= nextLvl;
+                
+                console.log('License Check:', { 
+                    ranchType: licenseKey, 
+                    requiredLevel: nextLvl, 
+                    userLevel: userLicenseLevel, 
+                    hasLicense: hasLicense 
+                });
+
+                const lColor = hasLicense ? '#2ecc71' : '#e74c3c';
+                const lBg = hasLicense ? 'rgba(46, 204, 113, 0.15)' : 'rgba(231, 76, 60, 0.15)';
+                const lIcon = hasLicense ? 'fas fa-check-circle' : 'fas fa-times-circle';
+
+                const licenseBadge = `
+                    <div style="background:${lBg}; color:${lColor}; border:1px solid ${lColor}; padding:8px; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:10px; font-weight:bold; font-size:0.9rem;">
+                        <i class="${lIcon}" style="font-size:1.2rem;"></i> 
+                        <div style="text-align:left; line-height:1.2;">
+                            <div>${requiredLicenseText}</div>
+                        </div>
+                    </div>
+                `;
+
+                // Helper for resource badges
+                const check = (val, cost, label, icon, isImage = false) => {
+                    if (!cost || cost <= 0) return '';
+                    const has = (val || 0) >= cost;
+                    const color = has ? '#2ecc71' : '#e74c3c';
+                    const bg = has ? 'rgba(46, 204, 113, 0.15)' : 'rgba(231, 76, 60, 0.15)';
+                    
+                    const iconHtml = isImage 
+                        ? `<img src="${icon}" style="width:20px; height:20px; object-fit:contain;">`
+                        : `<i class="${icon}"></i>`;
+
+                    return `
+                        <div style="background:${bg}; color:${color}; border:1px solid ${color}; padding:8px; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:bold;">
+                            ${iconHtml} ${fmt(cost)} ${label}
+                        </div>
+                    `;
+                };
+
+                // Helper for benefit badges
+                const benefit = (text, icon) => {
+                    return `
+                        <div style="background:rgba(255, 215, 0, 0.15); color:#ffd700; border:1px solid #ffd700; padding:8px; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:bold;">
+                            <i class="${icon}"></i> ${text}
+                        </div>
+                    `;
+                };
+
+                // Inventory check
+                fetch(`/api/inventory/${user.id}`).then(res => res.json()).then(inv => {
+                    const userInv = inv || {};
+
+                    const html = `
+                        <div style="text-align:left; margin-bottom:15px;">
+                            <h4 style="color:#fff; border-bottom:1px solid #333; padding-bottom:5px; margin-bottom:10px;">GEREKSİNİMLER</h4>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:0.9rem;">
+                                ${check(user.money, costs.money, '₺', 'fas fa-money-bill-wave')}
+                                ${check(user.gold, costs.gold, 'Altın', 'fas fa-coins')}
+                                ${check(user.diamond, costs.diamond, 'Elmas', 'fas fa-gem')}
+                                ${check(userInv['lumber']||0, costs.wood, 'Tahta', 'icons/inventory-icon/lumber.png', true)}
+                                ${check(userInv['brick']||0, costs.brick, 'Tuğla', 'icons/inventory-icon/brick.png', true)}
+                                ${check(userInv['concrete']||0, costs.cement, 'Çimento', 'icons/inventory-icon/concrete.png', true)}
+                                ${check(userInv['glass']||0, costs.glass, 'Cam', 'icons/inventory-icon/glass.png', true)}
+                                ${check(userInv['steel']||0, costs.steel, 'Çelik', 'icons/inventory-icon/steel.png', true)}
+                            </div>
+                            <div style="margin-top:10px; text-align:center;">
+                                ${licenseBadge}
+                            </div>
+                        </div>
+
+                        <div style="text-align:left; margin-bottom:15px;">
+                            <h4 style="color:#fff; border-bottom:1px solid #333; padding-bottom:5px; margin-bottom:10px;">KAZANIMLAR</h4>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:0.9rem;">
+                                ${benefit(`+${upgradeInfo.nextLevel.benefits.workers} İşçi`, 'fas fa-users')}
+                                ${benefit(`+${upgradeInfo.nextLevel.benefits.storage} Depo`, 'fas fa-warehouse')}
+                                ${benefit(`Hız Artışı`, 'fas fa-bolt')}
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('upgradeCosts').innerHTML = html;
+                    document.getElementById('upgradeModal').style.display = 'flex'; 
+                });
+            });
+        }
+
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         function startUpgrade() {
-            if(user.money < factory.upgradeCost) return toastr.error("Yetersiz Bakiye!");
-            
             closeModal('upgradeModal');
 
-            const btn = document.getElementById('upgradeBtn');
-            const prog = document.getElementById('upgradeProgress');
-            const bar = document.getElementById('upBar');
-            const txt = document.getElementById('upTimer');
-
-            btn.style.display = 'none';
-            prog.style.display = 'block';
-
-            let timeLeft = factory.upgradeTime;
-            const int = setInterval(() => {
-                timeLeft--;
-                const percent = ((factory.upgradeTime - timeLeft) / factory.upgradeTime) * 100;
-                bar.style.width = percent + "%";
-                txt.innerText = `Geliştiriliyor... ${timeLeft}s`;
-
-                if(timeLeft <= 0) {
-                    clearInterval(int);
-                    performUpgrade();
-                }
-            }, 1000);
-        }
-
-        function performUpgrade() {
-             fetch(`/api/ranches/upgrade/${ranchId}`, {
+            fetch(`/api/ranches/start-upgrade/${ranchId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: user.id })
@@ -660,11 +840,8 @@
                 } else {
                     toastr.error(data.message);
                 }
-                // Reset UI
-                document.getElementById('upgradeBtn').style.display = 'flex';
-                document.getElementById('upgradeProgress').style.display = 'none';
-                document.getElementById('upBar').style.width = '0%';
-            });
+            })
+            .catch(err => toastr.error("Bağlantı hatası"));
         }
 
     </script>

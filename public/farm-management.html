@@ -279,11 +279,14 @@
                 <i class="fas fa-hammer" style="font-size:3rem; color:var(--accent-gold); margin-bottom:10px;"></i>
                 <h3 class="m-title">Seviye Yükselt</h3>
                 <p class="m-desc">Kapasiteyi ve üretim hızını artırmak için tarlayı geliştir.</p>
-                <span class="m-price" id="uPrice">1.000.000 ₺</span>
+                
+                <div id="upgradeCosts" style="text-align:left; background:#111; padding:10px; border-radius:8px; margin-bottom:15px; font-size:0.9rem;">
+                    <!-- JS will fill this -->
+                </div>
                 
                 <div class="m-btns">
                     <button class="m-btn btn-cancel" onclick="closeModal('upgradeModal')">İPTAL</button>
-                    <button class="m-btn btn-confirm" onclick="startUpgrade()">ONAYLA</button>
+                    <button class="m-btn btn-confirm" onclick="startUpgrade()">GELİŞTİR</button>
                 </div>
             </div>
         </div>
@@ -312,6 +315,8 @@
         // --- VERİLER ---
         let user = JSON.parse(localStorage.getItem('simWorldUser'));
         if (!user) window.location.href = 'login.html';
+        
+        let userLicenses = {};
 
         const urlParams = new URLSearchParams(window.location.search);
         const farmId = urlParams.get('id');
@@ -368,7 +373,18 @@
             loadFactoryData();
         };
 
+        let upgradeInfo = null;
+        let upgradeTimerInterval = null;
+
         function loadFactoryData() {
+            fetchUser();
+            // Fetch Licenses
+            fetch(`/api/licenses/${user.id}`)
+                .then(res => res.json())
+                .then(data => { userLicenses = data; })
+                .catch(e => console.error('License fetch error:', e));
+
+            // 1. Get Farm Details
             fetch(`/api/farms/detail/${farmId}?userId=${user.id}`)
                 .then(res => res.json())
                 .then(data => {
@@ -378,7 +394,6 @@
                     }
                     
                     const m = data.farm;
-                    // Security Check
                     if (m.user_id !== user.id) {
                         toastr.error('Bu tarlaya erişim yetkiniz yok!');
                         setTimeout(() => window.location.href = 'index.html', 2000);
@@ -387,14 +402,15 @@
 
                     factory = {
                         name: m.name || m.farm_name || 'Tarla', 
+                        typeName: m.farm_name || 'Tarla',
+                        farm_name: m.farm_name,
+                        farm_type: m.farm_type,
                         level: m.level,
                         wage: m.salary,
-                        raw: m.reserve || 0, // Seed Stock
-                        rawCap: m.level * 10000, 
+                        raw: m.reserve || 0, 
+                        rawCap: m.capacity || m.level * 10000, // Use DB capacity if available
                         prod: m.stock || 0, 
-                        prodCap: m.level * 5000,
-                        upgradeCost: (m.level + 1) * 5000, 
-                        upgradeTime: 10, 
+                        prodCap: (m.capacity || m.level * 5000) / 2, // Split capacity? Or just use same. Let's stick to logic.
                         workers: m.workers,
                         maxWorkers: m.max_workers,
                         efficiency: 100, 
@@ -402,6 +418,16 @@
                         vault: m.vault || 0,
                         type: m.farm_type
                     };
+
+                    // 2. Get Upgrade Info
+                    fetch(`/api/farms/upgrade-info/${farmId}?userId=${user.id}`)
+                        .then(res => res.json())
+                        .then(upData => {
+                            if(upData.success) {
+                                upgradeInfo = upData;
+                                updateUpgradeUI();
+                            }
+                        });
 
                     fetchUser();
 
@@ -414,250 +440,179 @@
                 .catch(err => console.error(err));
         }
 
-        function fetchUser() {
-             fetch('/api/login', { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: user.username, password: user.password }) 
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(data.user) {
-                    user = data.user;
-                    localStorage.setItem('simWorldUser', JSON.stringify(user));
-                }
-            });
-        }
+        function updateUpgradeUI() {
+            if (!upgradeInfo) return;
 
-        function updateUI() {
-            document.getElementById('fName').innerText = factory.name; 
-            document.getElementById('fNameInput').value = factory.name;
-            document.getElementById('fWageInput').value = factory.wage;
-            document.getElementById('fLevel').innerText = factory.level;
+            const farm = upgradeInfo.farm;
+            const next = upgradeInfo.nextLevel;
+
+            document.getElementById('curLvl').innerText = farm.level;
             
-            document.getElementById('fWorker').innerText = `${factory.workers}/${factory.maxWorkers}`;
-            document.getElementById('fReserve').innerText = fmt(factory.raw); // Seed
-            document.getElementById('fEfficiency').innerText = `%${factory.efficiency}`;
-            
-            let t = factory.productionTime;
-            let tStr = t < 60 ? `${t}sn` : (t % 60 === 0 ? `${t/60}dk` : `${Math.floor(t/60)}dk ${t%60}sn`);
-            document.getElementById('fSpeed').innerText = tStr;
-
-            document.getElementById('fVault').innerText = fmt(factory.vault) + " ₺";
-            document.getElementById('maxVaultAdd').innerText = fmt(factory.level * 100000);
-
-            // Dynamic Warehouse Grid
-            const grid = document.getElementById('warehouseGrid');
-            grid.innerHTML = '';
-
-            const config = resourceMap[factory.type] || resourceMap['wheat'];
-
-            // Update Main Icon
-            if (config.main) {
-                 document.getElementById('fIcon').src = config.main;
-            }
-
-            // Seed (Raw Material)
-            grid.innerHTML += createCardHTML('reserve', { name: 'Tohum', key: 'seed', icon: 'icons/ranch-icon/seed.png' }, factory.raw, factory.rawCap, 'add');
-
-            // Product
-            grid.innerHTML += createCardHTML('prod', config.prod, factory.prod, factory.prodCap, 'pull');
-
-
-            document.getElementById('curLvl').innerText = factory.level;
-            document.getElementById('nextLvl').innerText = factory.level + 1;
-            document.getElementById('uPrice').innerText = fmt(factory.upgradeCost) + " ₺";
-            document.getElementById('upgradeBtn').innerText = `YÜKSELT (${fmt(factory.upgradeCost)} ₺)`;
-        }
-
-        function createCardHTML(type, item, amount, cap, action) {
-            const btnClass = action === 'add' ? 'btn-add' : 'btn-pull';
-            const btnText = action === 'add' ? 'EKLE' : 'ÇEK';
-            const inputId = `${type}Input`;
-            
-            // Fallback icon if not found
-            const iconSrc = item.icon || 'icons/ranch-icon/seed.png';
-
-            return `
-                <div class="wh-card">
-                    <img src="${iconSrc}" class="wh-icon" style="width:50px; height:50px; object-fit:contain; margin:0 auto 10px auto;" onerror="this.src='icons/ranch-icon/seed.png'">
-                    <div class="wh-title">${action === 'add' ? 'HAMMADDE' : 'ÜRÜN'} (${item.name.toUpperCase()})</div>
-                    <div class="wh-amount">${amount}</div>
-                    <div class="wh-cap">Kapasite: ${cap}</div>
-                    
-                    <input type="number" id="${inputId}" class="wh-input" placeholder="Miktar">
-                    <button class="btn-wh ${btnClass}" onclick="confirmAction('${type}', '${action}', '${item.key}', '${item.name}')">${btnText}</button>
-                </div>
-            `;
-        }
-
-        function updateLogs(logs) {
-            const list = document.getElementById('logList');
-            list.innerHTML = '';
-            
-            if(!logs || logs.length === 0) {
-                list.innerHTML = '<div class="log-item" style="justify-content:center;">Kayıt yok.</div>';
+            if (upgradeInfo.maxLevel) {
+                document.getElementById('nextLvl').innerText = "MAX";
+                document.getElementById('upgradeBtn').style.display = 'none';
                 return;
             }
 
-            const typeMap = {
-                'wheat': 'Buğday', 'corn': 'Mısır', 'fruit': 'Meyve', 'vegetable': 'Sebze',
-                'rice': 'Pirinç', 'potato': 'Patates', 'olive': 'Zeytin'
-            };
-            const productName = factory.type ? (typeMap[factory.type] || 'Ürün') : 'Ürün';
-
-            logs.forEach(log => {
-                const date = new Date(log.created_at);
-                const timeStr = date.toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'});
-                
-                const div = document.createElement('div');
-                div.className = 'log-item';
-                div.innerHTML = `
-                    <span>
-                        <a href="profile.html?id=${log.user_id}" style="color:var(--accent-cyan); text-decoration:none; font-weight:bold;">
-                            #${log.user_id} - ${log.username}
-                        </a>
-                        <span style="color:#aaa"> - ${log.message}</span>
-                    </span>
-                    <span class="log-time">${timeStr}</span>
-                `;
-                list.appendChild(div);
-            });
-        }
-
-        // --- AYARLAR ---
-        function saveSettings() {
-            const name = document.getElementById('fNameInput').value;
-            const wage = parseInt(document.getElementById('fWageInput').value);
-            
-            if(name.length < 3) return toastr.warning("İsim çok kısa.");
-            if(wage < 1 || wage > 1000) return toastr.warning("Maaş 1 ile 1000 arasında olmalıdır.");
-
-            fetch(`/api/farms/update/${farmId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: user.id, name, salary: wage })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(data.success) {
-                    toastr.success(data.message);
-                    factory.name = name;
-                    factory.wage = wage;
-                    updateUI();
-                } else {
-                    toastr.error(data.message);
-                }
-            });
-        }
-
-        // --- DEPO & KASA ---
-        let pendingAction = null;
-
-        function confirmAction(type, action, itemKey, itemName) {
-            let inputId = '';
-            if(type === 'reserve') inputId = 'reserveInput'; // Seed
-            else if(type === 'prod') inputId = 'prodInput';
-            else if(type === 'vault') inputId = 'vaultInput';
-
-            const amount = parseInt(document.getElementById(inputId).value);
-            
-            if(!amount || amount <= 0) return toastr.warning("Miktar giriniz.");
-
-            // Vault Limit Check
-            if(type === 'vault' && action === 'add') {
-                const limit = factory.level * 100000;
-                if(amount > limit) return toastr.warning(`Seviye ${factory.level} için maksimum ${fmt(limit)} ₺ ekleyebilirsiniz.`);
-            }
-
-            pendingAction = { type, action, amount, itemKey };
-            
-            let desc = "";
-            if(type === 'reserve' && action === 'add') {
-                desc = `${amount} adet ${itemName} envanterden düşülüp tarlaya eklenecek.`;
-            } else if(type === 'prod' && action === 'pull') {
-                desc = `${amount} adet ürün tarladan çekilip envantere eklenecek.`;
-            } else if(type === 'vault' && action === 'add') {
-                desc = `${fmt(amount)} ₺ hesabınızdan çekilip tarla kasasına eklenecek.`;
-            }
-            
-            document.getElementById('confirmDesc').innerText = desc;
-            document.getElementById('btnConfirmAction').onclick = executeAction;
-            document.getElementById('confirmModal').style.display = 'flex';
-        }
-
-        function executeAction() {
-            if(!pendingAction) return;
-            closeModal('confirmModal');
-            
-            const { type, action, amount, itemKey } = pendingAction;
-            let inputId = '';
-            if(type === 'reserve') inputId = 'reserveInput';
-            else if(type === 'prod') inputId = 'prodInput';
-            else if(type === 'vault') inputId = 'vaultInput';
-
-            let endpoint = '';
-            let body = { userId: user.id, amount: amount };
-
-            if(type === 'reserve' && action === 'add') {
-                endpoint = `/api/farms/deposit-seed/${farmId}`; 
-                body.itemKey = itemKey;
-            } else if(type === 'prod' && action === 'pull') {
-                endpoint = `/api/farms/withdraw-product/${farmId}`; 
-            } else if(type === 'vault' && action === 'add') {
-                endpoint = `/api/farms/deposit/${farmId}`; 
-            }
-
-            fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(data.success) {
-                    toastr.success(data.message);
-                    document.getElementById(inputId).value = "";
-                    loadFactoryData(); 
-                } else {
-                    toastr.error(data.message);
-                }
-            });
-        }
-
-        // --- GELİŞTİRME ---
-        function openUpgradeModal() { document.getElementById('upgradeModal').style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-        function startUpgrade() {
-            if(user.money < factory.upgradeCost) return toastr.error("Yetersiz Bakiye!");
-            
-            closeModal('upgradeModal');
+            document.getElementById('nextLvl').innerText = next.level;
 
             const btn = document.getElementById('upgradeBtn');
             const prog = document.getElementById('upgradeProgress');
             const bar = document.getElementById('upBar');
             const txt = document.getElementById('upTimer');
 
-            btn.style.display = 'none';
-            prog.style.display = 'block';
-
-            let timeLeft = factory.upgradeTime;
-            const int = setInterval(() => {
-                timeLeft--;
-                const percent = ((factory.upgradeTime - timeLeft) / factory.upgradeTime) * 100;
-                bar.style.width = percent + "%";
-                txt.innerText = `Geliştiriliyor... ${timeLeft}s`;
-
-                if(timeLeft <= 0) {
-                    clearInterval(int);
-                    performUpgrade();
-                }
-            }, 1000);
+            if (farm.isUpgrading) {
+                btn.style.display = 'none';
+                prog.style.display = 'block';
+                startTimer(farm.timeLeft, next.duration);
+            } else {
+                btn.style.display = 'flex';
+                prog.style.display = 'none';
+                btn.innerText = `YÜKSELT (Seviye ${next.level})`;
+            }
         }
 
-        function performUpgrade() {
-             fetch(`/api/farms/upgrade/${farmId}`, {
+        function startTimer(timeLeft, totalDuration) {
+            if (upgradeTimerInterval) clearInterval(upgradeTimerInterval);
+            
+            const bar = document.getElementById('upBar');
+            const txt = document.getElementById('upTimer');
+
+            if (!bar || !txt) return;
+
+            const update = () => {
+                if (timeLeft <= 0) {
+                    clearInterval(upgradeTimerInterval);
+                    completeUpgrade();
+                    return;
+                }
+                
+                let percent = 0;
+                if (totalDuration > 0) {
+                    percent = ((totalDuration - timeLeft) / totalDuration) * 100;
+                }
+                bar.style.width = percent + "%";
+                
+                const min = Math.floor(timeLeft / 60);
+                const sec = timeLeft % 60;
+                txt.innerText = `Geliştiriliyor... ${min}dk ${sec}sn`;
+                
+                timeLeft--;
+            };
+
+            update();
+            upgradeTimerInterval = setInterval(update, 1000);
+        }
+
+        function completeUpgrade() {
+            fetch(`/api/farms/complete-upgrade/${farmId}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        toastr.success(data.message);
+                        loadFactoryData(); // Reload all
+                    } else {
+                        // If not ready (server time sync issue), reload data to sync timer
+                        if(data.message && data.message.includes('Henüz')) {
+                            setTimeout(loadFactoryData, 2000);
+                        } else {
+                            toastr.error(data.message);
+                        }
+                    }
+                })
+                .catch(err => console.error(err));
+        }
+
+        // --- GELİŞTİRME ---
+        function openUpgradeModal() { 
+            if(!upgradeInfo || upgradeInfo.maxLevel) return;
+            
+            fetchUser().then(() => {
+                const costs = upgradeInfo.nextLevel.costs;
+                const nextLvl = upgradeInfo.nextLevel.level;
+                
+                // Lisans Kontrolü
+                const licenseKey = factory.farm_type;
+                const licenseName = factory.farm_name;
+                const requiredLicenseText = `${nextLvl}. Seviye ${licenseName} Lisansı`;
+                
+                const userLicenseLevel = userLicenses[licenseKey] || 0;
+                const hasLicense = userLicenseLevel >= nextLvl;
+                
+                const lColor = hasLicense ? '#2ecc71' : '#e74c3c';
+                const lBg = hasLicense ? 'rgba(46, 204, 113, 0.15)' : 'rgba(231, 76, 60, 0.15)';
+                const lIcon = hasLicense ? 'fas fa-check-circle' : 'fas fa-times-circle';
+
+                const licenseBadge = `
+                    <div style="background:${lBg}; color:${lColor}; border:1px solid ${lColor}; padding:8px; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:bold; font-size:0.9rem;">
+                        <i class="${lIcon}"></i> ${requiredLicenseText}
+                    </div>
+                `;
+
+                // Helper for resource badges
+                const check = (val, cost, label, icon, isImage = false) => {
+                    if (!cost) return '';
+                    const has = (val || 0) >= cost;
+                    const color = has ? '#2ecc71' : '#e74c3c';
+                    const bg = has ? 'rgba(46, 204, 113, 0.15)' : 'rgba(231, 76, 60, 0.15)';
+                    
+                    const iconHtml = isImage 
+                        ? `<img src="${icon}" style="width:20px; height:20px; object-fit:contain;">`
+                        : `<i class="${icon}"></i>`;
+
+                    return `
+                        <div style="background:${bg}; color:${color}; border:1px solid ${color}; padding:8px; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:bold;">
+                            ${iconHtml} ${fmt(cost)} ${label}
+                        </div>
+                    `;
+                };
+
+                // Helper for benefit badges
+                const benefit = (text, icon) => {
+                    return `
+                        <div style="background:rgba(255, 215, 0, 0.15); color:#ffd700; border:1px solid #ffd700; padding:8px; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:bold;">
+                            <i class="${icon}"></i> ${text}
+                        </div>
+                    `;
+                };
+
+                const html = `
+                    <div style="text-align:left; margin-bottom:15px;">
+                        <h4 style="color:#fff; border-bottom:1px solid #333; padding-bottom:5px; margin-bottom:10px;">GEREKSİNİMLER</h4>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:0.9rem;">
+                            ${check(user.money, costs.money, '₺', 'fas fa-money-bill')}
+                            ${check(user.gold, costs.gold, 'Altın', 'fas fa-coins')}
+                            ${check(user.diamond, costs.diamond, 'Elmas', 'fas fa-gem')}
+                            ${check(user.wood, costs.wood, 'Tahta', 'icons/factory-icon/wood-plank.png', true)}
+                            ${check(user.brick, costs.brick, 'Tuğla', 'icons/factory-icon/brick.png', true)}
+                            ${check(user.cement, costs.cement, 'Çimento', 'icons/factory-icon/cement.png', true)}
+                            ${check(user.glass, costs.glass, 'Cam', 'icons/factory-icon/window.png', true)}
+                            ${check(user.steel, costs.steel, 'Çelik', 'icons/factory-icon/steel.png', true)}
+                        </div>
+                        <div style="margin-top:10px; text-align:center;">
+                            ${licenseBadge}
+                        </div>
+                    </div>
+
+                    <div style="text-align:left; margin-bottom:15px;">
+                        <h4 style="color:#fff; border-bottom:1px solid #333; padding-bottom:5px; margin-bottom:10px;">KAZANIMLAR</h4>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:0.9rem;">
+                            ${benefit('+' + (upgradeInfo.nextLevel.benefits.workers || 5) + ' İşçi', 'fas fa-users')}
+                            ${benefit('+' + (upgradeInfo.nextLevel.benefits.storage || 500) + ' Depo', 'fas fa-warehouse')}
+                            ${benefit(Math.ceil(upgradeInfo.nextLevel.duration / 60) + ' Dakika', 'fas fa-clock')}
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('upgradeCosts').innerHTML = html;
+                document.getElementById('upgradeModal').style.display = 'flex'; 
+            });
+        }
+
+        function startUpgrade() {
+            closeModal('upgradeModal');
+
+            fetch(`/api/farms/start-upgrade/${farmId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: user.id })
@@ -670,12 +625,189 @@
                 } else {
                     toastr.error(data.message);
                 }
-                // Reset UI
-                document.getElementById('upgradeBtn').style.display = 'flex';
-                document.getElementById('upgradeProgress').style.display = 'none';
-                document.getElementById('upBar').style.width = '0%';
+            })
+            .catch(err => toastr.error("Bağlantı hatası"));
+        }
+
+        function fetchUser() {
+            return fetch(`/api/user-stats/${user.id}`)
+                .then(res => res.json())
+                .then(data => {
+                    user.money = data.money;
+                    user.gold = data.gold;
+                    user.diamond = data.diamond;
+                    user.wood = data.wood;
+                    user.brick = data.brick;
+                    user.cement = data.cement;
+                    user.glass = data.glass;
+                    user.steel = data.steel;
+                    user.license_farm_level = data.license_farm_level;
+                    localStorage.setItem('simWorldUser', JSON.stringify(user));
+                });
+        }
+
+        function updateUI() {
+            if(!factory.name) return;
+            
+            document.getElementById('fName').innerText = factory.name;
+            document.getElementById('fLevel').innerText = factory.level;
+            document.getElementById('fWorker').innerText = `${factory.workers}/${factory.maxWorkers}`;
+            document.getElementById('fReserve').innerText = fmt(factory.raw);
+            document.getElementById('fSpeed').innerText = factory.productionTime + 's';
+            document.getElementById('fEfficiency').innerText = '%' + factory.efficiency;
+            
+            document.getElementById('fNameInput').value = factory.name;
+            document.getElementById('fWageInput').value = factory.wage;
+            
+            document.getElementById('fVault').innerText = fmt(factory.vault) + ' ₺';
+            
+            if(factory.farm_type && resourceMap[factory.farm_type]) {
+                 document.getElementById('fIcon').src = resourceMap[factory.farm_type].main;
+            }
+
+            renderWarehouse();
+        }
+
+        function renderWarehouse() {
+            const grid = document.getElementById('warehouseGrid');
+            grid.innerHTML = '';
+            
+            if(!factory.farm_type || !resourceMap[factory.farm_type]) return;
+            
+            const conf = resourceMap[factory.farm_type];
+            
+            // Raw Material
+            const rawCard = document.createElement('div');
+            rawCard.className = 'wh-card';
+            rawCard.innerHTML = `
+                <img src="${conf.raw[0].icon}" class="wh-icon" style="width:40px;height:40px;object-fit:contain;">
+                <div class="wh-title">${conf.raw[0].name}</div>
+                <div class="wh-amount" style="color:var(--accent-green)">${fmt(factory.raw)}</div>
+                <div class="wh-cap">Kapasite: ${fmt(factory.rawCap)}</div>
+                <input type="number" id="rawInput" class="wh-input" placeholder="Miktar">
+                <div style="display:flex; gap:5px;">
+                    <button class="btn-wh btn-add" onclick="confirmAction('raw', 'add')">EKLE</button>
+                </div>
+            `;
+            grid.appendChild(rawCard);
+            
+            // Product
+            const prodCard = document.createElement('div');
+            prodCard.className = 'wh-card';
+            prodCard.innerHTML = `
+                <img src="${conf.prod.icon}" class="wh-icon" style="width:40px;height:40px;object-fit:contain;">
+                <div class="wh-title">${conf.prod.name}</div>
+                <div class="wh-amount" style="color:var(--accent-cyan)">${fmt(factory.prod)}</div>
+                <div class="wh-cap">Kapasite: ${fmt(factory.prodCap)}</div>
+                <input type="number" id="prodInput" class="wh-input" placeholder="Miktar">
+                <div style="display:flex; gap:5px;">
+                    <button class="btn-wh btn-pull" onclick="confirmAction('prod', 'pull')">ÇEK</button>
+                </div>
+            `;
+            grid.appendChild(prodCard);
+        }
+
+        function updateLogs(logs) {
+            const list = document.getElementById('logList');
+            list.innerHTML = '';
+            if(!logs || logs.length === 0) {
+                list.innerHTML = '<div style="text-align:center; color:#555; font-size:0.8rem;">Henüz kayıt yok.</div>';
+                return;
+            }
+
+            // Determine product name
+            let productName = 'Ürün';
+            if(factory.farm_type && resourceMap[factory.farm_type]) {
+                productName = resourceMap[factory.farm_type].prod.name;
+            }
+
+            logs.forEach(l => {
+                const item = document.createElement('div');
+                item.className = 'log-item';
+                item.style.alignItems = 'center';
+                
+                const avatarUrl = l.avatar || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
+                const amount = l.amount || 0;
+
+                // Format: #id - username (level Level) (+ amount product) üretti
+                const logText = `#${l.user_id} - ${l.username} (${l.level} Level) <span style="color:var(--accent-green)">(+ ${amount} ${productName})</span> üretti`;
+
+                item.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <img src="${avatarUrl}" style="width:24px; height:24px; border-radius:50%; object-fit:cover; border:1px solid #333;">
+                        <span>${logText}</span>
+                    </div>
+                    <span class="log-time">${new Date(l.created_at).toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'})}</span>
+                `;
+                list.appendChild(item);
             });
         }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        let pendingAction = null;
+        function confirmAction(type, action) {
+            let amount = 0;
+            if(type === 'vault') amount = document.getElementById('vaultInput').value;
+            else if(type === 'raw') amount = document.getElementById('rawInput').value;
+            else if(type === 'prod') amount = document.getElementById('prodInput').value;
+            
+            if(!amount || amount <= 0) return toastr.warning('Geçerli miktar girin');
+            
+            pendingAction = { type, action, amount };
+            
+            document.getElementById('confirmDesc').innerText = `${amount} miktarında işlem yapmak istiyor musunuz?`;
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+        
+        document.getElementById('btnConfirmAction').onclick = () => {
+            if(!pendingAction) return;
+            closeModal('confirmModal');
+            
+            fetch('/api/farms/action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: user.id,
+                    farmId: farmId,
+                    type: pendingAction.type,
+                    action: pendingAction.action,
+                    amount: pendingAction.amount
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    toastr.success(data.message);
+                    loadFactoryData();
+                } else {
+                    toastr.error(data.message);
+                }
+            });
+        };
+
+        function saveSettings() {
+            const name = document.getElementById('fNameInput').value;
+            const wage = document.getElementById('fWageInput').value;
+            
+            fetch('/api/farms/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id, farmId: farmId, name, wage })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    toastr.success('Ayarlar kaydedildi');
+                    loadFactoryData();
+                } else {
+                    toastr.error(data.message);
+                }
+            });
+        }
+
 
     </script>
 </body>

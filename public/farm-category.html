@@ -220,7 +220,7 @@
                 `;
                 const btn = row.querySelector('.farm-action-btn');
                 if (owned) {
-                    btn.onclick = () => location.href = `farm.html?id=${owned.farm_id}`;
+                    btn.onclick = () => location.href = `farm-management.html?id=${owned.farm_id}`;
                 } else {
                     btn.onclick = () => openBuyModal(type);
                 }

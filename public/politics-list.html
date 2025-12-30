@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim of World - Siyaset</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0a0a0a; 
+            --bg-card: #141414; 
+            --bg-input: #1a1a1a;
+            --accent: #9b59b6; /* Siyaset Teması: Mor */
+            --accent-cyan: #00e5ff; 
+            --accent-gold: #ffd700; 
+            --accent-red: #e74c3c;
+            --accent-green: #2ecc71;
+            --text-white: #ffffff; 
+            --text-muted: #888; 
+            --border-color: #222;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%; max-width: 450px; background-color: var(--bg-dark);
+            height: 100vh; display: flex; flex-direction: column; position: relative;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5); border-left: 1px solid #111; border-right: 1px solid #111;
+        }
+
+        /* HEADER removed */
+
+
+        /* MAIN */
+        main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
+
+        .page-header { text-align: center; margin-bottom: 20px; animation: fadeInDown 0.5s; }
+        .page-title { font-size: 1.4rem; letter-spacing: 1px; color: #fff; text-transform: uppercase; font-weight: 800; }
+        .page-desc { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* TABS */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
+        .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: #777; font-family: 'Rajdhani'; font-weight: bold; cursor: pointer; border-radius: 6px; transition: all 0.3s; }
+        .tab-btn.active { background: #222; color: var(--accent); border: 1px solid var(--accent); box-shadow: 0 0 10px rgba(155, 89, 182, 0.2); }
+
+        /* TAB 1: PARTİ LİSTESİ */
+        .search-box {
+            background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px;
+            display: flex; align-items: center; gap: 10px; margin-bottom: 15px;
+        }
+        .search-box input { background: transparent; border: none; color: #fff; width: 100%; font-family: 'Rajdhani'; outline: none; font-size: 1rem; }
+
+        .party-list { display: flex; flex-direction: column; gap: 15px; animation: fadeIn 0.5s; }
+
+        .party-card {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 12px; padding: 15px; position: relative; overflow: hidden;
+            transition: transform 0.2s; display: flex; align-items: center; gap: 15px;
+        }
+        .party-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+        
+        /* Parti Renk Çizgisi */
+        .party-stripe { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #555; }
+
+        .pc-logo { 
+            width: 50px; height: 50px; background: var(--bg-input); border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 800; color: #fff;
+            border: 2px solid #333; z-index: 1;
+        }
+        
+        .pc-info { flex: 1; }
+        .pc-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+        .pc-name { font-size: 1.1rem; font-weight: 700; color: #fff; }
+        .pc-abbr { font-size: 0.75rem; color: #aaa; background: #222; padding: 1px 6px; border-radius: 4px; }
+        
+        .pc-leader { font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 8px; }
+        .pc-leader i { color: var(--accent-gold); margin-right: 4px; }
+
+        .pc-meta { display: flex; gap: 10px; }
+        .pc-badge { 
+            font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; background: rgba(255,255,255,0.05); 
+            color: #ccc; border: 1px solid #333; display: flex; align-items: center; gap: 4px;
+        }
+
+        .btn-join {
+            background: transparent; border: 1px solid var(--accent); color: var(--accent);
+            padding: 6px 12px; border-radius: 6px; font-family: 'Rajdhani'; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 0.8rem;
+        }
+        .btn-join:hover { background: var(--accent); color: #000; }
+
+        /* TAB 2: PARTİ KURMA */
+        .create-hero {
+            background: linear-gradient(135deg, rgba(155, 89, 182, 0.15), rgba(20,20,20,0.95));
+            border: 1px solid var(--accent); border-radius: 12px; padding: 20px; text-align: center;
+            box-shadow: 0 0 20px rgba(155, 89, 182, 0.1); margin-bottom: 20px;
+        }
+        .ch-icon { font-size: 3rem; color: var(--accent); margin-bottom: 10px; }
+        .ch-price { font-size: 1.8rem; font-weight: 800; color: var(--accent-gold); margin: 10px 0; }
+
+        .form-group { margin-bottom: 15px; }
+        .form-label { display: block; font-size: 0.8rem; color: #aaa; margin-bottom: 5px; text-transform: uppercase; font-weight: bold; }
+        .modern-input, .modern-select, .modern-textarea { 
+            width: 100%; background: var(--bg-input); border: 1px solid var(--border-color); color: #fff; 
+            padding: 12px; border-radius: 6px; font-family: 'Rajdhani'; font-size: 1rem; outline: none; transition: border-color 0.2s;
+        }
+        .modern-textarea { resize: none; height: 80px; }
+        .modern-input:focus, .modern-select:focus, .modern-textarea:focus { border-color: var(--accent); }
+
+        /* Renk Seçici */
+        .color-grid { display: flex; gap: 10px; justify-content: center; margin-top: 5px; }
+        .color-opt { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.2s; }
+        .color-opt:hover { transform: scale(1.1); }
+        .color-opt.selected { border-color: #fff; transform: scale(1.2); box-shadow: 0 0 10px rgba(255,255,255,0.5); }
+
+        .btn-create { 
+            width: 100%; padding: 14px; border: none; border-radius: 8px; 
+            background: var(--accent); color: #fff; font-family: 'Rajdhani'; font-weight: 800; font-size: 1.1rem; cursor: pointer;
+            box-shadow: 0 0 15px rgba(155, 89, 182, 0.3); margin-top: 10px;
+        }
+
+        /* MODAL */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; display: none; justify-content: center; align-items: center; animation: fadeIn 0.3s; }
+        .modal-content { background: #181818; width: 85%; padding: 25px; border-radius: 12px; border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent); }
+        .m-title { font-size: 1.3rem; margin-bottom: 10px; color: #fff; font-weight: bold; }
+        .m-desc { color: #aaa; font-size: 0.9rem; margin-bottom: 20px; }
+        .m-btns { display: flex; gap: 10px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 1rem; }
+        .btn-confirm { background: var(--accent-green); color: #000; }
+        .btn-cancel { background: #333; color: #fff; }
+
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- HEADER removed -->
+
+        <main>
+            <div class="page-header">
+                <h1 class="page-title">SİYASİ PARTİLER</h1>
+                <p class="page-desc">Bir partiye katıl veya kendi hareketini başlat.</p>
+            </div>
+
+            <!-- SEKMELER -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('list')">PARTİ LİSTESİ</button>
+                <button class="tab-btn" id="second-tab-btn" onclick="switchTab('create')">PARTİ KUR</button>
+            </div>
+
+            <!-- TAB 1: PARTİ LİSTESİ -->
+            <div id="tab-list">
+                <div class="search-box">
+                    <i class="fas fa-search" style="color:#666;"></i>
+                    <input type="text" id="searchInput" placeholder="Parti ara..." onkeyup="filterParties()">
+                </div>
+
+                <div class="party-list" id="partyListContainer">
+                    <!-- JS Dolduracak -->
+                </div>
+            </div>
+
+            <!-- TAB 3: PARTİM -->
+            <div id="tab-myparty" style="display:none;">
+                <div id="my-party-container" class="party-list"></div>
+            </div>
+
+            <!-- TAB 2: PARTİ KURMA -->
+            <div id="tab-create" style="display:none;">
+                <div class="create-hero">
+                    <i class="fas fa-landmark ch-icon"></i>
+                    <h2 style="color:#fff; margin:0;">YENİ PARTİ KURULUMU</h2>
+                    <p style="color:#aaa; font-size:0.9rem; margin-top:5px;">Kendi ideolojini yay ve seçimlere katıl.</p>
+                    <div class="ch-price" style="font-size: 1.2rem;">
+                        <span style="color:var(--accent-green)">10.000.000 ₺</span> + 
+                        <span style="color:var(--accent-gold)">500 Altın</span> + 
+                        <span style="color:var(--accent-cyan)">50 Elmas</span>
+                    </div>
+                    <div id="licenseStatus" style="margin-top: 10px; font-size: 0.9rem; font-weight: bold;">
+                        <!-- JS will fill this -->
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Parti Adı</label>
+                    <input type="text" id="pName" class="modern-input" placeholder="Örn: Milli Birlik Partisi">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Kısaltma (Max 4 Karakter)</label>
+                    <input type="text" id="pAbbr" class="modern-input" maxlength="4" placeholder="Örn: MBP" style="text-transform:uppercase;">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">İdeoloji</label>
+                    <select id="pIdeology" class="modern-select">
+                        <option value="Demokrat">Demokrat</option>
+                        <option value="Liberal">Liberal</option>
+                        <option value="Sosyalist">Sosyalist</option>
+                        <option value="Milliyetçi">Milliyetçi</option>
+                        <option value="Teknokrat">Teknokrat</option>
+                        <option value="Muhafazakar">Muhafazakar</option>
+                        <option value="Komünist">Komünist</option>
+                        <option value="Faşist">Faşist</option>
+                        <option value="Anarşist">Anarşist</option>
+                        <option value="Yeşiller">Yeşiller</option>
+                        <option value="Merkezci">Merkezci</option>
+                        <option value="Liberteryen">Liberteryen</option>
+                        <option value="Monarşist">Monarşist</option>
+                        <option value="Teokrat">Teokrat</option>
+                        <option value="Popülist">Popülist</option>
+                    </select>
+                </div>
+
+                <button class="btn-create" onclick="openCreateModal()">PARTİYİ KUR</button>
+            </div>
+
+        </main>
+
+        <!-- ONAY MODALI -->
+        <div class="modal-overlay" id="confirmModal">
+            <div class="modal-content">
+                <i class="fas fa-file-signature" style="font-size:3rem; color:var(--accent); margin-bottom:10px;"></i>
+                <h3 class="m-title" id="modalTitle">ONAYLA</h3>
+                <p class="m-desc" id="modalDesc">İşlemi onaylıyor musunuz?</p>
+                <div class="m-btns">
+                    <button class="m-btn btn-cancel" onclick="closeModal()">İPTAL</button>
+                    <button class="m-btn btn-confirm" id="modalConfirmBtn">ONAYLA</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM NAV REMOVED (Managed by menu-manager.js) -->
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="js/header-manager.js"></script>
+    <script src="js/menu-manager.js"></script>
+    <script>
+        // Toastr Config
+        toastr.options = {
+            "closeButton": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "timeOut": "3000"
+        };
+
+        // --- OYUNCU VERİLERİ ---
+        let user = null;
+        let parties = [];
+        let myApplications = [];
+
+        const fmt = (n) => n.toLocaleString('tr-TR');
+
+        window.onload = async () => {
+            const storedUser = localStorage.getItem('simWorldUser');
+            if (!storedUser) {
+                window.location.href = 'login.html';
+                return;
+            }
+            user = JSON.parse(storedUser);
+            
+            // Fetch fresh user data to check money and party status
+            try {
+                const userRes = await fetch(`/api/user-stats/${user.id}`);
+                if (userRes.ok) {
+                    const userData = await userRes.json();
+                    user.money = userData.money;
+                    user.party_id = userData.party_id; // Update party_id from server
+                    user.hasParty = !!userData.party_id; 
+                    user.hasPartyLicense = userData.hasPartyLicense;
+                    localStorage.setItem('simWorldUser', JSON.stringify(user)); // Update local storage
+                }
+            } catch (e) { console.error(e); }
+
+            // Fetch applications
+            try {
+                const appRes = await fetch(`/api/my-applications/${user.id}`);
+                if (appRes.ok) {
+                    myApplications = await appRes.json();
+                }
+            } catch (e) { console.error(e); }
+
+            updateUI();
+            updateLicenseStatus();
+            await fetchParties();
+        };
+
+        function updateLicenseStatus() {
+            const el = document.getElementById('licenseStatus');
+            if(!el) return;
+            
+            if (user.hasPartyLicense) {
+                el.innerHTML = '<span style="display:inline-block; padding:6px 12px; border-radius:6px; background:rgba(46, 204, 113, 0.15); color:var(--accent-green); border:1px solid var(--accent-green); font-weight:bold; font-size:0.85rem;"><i class="fas fa-check-circle"></i> PARTİ KURMA LİSANSI MEVCUT</span>';
+            } else {
+                el.innerHTML = '<span style="display:inline-block; padding:6px 12px; border-radius:6px; background:rgba(231, 76, 60, 0.15); color:var(--accent-red); border:1px solid var(--accent-red); font-weight:bold; font-size:0.85rem;"><i class="fas fa-times-circle"></i> PARTİ KURMA LİSANSI YOK</span>';
+            }
+        }
+
+        async function fetchParties() {
+            try {
+                const res = await fetch('/api/parties');
+                if (res.ok) {
+                    parties = await res.json();
+                    renderParties();
+                    setupTabs();
+                }
+            } catch (error) {
+                console.error('Parties fetch error:', error);
+            }
+        }
+
+        function setupTabs() {
+            const isLeader = parties.some(p => Number(p.leader_id) === Number(user.id));
+            const btn = document.getElementById('second-tab-btn');
+            
+            if (isLeader) {
+                btn.innerText = 'PARTİM';
+                btn.onclick = function(e) { switchTab('myparty', e.target); };
+                renderMyParty();
+            } else {
+                btn.innerText = 'PARTİ KUR';
+                btn.onclick = function(e) { switchTab('create', e.target); };
+            }
+        }
+
+        function renderMyParty() {
+            const p = parties.find(p => Number(p.leader_id) === Number(user.id));
+            if(!p) return;
+
+            const container = document.getElementById('my-party-container');
+            
+            let logoHtml = p.abbr;
+            if(p.logo && p.logo !== 'uploads/avatars/default.png') {
+                logoHtml = `<img src="${p.logo}" style="width:100%; height:100%; object-fit:cover;">`;
+            }
+
+            container.innerHTML = `
+                <div class="party-card" style="border-color:${p.color}">
+                    <div class="party-stripe" style="background:${p.color}"></div>
+                    <div class="pc-logo" style="color:${p.color}; border-color:${p.color}50; overflow:hidden; padding:0;">${logoHtml}</div>
+                    <div class="pc-info">
+                        <div class="pc-head">
+                            <span class="pc-name">${p.name}</span>
+                        </div>
+                        <span class="pc-leader"><i class="fas fa-crown"></i> ${p.leader_name || 'Siz'}</span>
+                        <div class="pc-meta">
+                            <span class="pc-badge"><i class="fas fa-users"></i> ${p.members_count}</span>
+                            <span class="pc-badge"><i class="fas fa-book"></i> ${p.ideology}</span>
+                        </div>
+                    </div>
+                    <div style="display:flex;">
+                        <button class="btn-join" style="border-color:${p.color}; color:${p.color}" onclick="manageParty(${p.id})">YÖNET</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateUI() {
+            // Header handled by header-manager.js
+        }
+
+        function switchTab(tab, el) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            if (el) {
+                el.classList.add('active');
+            } else if (event && event.target) {
+                event.target.classList.add('active');
+            }
+
+            document.getElementById('tab-list').style.display = 'none';
+            document.getElementById('tab-create').style.display = 'none';
+            const mp = document.getElementById('tab-myparty');
+            if(mp) mp.style.display = 'none';
+            
+            document.getElementById('tab-' + tab).style.display = 'block';
+        }
+
+        // --- PARTİ LİSTELEME ---
+        function renderParties(filter = "") {
+            const container = document.getElementById('partyListContainer');
+            container.innerHTML = '';
+
+            const filtered = parties.filter(p => p.name.toLowerCase().includes(filter.toLowerCase()));
+
+            filtered.forEach(p => {
+                let actionButtons = '';
+                const isLeader = Number(user.id) === Number(p.leader_id);
+                const isMember = Number(user.party_id) === Number(p.id);
+                const hasNoParty = !user.party_id;
+
+                if (isLeader) {
+                    actionButtons = `
+                        <button class="btn-join" style="border-color:${p.color}; color:${p.color}; margin-right:5px;" onclick="enterParty(${p.id})">GİR</button>
+                        <button class="btn-join" style="border-color:${p.color}; color:${p.color}" onclick="manageParty(${p.id})">YÖNET</button>
+                    `;
+                } else if (isMember) {
+                    actionButtons = `
+                        <button class="btn-join" style="border-color:${p.color}; color:${p.color}" onclick="enterParty(${p.id})">GİR</button>
+                    `;
+                } else if (hasNoParty) {
+                    if (myApplications.includes(p.id)) {
+                        actionButtons = `
+                            <button class="btn-join" style="border-color:#ffd700; color:#ffd700;" onclick="cancelApplication(${p.id}, '${p.name}')">İPTAL ET</button>
+                        `;
+                    } else {
+                        actionButtons = `
+                            <button class="btn-join" style="border-color:${p.color}; color:${p.color}" onclick="applyToParty(${p.id}, '${p.name}')">BAŞVUR</button>
+                        `;
+                    }
+                }
+
+                let logoHtml = p.abbr;
+                if(p.logo && p.logo !== 'uploads/avatars/default.png') {
+                    logoHtml = `<img src="${p.logo}" style="width:100%; height:100%; object-fit:cover;">`;
+                }
+
+                const card = document.createElement('div');
+                card.className = 'party-card';
+                card.innerHTML = `
+                    <div class="party-stripe" style="background:${p.color}"></div>
+                    <div class="pc-logo" style="color:${p.color}; border-color:${p.color}50; overflow:hidden; padding:0;">${logoHtml}</div>
+                    <div class="pc-info">
+                        <div class="pc-head">
+                            <span class="pc-name">${p.name}</span>
+                        </div>
+                        <span class="pc-leader"><i class="fas fa-crown"></i> ${p.leader_name || 'Bilinmiyor'}</span>
+                        <div class="pc-meta">
+                            <span class="pc-badge"><i class="fas fa-users"></i> ${p.members_count}</span>
+                            <span class="pc-badge"><i class="fas fa-book"></i> ${p.ideology}</span>
+                        </div>
+                    </div>
+                    <div style="display:flex;">
+                        ${actionButtons}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function enterParty(id) {
+            window.location.href = 'party-detail.html?id=' + id;
+        }
+
+        function manageParty(id) {
+            window.location.href = 'party-management.html?id=' + id;
+        }
+
+        function applyToParty(partyId, partyName) {
+            document.getElementById('modalTitle').innerText = "BAŞVURU YAP";
+            document.getElementById('modalDesc').innerText = `${partyName} partisine katılmak için başvuru yapmak istiyor musunuz?`;
+            document.getElementById('modalConfirmBtn').onclick = function() { confirmApplication(partyId); };
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+
+        async function confirmApplication(partyId) {
+            closeModal();
+            try {
+                const res = await fetch('/api/parties/apply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, partyId: partyId })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    toastr.success(data.message || "Başvuru gönderildi.");
+                    myApplications.push(partyId);
+                    renderParties(document.getElementById('searchInput').value);
+                } else {
+                    toastr.error(data.message || "Başvuru başarısız.");
+                }
+            } catch(e) {
+                console.error(e);
+                toastr.error("Hata oluştu.");
+            }
+        }
+
+        function cancelApplication(partyId, partyName) {
+            document.getElementById('modalTitle').innerText = "BAŞVURU İPTALİ";
+            document.getElementById('modalDesc').innerText = `${partyName} partisine yaptığınız başvuruyu iptal etmek istiyor musunuz?`;
+            document.getElementById('modalConfirmBtn').onclick = function() { confirmCancelApplication(partyId); };
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+
+        async function confirmCancelApplication(partyId) {
+            closeModal();
+            try {
+                const res = await fetch('/api/parties/application/cancel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, partyId: partyId })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    toastr.success(data.message);
+                    myApplications = myApplications.filter(id => id !== partyId);
+                    renderParties(document.getElementById('searchInput').value);
+                } else {
+                    toastr.error(data.message);
+                }
+            } catch(e) {
+                console.error(e);
+                toastr.error("Hata oluştu.");
+            }
+        }
+
+        function filterParties() {
+            const val = document.getElementById('searchInput').value;
+            renderParties(val);
+        }
+
+        // --- PARTİ KURMA ---
+
+        function openCreateModal() {
+            if(user.hasParty) return toastr.warning("Zaten bir partin var veya üyesin!");
+            if(!user.hasPartyLicense) return toastr.warning("Parti kurmak için lisansınız yok!");
+            if(user.money < 10000000) return toastr.warning("Yetersiz Bakiye!");
+            // Gold and Diamond check should ideally be here too, but server will check it.
+            
+            const name = document.getElementById('pName').value;
+            const abbr = document.getElementById('pAbbr').value;
+            if(name.length < 3 || abbr.length < 2) return toastr.warning("Lütfen geçerli isim ve kısaltma girin.");
+
+            document.getElementById('modalTitle').innerText = "PARTİ KUR";
+            document.getElementById('modalDesc').innerText = "10.000.000 ₺, 500 Altın ve 50 Elmas karşılığında yeni bir siyasi parti kurmak istiyor musunuz?";
+            document.getElementById('modalConfirmBtn').onclick = createParty;
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+        }
+
+        async function createParty() {
+            const name = document.getElementById('pName').value;
+            const abbr = document.getElementById('pAbbr').value.toUpperCase();
+            const ideology = document.getElementById('pIdeology').value;
+
+            // Random color assignment since selection is removed
+            const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#ffffff'];
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+            try {
+                const response = await fetch('/api/parties/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: user.id,
+                        name,
+                        abbr,
+                        ideology,
+                        color: randomColor
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    toastr.success(result.message, "Başarılı!");
+                    user.money -= 10000000;
+                    user.hasParty = true;
+                    closeModal();
+                    updateUI();
+                    switchTab('list');
+                    fetchParties();
+                } else {
+                    toastr.error(result.message, "Hata!");
+                }
+            } catch (error) {
+                console.error(error);
+                toastr.error('Sunucu hatası.', "Hata!");
+            }
+        }
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim of World - Mülk Yönetimi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0a0a0a; 
+            --bg-card: #141414; 
+            --bg-input: #1a1a1a;
+            --accent: #2ecc71; /* Emlak Teması: Yeşil */
+            --accent-cyan: #00e5ff;
+            --accent-gold: #ffd700;
+            --accent-red: #e74c3c;
+            --text-white: #ffffff; 
+            --text-muted: #888; 
+            --border-color: #222;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%; max-width: 450px; background-color: var(--bg-dark);
+            height: 100vh; display: flex; flex-direction: column; position: relative;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5); border-left: 1px solid #111; border-right: 1px solid #111;
+        }
+
+        /* HEADER */
+        header { background-color: rgba(10,10,10,0.9); backdrop-filter: blur(10px); padding: 10px; border-bottom: 1px solid var(--border-color); }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .logo { font-size: 1.2rem; font-weight: 700; }
+        .stat-box { background: var(--bg-input); padding: 5px 10px; border-radius: 4px; font-size: 0.9rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 5px; }
+        .status-bars { display: flex; gap: 5px; }
+        .bar-item { background: var(--bg-input); padding: 4px; border-radius: 15px; font-size: 0.75rem; flex: 1; text-align: center; font-weight: bold; }
+
+        /* MAIN */
+        main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
+
+        .page-header { text-align: center; margin-bottom: 20px; animation: fadeInDown 0.5s; }
+        .page-title { font-size: 1.4rem; letter-spacing: 1px; color: #fff; text-transform: uppercase; font-weight: 800; }
+        .page-desc { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* TABS */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
+        .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: #777; font-family: 'Rajdhani'; font-weight: bold; cursor: pointer; border-radius: 6px; transition: all 0.3s; }
+        .tab-btn.active { background: #222; color: var(--accent); border: 1px solid var(--accent); box-shadow: 0 0 10px rgba(46, 204, 113, 0.2); }
+
+        /* İNŞAAT LİSTESİ */
+        .build-grid { display: flex; flex-direction: column; gap: 15px; animation: fadeIn 0.5s; }
+
+        .build-card {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 12px; padding: 15px; position: relative; overflow: hidden;
+            transition: transform 0.2s; display: flex; align-items: center; gap: 15px;
+        }
+        .build-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+        
+        .bc-icon { 
+            width: 60px; height: 60px; background: rgba(46, 204, 113, 0.1); border-radius: 10px; 
+            display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--accent);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+        
+        .bc-info { flex: 1; }
+        .bc-name { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 2px; }
+        .bc-detail { font-size: 0.75rem; color: #aaa; display: flex; gap: 10px; margin-bottom: 5px; }
+        .bc-price { font-size: 1rem; color: var(--accent-gold); font-weight: bold; }
+
+        .btn-build {
+            padding: 8px 15px; background: var(--bg-input); border: 1px solid var(--accent); color: var(--accent);
+            border-radius: 6px; font-family: 'Rajdhani'; font-weight: bold; cursor: pointer; transition: 0.2s;
+        }
+        .btn-build:hover { background: var(--accent); color: #000; }
+
+        /* MÜLKLERİM (VERGİ TOPLAMA) */
+        .property-list { display: flex; flex-direction: column; gap: 15px; animation: slideUp 0.5s; }
+
+        .prop-card {
+            background: linear-gradient(135deg, var(--bg-card), #111);
+            border: 1px solid var(--border-color); border-left: 4px solid var(--accent);
+            border-radius: 10px; padding: 15px; position: relative;
+        }
+        .prop-card.expired { border-left-color: var(--accent-red); opacity: 0.6; }
+
+        .pc-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .pc-name { font-weight: 700; font-size: 1.1rem; color: #fff; }
+        .pc-type { font-size: 0.75rem; color: #888; background: #222; padding: 2px 6px; border-radius: 4px; }
+
+        /* Badges */
+        .badge {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: #222;
+            color: #ccc;
+            border: 1px solid #333;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .badge-income { color: var(--accent-gold); border-color: rgba(255, 215, 0, 0.2); }
+        .badge-time { color: var(--accent-cyan); border-color: rgba(0, 229, 255, 0.2); }
+        .badge-life { color: var(--accent); border-color: rgba(46, 204, 113, 0.2); }
+
+        /* Ömür Barı */
+        .lifespan-container { margin-bottom: 15px; }
+        .ls-info { display: flex; justify-content: space-between; font-size: 0.75rem; color: #aaa; margin-bottom: 3px; }
+        .ls-bar-bg { width: 100%; height: 6px; background: #333; border-radius: 3px; overflow: hidden; }
+        .ls-bar-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
+        
+        .prop-actions { display: flex; justify-content: space-between; align-items: center; }
+        .tax-amount { font-size: 1.2rem; font-weight: 800; color: var(--accent-gold); }
+        
+        .btn-collect {
+            background: var(--accent); color: #000; border: none; padding: 8px 20px;
+            border-radius: 6px; font-weight: bold; font-family: 'Rajdhani'; cursor: pointer;
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.4); transition: transform 0.1s;
+        }
+        .btn-collect:active { transform: scale(0.95); }
+        .btn-collect:disabled { background: #333; color: #666; box-shadow: none; cursor: not-allowed; }
+
+        /* MODAL */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; display: none; justify-content: center; align-items: center; animation: fadeIn 0.3s; }
+        .modal-content { background: #181818; width: 90%; max-width: 400px; padding: 25px; border-radius: 10px; border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent); box-shadow: 0 0 30px rgba(46, 204, 113, 0.1); }
+        .m-title { font-size: 1.3rem; margin-bottom: 10px; color: #fff; font-weight: bold; }
+        .m-desc { color: #888; font-size: 0.9rem; margin-bottom: 15px; }
+        
+        .req-list { 
+            text-align: center; 
+            margin: 20px 0; 
+            background: #222; 
+            padding: 15px; 
+            border-radius: 8px; 
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .req-badge {
+            background: #333;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #ccc;
+            border: 1px solid #444;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .req-badge.ok { border-color: var(--accent); color: var(--accent); background: rgba(46, 204, 113, 0.1); }
+        .req-badge.fail { border-color: var(--accent-red); color: var(--accent-red); background: rgba(231, 76, 60, 0.1); }
+
+        .m-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 1rem; }
+        .btn-confirm { background: var(--accent); color: #000; }
+        .btn-cancel { background: #333; color: #fff; }
+        .btn-confirm:disabled { background: #444; color: #888; cursor: not-allowed; }
+
+        /* BOTTOM NAV */
+        .bottom-nav { position: absolute; bottom: 0; width: 100%; background: #0a0a0a; border-top: 1px solid #333; display: flex; justify-content: space-around; padding: 10px 0; z-index: 10; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 0.75rem; cursor: pointer; }
+        .nav-item i { font-size: 1.4rem; margin-bottom: 3px; }
+        .nav-item.active { color: var(--accent); }
+
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+
+
+        <main>
+            <div class="page-header">
+                <h1 class="page-title">MÜLK YÖNETİMİ</h1>
+                <p class="page-desc">Mülk inşa et ve düzenli vergi geliri topla.</p>
+            </div>
+
+            <!-- SEKMELER (Sıra Değişti) -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('list')">MÜLKLERİM</button>
+                <button class="tab-btn" onclick="switchTab('build')">İNŞA ET</button>
+            </div>
+
+            <!-- TAB 1: MÜLKLERİM (Varsayılan Açık) -->
+            <div id="tab-list">
+                <div class="property-list" id="propertyList">
+                    <!-- JS Dolduracak -->
+                </div>
+                <div id="emptyMsg" style="text-align:center; color:#666; margin-top:50px; display:none;">
+                    <i class="fas fa-city" style="font-size:3rem; margin-bottom:10px;"></i>
+                    <p>Henüz hiç mülkün yok.</p>
+                </div>
+            </div>
+
+            <!-- TAB 2: İNŞAAT ALANI (Varsayılan Gizli) -->
+            <div id="tab-build" style="display:none;">
+                <div class="build-grid" id="buildList">
+                    <!-- JS Dolduracak -->
+                </div>
+            </div>
+
+        </main>
+
+        <!-- ONAY MODALI -->
+        <div class="modal-overlay" id="buildModal">
+            <div class="modal-content">
+                <i class="fas fa-hammer" style="font-size:3rem; color:var(--accent); margin-bottom:10px;"></i>
+                <h3 class="m-title" id="mTitle">Apartman İnşa Et</h3>
+                <p class="m-desc">Bu mülkü inşa etmek için aşağıdaki gereksinimleri karşılamalısınız.</p>
+                
+                <div class="req-list" id="reqList">
+                    <!-- JS Dolduracak -->
+                </div>
+
+                <div class="m-btns">
+                    <button class="m-btn btn-cancel" onclick="closeModal()">İPTAL</button>
+                    <button class="m-btn btn-confirm" id="btnConfirmBuild" onclick="confirmBuild()">İNŞA ET</button>
+                </div>
+            </div>
+        </div>
+
+
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="js/loader-manager.js"></script>
+    <script src="js/header-manager.js"></script>
+
+    <script>
+        let user = JSON.parse(localStorage.getItem('simWorldUser'));
+        if (!user) window.location.href = 'login.html';
+
+        let propertyTypes = [];
+        let myProperties = [];
+        let licenseLevel = 0;
+        let selectedTypeId = null;
+        let userInventory = {};
+
+        const fmt = (n) => n.toLocaleString('tr-TR');
+
+        window.onload = () => {
+            fetchData();
+        };
+
+        function fetchData() {
+            // Fetch Properties & Types
+            fetch(`/api/properties?userId=${user.id}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        propertyTypes = data.types;
+                        myProperties = data.properties;
+                        licenseLevel = data.licenseLevel;
+                        
+                        fetchUser();
+                        renderBuildList();
+                        renderMyProperties();
+                    }
+                });
+
+            // Fetch Inventory
+            fetch(`/api/inventory/${user.id}`)
+                .then(res => res.json())
+                .then(data => {
+                    // API returns direct object { wood: 10, stone: 5 }
+                    userInventory = data || {};
+                });
+        }
+
+        function fetchUser() {
+             fetch('/api/login', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: user.username, password: user.password }) 
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.user) {
+                    user = data.user;
+                    localStorage.setItem('simWorldUser', JSON.stringify(user));
+                }
+            });
+        }
+
+        // --- TAB YÖNETİMİ ---
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.getElementById('tab-build').style.display = 'none';
+            document.getElementById('tab-list').style.display = 'none';
+            document.getElementById('tab-' + tab).style.display = 'block';
+        }
+
+        // --- RENDER: İNŞA LİSTESİ ---
+        function renderBuildList() {
+            const container = document.getElementById('buildList');
+            container.innerHTML = '';
+
+            const formatTime = (seconds) => {
+                if(seconds < 60) return `${seconds}sn`;
+                if(seconds % 60 === 0) return `${seconds/60}dk`;
+                return `${Math.floor(seconds/60)}dk ${seconds%60}sn`;
+            };
+
+            propertyTypes.forEach(p => {
+                // Check if already built
+                const isBuilt = myProperties.some(mp => mp.property_type_id === p.id);
+                
+                let btnHtml = `<button class="btn-build" onclick="openBuildModal(${p.id})">İNŞA ET</button>`;
+                if (isBuilt) {
+                    btnHtml = `<button class="btn-build" disabled style="background:#333; color:#777; border-color:#444; cursor:default;">İNŞA EDİLDİ</button>`;
+                }
+
+                const card = document.createElement('div');
+                card.className = 'build-card';
+                
+                const iconHtml = p.image 
+                    ? `<img src="${p.image}" style="width:100%; height:100%; object-fit:contain;">` 
+                    : `<i class="fas fa-building"></i>`;
+
+                card.innerHTML = `
+                    <div class="bc-icon" style="padding:5px;">
+                        ${iconHtml}
+                    </div>
+                    <div class="bc-info">
+                        <div class="bc-name">${p.name}</div>
+                        <div class="bc-badges" style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:5px;">
+                            <span class="badge badge-income"><i class="fas fa-coins"></i> ${fmt(p.tax_income)} ₺ / Kira</span>
+                            <span class="badge badge-time"><i class="fas fa-clock"></i> ${formatTime(p.tax_interval)}</span>
+                            <span class="badge badge-life"><i class="fas fa-repeat"></i> 100 Kez</span>
+                        </div>
+                    </div>
+                    ${btnHtml}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // --- RENDER: MÜLKLERİM ---
+        function renderMyProperties() {
+            const list = document.getElementById('propertyList');
+            const emptyMsg = document.getElementById('emptyMsg');
+            list.innerHTML = '';
+
+            if(myProperties.length === 0) {
+                emptyMsg.style.display = 'block';
+                return;
+            }
+            emptyMsg.style.display = 'none';
+
+            const formatTime = (seconds) => {
+                if(seconds < 60) return `${seconds}sn`;
+                if(seconds % 60 === 0) return `${seconds/60}dk`;
+                return `${Math.floor(seconds/60)}dk ${seconds%60}sn`;
+            };
+
+            myProperties.forEach(prop => {
+                const div = document.createElement('div');
+                div.className = `prop-card ${prop.isReady ? '' : 'expired'}`; 
+                div.style.display = 'flex';
+                div.style.alignItems = 'center';
+                div.style.gap = '15px';
+                
+                let btnHtml = '';
+                if(prop.isReady) {
+                    btnHtml = `<button class="btn-collect" onclick="collectTax(${prop.id})">KİRA TOPLA</button>`;
+                } else {
+                    const next = new Date(prop.nextCollection);
+                    const now = new Date();
+                    const diff = Math.ceil((next - now) / 1000);
+                    const min = Math.floor(diff / 60);
+                    const sec = diff % 60;
+                    btnHtml = `<button class="btn-collect" disabled style="background:#333; color:#777; cursor:not-allowed; font-size:0.8rem; padding:8px 10px;">${min}dk ${sec}sn</button>`;
+                }
+
+                const iconHtml = prop.image 
+                    ? `<img src="${prop.image}" style="width:100%; height:100%; object-fit:contain;">` 
+                    : `<i class="fas fa-building"></i>`;
+
+                div.innerHTML = `
+                    <div class="bc-icon" style="padding:5px;">
+                        ${iconHtml}
+                    </div>
+                    <div class="bc-info">
+                        <div class="pc-header" style="margin-bottom:5px;">
+                            <div class="pc-name">${prop.name} <span style="font-size:0.8rem; color:#aaa;">#${prop.id}</span></div>
+                        </div>
+                        <div class="pc-badges" style="display:flex; gap:5px; flex-wrap:wrap;">
+                            <span class="badge badge-income"><i class="fas fa-coins"></i> ${fmt(prop.tax_income)} ₺</span>
+                            <span class="badge badge-time"><i class="fas fa-clock"></i> ${formatTime(prop.tax_interval)}</span>
+                            <span class="badge badge-life"><i class="fas fa-repeat"></i> ${prop.remaining_life || 100}</span>
+                        </div>
+                    </div>
+                    <div class="pc-action" style="margin-left: auto;">
+                        ${btnHtml}
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        // --- MODAL ---
+        function openBuildModal(typeId) {
+            selectedTypeId = typeId;
+            const type = propertyTypes.find(t => t.id === typeId);
+            
+            document.getElementById('mTitle').innerText = type.name + " İnşa Et";
+            const reqList = document.getElementById('reqList');
+            reqList.innerHTML = '';
+
+            let canBuild = true;
+
+            // Helper to add badge
+            const addBadge = (label, isOk) => {
+                const badge = document.createElement('div');
+                badge.className = `req-badge ${isOk ? 'ok' : 'fail'}`;
+                badge.innerHTML = `<i class="fas ${isOk ? 'fa-check' : 'fa-times'}"></i> ${label}`;
+                reqList.appendChild(badge);
+                if(!isOk) canBuild = false;
+            };
+
+            // 0. General License Limit
+            const currentCount = myProperties.length;
+            const currentLimit = licenseLevel || 1;
+            const isLimitOk = currentCount < currentLimit;
+            
+            if (isLimitOk) {
+                addBadge(`Mülk Kapasitesi (${currentCount}/${currentLimit})`, true);
+            } else {
+                addBadge(`Mülk Lisansı Lv.${currentCount + 1} Gerekli`, false);
+            }
+
+            // 0.5 Unique Check
+            const alreadyHas = myProperties.some(p => p.property_type_id === typeId);
+            if(alreadyHas) {
+                addBadge('Bu mülkten zaten var', false);
+            }
+
+            // 1. Money
+            if(type.cost_money > 0) {
+                const ok = user.money >= type.cost_money;
+                addBadge(`${fmt(type.cost_money)} ₺`, ok);
+            }
+            // 2. Gold
+            if(type.cost_gold > 0) {
+                const ok = user.gold >= type.cost_gold;
+                addBadge(`${type.cost_gold} Altın`, ok);
+            }
+            // 3. Diamond
+            if(type.cost_diamond > 0) {
+                const ok = (user.diamond || 0) >= type.cost_diamond;
+                addBadge(`${type.cost_diamond} Elmas`, ok);
+            }
+
+            // 4. License
+            if(type.req_license_level > 1) {
+                const curLic = licenseLevel || 1;
+                const ok = curLic >= type.req_license_level;
+                addBadge(`Lisans Lv.${type.req_license_level}`, ok);
+            }
+
+            // 5. Education
+            if(type.req_education_level > 0) {
+                const userEdu = user.education_skill || 0;
+                const ok = userEdu >= type.req_education_level;
+                addBadge(`Eğitim Lv.${type.req_education_level}`, ok);
+            }
+
+            // 6. Materials
+            let materials = {};
+            if (typeof type.req_materials === 'string') {
+                try { materials = JSON.parse(type.req_materials); } catch(e) { console.error("JSON Parse Error:", e); }
+            } else {
+                materials = type.req_materials || {};
+            }
+            
+            console.log("Materials for", type.name, materials);
+
+            const matNames = {
+                wood: 'Odun', stone: 'Taş', glass: 'Cam', concrete: 'Çimento',
+                brick: 'Tuğla', steel: 'Çelik', lumber: 'Tahta', gold: 'Altın',
+                uranium: 'Uranyum'
+            };
+
+            for(let [key, val] of Object.entries(materials)) {
+                const name = matNames[key] || key.toUpperCase();
+                const userAmount = userInventory[key] || 0;
+                const ok = userAmount >= val;
+                addBadge(`${val} ${name} (${userAmount})`, ok);
+            }
+
+            const btn = document.getElementById('btnConfirmBuild');
+            btn.disabled = !canBuild;
+            btn.style.opacity = canBuild ? '1' : '0.5';
+            
+            document.getElementById('buildModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('buildModal').style.display = 'none';
+        }
+
+        // --- MANTIK: İNŞAAT ---
+        function confirmBuild() {
+            fetch('/api/properties/build', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id, propertyTypeId: selectedTypeId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    toastr.success(data.message);
+                    closeModal();
+                    fetchData(); 
+                    document.querySelector('[data-tab="list"]').click();
+                } else {
+                    toastr.error(data.message);
+                }
+            });
+        }
+
+        // --- MANTIK: VERGİ TOPLAMA ---
+        function collectTax(propId) {
+            fetch('/api/properties/collect-tax', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id, propertyId: propId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    toastr.success(data.message);
+                    fetchData(); 
+                } else {
+                    toastr.error(data.message);
+                }
+            });
+        }
+
+    </script>
+</body>
+</html>

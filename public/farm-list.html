@@ -371,7 +371,8 @@
             const licenseKey = selectedFarm.slug; 
             const licenseName = selectedFarm.name + ' Lisansı';
             const licenseLevel = userLicenses[licenseKey] || 0;
-            const hasLicense = licenseLevel >= 1; // Changed to require only Level 1
+            const reqLevel = selectedFarm.license_req || 1;
+            const hasLicense = licenseLevel >= reqLevel;
 
             const canBuy = hasMoney && hasGold && hasDiamond && hasLicense;
             
@@ -384,7 +385,7 @@
                 html += `<div class="req-badge ${hasDiamond ? 'ok' : 'fail'}"><img src="icons/inventory-icon/diamond.png" style="width:20px;height:20px;vertical-align:middle;"> ${selectedFarm.diamond_price}</div>`;
             }
             
-            html += `<div class="req-badge ${hasLicense ? 'ok' : 'fail'}"><i class="fas fa-id-card"></i> ${licenseName} Lv. 1</div>`;
+            html += `<div class="req-badge ${hasLicense ? 'ok' : 'fail'}"><i class="fas fa-id-card"></i> ${licenseName} Lv. ${reqLevel}</div>`;
 
             document.getElementById('reqList').innerHTML = html;
             document.getElementById('btnConfirmBuy').disabled = !canBuy;

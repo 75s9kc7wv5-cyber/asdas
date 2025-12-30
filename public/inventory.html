@@ -375,6 +375,11 @@
                         iconHtml = `<i class="fas ${config.icon} ${config.color}"></i>`;
                     }
 
+                    let consumableBadge = '';
+                    if (config.energy) {
+                        consumableBadge = '<span style="font-size: 0.65rem; color: var(--accent-green); display: block; margin-top: 2px;">(Tüketilebilir)</span>';
+                    }
+
                     card.innerHTML = `
                         <div class="inv-icon-box">
                             ${iconHtml}
@@ -382,6 +387,7 @@
                         <div class="inv-info">
                             <h4>${config.name}</h4>
                             <p>${formatNumber(qty)} Adet</p>
+                            ${consumableBadge}
                         </div>
                     `;
                     list.appendChild(card);

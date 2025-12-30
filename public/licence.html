@@ -294,6 +294,7 @@
             { id: 'ready_food', name: 'Hazır Yemek Üretim Tesisi', icon: 'icons/factory-icon/food-factory.png' },
             { id: 'olive_oil', name: 'Zeytinyağı Üretim Tesisi', icon: 'icons/factory-icon/food-factory.png' },
             { id: 'sweets', name: 'Tatlı & Şekerleme Üretim Tesisi', icon: 'icons/factory-icon/food-factory.png' },
+            { id: 'gold_factory', name: 'Altın Külçe Fabrikası', icon: 'icons/inventory-icon/gold.png' },
             { id: 'weapon', name: 'Silah Fabrikası', icon: 'fa-crosshairs' },
             { id: 'wind_turbine', name: 'Rüzgar Türbini', icon: 'icons/energy-factory-icon/wind-turbine.png' },
             { id: 'solar_plant', name: 'Güneş Enerjisi Santrali', icon: 'icons/energy-factory-icon/solar-panel.png' },
@@ -303,7 +304,9 @@
 
         const businessData = [
             { id: 'hospital', name: 'Hastane İşletmesi', icon: 'fa-hospital' },
-            { id: 'bank', name: 'Banka Açma Lisansı', icon: 'fa-university' }
+            { id: 'bank', name: 'Banka Açma Lisansı', icon: 'fa-university' },
+            { id: 'property_license', name: 'Mülk Lisansı', icon: 'fa-building' },
+            { id: 'political_party', name: 'Siyasi Parti Kurma Lisansı', icon: 'fa-flag' }
         ];
 
         let ranchData = [];
@@ -342,135 +345,23 @@
                 const farmTypesRes = await fetch('/api/farm-types');
                 if (farmTypesRes.ok) {
                     const farmTypes = await farmTypesRes.json();
-                    // Map farm types to license format if needed, or just use them directly
-                    // For now, we keep the generic 'farm' license as the base requirement, 
-                    // but if we want specific licenses for each farm type, we would map them here.
-                    // However, the user asked to add "tarlaların lisansları" (plural).
-                    // Let's assume we want to show licenses corresponding to farm types.
-                    // But currently the system uses a single 'license_farm_level' for all farms.
-                    // If the user wants specific licenses for each farm type (e.g. Wheat License, Corn License),
-                    // we would need to change the DB structure.
-                    // Based on previous context, we have a single 'license_farm_level'.
-                    // So 'farmData' with a single entry is correct for the current backend logic.
-                    // BUT, if the user wants to SEE the farm types listed in the license menu, 
-                    // maybe they mean they want to see which farm requires which license level?
-                    // Or maybe they want separate licenses?
-                    // "tarla menüsünde veritabanına eklediğimiz tarlaların lisansları olsun"
-                    // "Let there be licenses of the farms we added to the database in the field menu"
-                    // This likely means listing the farm types and their required license levels, 
-                    // OR treating them as separate licenses.
-                    // Given we just added `license_farm_level` (singular) to users table, 
-                    // it's a single skill tree.
-                    // So we should probably list the farms under the "Tarla" tab, showing what level they unlock at.
-                    // OR, maybe the user wants to buy licenses for specific farms?
-                    // "tarla satın alırken bu lisans gerekli olsun" -> "this license" (singular/specific).
-                    // If we have `license_farm_level`, it's a general farming skill.
-                    // Let's stick to the single "Çiftçilik Lisansı" which unlocks all farms at various levels.
-                    // I will update the UI to show which farms are unlocked at which level in the description or similar.
-                    // Wait, the user said "tarlaların lisansları olsun" (plural).
-                    // Maybe they want to see "Buğday Lisansı", "Mısır Lisansı" etc?
-                    // But we only have `license_farm_level`.
-                    // If I add them as separate items in `farmData`, they will all try to update `license_farm_level`?
-                    // No, that would be confusing.
-                    // Let's assume the user wants to see the list of farms and their requirements in the license tab,
-                    // essentially showing what the "Çiftçilik Lisansı" unlocks.
-                    // OR, they might want to change the system to have specific licenses.
-                    // Given the previous prompt "tarla satın alırken bu lisans gerekli olsun" (singular implied by "bu lisans"),
-                    // I will stick to the single license but maybe enhance the display.
-                    
-                    // Actually, looking at `farm-list.html`, it says "Gereken Lisans: Lv. X".
-                    // So we have one license type "Çiftçilik Lisansı" with levels.
-                    // The current `farmData` has only one item: `{ id: 'farm', name: 'Çiftçilik Lisansı', ... }`.
-                    // This seems correct for a single tiered license.
-                    // If the user wants "tarlaların lisansları" (plural), maybe they want to see the list of farms?
-                    // But this is the *License* page.
-                    // Let's keep it as is for now, but maybe fetch farm types to show them as "Unlockable Content"?
-                    // Or maybe the user thinks each farm has its own license?
-                    // "veritabanına eklediğimiz tarlaların lisansları olsun"
-                    // "Let the licenses of the farms we added to the database be in the field menu"
-                    // This might mean: For every farm type in DB, show a license card.
-                    // But we don't have columns for `license_wheat_level`, `license_corn_level` etc.
-                    // We only have `license_farm_level`.
-                    // So if I add them, they would all have to map to the same DB column or we need new columns.
-                    // Since I cannot easily add dynamic columns to DB without a migration script and user approval,
-                    // I will assume they want to see the *single* farming license that covers them all.
-                    
-                    // However, to be safe and responsive to "veritabanına eklediğimiz tarlaların",
-                    // I will fetch the farm types and maybe list them as "Available Farms" under the license?
-                    // Or maybe I should just ensure the "Çiftçilik Lisansı" is prominent.
-                    
-                    // Re-reading: "tarla menüsünde" -> "in the field menu".
-                    // This is `licence.html` (License Menu) or `farm-list.html` (Field Menu)?
-                    // The user is currently in `licence.html`.
-                    // "tarla menüsünde ... tarlaların lisansları olsun"
-                    // Maybe they mean in `farm-list.html`?
-                    // But the previous prompt was "licence.html sayfasına ilgili tarla lisanslarını ekle".
-                    // And I added one "Çiftçilik Lisansı".
-                    // Now they say "veritabanına eklediğimiz tarlaların lisansları olsun".
-                    // This implies multiple.
-                    // If I have to support multiple licenses (one per farm type), I would need a table `player_licenses` or similar.
-                    // We have a `licenses` table!
-                    // `create table licenses (user_id int, mine_type varchar(50), level int)`
-                    // So we CAN have multiple licenses!
-                    // `mine_type` can be 'wheat', 'corn', etc.
-                    // So, I should fetch farm types, and for each farm type, create a license entry in `farmData`.
-                    // And when buying, send `mineType: 'wheat'` etc.
-                    // AND update `server.js` to handle these types (generic handler might work).
-                    // BUT `server.js` currently has a special block for `farm` type updating `users.license_farm_level`.
-                    // If I switch to individual licenses, I should use the `licenses` table instead of `users` column.
-                    // The `licenses` table is generic.
-                    // So, plan:
-                    // 1. Fetch farm types from API.
-                    // 2. Populate `farmData` with these types (id: slug, name: name + ' Lisansı').
-                    // 3. In `server.js`, the generic `/api/licenses/buy` handler writes to `licenses` table if it's not 'hospital' or 'farm'.
-                    // 4. Wait, I just added a special block for 'farm' in `server.js`.
-                    // If I want individual licenses, I should remove that special block or make it only for a "General Farming License" if that exists.
-                    // If the user wants "tarlaların lisansları" (plural), they probably want individual licenses.
-                    // "Buğday Lisansı", "Mısır Lisansı"...
-                    // Let's try to implement individual licenses using the `licenses` table.
-                    
-                    // Step 1: Fetch farm types and populate `farmData`.
-                    // Filter out ranch types (chicken, cow, sheep, bee) from farmData
-                    // Assuming ranch types are identified by their slugs or we can filter by checking if they are in ranchData
-                    // But ranchData is hardcoded above.
-                    // Let's just filter out known ranch slugs if they come from farm-types API (which they shouldn't if API is correct, but just in case)
-                    // Actually, the user said "tarla menüsünde çiftlik lisansları olmasın".
-                    // "Tarla" tab is `farmList`. "Çiftlik" tab is `ranchList`.
-                    // The user might be seeing ranch licenses in the farm tab?
-                    // Ah, `farmTypes` API might be returning ranches too if they are in the same table?
-                    // Let's check `farm_types` table.
-                    // If `farm_types` contains ranches, we need to filter them out.
-                    // Based on previous `check_farm_types.js` output:
-                    // id: 1, name: 'Tavuk Çiftliği', slug: 'chicken_farm'
-                    // id: 2, name: 'İnek Çiftliği', slug: 'cow_farm'
-                    // ...
-                    // id: 5, name: 'Buğday Tarlası', slug: 'wheat'
-                    // So YES, `farm_types` contains BOTH ranches and farms.
-                    // We need to separate them.
-                    // Ranches seem to have '_farm' suffix in slug or we can list them.
-                    // Or better, we can check if the name contains "Çiftliği" vs "Tarlası" / "Bahçesi"?
-                    // Or hardcode the ranch slugs to exclude.
                     const ranchSlugs = ['chicken_farm', 'cow_farm', 'sheep_farm', 'bee_farm'];
                     
                     farmData = farmTypes
-                        .filter(f => !ranchSlugs.includes(f.slug)) // Exclude ranches from Farm tab
+                        .filter(f => !ranchSlugs.includes(f.slug))
                         .map(f => ({
-                            id: f.slug, // e.g. 'wheat'
+                            id: f.slug,
                             name: f.name + ' Lisansı',
                             icon: f.image_path || 'fa-tractor'
                         }));
 
-                    // Populate Ranch Data (Animals)
                     ranchData = farmTypes
                         .filter(f => ranchSlugs.includes(f.slug))
                         .map(f => ({
-                            id: f.slug,
+                            id: f.slug.replace('_farm', ''),
                             name: f.name + ' Lisansı',
                             icon: f.image_path || 'fa-paw'
                         }));
-                    // If we want to use DB for ranches too, we should update `ranchData` here.
-                    // But the user specifically asked to fix the "Tarla" menu.
-                    // So I will just fix `farmData`.
                 }
 
                 // Get Licenses
@@ -482,8 +373,7 @@
                 const stats = await statsRes.json();
                 if(stats) {
                     if (stats.license_hospital_level) userLicenses['hospital'] = stats.license_hospital_level;
-                    // We might still keep the general farm license if needed, but for now let's rely on the dynamic ones
-                    // if (stats.license_farm_level) userLicenses['farm'] = stats.license_farm_level;
+                    if (stats.license_property_level) userLicenses['property_license'] = stats.license_property_level;
                     userEducationSkill = stats.education_skill || 1;
                 }
 

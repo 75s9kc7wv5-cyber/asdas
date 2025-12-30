@@ -141,6 +141,7 @@
             <button onclick="showTab('reports')" class="btn-edit" style="background: var(--accent-gold);">Raporlar</button>
             <button onclick="showTab('inventory')" class="btn-edit" style="background: var(--accent-green);">Envanter Ekle</button>
             <button onclick="showTab('settings')" class="btn-edit" style="background: #9b59b6; color: white;">Üretim Süreleri</button>
+            <button onclick="showTab('properties')" class="btn-edit" style="background: #e67e22; color: white;">Mülk Ayarları</button>
         </div>
 
         <!-- INVENTORY TAB -->
@@ -230,6 +231,25 @@
                 </thead>
                 <tbody id="farmSettingsList">
                     <!-- Farm Settings will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- PROPERTIES TAB -->
+        <div id="tab-properties" style="display: none;">
+            <h2 style="margin-bottom: 15px; color: #e67e22;">Mülk Ayarları</h2>
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Mülk Adı</th>
+                        <th>Kira Süresi (sn)</th>
+                        <th>Kira Geliri</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody id="propertySettingsList">
+                    <!-- Properties will be loaded here -->
                 </tbody>
             </table>
         </div>
@@ -618,16 +638,62 @@
             document.getElementById('tab-reports').style.display = 'none';
             document.getElementById('tab-settings').style.display = 'none';
             document.getElementById('tab-inventory').style.display = 'none';
+            document.getElementById('tab-properties').style.display = 'none';
             
             document.getElementById('tab-' + tabName).style.display = 'block';
             
             if (tabName === 'toxic') loadToxicLogs();
             if (tabName === 'reports') loadReports();
+            if (tabName === 'properties') loadProperties();
             if (tabName === 'settings') {
                 loadSettings();
                 loadRanchSettings();
                 loadFarmSettings();
             }
+        }
+
+        async function loadProperties() {
+            const tbody = document.getElementById('propertySettingsList');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Yükleniyor...</td></tr>';
+            try {
+                const res = await fetch('/api/admin/property-types');
+                const data = await res.json();
+                if(data.success) {
+                    tbody.innerHTML = '';
+                    data.types.forEach(p => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td data-label="ID">#${p.id}</td>
+                            <td data-label="Mülk Adı">${p.name}</td>
+                            <td data-label="Kira Süresi (sn)">
+                                <input type="number" id="prop-dur-${p.id}" value="${p.tax_interval}" class="form-input" style="width:100px;">
+                            </td>
+                            <td data-label="Kira Geliri">
+                                <input type="number" id="prop-inc-${p.id}" value="${p.tax_income}" class="form-input" style="width:100px;">
+                            </td>
+                            <td data-label="İşlem">
+                                <button class="btn-edit" onclick="savePropertySetting(${p.id})">Kaydet</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function savePropertySetting(id) {
+            const interval = document.getElementById('prop-dur-' + id).value;
+            const income = document.getElementById('prop-inc-' + id).value;
+            try {
+                const res = await fetch('/api/admin/property-types/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id, tax_interval: interval, tax_income: income })
+                });
+                const data = await res.json();
+                if(data.success) toastr.success(data.message);
+                else toastr.error('Hata');
+            } catch(e) { toastr.error('Sunucu hatası'); }
         }
 
         async function loadRanchSettings() {
@@ -869,7 +935,7 @@
             { key: 'lumber', name: 'Tahta', img: 'icons/factory-icon/wood-plank.png' },
             { key: 'brick', name: 'Tuğla', img: 'icons/factory-icon/brick.png' },
             { key: 'glass', name: 'Cam', img: 'icons/factory-icon/window.png' },
-            { key: 'concrete', name: 'Beton', img: 'icons/factory-icon/cement.png' },
+            { key: 'concrete', name: 'Çimento', img: 'icons/factory-icon/cement.png' },
             { key: 'steel', name: 'Çelik', img: 'icons/factory-icon/steel.png' },
             
             { key: 'wheat', name: 'Buğday', img: 'icons/farm-icon/wheat.png' },
@@ -894,7 +960,12 @@
             
             { key: 'weapon', name: 'Silah', icon: 'fa-crosshairs', color: '#fff' },
             { key: 'ammo', name: 'Mermi', icon: 'fa-burn', color: '#ffd700' },
-            { key: 'helmet', name: 'Kask', icon: 'fa-hard-hat', color: '#2ecc71' }
+            { key: 'helmet', name: 'Kask', icon: 'fa-hard-hat', color: '#2ecc71' },
+            { key: 'corn', name: 'Mısır', img: 'icons/farm-icon/corn.png' },
+            { key: 'seed', name: 'Tohum', img: 'icons/ranch-icon/seed.png' },
+            { key: 'feed', name: 'Yem', img: 'icons/ranch-icon/sack.png' },
+            { key: 'wool', name: 'Yün', img: 'icons/ranch-icon/wool.png' },
+            { key: 'energy', name: 'Elektrik', img: 'icons/energy-factory-icon/battery.png' }
         ];
 
         function initCustomSelect() {

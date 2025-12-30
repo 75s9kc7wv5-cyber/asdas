@@ -1072,7 +1072,7 @@ app.get('/api/user-stats/:userId', (req, res) => {
         db.query(activeTreatmentQuery, [userId], (err, activeTreatments) => {
             const hasActiveTreatment = (!err && activeTreatments.length > 0);
 
-            const query = 'SELECT money, gold, diamond, health, energy, level, license_hospital_level, license_farm_level, education_skill, avatar, username FROM users WHERE id = ?';
+            const query = 'SELECT money, gold, diamond, health, energy, level, license_hospital_level, license_farm_level, license_property_level, education_skill, avatar, username, party_id FROM users WHERE id = ?';
             db.query(query, [userId], (err, results) => {
                 if (err) return res.status(500).json({ error: err });
                 if (results.length === 0) return res.status(404).json({ error: 'User not found' });
@@ -1080,7 +1080,32 @@ app.get('/api/user-stats/:userId', (req, res) => {
                 const userData = results[0];
                 userData.has_active_treatment = hasActiveTreatment;
                 
-                res.json(userData);
+                // Check Party License
+                db.query('SELECT * FROM licenses WHERE user_id = ? AND mine_type = "political_party"', [userId], (err, licenses) => {
+                    userData.hasPartyLicense = (!err && licenses.length > 0);
+
+                    // Fetch Inventory Items (Construction Materials)
+                    const invQuery = "SELECT item_key, quantity FROM inventory WHERE user_id = ? AND item_key IN ('lumber', 'brick', 'concrete', 'glass', 'steel')";
+                    db.query(invQuery, [userId], (err, invResults) => {
+                        // Initialize with 0
+                        userData.wood = 0;
+                        userData.brick = 0;
+                        userData.cement = 0;
+                        userData.glass = 0;
+                        userData.steel = 0;
+
+                        if (!err && invResults.length > 0) {
+                            invResults.forEach(row => {
+                                if(row.item_key === 'lumber') userData.wood = row.quantity;
+                                if(row.item_key === 'brick') userData.brick = row.quantity;
+                                if(row.item_key === 'concrete') userData.cement = row.quantity;
+                                if(row.item_key === 'glass') userData.glass = row.quantity;
+                                if(row.item_key === 'steel') userData.steel = row.quantity;
+                            });
+                        }
+                        res.json(userData);
+                    });
+                });
             });
         });
     });
@@ -1159,7 +1184,7 @@ app.get('/api/licenses/:userId', (req, res) => {
         });
         
         // Fetch special licenses from users table
-        const userQuery = 'SELECT license_hospital_level, license_farm_level FROM users WHERE id = ?';
+        const userQuery = 'SELECT license_hospital_level, license_farm_level, license_ranch_level FROM users WHERE id = ?';
         db.query(userQuery, [userId], (err, userRes) => {
             if (!err && userRes.length > 0) {
                 if (userRes[0].license_hospital_level > 0) {
@@ -1167,6 +1192,9 @@ app.get('/api/licenses/:userId', (req, res) => {
                 }
                 if (userRes[0].license_farm_level > 0) {
                     licenses['farm'] = userRes[0].license_farm_level;
+                }
+                if (userRes[0].license_ranch_level > 0) {
+                    licenses['ranch'] = userRes[0].license_ranch_level;
                 }
             }
             res.json(licenses);
@@ -1227,6 +1255,52 @@ app.post('/api/licenses/buy', (req, res) => {
                 if (err) return res.status(500).json({ success: false, message: 'İşlem başlatılamadı.' });
 
                 const updateQuery = 'UPDATE users SET money = money - ?, gold = gold - ?, diamond = diamond - ?, license_hospital_level = ? WHERE id = ?';
+                db.query(updateQuery, [moneyCost, goldCost, diamondCost, nextLevel, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Güncelleme hatası.' }));
+
+                    db.commit(err => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                        res.json({ success: true, newLevel: nextLevel, moneyCost, goldCost });
+                    });
+                });
+            });
+        });
+        return;
+    }
+
+    // Special handling for Property License
+    if (mineType === 'property_license') {
+        const userQuery = 'SELECT money, gold, diamond, education_skill, license_property_level FROM users WHERE id = ?';
+        db.query(userQuery, [userId], (err, userRes) => {
+            if (err || userRes.length === 0) return res.status(500).json({ success: false, message: 'Kullanıcı bulunamadı.' });
+            
+            const user = userRes[0];
+            const currentLevel = user.license_property_level || 1;
+            const nextLevel = currentLevel + 1;
+
+            if (nextLevel > 10) {
+                return res.json({ success: false, message: 'Maksimum seviyeye ulaşıldı.' });
+            }
+
+            const moneyCost = Math.floor(1000 * Math.pow(1.5, nextLevel - 1));
+            const goldCost = nextLevel > 1 ? 10 * (nextLevel - 1) : 0;
+            const diamondCost = nextLevel >= 5 ? 5 * (nextLevel - 4) : 0;
+            
+            const userEdu = Number(user.education_skill) || 0;
+            const requiredEdu = nextLevel * 10;
+
+            if (userEdu < requiredEdu) {
+                return res.json({ success: false, message: `Eğitim seviyeniz yetersiz. Gereken: ${requiredEdu} ve üzeri.` });
+            }
+
+            if (user.money < moneyCost || user.gold < goldCost || (user.diamond || 0) < diamondCost) {
+                return res.json({ success: false, message: 'Yetersiz bakiye.' });
+            }
+
+            db.beginTransaction(err => {
+                if (err) return res.status(500).json({ success: false, message: 'İşlem başlatılamadı.' });
+
+                const updateQuery = 'UPDATE users SET money = money - ?, gold = gold - ?, diamond = diamond - ?, license_property_level = ? WHERE id = ?';
                 db.query(updateQuery, [moneyCost, goldCost, diamondCost, nextLevel, userId], (err) => {
                     if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Güncelleme hatası.' }));
 
@@ -1312,25 +1386,92 @@ app.post('/api/licenses/buy', (req, res) => {
     });
 });
 
+// --- POLITICS ENDPOINTS ---
+
+// Get Parties List
+app.get('/api/parties', (req, res) => {
+    const query = 'SELECT * FROM parties ORDER BY members_count DESC';
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error('Parties fetch error:', err);
+            return res.status(500).json({ success: false, message: 'Partiler yüklenemedi.' });
+        }
+        res.json(results);
+    });
+});
+
+// Create Party
+app.post('/api/parties/create', (req, res) => {
+    const { userId, name, abbr, ideology, color } = req.body;
+    
+    // Check user
+    db.query('SELECT * FROM users WHERE id = ?', [userId], (err, users) => {
+        if (err || users.length === 0) return res.status(500).json({ success: false, message: 'Kullanıcı hatası.' });
+        
+        const user = users[0];
+        if (user.party_id) return res.json({ success: false, message: 'Zaten bir partiniz var veya üyesiniz.' });
+        
+        const costMoney = 10000000;
+        const costGold = 500;
+        const costDiamond = 50;
+
+        if (user.money < costMoney) return res.json({ success: false, message: 'Yetersiz bakiye (Para).' });
+        if (user.gold < costGold) return res.json({ success: false, message: 'Yetersiz bakiye (Altın).' });
+        if ((user.diamond || 0) < costDiamond) return res.json({ success: false, message: 'Yetersiz bakiye (Elmas).' });
+
+        // Check license
+        db.query('SELECT * FROM licenses WHERE user_id = ? AND mine_type = "political_party"', [userId], (err, licenses) => {
+            if (err) return res.status(500).json({ success: false, message: 'Lisans kontrol hatası.' });
+            if (licenses.length === 0) return res.json({ success: false, message: 'Siyasi Parti Kurma Lisansınız yok!' });
+
+            // Create Party Transaction
+            db.beginTransaction(err => {
+                if (err) return res.status(500).json({ success: false, message: 'İşlem başlatılamadı.' });
+
+                const createQuery = 'INSERT INTO parties (name, abbr, leader_id, leader_name, ideology, color, members_count) VALUES (?, ?, ?, ?, ?, ?, 1)';
+                db.query(createQuery, [name, abbr, userId, user.username, ideology, color], (err, result) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Parti oluşturulamadı.' }));
+                    
+                    const partyId = result.insertId;
+                    
+                    // Update User (Money, Gold, Diamond & Party ID)
+                    const updateUser = 'UPDATE users SET money = money - ?, gold = gold - ?, diamond = diamond - ?, party_id = ? WHERE id = ?';
+                    db.query(updateUser, [costMoney, costGold, costDiamond, partyId, userId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kullanıcı güncellenemedi.' }));
+                        
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                            res.json({ success: true, message: 'Parti başarıyla kuruldu!', partyId });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
 // --- MINES MANAGEMENT ENDPOINTS ---
 
 const FACTORY_RECIPES = {
     'bakery': [
-        { id: 'bread', name: 'Ekmek', inputs: { wheat: 3, egg: 3 }, output: { bread: 1 } },
-        { id: 'cake', name: 'Kek', inputs: { wheat: 3, egg: 3, fruit: 3 }, output: { cake: 1 } }
+        { id: 'bread', name: 'Ekmek', inputs: { wheat: 3, egg: 3, energy: 1 }, output: { bread: 1 } },
+        { id: 'cake', name: 'Kek', inputs: { wheat: 3, egg: 3, fruit: 3, energy: 1 }, output: { cake: 1 } }
     ],
     'ready_food': [
-        { id: 'salad', name: 'Salata', inputs: { vegetable: 3 }, output: { salad: 1 } },
-        { id: 'canned_fruit', name: 'Konserve Meyve', inputs: { fruit: 3 }, output: { canned_fruit: 1 } },
-        { id: 'cooked_meat', name: 'Pişmiş Et', inputs: { meat: 3, olive_oil: 1 }, output: { cooked_meat: 1 } },
-        { id: 'rice_dish', name: 'Pilav', inputs: { rice: 3, olive_oil: 1 }, output: { rice_dish: 1 } },
-        { id: 'meat_dish', name: 'Et Yemeği', inputs: { potato: 3, meat: 3, olive_oil: 1 }, output: { meat_dish: 1 } }
+        { id: 'salad', name: 'Salata', inputs: { vegetable: 3, energy: 1 }, output: { salad: 1 } },
+        { id: 'canned_fruit', name: 'Konserve Meyve', inputs: { fruit: 3, energy: 1 }, output: { canned_fruit: 1 } },
+        { id: 'cooked_meat', name: 'Pişmiş Et', inputs: { meat: 3, olive_oil: 1, energy: 1 }, output: { cooked_meat: 1 } },
+        { id: 'rice_dish', name: 'Pilav', inputs: { rice: 3, olive_oil: 1, energy: 1 }, output: { rice_dish: 1 } },
+        { id: 'meat_dish', name: 'Et Yemeği', inputs: { potato: 3, meat: 3, olive_oil: 1, energy: 1 }, output: { meat_dish: 1 } }
     ],
     'olive_oil': [
-        { id: 'olive_oil', name: 'Zeytinyağı', inputs: { olive: 3 }, output: { olive_oil: 1 } }
+        { id: 'olive_oil', name: 'Zeytinyağı', inputs: { olive: 3, energy: 1 }, output: { olive_oil: 1 } }
     ],
     'sweets': [
-        { id: 'energy_bar', name: 'Enerji Barı', inputs: { honey: 3, wheat: 3, fruit: 3, egg: 3, olive_oil: 1 }, output: { energy_bar: 1 } }
+        { id: 'energy_bar', name: 'Enerji Barı', inputs: { honey: 3, wheat: 3, fruit: 3, egg: 3, olive_oil: 1, energy: 1 }, output: { energy_bar: 1 } }
+    ],
+    'gold_factory': [
+        { id: 'gold_ingot', name: 'Altın Külçe', inputs: { gold_nugget: 30, energy: 1 }, output: { gold: 1 } }
     ],
     'coal_plant': [
         { id: 'coal_energy', name: 'Termik Enerji', inputs: { coal: 10 }, output: { energy: 1 } }
@@ -1341,12 +1482,18 @@ const FACTORY_RECIPES = {
 };
 
 const FACTORY_INPUTS = {
-    'bakery': ['wheat', 'egg', 'fruit'],
-    'ready_food': ['vegetable', 'fruit', 'meat', 'olive_oil', 'rice', 'potato'],
-    'olive_oil': ['olive'],
-    'sweets': ['honey', 'wheat', 'fruit', 'egg', 'olive_oil'],
+    'bakery': ['wheat', 'egg', 'fruit', 'energy'],
+    'ready_food': ['vegetable', 'fruit', 'meat', 'olive_oil', 'rice', 'potato', 'energy'],
+    'olive_oil': ['olive', 'energy'],
+    'sweets': ['honey', 'wheat', 'fruit', 'egg', 'olive_oil', 'energy'],
+    'gold_factory': ['gold_nugget', 'energy'],
     'coal_plant': ['coal'],
-    'nuclear_plant': ['uranium']
+    'nuclear_plant': ['uranium'],
+    'lumber': ['wood', 'energy'],
+    'brick': ['stone', 'energy'],
+    'glass': ['sand', 'energy'],
+    'concrete': ['sand', 'stone', 'energy'],
+    'steel': ['iron', 'coal', 'energy']
 };
 
 const MINE_TYPES = [
@@ -1372,6 +1519,7 @@ const MINE_TYPES = [
     { id: 'olive_oil', name: 'Zeytinyağı Üretim Tesisi', reqLevel: 10, costMoney: 10000, costGold: 5, costDiamond: 0 },
     { id: 'sweets', name: 'Tatlı & Şekerleme Üretim Tesisi', reqLevel: 12, costMoney: 12000, costGold: 5, costDiamond: 0 },
     { id: 'weapon', name: 'Silah Fabrikası', reqLevel: 30, costMoney: 50000, costGold: 50, costDiamond: 10 },
+    { id: 'gold_factory', name: 'Altın Külçe Fabrikası', reqLevel: 20, costMoney: 40000, costGold: 0, costDiamond: 5 },
     { id: 'solar', name: 'Güneş Santrali', reqLevel: 50, costMoney: 100000, costGold: 100, costDiamond: 20 },
     // Energy Plants
     { id: 'wind_turbine', name: 'Rüzgar Türbini', reqLevel: 10, costMoney: 15000, costGold: 5, costDiamond: 0 },
@@ -1534,6 +1682,16 @@ app.get('/api/mines/detail/:id', (req, res) => {
                             mine.inventory = inventory;
 
                             // Get Active Workers (Active OR Current User's Pending)
+                            const nextLevel = mine.level + 1;
+                            mine.upgradeCost = nextLevel * 5000;
+                            mine.upgradeRequirements = {
+                                lumber: nextLevel * 250,
+                                brick: nextLevel * 250,
+                                glass: nextLevel * 150,
+                                concrete: nextLevel * 100,
+                                steel: nextLevel * 50
+                            };
+
                             const workersQuery = `
                                 SELECT maw.*, u.username, u.avatar,
                                 TIMESTAMPDIFF(SECOND, NOW(), maw.end_time) as remaining_seconds
@@ -1869,23 +2027,60 @@ app.post('/api/mines/upgrade/:id', (req, res) => {
             const costMoney = nextLevel * 5000;
             const costGold = nextLevel > 5 ? (nextLevel - 5) * 10 : 0;
 
+            const reqMaterials = {
+                lumber: nextLevel * 250,
+                brick: nextLevel * 250,
+                glass: nextLevel * 150,
+                concrete: nextLevel * 100,
+                steel: nextLevel * 50
+            };
+
             db.query('SELECT money, gold FROM users WHERE id = ?', [userId], (err, users) => {
                 if (err || users.length === 0) return db.rollback(() => res.status(500).json({ success: false, message: 'User Error' }));
                 const user = users[0];
 
                 if (user.money < costMoney || user.gold < costGold) {
-                    return db.rollback(() => res.json({ success: false, message: 'Yetersiz kaynak.' }));
+                    return db.rollback(() => res.json({ success: false, message: 'Yetersiz bakiye (Para/Altın).' }));
                 }
 
-                db.query('UPDATE users SET money = money - ?, gold = gold - ? WHERE id = ?', [costMoney, costGold, userId], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kaynak düşülemedi.' }));
+                // Check Inventory for Materials
+                db.query('SELECT item_key, quantity FROM inventory WHERE user_id = ?', [userId], (err, invRes) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Envanter hatası.' }));
+                    
+                    const inventory = {};
+                    invRes.forEach(row => inventory[row.item_key] = row.quantity);
 
-                    db.query('UPDATE player_mines SET level = level + 1, raw_capacity = COALESCE(raw_capacity, 1000) + 500, product_capacity = COALESCE(product_capacity, 500) + 200 WHERE id = ?', [mineId], (err) => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Seviye arttırılamadı.' }));
+                    for (const [key, amount] of Object.entries(reqMaterials)) {
+                        if ((inventory[key] || 0) < amount) {
+                            return db.rollback(() => res.json({ success: false, message: `Yetersiz Malzeme: ${key} (${inventory[key] || 0}/${amount})` }));
+                        }
+                    }
 
-                        db.commit(err => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                            res.json({ success: true, message: `Maden Seviye ${nextLevel} oldu!` });
+                    // Deduct Money & Gold
+                    db.query('UPDATE users SET money = money - ?, gold = gold - ? WHERE id = ?', [costMoney, costGold, userId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kaynak düşülemedi.' }));
+
+                        // Deduct Materials
+                        const materialUpdates = Object.entries(reqMaterials).map(([key, amount]) => {
+                            return new Promise((resolve, reject) => {
+                                db.query('UPDATE inventory SET quantity = quantity - ? WHERE user_id = ? AND item_key = ?', [amount, userId, key], (err) => {
+                                    if (err) reject(err);
+                                    else resolve();
+                                });
+                            });
+                        });
+
+                        Promise.all(materialUpdates).then(() => {
+                            db.query('UPDATE player_mines SET level = level + 1, raw_capacity = COALESCE(raw_capacity, 1000) + 500, product_capacity = COALESCE(product_capacity, 500) + 200 WHERE id = ?', [mineId], (err) => {
+                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Seviye arttırılamadı.' }));
+
+                                db.commit(err => {
+                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                                    res.json({ success: true, message: `Maden Seviye ${nextLevel} oldu!` });
+                                });
+                            });
+                        }).catch(err => {
+                            db.rollback(() => res.status(500).json({ success: false, message: 'Malzeme düşülemedi.' }));
                         });
                     });
                 });
@@ -3664,10 +3859,19 @@ app.post('/api/mines/start', (req, res) => {
                          invRes.forEach(row => inventory[row.item_key] = row.amount);
                          
                          // Check requirements
+                         const trNames = {
+                             wheat: 'Buğday', egg: 'Yumurta', fruit: 'Meyve', vegetable: 'Sebze',
+                             meat: 'Et', olive_oil: 'Zeytinyağı', rice: 'Pirinç', potato: 'Patates',
+                             olive: 'Zeytin', honey: 'Bal', energy: 'Elektrik',
+                             wood: 'Odun', stone: 'Taş', iron: 'Demir', coal: 'Kömür',
+                             sand: 'Kum', copper: 'Bakır', uranium: 'Uranyum', gold_nugget: 'Altın Parçası'
+                         };
+
                          for (const [key, val] of Object.entries(recipeInputs)) {
                              const required = val * productionAmount;
                              if ((inventory[key] || 0) < required) {
-                                 return db.rollback(() => res.json({ success: false, message: `Yetersiz hammadde: ${key} (${required} gerekli)` }));
+                                 const trName = trNames[key] || key;
+                                 return db.rollback(() => res.json({ success: false, message: `Yetersiz hammadde: ${trName} (${required} gerekli)` }));
                              }
                          }
                          
@@ -3692,6 +3896,30 @@ app.post('/api/mines/start', (req, res) => {
                  }
                  if (req2 > 0 && raw2 < req2) {
                      return db.rollback(() => res.json({ success: false, message: `Fabrikada yeterli ${raw2Name} yok! (${req2} gerekli, ${raw2} mevcut)` }));
+                 }
+
+                 // Legacy Factories: Check & Deduct Energy + Raw Materials
+                 const legacyFactories = ['lumber', 'brick', 'glass', 'concrete', 'steel'];
+                 if (legacyFactories.includes(data.mine_type)) {
+                     const energyRequired = productionAmount;
+                     
+                     // Check Energy
+                     db.query('SELECT amount FROM factory_inventory WHERE mine_id = ? AND item_key = "energy"', [mineId], (err, enRes) => {
+                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Energy Check Error' }));
+                         const currentEnergy = (enRes[0] && enRes[0].amount) || 0;
+                         
+                         if (currentEnergy < energyRequired) {
+                             return db.rollback(() => res.json({ success: false, message: `Fabrikada yeterli Elektrik yok! (${energyRequired} gerekli, ${currentEnergy} mevcut)` }));
+                         }
+
+                         // Deduct Energy
+                         db.query('UPDATE factory_inventory SET amount = amount - ? WHERE mine_id = ? AND item_key = "energy"', [energyRequired, mineId], (err) => {
+                             if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Energy Deduct Error' }));
+                             
+                             proceedWithProduction(null, null, productionAmount, false);
+                         });
+                     });
+                     return;
                  }
                  
                  proceedWithProduction(null, null, productionAmount, false);
@@ -3922,7 +4150,7 @@ app.get('/api/ranches/detail/:id', (req, res) => {
 
                 // Get Logs
                 const logQuery = `
-                    SELECT rl.*, u.username 
+                    SELECT rl.*, u.username, u.avatar, u.level 
                     FROM ranch_logs rl 
                     JOIN users u ON rl.user_id = u.id 
                     WHERE rl.ranch_id = ? 
@@ -4216,7 +4444,7 @@ app.get('/api/farms/detail/:id', (req, res) => {
 
                 // Get Logs
                 const logQuery = `
-                    SELECT fl.*, u.username 
+                    SELECT fl.*, u.username, u.avatar, u.level 
                     FROM farm_logs fl 
                     JOIN users u ON fl.user_id = u.id 
                     WHERE fl.farm_id = ? 
@@ -4272,7 +4500,7 @@ app.post('/api/farms/start', (req, res) => {
 
         // 1. Get User & Farm Data
         const query = `
-            SELECT u.energy, u.health, u.education_skill, pf.id as farm_id, pf.max_workers, pf.reserve, pf.salary, pf.vault, pf.stock, pf.level, pf.user_id as owner_id,
+            SELECT u.energy, u.health, u.education_skill, pf.id as farm_id, pf.max_workers, pf.reserve, pf.salary, pf.vault, pf.stock, pf.level, pf.capacity, pf.user_id as owner_id,
             ft.slug as farm_type,
             COALESCE(ft.production_time, 60) as production_time,
             (SELECT COUNT(*) FROM farm_active_workers WHERE farm_id = pf.id AND end_time > NOW()) as current_workers,
@@ -4292,7 +4520,7 @@ app.post('/api/farms/start', (req, res) => {
             // 2. Checks
             const ENERGY_COST = 10;
             const HEALTH_COST = 5;
-            const MAX_STOCK = level * 1000;
+            const MAX_STOCK = data.capacity || (level * 1000);
 
             if (any_active_workers > 0) return db.rollback(() => res.json({ success: false, message: 'Zaten bir işte çalışıyorsun! Önce onu tamamla.' }));
             if (energy < ENERGY_COST) return db.rollback(() => res.json({ success: false, message: 'Yetersiz Enerji!' }));
@@ -4585,52 +4813,13 @@ app.post('/api/farms/deposit-seed/:id', (req, res) => {
     });
 });
 
-// Upgrade Farm
-app.post('/api/farms/upgrade/:id', (req, res) => {
-    const farmId = req.params.id;
-    const { userId } = req.body;
+// --- FARM UPGRADE SYSTEM ---
 
-    db.beginTransaction(err => {
-        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
 
-        db.query('SELECT * FROM player_farms WHERE id = ?', [farmId], (err, farms) => {
-            if (err || farms.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Tarla bulunamadı.' }));
-            const farm = farms[0];
-            
-            const nextLevel = farm.level + 1;
-            const costMoney = nextLevel * 5000;
 
-            db.query('SELECT money FROM users WHERE id = ?', [userId], (err, users) => {
-                if (err || users.length === 0) return db.rollback(() => res.status(500).json({ success: false, message: 'User Error' }));
-                const user = users[0];
 
-                if (user.money < costMoney) {
-                    return db.rollback(() => res.json({ success: false, message: `Yetersiz bakiye. Gerekli: ${costMoney} ₺` }));
-                }
 
-                // Deduct Money
-                db.query('UPDATE users SET money = money - ? WHERE id = ?', [costMoney, userId], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Para çekilemedi.' }));
 
-                    // Upgrade Farm
-                    // Increase capacity and max_workers
-                    const newCapacity = farm.capacity + 50; // Example increment
-                    const newMaxWorkers = farm.max_workers + 1; // Example increment
-
-                    db.query('UPDATE player_farms SET level = ?, capacity = ?, max_workers = ? WHERE id = ?', 
-                        [nextLevel, newCapacity, newMaxWorkers, farmId], (err) => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Tarla yükseltilemedi.' }));
-
-                        db.commit(err => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                            res.json({ success: true, message: `Tarla Seviye ${nextLevel} oldu!` });
-                        });
-                    });
-                });
-            });
-        });
-    });
-});
 
 // --- CHAT SYSTEM ---
 
@@ -4890,6 +5079,29 @@ app.get('/api/admin/toxic-logs', (req, res) => {
     db.query(query, (err, results) => {
         if (err) return res.status(500).json({ success: false, error: err });
         res.json(results);
+    });
+});
+
+// Admin: Get Property Types
+app.get('/api/admin/property-types', (req, res) => {
+    db.query('SELECT * FROM property_types', (err, results) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+        res.json({ success: true, types: results });
+    });
+});
+
+// Admin: Update Property Type
+app.post('/api/admin/property-types/update', (req, res) => {
+    const { id, tax_interval, tax_income } = req.body;
+    db.query('UPDATE property_types SET tax_interval = ?, tax_income = ? WHERE id = ?', [tax_interval, tax_income, id], (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+        res.json({ success: true, message: 'Mülk ayarı güncellendi.' });
     });
 });
 
@@ -5213,38 +5425,158 @@ app.post('/api/ranches/deposit-feed/:id', (req, res) => {
     });
 });
 
-// Upgrade Ranch
-app.post('/api/ranches/upgrade/:id', (req, res) => {
-    const ranchId = req.params.id;
+// --- RANCH UPGRADE SYSTEM ---
+
+// Get Upgrade Info
+app.get('/api/ranches/upgrade-info/:ranchId', (req, res) => {
+    const ranchId = req.params.ranchId;
+    const userId = req.query.userId;
+
+    // 1. Get Ranch Status
+    db.query('SELECT * FROM player_ranches WHERE id = ?', [ranchId], (err, ranches) => {
+        if (err || !ranches.length) return res.json({ success: false, message: 'Çiftlik bulunamadı' });
+        const ranch = ranches[0];
+        
+        if (ranch.user_id != userId) return res.json({ success: false, message: 'Yetkisiz işlem' });
+
+        // 2. Get Next Level Info
+        const nextLevel = ranch.level + 1;
+        db.query('SELECT * FROM ranch_levels WHERE level = ?', [nextLevel], (err, levels) => {
+            if (err) return res.json({ success: false, message: 'DB Hatası' });
+            
+            const isUpgrading = ranch.is_upgrading === 1;
+            let timeLeft = 0;
+            if (isUpgrading && ranch.upgrade_end_time) {
+                const now = new Date();
+                const end = new Date(ranch.upgrade_end_time);
+                timeLeft = Math.floor((end - now) / 1000);
+                if (timeLeft < 0) timeLeft = 0;
+            }
+
+            if (levels.length === 0) {
+                return res.json({ 
+                    success: true, 
+                    ranch: { level: ranch.level, isUpgrading, timeLeft },
+                    maxLevel: true 
+                });
+            }
+
+            const lvlInfo = levels[0];
+            res.json({
+                success: true,
+                ranch: { level: ranch.level, isUpgrading, timeLeft },
+                nextLevel: {
+                    level: nextLevel,
+                    duration: lvlInfo.duration_seconds,
+                    costs: {
+                        money: lvlInfo.cost_money,
+                        gold: lvlInfo.cost_gold,
+                        diamond: lvlInfo.cost_diamond,
+                        wood: lvlInfo.cost_wood,
+                        brick: lvlInfo.cost_brick,
+                        cement: lvlInfo.cost_cement,
+                        glass: lvlInfo.cost_glass,
+                        steel: lvlInfo.cost_steel
+                    },
+                    benefits: {
+                        workers: lvlInfo.capacity_worker_increase,
+                        storage: lvlInfo.capacity_storage_increase
+                    }
+                }
+            });
+        });
+    });
+});
+
+// Start Upgrade
+app.post('/api/ranches/start-upgrade/:ranchId', (req, res) => {
+    const ranchId = req.params.ranchId;
     const { userId } = req.body;
 
-    db.beginTransaction(err => {
-        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
+    db.query('SELECT pr.*, rt.slug as type_slug, rt.name as type_name FROM player_ranches pr JOIN ranch_types rt ON pr.ranch_type_id = rt.id WHERE pr.id = ?', [ranchId], (err, ranches) => {
+        if (err || !ranches.length) return res.json({ success: false, message: 'Çiftlik bulunamadı' });
+        const ranch = ranches[0];
 
-        db.query('SELECT * FROM player_ranches WHERE id = ?', [ranchId], (err, ranches) => {
-            if (err || ranches.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Çiftlik bulunamadı.' }));
-            const ranch = ranches[0];
-            
-            const nextLevel = ranch.level + 1;
-            const costMoney = nextLevel * 5000;
+        if (ranch.user_id != userId) return res.json({ success: false, message: 'Yetkisiz işlem' });
+        if (ranch.is_upgrading) return res.json({ success: false, message: 'Zaten geliştiriliyor' });
 
-            db.query('SELECT money FROM users WHERE id = ?', [userId], (err, users) => {
-                if (err || users.length === 0) return db.rollback(() => res.status(500).json({ success: false, message: 'User Error' }));
+        const nextLevel = ranch.level + 1;
+        db.query('SELECT * FROM ranch_levels WHERE level = ?', [nextLevel], (err, levels) => {
+            if (err || !levels.length) return res.json({ success: false, message: 'Maksimum seviye veya yapılandırma hatası' });
+            const cost = levels[0];
+
+            // License Check
+            const licenseKey = ranch.type_slug; // e.g. 'chicken', 'cow'
+            db.query('SELECT u.*, l.level as specific_license_level FROM users u LEFT JOIN licenses l ON u.id = l.user_id AND l.mine_type = ? WHERE u.id = ?', [licenseKey, userId], (err, users) => {
+                if (err || !users.length) return res.json({ success: false, message: 'Kullanıcı hatası' });
                 const user = users[0];
 
-                if (user.money < costMoney) {
-                    return db.rollback(() => res.json({ success: false, message: 'Yetersiz bakiye.' }));
+                const userLicenseLevel = user.specific_license_level || 0;
+                console.log(`Upgrade Check: User ${userId} wants to upgrade ${ranch.type_slug} to level ${nextLevel}. Has license level: ${userLicenseLevel}`);
+                
+                if (userLicenseLevel < nextLevel) {
+                    return res.json({ success: false, message: `Yetersiz Lisans! Seviye ${nextLevel} ${ranch.type_name} Lisansı gerekli.` });
                 }
 
-                db.query('UPDATE users SET money = money - ? WHERE id = ?', [costMoney, userId], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Para düşülemedi.' }));
+                // Resources Check
+                if (user.money < cost.cost_money) return res.json({ success: false, message: 'Yetersiz Para' });
+                if (user.gold < cost.cost_gold) return res.json({ success: false, message: 'Yetersiz Altın' });
+                if (user.diamond < cost.cost_diamond) return res.json({ success: false, message: 'Yetersiz Elmas' });
 
-                    db.query('UPDATE player_ranches SET level = level + 1, max_workers = max_workers + 1 WHERE id = ?', [ranchId], (err) => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Seviye arttırılamadı.' }));
+                const materials = {
+                    'lumber': cost.cost_wood,
+                    'brick': cost.cost_brick,
+                    'concrete': cost.cost_cement,
+                    'glass': cost.cost_glass,
+                    'steel': cost.cost_steel
+                };
 
-                        db.commit(err => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                            res.json({ success: true, message: `Çiftlik Seviye ${nextLevel} oldu!` });
+                db.query('SELECT * FROM inventory WHERE user_id = ?', [userId], (err, inv) => {
+                    const userInv = {};
+                    inv.forEach(i => userInv[i.item_key] = i.quantity);
+
+                    for (const [key, amount] of Object.entries(materials)) {
+                        if ((userInv[key] || 0) < amount) {
+                            const label = key === 'lumber' ? 'Tahta' : (key === 'concrete' ? 'Çimento' : key);
+                            return res.json({ success: false, message: 'Yetersiz Malzeme: ' + label });
+                        }
+                    }
+
+                    // Start Transaction
+                    db.beginTransaction(err => {
+                        if (err) return res.json({ success: false, message: 'DB Hatası' });
+
+                        db.query('UPDATE users SET money = money - ?, gold = gold - ?, diamond = diamond - ? WHERE id = ?', 
+                            [cost.cost_money, cost.cost_gold, cost.cost_diamond, userId], (err) => {
+                            if (err) return db.rollback(() => res.json({ success: false, message: 'Ödeme hatası' }));
+
+                            const queries = Object.entries(materials).map(([key, amount]) => {
+                                return new Promise((resolve, reject) => {
+                                    if (amount > 0) {
+                                        db.query('UPDATE inventory SET quantity = quantity - ? WHERE user_id = ? AND item_key = ?', 
+                                            [amount, userId, key], (err) => {
+                                            if (err) reject(err); else resolve();
+                                        });
+                                    } else resolve();
+                                });
+                            });
+
+                            Promise.all(queries).then(() => {
+                                const duration = cost.duration_seconds;
+                                const endTime = new Date(Date.now() + duration * 1000);
+                                
+                                db.query('UPDATE player_ranches SET is_upgrading = 1, upgrade_end_time = ? WHERE id = ?', 
+                                    [endTime, ranchId], (err) => {
+                                    if (err) return db.rollback(() => res.json({ success: false, message: 'Güncelleme hatası' }));
+                                    
+                                    db.commit(err => {
+                                        if (err) return db.rollback(() => res.json({ success: false, message: 'Commit hatası' }));
+                                        res.json({ success: true, message: 'Geliştirme başlatıldı!' });
+                                    });
+                                });
+                            }).catch(err => {
+                                db.rollback(() => res.json({ success: false, message: 'Malzeme düşme hatası' }));
+                            });
                         });
                     });
                 });
@@ -5252,6 +5584,39 @@ app.post('/api/ranches/upgrade/:id', (req, res) => {
         });
     });
 });
+
+// Complete Upgrade
+app.post('/api/ranches/complete-upgrade/:ranchId', (req, res) => {
+    const ranchId = req.params.ranchId;
+    
+    db.query('SELECT * FROM player_ranches WHERE id = ?', [ranchId], (err, ranches) => {
+        if (err || !ranches.length) return res.json({ success: false, message: 'Çiftlik bulunamadı' });
+        const ranch = ranches[0];
+
+        if (!ranch.is_upgrading) return res.json({ success: false, message: 'Geliştirme işlemi yok' });
+
+        const now = new Date();
+        const end = new Date(ranch.upgrade_end_time);
+        
+        if (now < end) return res.json({ success: false, message: 'Henüz tamamlanmadı' });
+
+        const nextLevel = ranch.level + 1;
+        
+        db.query('SELECT * FROM ranch_levels WHERE level = ?', [nextLevel], (err, levels) => {
+             const workerInc = levels.length ? levels[0].capacity_worker_increase : 5;
+             const storageInc = levels.length ? levels[0].capacity_storage_increase : 500;
+
+             db.query('UPDATE player_ranches SET level = level + 1, max_workers = max_workers + ?, capacity = capacity + ?, is_upgrading = 0, upgrade_end_time = NULL WHERE id = ?', 
+                [workerInc, storageInc, ranchId], (err) => {
+                if (err) return res.json({ success: false, message: 'DB Hatası' });
+                res.json({ success: true, message: 'Geliştirme tamamlandı! Seviye ' + nextLevel });
+             });
+        });
+    });
+});
+
+// Legacy Upgrade (Deprecated but kept for safety if needed, though replaced above)
+// app.post('/api/ranches/upgrade/:id', ...
 
 // Get My Ranches
 app.get('/api/ranches/my/:userId', (req, res) => {
@@ -5390,8 +5755,843 @@ app.post('/api/ranches/buy', (req, res) => {
     });
 });
 
+
+// --- PROPERTY MANAGEMENT ---
+
+// Get Property Types
+app.get('/api/properties', (req, res) => {
+    const userId = req.query.userId;
+
+    // 1. Get Property Types
+    db.query('SELECT * FROM property_types ORDER BY cost_money ASC', (err, types) => {
+        if (err) return res.status(500).json({ success: false, message: 'Veritabanı hatası (Types)' });
+
+        if (!userId) {
+            return res.json({ success: true, types: types, properties: [], licenseLevel: 1 });
+        }
+
+        // 2. Get User Properties
+        const propQuery = `
+            SELECT pp.*, pt.name, pt.tax_income, pt.tax_interval, pt.image 
+            FROM player_properties pp
+            JOIN property_types pt ON pp.property_type_id = pt.id
+            WHERE pp.user_id = ?
+        `;
+        
+        db.query(propQuery, [userId], (err, userProps) => {
+            if (err) return res.status(500).json({ success: false, message: 'Veritabanı hatası (User Props)' });
+
+            // Calculate tax availability
+            const now = new Date();
+            const properties = userProps.map(p => {
+                const lastCollection = p.last_tax_collected ? new Date(p.last_tax_collected) : new Date(p.created_at);
+                const nextCollection = new Date(lastCollection.getTime() + p.tax_interval * 1000);
+                const isReady = now >= nextCollection;
+                return { ...p, isReady, nextCollection };
+            });
+
+            // 3. Get License Level
+            db.query('SELECT license_property_level FROM users WHERE id = ?', [userId], (err, userRes) => {
+                if (err) return res.status(500).json({ success: false, message: 'Veritabanı hatası (User)' });
+                
+                const licenseLevel = userRes.length > 0 ? (userRes[0].license_property_level || 1) : 1;
+
+                res.json({ 
+                    success: true, 
+                    types: types, 
+                    properties: properties, 
+                    licenseLevel: licenseLevel 
+                });
+            });
+        });
+    });
+});
+
+// Get User Properties
+app.get('/api/user-properties', (req, res) => {
+    const userId = req.query.userId;
+    if (!userId) return res.status(400).json({ success: false, message: 'Kullanıcı ID gerekli' });
+
+    const query = `
+        SELECT pp.*, pt.name, pt.tax_income, pt.tax_interval, pt.image 
+        FROM player_properties pp
+        JOIN property_types pt ON pp.property_type_id = pt.id
+        WHERE pp.user_id = ?
+    `;
+    
+    db.query(query, [userId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, message: 'Veritabanı hatası' });
+        
+        // Calculate tax availability
+        const now = new Date();
+        const properties = results.map(p => {
+            const lastCollection = p.last_tax_collected ? new Date(p.last_tax_collected) : new Date(p.created_at);
+            const nextCollection = new Date(lastCollection.getTime() + p.tax_interval * 1000);
+            const isReady = now >= nextCollection;
+            return { ...p, isReady, nextCollection };
+        });
+
+        res.json({ success: true, properties });
+    });
+});
+
+// Build Property
+app.post('/api/properties/build', (req, res) => {
+    const { userId, propertyTypeId } = req.body;
+    if (!userId || !propertyTypeId) return res.status(400).json({ success: false, message: 'Eksik veri' });
+
+    db.query('SELECT * FROM users WHERE id = ?', [userId], (err, users) => {
+        if (err || users.length === 0) return res.status(500).json({ success: false, message: 'Kullanıcı bulunamadı' });
+        const user = users[0];
+
+        db.query('SELECT * FROM property_types WHERE id = ?', [propertyTypeId], (err, types) => {
+            if (err || types.length === 0) return res.status(500).json({ success: false, message: 'Mülk tipi bulunamadı' });
+            const propType = types[0];
+
+            // Check License Limit
+            db.query('SELECT COUNT(*) as count FROM player_properties WHERE user_id = ?', [userId], (err, countRes) => {
+                if (err) return res.status(500).json({ success: false, message: 'Veritabanı hatası' });
+                
+                const currentProperties = countRes[0].count;
+                const licenseLevel = user.license_property_level || 1;
+
+                // Requirement: 1 property for level 1, 2 for level 2...
+                if (currentProperties >= licenseLevel) {
+                    return res.status(400).json({ success: false, message: `Mevcut lisans seviyeniz (${licenseLevel}) ile en fazla ${licenseLevel} mülk sahibi olabilirsiniz. Lisansınızı yükseltin!` });
+                }
+                
+                if (currentProperties >= 10) {
+                     return res.status(400).json({ success: false, message: 'Maksimum mülk sınırına (10) ulaştınız!' });
+                }
+
+                // Check Property Specific Requirements (NEW)
+                if (propType.req_license_level && licenseLevel < propType.req_license_level) {
+                    return res.status(400).json({ success: false, message: `Bu mülkü inşa etmek için Lisans Seviyesi ${propType.req_license_level} gerekli. (Mevcut: ${licenseLevel})` });
+                }
+
+                const userEdu = Number(user.education_skill) || 0;
+                if (propType.req_education_level && userEdu < propType.req_education_level) {
+                    return res.status(400).json({ success: false, message: `Bu mülkü inşa etmek için Eğitim Seviyesi ${propType.req_education_level} gerekli. (Mevcut: ${userEdu})` });
+                }
+
+                // Check Costs
+                if (user.money < propType.cost_money) return res.status(400).json({ success: false, message: 'Yetersiz Para!' });
+                if (user.gold < propType.cost_gold) return res.status(400).json({ success: false, message: 'Yetersiz Altın!' });
+                if (user.diamond < propType.cost_diamond) return res.status(400).json({ success: false, message: 'Yetersiz Elmas!' });
+
+                // Check Materials (Inventory)
+                let materials = {};
+                if (typeof propType.req_materials === 'string') {
+                    try { materials = JSON.parse(propType.req_materials); } catch(e) {}
+                } else {
+                    materials = propType.req_materials || {};
+                }
+                
+                db.query('SELECT * FROM inventory WHERE user_id = ?', [userId], (err, invRes) => {
+                    if (err) return res.status(500).json({ success: false, message: 'Envanter hatası' });
+                    
+                    const inventory = {};
+                    invRes.forEach(row => {
+                        inventory[row.item_key] = row.quantity;
+                    });
+
+                    for (const [mat, amount] of Object.entries(materials)) {
+                        if ((inventory[mat] || 0) < amount) {
+                            return res.status(400).json({ success: false, message: `Yetersiz Malzeme: ${mat} (${inventory[mat] || 0}/${amount})` });
+                        }
+                    }
+
+                    // Start Transaction
+                    db.beginTransaction(err => {
+                        if (err) return res.status(500).json({ success: false, message: 'İşlem hatası' });
+
+                        // Deduct Money/Gold/Diamond
+                        db.query('UPDATE users SET money = money - ?, gold = gold - ?, diamond = diamond - ? WHERE id = ?', 
+                            [propType.cost_money, propType.cost_gold, propType.cost_diamond, userId], (err) => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Ödeme hatası' }));
+
+                            // Deduct Materials
+                            const materialUpdates = Object.entries(materials).map(([mat, amount]) => {
+                                return new Promise((resolve, reject) => {
+                                    db.query('UPDATE inventory SET quantity = quantity - ? WHERE user_id = ? AND item_key = ?', 
+                                        [amount, userId, mat], (err, result) => {
+                                        if (err) reject(err);
+                                        else resolve(result);
+                                    });
+                                });
+                            });
+
+                            Promise.all(materialUpdates)
+                                .then(() => {
+                                    insertProperty();
+                                })
+                                .catch(err => {
+                                    console.error(err);
+                                    db.rollback(() => res.status(500).json({ success: false, message: 'Malzeme düşme hatası' }));
+                                });
+
+                            function insertProperty() {
+                                db.query('INSERT INTO player_properties (user_id, property_type_id, name, created_at, last_tax_collected) VALUES (?, ?, ?, NOW(), NOW())', 
+                                    [userId, propType.id, propType.name], (err) => {
+                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Mülk oluşturma hatası' }));
+
+                                    db.commit(err => {
+                                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit hatası' }));
+                                        res.json({ success: true, message: `${propType.name} başarıyla inşa edildi!` });
+                                    });
+                                });
+                            }
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Upgrade Property License
+app.post('/api/properties/upgrade-license', (req, res) => {
+    const { userId } = req.body;
+    
+    db.query('SELECT * FROM users WHERE id = ?', [userId], (err, results) => {
+        if (err || results.length === 0) return res.status(500).json({ success: false, message: 'Kullanıcı bulunamadı' });
+        const user = results[0];
+        
+        const currentLevel = user.license_property_level || 1;
+        if (currentLevel >= 10) return res.status(400).json({ success: false, message: 'Maksimum lisans seviyesine ulaştınız!' });
+        
+        const cost = currentLevel * 50000; // Cost: Level * 50.000 TL
+        
+        if (user.money < cost) return res.status(400).json({ success: false, message: `Yetersiz Bakiye! (${cost} ₺ gerekli)` });
+        
+        db.query('UPDATE users SET money = money - ?, license_property_level = license_property_level + 1 WHERE id = ?', [cost, userId], (err) => {
+            if (err) return res.status(500).json({ success: false, message: 'Güncelleme hatası' });
+            res.json({ success: true, message: `Tebrikler! Mülk Lisansınız Seviye ${currentLevel + 1} oldu.` });
+        });
+    });
+});
+
+// Collect Tax
+app.post('/api/properties/collect-tax', (req, res) => {
+    const { userId, propertyId } = req.body;
+    
+    db.query(`
+        SELECT pp.*, pt.tax_income, pt.tax_interval 
+        FROM player_properties pp
+        JOIN property_types pt ON pp.property_type_id = pt.id
+        WHERE pp.id = ? AND pp.user_id = ?
+    `, [propertyId, userId], (err, results) => {
+        if (err || results.length === 0) return res.status(400).json({ success: false, message: 'Mülk bulunamadı' });
+        
+        const prop = results[0];
+        const lastCollection = prop.last_tax_collected ? new Date(prop.last_tax_collected) : new Date(prop.created_at);
+        const now = new Date();
+        const diffSeconds = (now - lastCollection) / 1000;
+
+        if (diffSeconds < prop.tax_interval) {
+            const remaining = Math.ceil(prop.tax_interval - diffSeconds);
+            return res.status(400).json({ success: false, message: `Vergi toplamak için ${Math.floor(remaining/60)}dk ${remaining%60}sn beklemelisiniz.` });
+        }
+
+        db.beginTransaction(err => {
+            if (err) return res.status(500).json({ success: false, message: 'İşlem hatası' });
+
+            const currentLife = prop.remaining_life !== null ? prop.remaining_life : 100;
+            const newLife = currentLife - 1;
+
+            // 1. Add Money (Always collect rent first)
+            db.query('UPDATE users SET money = money + ? WHERE id = ?', [prop.tax_income, userId], (err) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Para ekleme hatası' }));
+
+                if (newLife <= 0) {
+                    // 2a. Delete Property if life is over
+                    db.query('DELETE FROM player_properties WHERE id = ?', [propertyId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Silme hatası' }));
+
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit hatası' }));
+                            res.json({ success: true, message: `${prop.tax_income} ₺ kira toplandı. Mülk ömrünü tamamladı ve yıkıldı!` });
+                        });
+                    });
+                } else {
+                    // 2b. Update Property (Life & Time)
+                    db.query('UPDATE player_properties SET last_tax_collected = NOW(), remaining_life = ? WHERE id = ?', [newLife, propertyId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Güncelleme hatası' }));
+
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit hatası' }));
+                            res.json({ success: true, message: `${prop.tax_income} ₺ kira toplandı. (Kalan Ömür: ${newLife})` });
+                        });
+                    });
+                }
+            });
+        });
+    });
+});
+
 const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
 });
 
+
+// --- PARTY MANAGEMENT ENDPOINTS ---
+
+// Mock Me Endpoint (For dev)
+app.get('/api/user/me', (req, res) => {
+    const userId = req.query.userId || 1; 
+    db.query('SELECT * FROM users WHERE id = ?', [userId], (err, results) => {
+        if(err || results.length === 0) return res.status(401).json({ success: false });
+        res.json({ success: true, user: results[0] });
+    });
+});
+
+// Get Party Details
+app.get('/api/parties/:id', (req, res) => {
+    const partyId = req.params.id;
+    console.log(`Fetching party data for ID: ${partyId}`);
+    const query = `
+        SELECT p.*, u.username as leader_name 
+        FROM parties p 
+        LEFT JOIN users u ON p.leader_id = u.id 
+        WHERE p.id = ?
+    `;
+    
+    db.query(query, [partyId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, message: 'DB Error' });
+        if (results.length === 0) return res.status(404).json({ success: false, message: 'Parti bulunamadı.' });
+        
+        const party = results[0];
+        
+        // Calculate Rank (Based on Vault)
+        db.query('SELECT COUNT(*) + 1 AS `rank` FROM parties WHERE vault > ?', [party.vault], (err, rankRes) => {
+            if (err) console.error("Rank Query Error:", err);
+            party.rank = (rankRes && rankRes[0]) ? rankRes[0].rank : '-';
+
+            // Get Members with Total Donations
+            const membersQuery = `
+                SELECT u.id, u.username, u.avatar, u.role, u.level,
+                       COALESCE(SUM(pl.amount), 0) as total_donated 
+                FROM users u 
+                LEFT JOIN party_logs pl ON u.id = pl.user_id AND pl.party_id = ? AND pl.action_type = "deposit"
+                WHERE u.party_id = ? 
+                GROUP BY u.id
+            `;
+            
+            db.query(membersQuery, [partyId, partyId], (err, members) => {
+                party.members = members || [];
+                party.members_count = party.members.length;
+                
+                // Get Applications
+                db.query('SELECT pa.*, u.username, u.avatar, u.level FROM party_applications pa JOIN users u ON pa.user_id = u.id WHERE pa.party_id = ?', [partyId], (err, apps) => {
+                    party.applications = apps || [];
+
+                    // Get Last 10 Donations
+                    const logsQuery = `
+                        SELECT pl.*, u.username, u.avatar, u.role, u.level
+                        FROM party_logs pl
+                        JOIN users u ON pl.user_id = u.id
+                        WHERE pl.party_id = ? AND pl.action_type = 'deposit'
+                        ORDER BY pl.created_at DESC
+                        LIMIT 10
+                    `;
+                    
+                    // Get Total Donation Count
+                    const countQuery = `SELECT COUNT(*) as total FROM party_logs WHERE party_id = ? AND action_type = 'deposit'`;
+
+                    db.query(logsQuery, [partyId], (err, logs) => {
+                        party.donationLogs = logs || [];
+                        
+                        db.query(countQuery, [partyId], (err, countRes) => {
+                            party.totalDonations = countRes ? countRes[0].total : 0;
+                            res.json({ success: true, party });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Get My Party
+app.get('/api/party/my-party', (req, res) => {
+    const userId = req.query.userId || 1; // Default to 1 for dev
+    db.query('SELECT party_id FROM users WHERE id = ?', [userId], (err, results) => {
+        if(err || results.length === 0) return res.status(404).json({ success: false, message: 'User not found' });
+        
+        const partyId = results[0].party_id;
+        if(!partyId) return res.json({ success: false, message: 'No party' });
+        
+        res.redirect('/api/parties/' + partyId);
+    });
+});
+
+// Update Party Settings
+app.post('/api/party/settings', (req, res) => {
+    const { partyId, name, abbr, ideology } = req.body;
+    const COST = 100000;
+
+    // Check balance first
+    db.query('SELECT vault FROM parties WHERE id = ?', [partyId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, message: 'DB Error' });
+        if (results.length === 0) return res.status(404).json({ success: false, message: 'Parti bulunamadı.' });
+
+        const currentVault = results[0].vault;
+        if (currentVault < COST) {
+            return res.json({ success: false, message: `Yetersiz bakiye. Güncelleme ücreti: ${COST.toLocaleString()} ₺` });
+        }
+
+        db.beginTransaction(err => {
+            if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
+
+            // Deduct money
+            db.query('UPDATE parties SET vault = vault - ? WHERE id = ?', [COST, partyId], (err) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Vault Update Error' }));
+
+                // Update settings
+                let query = 'UPDATE parties SET name = ?, abbr = ?, ideology = ? WHERE id = ?';
+                let params = [name, abbr, ideology, partyId];
+
+                db.query(query, params, (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Settings Update Error' }));
+
+                    db.commit(err => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                        res.json({ success: true, message: 'Ayarlar güncellendi.' });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Publish Party Message
+app.post('/api/party/publish-message', (req, res) => {
+    const { partyId, userId, message } = req.body;
+    const COST = 50000;
+
+    if (!message || message.length > 255) {
+        return res.json({ success: false, message: 'Mesaj geçersiz veya çok uzun.' });
+    }
+
+    // Check User Role (Must be Leader)
+    db.query('SELECT role FROM users WHERE id = ?', [userId], (err, userRes) => {
+        if (err || userRes.length === 0) return res.status(500).json({ success: false, message: 'User Error' });
+        
+        if (userRes[0].role !== 'Genel Başkan') {
+            return res.json({ success: false, message: 'Sadece Genel Başkan mesaj yayınlayabilir.' });
+        }
+
+        // Check Party Vault
+        db.query('SELECT vault FROM parties WHERE id = ?', [partyId], (err, partyRes) => {
+            if (err || partyRes.length === 0) return res.status(500).json({ success: false, message: 'Party Error' });
+            
+            if (partyRes[0].vault < COST) {
+                return res.json({ success: false, message: `Yetersiz bakiye. Ücret: ${COST.toLocaleString()} ₺` });
+            }
+
+            db.beginTransaction(err => {
+                if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
+
+                // Deduct Money
+                db.query('UPDATE parties SET vault = vault - ? WHERE id = ?', [COST, partyId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false }));
+
+                    // Update Announcement
+                    db.query('UPDATE parties SET announcement = ?, announcement_date = NOW() WHERE id = ?', [message, partyId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false }));
+
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false }));
+                            res.json({ success: true, message: 'Mesaj yayınlandı.' });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Deposit Money
+app.post('/api/party/deposit', (req, res) => {
+    const { partyId, userId, amount } = req.body;
+    
+    db.query('SELECT money FROM users WHERE id = ?', [userId], (err, users) => {
+        if(err || users.length === 0) return res.status(500).json({ success: false, message: 'User error' });
+        if(users[0].money < amount) return res.json({ success: false, message: 'Yetersiz bakiye.' });
+        
+        db.beginTransaction(err => {
+            if(err) return res.status(500).json({ success: false });
+            
+            db.query('UPDATE users SET money = money - ? WHERE id = ?', [amount, userId], (err) => {
+                if(err) return db.rollback(() => res.status(500).json({ success: false }));
+                
+                db.query('UPDATE parties SET vault = vault + ? WHERE id = ?', [amount, partyId], (err) => {
+                    if(err) return db.rollback(() => res.status(500).json({ success: false }));
+                    
+                    // Log the deposit
+                    db.query('INSERT INTO party_logs (party_id, user_id, action_type, amount) VALUES (?, ?, "deposit", ?)', [partyId, userId, amount], (err) => {
+                        if(err) return db.rollback(() => res.status(500).json({ success: false }));
+
+                        db.commit(err => {
+                            if(err) return db.rollback(() => res.status(500).json({ success: false }));
+                            res.json({ success: true, message: 'Para yatırıldı.' });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Get Member Logs
+app.get('/api/party/member-logs/:partyId/:userId', (req, res) => {
+    const { partyId, userId } = req.params;
+    db.query('SELECT * FROM party_logs WHERE party_id = ? AND user_id = ? ORDER BY created_at DESC LIMIT 50', [partyId, userId], (err, logs) => {
+        if(err) return res.status(500).json({ success: false });
+        res.json({ success: true, logs });
+    });
+});
+
+// Withdraw Money
+app.post('/api/party/withdraw', (req, res) => {
+    const { partyId, userId, amount } = req.body;
+    
+    db.query('SELECT vault FROM parties WHERE id = ?', [partyId], (err, parties) => {
+        if(err || parties.length === 0) return res.status(500).json({ success: false, message: 'Party error' });
+        if(parties[0].vault < amount) return res.json({ success: false, message: 'Kasa bakiyesi yetersiz.' });
+        
+        db.beginTransaction(err => {
+            if(err) return res.status(500).json({ success: false });
+            
+            db.query('UPDATE parties SET vault = vault - ? WHERE id = ?', [amount, partyId], (err) => {
+                if(err) return db.rollback(() => res.status(500).json({ success: false }));
+                
+                db.query('UPDATE users SET money = money + ? WHERE id = ?', [amount, userId], (err) => {
+                    if(err) return db.rollback(() => res.status(500).json({ success: false }));
+                    
+                    db.commit(err => {
+                        if(err) return db.rollback(() => res.status(500).json({ success: false }));
+                        res.json({ success: true, message: 'Para çekildi.' });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Promote/Demote Member (Sequential)
+app.post('/api/party/promote', (req, res) => {
+    const { partyId, userId, type } = req.body; // type: 'promote' or 'demote'
+    const COST = 50000;
+
+    const roles = ['Üye', 'Teşkilat Sorumlusu', 'Başkan Yardımcısı', 'Genel Başkan'];
+
+    // 1. Check Vault
+    db.query('SELECT vault FROM parties WHERE id = ?', [partyId], (err, pRes) => {
+        if(err || pRes.length === 0) return res.status(500).json({ success: false, message: 'Parti bulunamadı.' });
+        if(pRes[0].vault < COST) return res.json({ success: false, message: 'Kasa bakiyesi yetersiz (50.000 ₺).' });
+
+        // 2. Get User Role
+        db.query('SELECT role FROM users WHERE id = ? AND party_id = ?', [userId, partyId], (err, uRes) => {
+            if(err || uRes.length === 0) return res.status(500).json({ success: false, message: 'Kullanıcı bulunamadı.' });
+            
+            const currentRole = uRes[0].role || 'Üye';
+            const currentIndex = roles.indexOf(currentRole);
+            
+            let newIndex = currentIndex;
+            if(type === 'promote') newIndex++;
+            else if(type === 'demote') newIndex--;
+            
+            if(newIndex < 0 || newIndex >= roles.length) return res.json({ success: false, message: 'Bu işlem yapılamaz.' });
+            
+            const newRole = roles[newIndex];
+
+            db.beginTransaction(err => {
+                if(err) return res.status(500).json({ success: false });
+
+                // 3. Deduct Money
+                db.query('UPDATE parties SET vault = vault - ? WHERE id = ?', [COST, partyId], (err) => {
+                    if(err) return db.rollback(() => res.status(500).json({ success: false }));
+
+                    // 4. Handle Role Conflicts (Unique Roles)
+                    const uniqueRoles = ['Teşkilat Sorumlusu', 'Başkan Yardımcısı', 'Genel Başkan'];
+                    
+                    const proceed = () => {
+                        db.query('UPDATE users SET role = ? WHERE id = ?', [newRole, userId], (err) => {
+                            if(err) return db.rollback(() => res.status(500).json({ success: false }));
+                            
+                            db.commit(err => {
+                                if(err) return db.rollback(() => res.status(500).json({ success: false }));
+                                res.json({ success: true, message: `Kullanıcı ${newRole} oldu.` });
+                            });
+                        });
+                    };
+
+                    if(uniqueRoles.includes(newRole)) {
+                        // Find existing holder and demote them
+                        db.query('SELECT id FROM users WHERE party_id = ? AND role = ? AND id != ?', [partyId, newRole, userId], (err, existing) => {
+                            if(err) return db.rollback(() => res.status(500).json({ success: false }));
+                            
+                            if(existing.length > 0) {
+                                // Prevent if role is taken (User requirement: "her partide bu rollerden sadece 1er tane olabilir")
+                                // Usually this means we should block the promotion if someone else has it.
+                                return db.rollback(() => res.json({ success: false, message: `Bu rolde zaten birisi var: ${newRole}` }));
+                            } else {
+                                proceed();
+                            }
+                        });
+                    } else {
+                        proceed();
+                    }
+                });
+            });
+        });
+    });
+});
+
+// Kick Member
+app.post('/api/party/kick', (req, res) => {
+    const { partyId, userId } = req.body;
+    db.query('UPDATE users SET party_id = NULL, role = NULL WHERE id = ? AND party_id = ?', [userId, partyId], (err) => {
+        if(err) return res.status(500).json({ success: false });
+        db.query('UPDATE parties SET members_count = members_count - 1 WHERE id = ?', [partyId]);
+        res.json({ success: true });
+    });
+});
+
+// Accept Application
+app.post('/api/party/application/accept', (req, res) => {
+    const { partyId, applicationId } = req.body;
+    
+    db.query('SELECT user_id FROM party_applications WHERE id = ?', [applicationId], (err, apps) => {
+        if(err || apps.length === 0) return res.status(404).json({ success: false });
+        const userId = apps[0].user_id;
+        
+        db.beginTransaction(err => {
+            db.query('UPDATE users SET party_id = ?, role = "Üye" WHERE id = ?', [partyId, userId], (err) => {
+                if(err) return db.rollback(() => res.status(500).json({ success: false }));
+                
+                db.query('DELETE FROM party_applications WHERE id = ?', [applicationId], (err) => {
+                    if(err) return db.rollback(() => res.status(500).json({ success: false }));
+                    
+                    db.query('UPDATE parties SET members_count = members_count + 1 WHERE id = ?', [partyId], (err) => {
+                         db.commit(err => {
+                             res.json({ success: true });
+                         });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Reject Application
+app.post('/api/party/application/reject', (req, res) => {
+    const { applicationId } = req.body;
+    db.query('DELETE FROM party_applications WHERE id = ?', [applicationId], (err) => {
+        if(err) return res.status(500).json({ success: false });
+        res.json({ success: true });
+    });
+});
+
+
+// --- FARM UPGRADE SYSTEM ---
+
+// Get Upgrade Info
+app.get('/api/farms/upgrade-info/:farmId', (req, res) => {
+    const farmId = req.params.farmId;
+    const userId = req.query.userId;
+
+    // 1. Get Farm Status
+    db.query('SELECT * FROM player_farms WHERE id = ?', [farmId], (err, farms) => {
+        if (err || !farms.length) return res.json({ success: false, message: 'Tarla bulunamadı' });
+        const farm = farms[0];
+        
+        // Check ownership
+        if (farm.user_id != userId) return res.json({ success: false, message: 'Yetkisiz işlem' });
+
+        // 2. Get Next Level Info
+        const nextLevel = farm.level + 1;
+        db.query('SELECT * FROM farm_levels WHERE level = ?', [nextLevel], (err, levels) => {
+            if (err) return res.json({ success: false, message: 'DB Hatası' });
+            
+            const isUpgrading = farm.is_upgrading === 1;
+            let timeLeft = 0;
+            if (isUpgrading && farm.upgrade_end_time) {
+                const now = new Date();
+                const end = new Date(farm.upgrade_end_time);
+                timeLeft = Math.floor((end - now) / 1000);
+                if (timeLeft < 0) timeLeft = 0;
+            }
+
+            if (levels.length === 0) {
+                // Max level reached
+                return res.json({ 
+                    success: true, 
+                    farm: { level: farm.level, isUpgrading, timeLeft },
+                    maxLevel: true 
+                });
+            }
+
+            const lvlInfo = levels[0];
+            res.json({
+                success: true,
+                farm: { level: farm.level, isUpgrading, timeLeft },
+                nextLevel: {
+                    level: nextLevel,
+                    duration: lvlInfo.duration_seconds,
+                    costs: {
+                        money: lvlInfo.cost_money,
+                        gold: lvlInfo.cost_gold,
+                        diamond: lvlInfo.cost_diamond,
+                        wood: lvlInfo.cost_wood,
+                        brick: lvlInfo.cost_brick,
+                        cement: lvlInfo.cost_cement,
+                        glass: lvlInfo.cost_glass,
+                        steel: lvlInfo.cost_steel
+                    },
+                    benefits: {
+                        workers: lvlInfo.capacity_worker_increase,
+                        storage: lvlInfo.capacity_storage_increase
+                    }
+                }
+            });
+        });
+    });
+});
+
+// Start Upgrade
+app.post('/api/farms/start-upgrade/:farmId', (req, res) => {
+    const farmId = req.params.farmId;
+    const { userId } = req.body;
+
+    db.query('SELECT pf.*, ft.slug as type_slug, ft.name as type_name FROM player_farms pf JOIN farm_types ft ON pf.farm_type_id = ft.id WHERE pf.id = ?', [farmId], (err, farms) => {
+        if (err || !farms.length) return res.json({ success: false, message: 'Tarla bulunamadı' });
+        const farm = farms[0];
+
+        if (farm.user_id != userId) return res.json({ success: false, message: 'Yetkisiz işlem' });
+        if (farm.is_upgrading) return res.json({ success: false, message: 'Zaten geliştiriliyor' });
+
+        const nextLevel = farm.level + 1;
+        db.query('SELECT * FROM farm_levels WHERE level = ?', [nextLevel], (err, levels) => {
+            if (err || !levels.length) return res.json({ success: false, message: 'Maksimum seviye veya yapılandırma hatası' });
+            const cost = levels[0];
+
+            // Normalize license key (remove _farm suffix if present to match licenses table)
+            const licenseKey = farm.type_slug.replace('_farm', '');
+
+            // Check User Resources & License
+            db.query('SELECT u.*, l.level as specific_license_level FROM users u LEFT JOIN licenses l ON u.id = l.user_id AND l.mine_type = ? WHERE u.id = ?', [licenseKey, userId], (err, users) => {
+                if (err || !users.length) return res.json({ success: false, message: 'Kullanıcı hatası' });
+                const user = users[0];
+
+                // License Check
+                const userLicenseLevel = user.specific_license_level || 0;
+
+                if (userLicenseLevel < nextLevel) {
+                    return res.json({ success: false, message: `Yetersiz Lisans! Seviye ${nextLevel} ${farm.type_name} Lisansı gerekli.` });
+                }
+
+                // Money/Gold/Diamond Check
+                if (user.money < cost.cost_money) return res.json({ success: false, message: 'Yetersiz Para' });
+                if (user.gold < cost.cost_gold) return res.json({ success: false, message: 'Yetersiz Altın' });
+                if (user.diamond < cost.cost_diamond) return res.json({ success: false, message: 'Yetersiz Elmas' });
+
+                // Inventory Check (Wood, Brick, etc.)
+                const materials = {
+                    'lumber': cost.cost_wood,
+                    'brick': cost.cost_brick,
+                    'concrete': cost.cost_cement,
+                    'glass': cost.cost_glass,
+                    'steel': cost.cost_steel
+                };
+
+                db.query('SELECT * FROM inventory WHERE user_id = ?', [userId], (err, inv) => {
+                    const userInv = {};
+                    inv.forEach(i => userInv[i.item_key] = i.quantity);
+
+                    for (const [key, amount] of Object.entries(materials)) {
+                        if ((userInv[key] || 0) < amount) {
+                            const label = key === 'lumber' ? 'Tahta' : (key === 'concrete' ? 'Çimento' : key);
+                            return res.json({ success: false, message: 'Yetersiz Malzeme: ' + label });
+                        }
+                    }
+
+                    // Start Transaction
+                    db.beginTransaction(err => {
+                        if (err) return res.json({ success: false, message: 'DB Hatası' });
+
+                        // Deduct Money/Gold/Diamond
+                        db.query('UPDATE users SET money = money - ?, gold = gold - ?, diamond = diamond - ? WHERE id = ?', 
+                            [cost.cost_money, cost.cost_gold, cost.cost_diamond, userId], (err) => {
+                            if (err) return db.rollback(() => res.json({ success: false, message: 'Ödeme hatası' }));
+
+                            // Deduct Materials
+                            const queries = Object.entries(materials).map(([key, amount]) => {
+                                return new Promise((resolve, reject) => {
+                                    if (amount > 0) {
+                                        db.query('UPDATE inventory SET quantity = quantity - ? WHERE user_id = ? AND item_key = ?', 
+                                            [amount, userId, key], (err) => {
+                                            if (err) reject(err); else resolve();
+                                        });
+                                    } else resolve();
+                                });
+                            });
+
+                            Promise.all(queries).then(() => {
+                                // Update Farm State
+                                const duration = cost.duration_seconds;
+                                // Use MySQL DATE_ADD or calculate in JS. JS is easier but need to format for MySQL.
+                                // MySQL expects 'YYYY-MM-DD HH:MM:SS'.
+                                const endTime = new Date(Date.now() + duration * 1000);
+                                
+                                db.query('UPDATE player_farms SET is_upgrading = 1, upgrade_end_time = ? WHERE id = ?', 
+                                    [endTime, farmId], (err) => {
+                                    if (err) return db.rollback(() => res.json({ success: false, message: 'Güncelleme hatası' }));
+                                    
+                                    db.commit(err => {
+                                        if (err) return db.rollback(() => res.json({ success: false, message: 'Commit hatası' }));
+                                        res.json({ success: true, message: 'Geliştirme başlatıldı!' });
+                                    });
+                                });
+                            }).catch(err => {
+                                db.rollback(() => res.json({ success: false, message: 'Malzeme düşme hatası' }));
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Complete Upgrade
+app.post('/api/farms/complete-upgrade/:farmId', (req, res) => {
+    const farmId = req.params.farmId;
+    
+    db.query('SELECT * FROM player_farms WHERE id = ?', [farmId], (err, farms) => {
+        if (err || !farms.length) return res.json({ success: false, message: 'Tarla bulunamadı' });
+        const farm = farms[0];
+
+        if (!farm.is_upgrading) return res.json({ success: false, message: 'Geliştirme işlemi yok' });
+
+        const now = new Date();
+        const end = new Date(farm.upgrade_end_time);
+        
+        if (now < end) return res.json({ success: false, message: 'Henüz tamamlanmadı' });
+
+        const nextLevel = farm.level + 1;
+        
+        db.query('SELECT * FROM farm_levels WHERE level = ?', [nextLevel], (err, levels) => {
+             const workerInc = levels.length ? levels[0].capacity_worker_increase : 5;
+             const storageInc = levels.length ? levels[0].capacity_storage_increase : 500;
+
+             db.query('UPDATE player_farms SET level = level + 1, max_workers = max_workers + ?, capacity = capacity + ?, is_upgrading = 0, upgrade_end_time = NULL WHERE id = ?', 
+                [workerInc, storageInc, farmId], (err) => {
+                if (err) return res.json({ success: false, message: 'DB Hatası' });
+                res.json({ success: true, message: 'Geliştirme tamamlandı! Seviye ' + nextLevel });
+             });
+        });
+    });
+});

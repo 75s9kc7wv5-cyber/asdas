@@ -11,7 +11,7 @@ db.connect((err) => {
     if (err) throw err;
     console.log('Connected!');
     
-    db.query('DESCRIBE farm_types', (err, results) => {
+    db.query('SELECT * FROM farm_types', (err, results) => {
         if (err) console.error(err);
         else console.log('Farm Types:', results);
         db.end();

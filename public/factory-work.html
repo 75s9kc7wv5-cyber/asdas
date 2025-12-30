@@ -292,21 +292,24 @@
 
         const factoryRecipes = {
             'bakery': [
-                { id: 'bread', name: 'Ekmek', inputs: { wheat: 3, egg: 3 }, output: { bread: 1 } },
-                { id: 'cake', name: 'Kek', inputs: { wheat: 3, egg: 3, fruit: 3 }, output: { cake: 1 } }
+                { id: 'bread', name: 'Ekmek', inputs: { wheat: 3, egg: 3, energy: 1 }, output: { bread: 1 } },
+                { id: 'cake', name: 'Kek', inputs: { wheat: 3, egg: 3, fruit: 3, energy: 1 }, output: { cake: 1 } }
             ],
             'ready_food': [
-                { id: 'salad', name: 'Salata', inputs: { vegetable: 3 }, output: { salad: 1 } },
-                { id: 'canned_fruit', name: 'Konserve Meyve', inputs: { fruit: 3 }, output: { canned_fruit: 1 } },
-                { id: 'cooked_meat', name: 'Pişmiş Et', inputs: { meat: 3, olive_oil: 1 }, output: { cooked_meat: 1 } },
-                { id: 'rice_dish', name: 'Pilav', inputs: { rice: 3, olive_oil: 1 }, output: { rice_dish: 1 } },
-                { id: 'meat_dish', name: 'Et Yemeği', inputs: { potato: 3, meat: 3, olive_oil: 1 }, output: { meat_dish: 1 } }
+                { id: 'salad', name: 'Salata', inputs: { vegetable: 3, energy: 1 }, output: { salad: 1 } },
+                { id: 'canned_fruit', name: 'Konserve Meyve', inputs: { fruit: 3, energy: 1 }, output: { canned_fruit: 1 } },
+                { id: 'cooked_meat', name: 'Pişmiş Et', inputs: { meat: 3, olive_oil: 1, energy: 1 }, output: { cooked_meat: 1 } },
+                { id: 'rice_dish', name: 'Pilav', inputs: { rice: 3, olive_oil: 1, energy: 1 }, output: { rice_dish: 1 } },
+                { id: 'meat_dish', name: 'Et Yemeği', inputs: { potato: 3, meat: 3, olive_oil: 1, energy: 1 }, output: { meat_dish: 1 } }
             ],
             'olive_oil': [
-                { id: 'olive_oil', name: 'Zeytinyağı', inputs: { olive: 3 }, output: { olive_oil: 1 } }
+                { id: 'olive_oil', name: 'Zeytinyağı', inputs: { olive: 3, energy: 1 }, output: { olive_oil: 1 } }
             ],
             'sweets': [
-                { id: 'energy_bar', name: 'Enerji Barı', inputs: { honey: 3, wheat: 3, fruit: 3, egg: 3, olive_oil: 1 }, output: { energy_bar: 1 } }
+                { id: 'energy_bar', name: 'Enerji Barı', inputs: { honey: 3, wheat: 3, fruit: 3, egg: 3, olive_oil: 1, energy: 1 }, output: { energy_bar: 1 } }
+            ],
+            'gold_factory': [
+                { id: 'gold_ingot', name: 'Altın Külçe', inputs: { gold_nugget: 30, energy: 1 }, output: { gold: 1 } }
             ],
             'wind_turbine': [
                 { id: 'wind_energy', name: 'Rüzgar Enerjisi', inputs: {}, output: { energy: 1 } }
@@ -452,15 +455,15 @@
         function renderStats() {
             // Resource Map for Raw Materials
             const resourceMap = {
-                'lumber': { raw: [{ name: 'Odun', key: 'wood' }] },
-                'brick': { raw: [{ name: 'Taş', key: 'stone' }] },
-                'glass': { raw: [{ name: 'Kum', key: 'sand' }] },
-                'concrete': { raw: [{ name: 'Kum', key: 'sand' }, { name: 'Taş', key: 'stone' }] },
-                'steel': { raw: [{ name: 'Demir', key: 'iron' }, { name: 'Kömür', key: 'coal' }] },
-                'bakery': { raw: [{ name: 'Buğday', key: 'wheat' }, { name: 'Yumurta', key: 'egg' }, { name: 'Meyve', key: 'fruit' }] },
-                'ready_food': { raw: [{ name: 'Sebze', key: 'vegetable' }, { name: 'Meyve', key: 'fruit' }, { name: 'Et', key: 'meat' }, { name: 'Zeytinyağı', key: 'olive_oil' }, { name: 'Pirinç', key: 'rice' }, { name: 'Patates', key: 'potato' }] },
-                'olive_oil': { raw: [{ name: 'Zeytin', key: 'olive' }] },
-                'sweets': { raw: [{ name: 'Bal', key: 'honey' }, { name: 'Buğday', key: 'wheat' }, { name: 'Meyve', key: 'fruit' }, { name: 'Yumurta', key: 'egg' }, { name: 'Zeytinyağı', key: 'olive_oil' }] },
+                'lumber': { raw: [{ name: 'Odun', key: 'wood' }, { name: 'Elektrik', key: 'energy' }] },
+                'brick': { raw: [{ name: 'Taş', key: 'stone' }, { name: 'Elektrik', key: 'energy' }] },
+                'glass': { raw: [{ name: 'Kum', key: 'sand' }, { name: 'Elektrik', key: 'energy' }] },
+                'concrete': { raw: [{ name: 'Kum', key: 'sand' }, { name: 'Taş', key: 'stone' }, { name: 'Elektrik', key: 'energy' }] },
+                'steel': { raw: [{ name: 'Demir', key: 'iron' }, { name: 'Kömür', key: 'coal' }, { name: 'Elektrik', key: 'energy' }] },
+                'bakery': { raw: [{ name: 'Buğday', key: 'wheat' }, { name: 'Yumurta', key: 'egg' }, { name: 'Meyve', key: 'fruit' }, { name: 'Elektrik', key: 'energy' }] },
+                'ready_food': { raw: [{ name: 'Sebze', key: 'vegetable' }, { name: 'Meyve', key: 'fruit' }, { name: 'Et', key: 'meat' }, { name: 'Zeytinyağı', key: 'olive_oil' }, { name: 'Pirinç', key: 'rice' }, { name: 'Patates', key: 'potato' }, { name: 'Elektrik', key: 'energy' }] },
+                'olive_oil': { raw: [{ name: 'Zeytin', key: 'olive' }, { name: 'Elektrik', key: 'energy' }] },
+                'sweets': { raw: [{ name: 'Bal', key: 'honey' }, { name: 'Buğday', key: 'wheat' }, { name: 'Meyve', key: 'fruit' }, { name: 'Yumurta', key: 'egg' }, { name: 'Zeytinyağı', key: 'olive_oil' }, { name: 'Elektrik', key: 'energy' }] },
                 'wind_turbine': { raw: [] },
                 'solar_plant': { raw: [] },
                 'coal_plant': { raw: [{ name: 'Kömür', key: 'coal' }] },
@@ -596,7 +599,7 @@
                 'lumber': 'Tahta', 'iron': 'Demir', 'gold': 'Altın', 'diamond': 'Elmas',
                 'oil': 'Petrol', 'coal': 'Kömür', 'stone': 'Taş', 'brick': 'Tuğla',
                 'sand': 'Kum', 'copper': 'Bakır', 'uranium': 'Uranyum', 'glass': 'Cam',
-                'concrete': 'Beton', 'steel': 'Çelik', 'agricultural': 'Ekin',
+                'concrete': 'Çimento', 'steel': 'Çelik', 'agricultural': 'Ekin',
                 'animal': 'Hayvan', 'food': 'Yemek', 'weapon': 'Silah', 'solar': 'Enerji',
                 'bakery': 'Ekmek', 'ready_food': 'Konserve', 'olive_oil': 'Zeytinyağı', 'sweets': 'Enerji Barı'
             };
@@ -607,7 +610,7 @@
                 'olive_oil': 'Zeytinyağı', 'energy_bar': 'Enerji Barı',
                 'wood': 'Odun', 'stone': 'Taş', 'iron': 'Demir', 'coal': 'Kömür', 'sand': 'Kum',
                 'copper': 'Bakır', 'gold_nugget': 'Altın', 'oil_barrel': 'Petrol', 'diamond': 'Elmas',
-                'lumber': 'Tahta', 'brick': 'Tuğla', 'glass': 'Cam', 'concrete': 'Beton', 'steel': 'Çelik',
+                'lumber': 'Tahta', 'brick': 'Tuğla', 'glass': 'Cam', 'concrete': 'Çimento', 'steel': 'Çelik',
                 'wheat': 'Buğday', 'egg': 'Yumurta', 'fruit': 'Meyve', 'vegetable': 'Sebze', 'meat': 'Et',
                 'rice': 'Pirinç', 'potato': 'Patates', 'olive': 'Zeytin', 'honey': 'Bal'
             };
@@ -794,7 +797,14 @@
                 return;
             }
 
-            document.querySelector('.m-desc').innerHTML = `Bu fabrikada çalışmak için <strong>10 Enerji</strong> harcayacaksınız. Karşılığında <strong>${factoryData.salary} ₺</strong> maaş kazanacaksınız.`;
+            let desc = `Bu fabrikada çalışmak için <strong>10 Enerji</strong> harcayacaksınız. Karşılığında <strong>${factoryData.salary} ₺</strong> maaş kazanacaksınız.`;
+            
+            const legacyFactories = ['lumber', 'brick', 'glass', 'concrete', 'steel'];
+            if (legacyFactories.includes(factoryData.mine_type)) {
+                desc += `<br><br><span style="color:var(--accent-cyan); font-size:0.9rem;">NOT: Üretim için fabrika deposundan Elektrik kullanılır.</span>`;
+            }
+
+            document.querySelector('.m-desc').innerHTML = desc;
             
             // Recipe Selection Logic
             const recipes = factoryRecipes[factoryData.mine_type];
@@ -837,7 +847,7 @@
                     const nameMap = {
                         wheat: 'Buğday', egg: 'Yumurta', fruit: 'Meyve', vegetable: 'Sebze',
                         meat: 'Et', olive_oil: 'Zeytinyağı', rice: 'Pirinç', potato: 'Patates',
-                        olive: 'Zeytin', honey: 'Bal'
+                        olive: 'Zeytin', honey: 'Bal', energy: 'Elektrik'
                     };
                     inputs.push(`${val} ${nameMap[key] || key}`);
                 }

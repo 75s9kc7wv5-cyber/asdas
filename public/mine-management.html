@@ -137,6 +137,33 @@
         .modal-content { background: #181818; width: 85%; padding: 25px; border-radius: 12px; border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-gold); }
         .m-title { font-size: 1.3rem; margin-bottom: 10px; color: #fff; font-weight: bold; }
         .m-price { font-size: 1.5rem; color: var(--accent-gold); font-weight: bold; margin: 15px 0; display: block; }
+        
+        .req-list { 
+            text-align: center; 
+            margin: 15px 0; 
+            background: #222; 
+            padding: 10px; 
+            border-radius: 8px; 
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+        }
+        .req-badge {
+            background: #333;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #ccc;
+            border: 1px solid #444;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .req-badge.ok { border-color: var(--accent-green); color: var(--accent-green); background: rgba(46, 204, 113, 0.1); }
+        .req-badge.fail { border-color: var(--accent); color: var(--accent); background: rgba(231, 76, 60, 0.1); }
+
         .m-btns { display: flex; gap: 10px; margin-top: 20px; }
         .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 1rem; }
         .btn-confirm { background: var(--accent-green); color: #000; }
@@ -285,6 +312,8 @@
                 <p class="m-desc">Kapasiteyi ve üretim hızını artırmak için madeni geliştir.</p>
                 <span class="m-price" id="uPrice">1.000.000 ₺</span>
                 
+                <div id="uReqs" class="req-list"></div>
+
                 <div class="m-btns">
                     <button class="m-btn btn-cancel" onclick="closeModal('upgradeModal')">İPTAL</button>
                     <button class="m-btn btn-confirm" onclick="startUpgrade()">ONAYLA</button>
@@ -326,6 +355,7 @@
         }
 
         let factory = {};
+        let userInventory = {};
 
         const fmt = (n) => n.toLocaleString('tr-TR');
 
@@ -374,15 +404,18 @@
         };
 
         function loadFactoryData() {
-            fetch(`/api/mines/detail/${mineId}?userId=${user.id}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (!data.success) {
-                        toastr.error(data.message);
-                        return;
-                    }
-                    
-                    const m = data.mine;
+            Promise.all([
+                fetch(`/api/mines/detail/${mineId}?userId=${user.id}`).then(res => res.json()),
+                fetch(`/api/inventory/${user.id}`).then(res => res.json())
+            ])
+            .then(([data, invData]) => {
+                if (!data.success) {
+                    toastr.error(data.message);
+                    return;
+                }
+                
+                userInventory = invData || {};
+                const m = data.mine;
                     // Security Check
                     if (m.owner_id !== user.id) {
                         toastr.error('Bu madene erişim yetkiniz yok!');
@@ -399,7 +432,8 @@
                         rawCap: m.raw_capacity || 1000,
                         prod: m.stock || 0, 
                         prodCap: m.product_capacity || 500,
-                        upgradeCost: (m.level + 1) * 5000, 
+                        upgradeCost: m.upgradeCost || (m.level + 1) * 5000, 
+                        upgradeRequirements: m.upgradeRequirements || {},
                         upgradeTime: 10, 
                         workers: m.workers,
                         maxWorkers: m.max_workers,
@@ -480,6 +514,28 @@
             document.getElementById('nextLvl').innerText = factory.level + 1;
             document.getElementById('uPrice').innerText = fmt(factory.upgradeCost) + " ₺";
             document.getElementById('upgradeBtn').innerText = `YÜKSELT (${fmt(factory.upgradeCost)} ₺)`;
+
+            // Requirements
+            const reqList = document.getElementById('uReqs');
+            if(reqList) {
+                reqList.innerHTML = '';
+                const matNames = {
+                    lumber: 'Tahta', brick: 'Tuğla', glass: 'Cam', concrete: 'Çimento', steel: 'Çelik'
+                };
+                
+                // Money
+                const moneyOk = user.money >= factory.upgradeCost;
+                reqList.innerHTML += `<div class="req-badge ${moneyOk ? 'ok' : 'fail'}">${fmt(factory.upgradeCost)} ₺</div>`;
+
+                if(factory.upgradeRequirements) {
+                    for(let [key, val] of Object.entries(factory.upgradeRequirements)) {
+                        const name = matNames[key] || key;
+                        const userAmount = userInventory[key] || 0;
+                        const ok = userAmount >= val;
+                        reqList.innerHTML += `<div class="req-badge ${ok ? 'ok' : 'fail'}">${val} ${name} (${userAmount})</div>`;
+                    }
+                }
+            }
         }
 
         function createCardHTML(type, item, amount, cap, action) {
@@ -513,7 +569,7 @@
                 'lumber': 'Tahta', 'iron': 'Demir', 'gold': 'Altın', 'diamond': 'Elmas',
                 'oil': 'Petrol', 'coal': 'Kömür', 'stone': 'Taş', 'brick': 'Tuğla',
                 'sand': 'Kum', 'copper': 'Bakır', 'uranium': 'Uranyum', 'glass': 'Cam',
-                'concrete': 'Beton', 'steel': 'Çelik', 'agricultural': 'Ekin',
+                'concrete': 'Çimento', 'steel': 'Çelik', 'agricultural': 'Ekin',
                 'animal': 'Hayvan', 'food': 'Yemek', 'weapon': 'Silah', 'solar': 'Enerji'
             };
             const productName = factory.type ? (typeMap[factory.type] || 'Ürün') : 'Ürün';

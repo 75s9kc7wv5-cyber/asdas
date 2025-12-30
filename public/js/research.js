@@ -19,9 +19,16 @@ const factoriesData = [
     { id: 'steel', name: 'Çelik Alaşımları', desc: 'Çelik üretim dayanıklılığını artırır.', image: 'icons/factory-icon/steel.png', colorClass: 'c-iron' },
     { id: 'agricultural', name: 'Modern Tarım', desc: 'Tarım ürünleri verimini artırır.', icon: 'fa-tractor', colorClass: 'c-wood' },
     { id: 'animal', name: 'Hayvancılık', desc: 'Hayvansal üretim hızını artırır.', icon: 'fa-egg', colorClass: 'c-wood' },
-    { id: 'food', name: 'Gıda İşleme', desc: 'Gıda paketleme hızını artırır.', icon: 'fa-burger', colorClass: 'c-wood' },
+    { id: 'bakery', name: 'Fırıncılık', desc: 'Ekmek ve pasta üretim hızını artırır.', image: 'icons/food-factory/bread.png', colorClass: 'c-wood' },
+    { id: 'ready_food', name: 'Hazır Gıda Teknolojisi', desc: 'Konserve ve yemek üretimini hızlandırır.', image: 'icons/food-factory/fruit-canned.png', colorClass: 'c-wood' },
+    { id: 'olive_oil', name: 'Zeytinyağı Presleme', desc: 'Zeytinyağı üretim verimini artırır.', image: 'icons/food-factory/olive-oil.png', colorClass: 'c-wood' },
+    { id: 'sweets', name: 'Şekerleme Üretimi', desc: 'Enerji barı üretimini optimize eder.', image: 'icons/food-factory/energy-bar.png', colorClass: 'c-wood' },
+    { id: 'gold_factory', name: 'Altın Külçe Fabrikası', desc: 'Altın külçe üretimini hızlandırır.', image: 'icons/inventory-icon/gold.png', colorClass: 'c-gold' },
     { id: 'weapon', name: 'Silah Teknolojisi', desc: 'Silah üretim hassasiyetini artırır.', icon: 'fa-jet-fighter', colorClass: 'c-iron' },
-    { id: 'solar', name: 'Güneş Panelleri', desc: 'Enerji üretim verimliliğini artırır.', icon: 'fa-solar-panel', colorClass: 'c-gold' }
+    { id: 'wind_turbine', name: 'Rüzgar Türbini', desc: 'Rüzgar enerjisi üretimini artırır.', image: 'icons/energy-factory-icon/wind-turbine.png', colorClass: 'c-sand' },
+    { id: 'solar_plant', name: 'Güneş Santrali', desc: 'Güneş enerjisi verimliliğini artırır.', image: 'icons/energy-factory-icon/solar-panel.png', colorClass: 'c-gold' },
+    { id: 'coal_plant', name: 'Termik Santral', desc: 'Kömürden enerji üretimini artırır.', image: 'icons/energy-factory-icon/fossil-fuel.png', colorClass: 'c-coal' },
+    { id: 'nuclear_plant', name: 'Nükleer Santral', desc: 'Nükleer enerji üretimini artırır.', image: 'icons/energy-factory-icon/nuclear-plant.png', colorClass: 'c-uranium' }
 ];
 
 let currentTab = 'mines';
