@@ -43,7 +43,7 @@
         .game-container {
             width: 100%; max-width: 450px; background-color: var(--bg-dark);
             /* Fixed position to fill space between header and footer */
-            position: fixed; top: 170px; bottom: 70px; height: auto;
+            position: fixed; top: 135px; bottom: 70px; height: auto;
             display: flex; flex-direction: column; 
             box-shadow: 0 0 40px rgba(0,0,0,0.5); border-left: 1px solid #111; border-right: 1px solid #111;
         }
@@ -54,16 +54,18 @@
         .chat-tabs {
             display: flex; background: var(--bg-card); border-bottom: 1px solid var(--border-color);
             overflow-x: auto; scrollbar-width: none; z-index: 15; flex-shrink: 0;
+            padding: 10px; gap: 10px;
         }
         .chat-tabs::-webkit-scrollbar { display: none; }
         
         .c-tab {
-            flex: 1; padding: 12px; text-align: center; font-size: 0.9rem; font-weight: 700;
-            color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap;
-            transition: all 0.2s;
+            flex: 1; padding: 8px 15px; text-align: center; font-size: 0.9rem; font-weight: 700;
+            color: var(--text-muted); cursor: pointer; 
+            border: 1px solid var(--border-color); border-radius: 5px; background: #222;
+            white-space: nowrap; transition: all 0.2s;
         }
-        .c-tab:hover { color: #fff; background: rgba(255,255,255,0.02); }
-        .c-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(0, 229, 255, 0.05); }
+        .c-tab:hover { color: #fff; background: #333; }
+        .c-tab.active { color: #000; background: var(--accent); border-color: var(--accent); }
 
         /* SOHBET ALANI */
         .chat-area {
@@ -176,7 +178,12 @@
         <div class="chat-tabs">
             <div class="c-tab active" onclick="switchTab('global', this)">GLOBAL</div>
             <div class="c-tab" onclick="switchTab('trade', this)">TİCARET</div>
-            <div class="c-tab" onclick="switchTab('clan', this)">KLAN</div>
+            <div class="c-tab" onclick="switchTab('clan', this)">PARTİM</div>
+        </div>
+
+        <!-- KANAL BAŞLIĞI (Sadece Partim sekmesinde görünür) -->
+        <div id="channelHeader" style="display:none; background:#1a1a1a; padding:8px; text-align:center; font-size:0.9rem; color:#ffd700; border-bottom:1px solid #222;">
+            <span id="partyNameDisplay"></span> Sohbet Alanı
         </div>
 
         <!-- MESAJ LİSTESİ -->
@@ -236,7 +243,7 @@
 
         async function fetchMessages() {
             try {
-                const response = await fetch(`/api/chat/messages?channel=${currentChannel}`);
+                const response = await fetch(`/api/chat/messages?channel=${currentChannel}&userId=${currentUser.id}`);
                 const messages = await response.json();
                 
                 renderMessages(messages);
@@ -251,9 +258,13 @@
             
             // container.innerHTML = ''; // REMOVED to prevent flickering
 
-            if (messages.length === 0) {
+            if (!messages || messages.length === 0) {
                 if (container.children.length === 0) {
-                    container.innerHTML = '<div class="message system" id="no-msg"><div class="msg-content"><div class="msg-text">Henüz mesaj yok.</div></div></div>';
+                    // Only show "No messages" if not in clan tab with no party
+                    // The clan tab logic handles its own "Not in party" message
+                    if (currentChannel !== 'clan' || (document.getElementById('channelHeader').style.display !== 'none')) {
+                         container.innerHTML = '<div class="message system" id="no-msg"><div class="msg-content"><div class="msg-text">Henüz mesaj yok.</div></div></div>';
+                    }
                 }
                 return;
             }
@@ -431,13 +442,58 @@
             area.scrollTop = area.scrollHeight;
         }
 
-        function switchTab(channel, btn) {
+        async function switchTab(channel, btn) {
             document.querySelectorAll('.c-tab').forEach(t => t.classList.remove('active'));
             btn.classList.add('active');
             
             currentChannel = channel;
             document.getElementById('chatList').innerHTML = ''; // Clear for new channel
-            fetchMessages();
+            
+            const header = document.getElementById('channelHeader');
+            const inputArea = document.querySelector('.input-area');
+            
+            // Reset UI first
+            header.style.display = 'none';
+            inputArea.style.display = 'flex';
+
+            if (channel === 'clan') {
+                // Check Party Status
+                const partyInfo = await checkPartyStatus();
+                
+                if (partyInfo && partyInfo.inParty) {
+                    header.style.display = 'block';
+                    document.getElementById('partyNameDisplay').innerText = partyInfo.name;
+                    fetchMessages();
+                } else {
+                    inputArea.style.display = 'none';
+                    document.getElementById('chatList').innerHTML = 
+                        '<div class="message system"><div class="msg-content"><div class="msg-text">Herhangi bir partiye üye değilsiniz.</div></div></div>';
+                }
+            } else {
+                fetchMessages();
+            }
+        }
+
+        async function checkPartyStatus() {
+            try {
+                // Get User Info first
+                const userRes = await fetch(`/api/user/me?userId=${currentUser.id}`);
+                const userData = await userRes.json();
+                
+                if (userData.success && userData.user.party_id) {
+                    // Get Party Info
+                    const partyRes = await fetch(`/api/parties/${userData.user.party_id}`);
+                    const partyData = await partyRes.json();
+                    
+                    if (partyData) {
+                        return { inParty: true, name: partyData.name };
+                    }
+                }
+                return { inParty: false };
+            } catch (e) {
+                console.error(e);
+                return { inParty: false };
+            }
         }
 
         function escapeHtml(text) {

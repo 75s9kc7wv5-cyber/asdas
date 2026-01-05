@@ -190,7 +190,7 @@
 
     <main>
         <div class="page-header" style="margin-bottom: 15px;">
-            <p class="page-desc" onclick="window.location.href='bank.html'" style="cursor:pointer; color: #888; font-size: 0.9rem;">&larr; Bankalara Dön</p>
+            <p class="page-desc" onclick="window.location.href='bank-list.html'" style="cursor:pointer; color: #888; font-size: 0.9rem;">&larr; Bankalara Dön</p>
         </div>
 
         <!-- Dijital Banka Kartı -->
@@ -498,13 +498,13 @@
                     // Account not found or closed
                     document.querySelector('main').innerHTML = `
                         <div class="page-header" style="margin-bottom: 15px;">
-                            <p class="page-desc" onclick="window.location.href='bank.html'" style="cursor:pointer; color: #888; font-size: 0.9rem;">&larr; Bankalara Dön</p>
+                            <p class="page-desc" onclick="window.location.href='bank-list.html'" style="cursor:pointer; color: #888; font-size: 0.9rem;">&larr; Bankalara Dön</p>
                         </div>
                         <div style="text-align:center; margin-top:50px;">
                             <i class="fas fa-university" style="font-size:3rem; color:#333; margin-bottom:20px;"></i>
                             <h3 style="color:#fff; margin-bottom:10px;">Hesap Bulunamadı</h3>
                             <p style="color:#888; margin-bottom:30px;">Bu bankada aktif bir hesabınız bulunmuyor.</p>
-                            <button class="btn-full" onclick="window.location.href='bank.html'" style="background:var(--success); color:#fff; max-width:200px; margin:0 auto;">HESAP AÇ</button>
+                            <button class="btn-full" onclick="window.location.href='bank-list.html'" style="background:var(--success); color:#fff; max-width:200px; margin:0 auto;">HESAP AÇ</button>
                         </div>
                     `;
                 }

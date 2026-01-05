@@ -98,34 +98,42 @@
         .h-stat i { font-size: 1.1rem; }
         .h-stat span { font-size: 0.95rem; font-weight: 600; color: #ddd; }
 
-        /* BED GRID */
-        .bed-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
+        /* BED GRID (Updated to match Mine Slots) */
+        .slots-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 25px; }
+
+        .slot-card {
+            background: rgba(20,20,20,0.8); border: 1px solid #333; border-radius: 8px;
+            padding: 10px 5px; text-align: center; position: relative; overflow: hidden;
+            transition: all 0.2s; cursor: pointer; min-height: 120px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        
+        /* Boş Slot */
+        .slot-empty:hover { border-color: var(--accent-green); background: rgba(46, 204, 113, 0.05); }
+        .slot-empty .slot-icon { font-size: 1.5rem; color: #333; margin-bottom: 5px; }
+        .slot-empty .slot-text { color: var(--accent-green); font-weight: 700; font-size: 0.8rem; line-height: 1.2; }
+
+        /* Dolu (Başka Oyuncu) */
+        .slot-occupied { border-color: #444; opacity: 0.7; cursor: not-allowed; }
+        .slot-occupied .slot-avatar { width: 35px; height: 35px; border-radius: 50%; border: 2px solid #555; margin-bottom: 5px; }
+        .slot-occupied .slot-text { color: #666; font-size: 0.7rem; }
+
+        /* Çalışıyor (Ben) */
+        .slot-working { border-color: var(--accent-green); background: rgba(46, 204, 113, 0.05); cursor: default; }
+        .slot-working .slot-icon { color: var(--accent-green); animation: pulse 1.5s infinite; font-size: 1.5rem; margin-bottom: 5px; }
+        .slot-timer-text { font-size: 0.9rem; font-weight: 800; color: #fff; margin-bottom: 5px; }
+        
+        /* Progress Bar */
+        .slot-progress-bg { 
+            width: 90%; height: 4px; background: #333; border-radius: 2px; 
+            overflow: hidden;
+        }
+        .slot-progress-fill { 
+            height: 100%; width: 0%; background: var(--accent-green); 
+            transition: width 1s linear; 
         }
 
-        .bed-item {
-            background: #222;
-            border: 2px solid #333;
-            border-radius: 10px;
-            padding: 15px;
-            text-align: center;
-            transition: all 0.3s;
-            position: relative;
-        }
-
-        .bed-item.empty { border-color: var(--accent-green); }
-        .bed-item.occupied { border-color: var(--accent-red); }
-
-        .bed-icon { font-size: 2rem; margin-bottom: 10px; }
-        .empty .bed-icon { color: var(--accent-green); }
-        .occupied .bed-icon { color: var(--accent-red); }
-
-        .bed-label { font-size: 0.8rem; color: #aaa; margin-bottom: 5px; }
-        .bed-timer { font-size: 1rem; font-weight: bold; color: #fff; }
-        .bed-user { font-size: 0.7rem; color: var(--accent-gold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
 
         .main-action-area {
             text-align: center;
@@ -202,8 +210,34 @@
         .m-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; color: #fff; }
         .m-text { color: #aaa; margin-bottom: 20px; font-size: 0.9rem; }
         .m-price { color: var(--accent-gold); font-weight: bold; font-size: 1.1rem; margin: 10px 0; }
-        .m-btns { display: flex; gap: 10px; justify-content: center; }
-        .m-btn { padding: 8px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; }
+        .m-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 1rem; }
+        
+        /* MODAL BADGES */
+        .modal-badge-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .modal-badge {
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 8px 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 80px;
+        }
+        .mb-icon { font-size: 1.2rem; width: 24px; height: 24px; object-fit: contain; }
+        .mb-content { display: flex; flex-direction: column; align-items: flex-start; }
+        .mb-label { font-size: 0.6rem; color: #aaa; text-transform: uppercase; line-height: 1; margin-bottom: 2px; white-space: nowrap; }
+        .mb-val { font-size: 0.85rem; font-weight: bold; color: #fff; line-height: 1; white-space: nowrap; }
+        
+        .badge-time { background: rgba(0, 229, 255, 0.1); border-color: rgba(0, 229, 255, 0.3); }
+        .badge-cost { background: rgba(255, 215, 0, 0.1); border-color: rgba(255, 215, 0, 0.3); }
+        .badge-gain { background: rgba(46, 204, 113, 0.1); border-color: rgba(46, 204, 113, 0.3); }
         
         @keyframes pulse-red {
             0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
@@ -225,11 +259,11 @@
                 <div class="h-name">Yükleniyor...</div>
             </div>
 
-            <div class="main-action-area">
-                <button id="mainTreatBtn" class="btn-treatment" onclick="openModal()">TEDAVİ OL</button>
+            <div class="instruction-text" style="text-align:center; color:#888; margin-bottom:15px; font-size:0.9rem;">
+                <i class="fas fa-info-circle"></i> Tedavi olmak için boş bir yatak slotuna tıklayın.
             </div>
 
-            <div id="bedGrid" class="bed-grid">
+            <div id="slotsGrid" class="slots-container">
                 <!-- JS ile doldurulacak -->
             </div>
 
@@ -244,13 +278,35 @@
         <!-- CONFIRM MODAL -->
         <div class="modal-overlay" id="treatmentModal">
             <div class="modal-content">
-                <i class="fas fa-procedures" style="font-size:3rem; color:var(--accent-cyan); margin-bottom:10px;"></i>
-                <div class="m-title">TEDAVİ OL</div>
+                <div class="m-title">TEDAVİ ONAYI</div>
                 <div class="m-text">
-                    Tedavi olmak istiyor musunuz? Süre: 1 Dakika.<br>
-                    <span style="color:var(--accent-green)">İyileşme: +<span id="healAmountInfo">10</span> Can</span>
+                    Seçilen yatakta tedavi olmak istiyor musunuz?
                 </div>
-                <div class="m-price" id="modalPrice">100 ₺</div>
+                
+                <div class="modal-badge-container">
+                    <div class="modal-badge badge-time">
+                        <i class="fas fa-clock mb-icon" style="color:var(--accent-cyan)"></i>
+                        <div class="mb-content">
+                            <span class="mb-label">SÜRE</span>
+                            <span class="mb-val" id="modalDuration">10 Dk</span>
+                        </div>
+                    </div>
+                    <div class="modal-badge badge-cost">
+                        <img src="icons/inventory-icon/money.png" class="mb-icon">
+                        <div class="mb-content">
+                            <span class="mb-label">TEDAVİ ÜCRETİ</span>
+                            <span class="mb-val" id="modalPrice">100 ₺</span>
+                        </div>
+                    </div>
+                    <div class="modal-badge badge-gain">
+                        <i class="fas fa-heart mb-icon" style="color:var(--accent-green)"></i>
+                        <div class="mb-content">
+                            <span class="mb-label">KAZANIM</span>
+                            <span class="mb-val">+100 CAN</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="m-btns">
                     <button class="m-btn" style="background:#333; color:#fff;" onclick="closeModal()">İPTAL</button>
                     <button class="m-btn" style="background:var(--accent-green); color:#000;" onclick="startTreatment()">ONAYLA</button>
@@ -271,7 +327,7 @@
         async function initPage() {
             if (!hospitalId) {
                 toastr.error('Hastane ID bulunamadı.');
-                setTimeout(() => window.location.href = 'hospital.html', 2000);
+                setTimeout(() => window.location.href = 'hospital-list.html', 2000);
                 return;
             }
             currentUser = JSON.parse(localStorage.getItem('simWorldUser'));
@@ -279,6 +335,8 @@
             // Refresh every 2 seconds for realtime feel
             setInterval(loadHospitalDetails, 2000);
         }
+
+        let timeOffset = 0;
 
         async function loadHospitalDetails() {
             try {
@@ -288,6 +346,12 @@
                 if (result.success) {
                     hospitalData = result.data;
                     activeTreatments = result.activeTreatments || [];
+                    
+                    // Calculate time offset (Server Time - Client Time)
+                    if (result.serverTime) {
+                        timeOffset = result.serverTime - Date.now();
+                    }
+
                     renderHospitalInfo();
                     renderBeds();
                     renderHistory(result.history);
@@ -299,12 +363,16 @@
 
         function renderHospitalInfo() {
             const h = hospitalData;
-            const duration = Math.max(3, 20 - (h.level - 1) * 2);
+            const duration = h.treatment_duration || 15;
+            const regen = h.health_regen || 100;
             
             document.getElementById('hospitalInfo').innerHTML = `
+                <div style="text-align: center; margin-bottom: 10px;">
+                    <img src="icons/hospital-icon/hospital.png" style="width: 60px; height: 60px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(0,229,255,0.4));">
+                </div>
                 <div class="h-level-badge">SEVİYE ${h.level}</div>
                 <div class="h-name">${h.name}</div>
-                <div class="h-owner"><i class="fas fa-user-md"></i> Sahibi: <a href="profile.html?id=${h.owner_id}" style="color:var(--accent-cyan); text-decoration:none;">${h.owner_name}</a></div>
+                <div class="h-owner"><i class="fas fa-user-md"></i> Sahibi: <a href="profile.html?id=${h.user_id}" style="color:var(--accent-cyan); text-decoration:none;">${h.owner_name}</a></div>
                 <div class="h-stats">
                     <div class="h-stat">
                         <i class="fas fa-bed" style="color:var(--accent-cyan)"></i> 
@@ -312,15 +380,15 @@
                     </div>
                     <div class="h-stat">
                         <i class="fas fa-heart" style="color:var(--accent-red)"></i> 
-                        <span>%100 Can</span>
+                        <span>%${regen} Can</span>
                     </div>
                     <div class="h-stat">
                         <i class="fas fa-clock" style="color:var(--accent-gold)"></i> 
-                        <span>${duration} Dk</span>
+                        <span>Tedavi Süresi: ${duration} Dk</span>
                     </div>
                     <div class="h-stat">
                         <i class="fas fa-tag" style="color:var(--accent-green)"></i> 
-                        <span>${h.treatment_price} ₺</span>
+                        <span>Tedavi Ücreti: ${h.price} ₺</span>
                     </div>
                 </div>
             `;
@@ -329,8 +397,8 @@
         let timerInterval;
 
         function renderBeds() {
-            const container = document.getElementById('bedGrid');
-            const now = Date.now();
+            const container = document.getElementById('slotsGrid');
+            const now = Date.now() + timeOffset; // Use server time
             let html = '';
             let occupiedCount = 0;
             let userIsBeingTreated = false;
@@ -338,8 +406,21 @@
             // Map active treatments by bed_index
             const treatmentMap = {};
             activeTreatments.forEach(t => {
-                const endTime = new Date(t.end_time).getTime();
-                if (endTime > now) {
+                // Use time_left_seconds from server if available
+                let timeLeftSeconds = t.time_left_seconds;
+                
+                console.log(`Treatment for user ${t.user_id}: Server says ${timeLeftSeconds} seconds left.`);
+
+                // Fallback if not available (though it should be)
+                if (timeLeftSeconds === undefined || timeLeftSeconds === null) {
+                    const endTime = new Date(t.end_time).getTime();
+                    timeLeftSeconds = (endTime - now) / 1000;
+                    console.log(`Fallback calculation: ${timeLeftSeconds} seconds left.`);
+                }
+
+                if (timeLeftSeconds > 0) {
+                    // Store calculated end time for client-side countdown
+                    t.clientEndTime = Date.now() + (timeLeftSeconds * 1000);
                     treatmentMap[t.bed_index] = t;
                     occupiedCount++;
                     if (currentUser && t.user_id === currentUser.id) {
@@ -354,59 +435,37 @@
                 
                 let content = '';
                 if (isOccupied) {
-                    const endTime = new Date(treatment.end_time).getTime();
-                    const timeLeft = Math.max(0, Math.ceil((endTime - now) / 1000));
-                    
+                    const endTime = treatment.clientEndTime;
+                    const timeLeft = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
                     const minutes = Math.floor(timeLeft / 60);
                     const seconds = timeLeft % 60;
                     const timeStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                    const isMe = currentUser && treatment.user_id === currentUser.id;
+                    let avatarUrl = treatment.avatar || 'uploads/avatars/default.png';
+                    if (avatarUrl === 'default-avatar.png') avatarUrl = 'uploads/avatars/default.png';
+                    if (!avatarUrl.startsWith('uploads/') && !avatarUrl.startsWith('http')) avatarUrl = 'uploads/avatars/' + avatarUrl;
                     
-                    // Animation class if time is low
-                    const pulseClass = timeLeft < 10 ? 'pulse-red' : '';
+                    let slotClass = isMe ? 'slot-working' : 'slot-occupied';
 
                     content = `
-                        <div class="bed-item occupied ${pulseClass}">
-                            <i class="fas fa-procedures bed-icon"></i>
-                            <div class="bed-label">Yatak ${i}</div>
-                            <div class="bed-timer" id="timer-bed-${i}" data-end="${endTime}">${timeStr}</div>
-                            <div class="bed-user"><a href="profile.html?id=${treatment.user_id}" style="color:var(--accent-cyan); text-decoration:none;">${treatment.username}</a></div>
-                            ${treatment.user_id === currentUser.id ? '<div style="font-size:0.7rem; color:var(--accent-green); margin-top:5px;">(SİZ)</div>' : ''}
+                        <div class="slot-card ${slotClass}">
+                            <img src="${avatarUrl}" class="slot-avatar" style="width:40px; height:40px; border-radius:50%; margin-bottom:5px; border:2px solid ${isMe ? 'var(--accent-green)' : '#444'}">
+                            <div class="slot-text" style="font-size:0.8rem; font-weight:bold; color:#fff; margin-bottom:2px;">#${treatment.user_id} - ${treatment.username}</div>
+                            <div class="slot-timer-text bed-timer" id="timer-bed-${i}" data-end="${endTime}">${timeStr}</div>
                         </div>
                     `;
                 } else {
                     content = `
-                        <div class="bed-item empty">
-                            <i class="fas fa-procedures bed-icon"></i>
-                            <div class="bed-label">Yatak ${i}</div>
-                            <div class="bed-timer" style="color:#aaa;">BOŞ</div>
+                        <div class="slot-card slot-empty" onclick="openModal(${i})">
+                            <i class="fas fa-plus-circle slot-icon"></i>
+                            <div class="slot-text">BOŞ<br>YATAK</div>
                         </div>
                     `;
                 }
                 html += content;
             }
             container.innerHTML = html;
-
-            // Update Main Button
-            const btn = document.getElementById('mainTreatBtn');
-            if (userIsBeingTreated) {
-                btn.disabled = true;
-                btn.innerText = 'TEDAVİ SÜRÜYOR...';
-                btn.style.background = '#333';
-                btn.style.color = '#888';
-                btn.style.boxShadow = 'none';
-            } else if (occupiedCount >= hospitalData.capacity) {
-                btn.disabled = true;
-                btn.innerText = 'KAPASİTE DOLU';
-                btn.style.background = '#333';
-                btn.style.color = '#888';
-                btn.style.boxShadow = 'none';
-            } else {
-                btn.disabled = false;
-                btn.innerText = 'TEDAVİ OL';
-                btn.style.background = 'linear-gradient(45deg, #27ae60, #2ecc71)';
-                btn.style.color = '#fff';
-                btn.style.boxShadow = '0 5px 15px rgba(46, 204, 113, 0.3)';
-            }
             
             startClientTimers();
         }
@@ -423,9 +482,9 @@
 
                 timers.forEach(t => {
                     const endTime = parseInt(t.getAttribute('data-end'));
-                    const now = Date.now();
+                    const now = Date.now(); // Use local time since endTime is adjusted
                     const timeLeft = Math.max(0, Math.ceil((endTime - now) / 1000));
-
+                    
                     if (timeLeft <= 0) {
                         t.innerText = "Bitti";
                         // Refresh page shortly after to clear bed
@@ -449,14 +508,20 @@
             let html = '';
             history.forEach(item => {
                 const date = new Date(item.created_at);
-                const dateStr = date.toLocaleString('tr-TR');
+                const dateStr = date.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                let avatar = item.avatar || 'uploads/avatars/default.png';
+                if (avatar === 'default-avatar.png') avatar = 'uploads/avatars/default.png';
+                if (!avatar.startsWith('uploads/') && !avatar.startsWith('http')) avatar = 'uploads/avatars/' + avatar;
+
+                const userId = item.user_id || '?';
                 
                 html += `
-                    <div class="hs-item">
-                        <span class="hs-text">
-                            <span style="color:var(--accent-cyan)">#${item.id}</span> - 
-                            <span style="color:var(--accent-gold)">${item.patient_name}</span> 
-                            <span style="color:#aaa">${dateStr} tarihinde tedavi olmuştur.</span>
+                    <div class="hs-item" style="display:flex; align-items:center; gap:10px;">
+                        <img src="${avatar}" style="width:30px; height:30px; border-radius:50%; border:1px solid #444;">
+                        <span class="hs-text" style="flex:1;">
+                            <a href="profile.html?id=${userId}" style="color:var(--accent-cyan); text-decoration:none; font-weight:bold;">#${userId} - ${item.patient_name}</a> 
+                            <span style="color:#aaa; margin-left:5px;">${dateStr} ${timeStr} tarihinde tedavi oldu.</span>
                         </span>
                     </div>
                 `;
@@ -464,34 +529,34 @@
             container.innerHTML = html;
         }
 
-        function openModal() {
-            document.getElementById('modalPrice').innerText = `${hospitalData.treatment_price} ₺`;
-            const duration = Math.max(3, 20 - (hospitalData.level - 1) * 2);
+        let selectedBedIndex = null;
+
+        function openModal(bedIndex) {
+            selectedBedIndex = bedIndex;
+            const duration = hospitalData.treatment_duration || 15;
+            const regen = hospitalData.health_regen || 100;
             
-            document.getElementById('treatmentModal').innerHTML = `
-                <div class="modal-content">
-                    <i class="fas fa-procedures" style="font-size:3rem; color:var(--accent-cyan); margin-bottom:10px;"></i>
-                    <div class="m-title">TEDAVİ OL</div>
-                    <div class="m-text">
-                        Tedavi olmak istiyor musunuz? Süre: ${duration} Dakika.<br>
-                        <span style="color:var(--accent-green)">İyileşme: %100 Can</span>
-                    </div>
-                    <div class="m-price" id="modalPrice">${hospitalData.treatment_price} ₺</div>
-                    <div class="m-btns">
-                        <button class="m-btn" style="background:#333; color:#fff;" onclick="closeModal()">İPTAL</button>
-                        <button class="m-btn" style="background:var(--accent-green); color:#000;" onclick="startTreatment()">ONAYLA</button>
-                    </div>
-                </div>
-            `;
+            document.getElementById('modalDuration').innerText = `${duration} Dk`;
+            document.getElementById('modalPrice').innerText = `${hospitalData.price} ₺`;
+            
+            // Update gain badge if exists or add logic for it
+            const gainBadge = document.querySelector('.badge-gain .mb-val');
+            if(gainBadge) gainBadge.innerText = `+${regen} CAN`;
+
             document.getElementById('treatmentModal').style.display = 'flex';
         }
 
         function closeModal() {
             document.getElementById('treatmentModal').style.display = 'none';
+            selectedBedIndex = null;
         }
 
         async function startTreatment() {
             if (!currentUser) return;
+            if (!selectedBedIndex) {
+                toastr.error('Yatak seçimi hatası.');
+                return;
+            }
 
             try {
                 const response = await fetch('/api/hospital/treat', {
@@ -499,7 +564,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         userId: currentUser.id, 
-                        hospitalId: hospitalId
+                        hospitalId: hospitalId,
+                        bedIndex: selectedBedIndex
                     })
                 });
                 const result = await response.json();

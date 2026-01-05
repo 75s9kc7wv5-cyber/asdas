@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bank Account Debug</title>
+</head>
+<body>
+    <h2>Bank Account Debug Tool</h2>
+    <div id="output"></div>
+    
+    <script>
+    const output = document.getElementById('output');
+    
+    // Get user from localStorage
+    const user = JSON.parse(localStorage.getItem('simWorldUser'));
+    output.innerHTML += `<p><strong>LocalStorage User:</strong> ${JSON.stringify(user, null, 2)}</p>`;
+    
+    // Get URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const bankId = urlParams.get('bank_id');
+    output.innerHTML += `<p><strong>URL bank_id:</strong> ${bankId}</p>`;
+    
+    if (user) {
+        const userId = user.id;
+        output.innerHTML += `<p><strong>User ID:</strong> ${userId}</p>`;
+        
+        // Test API call
+        output.innerHTML += `<p><strong>API URL:</strong> /api/bank-accounts/${userId}/${bankId || 'undefined'}</p>`;
+        
+        if (bankId) {
+            fetch(`/api/bank-accounts/${userId}/${bankId}`)
+                .then(res => res.json())
+                .then(data => {
+                    output.innerHTML += `<p><strong>API Response:</strong></p><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                })
+                .catch(err => {
+                    output.innerHTML += `<p><strong>API Error:</strong> ${err}</p>`;
+                });
+        } else {
+            output.innerHTML += `<p style="color:red;"><strong>ERROR:</strong> bank_id is missing in URL!</p>`;
+            output.innerHTML += `<p>Try accessing this page with: debug_bank_account.html?bank_id=1</p>`;
+        }
+    } else {
+        output.innerHTML += `<p style="color:red;"><strong>ERROR:</strong> User not logged in!</p>`;
+    }
+    </script>
+</body>
+</html>

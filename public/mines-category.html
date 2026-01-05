@@ -6,6 +6,7 @@
     <title>Sim of World - Maden Bölgeleri</title>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <link rel="stylesheet" href="css/global-menu.css">
     
     <style>
@@ -17,6 +18,7 @@
             --accent-red: #e74c3c;
             --accent-gold: #ffd700;
             --accent-orange: #e67e22;
+            --accent-purple: #9b59b6;
             --text-white: #ffffff;
             --text-muted: #888;
             --card-bg: rgba(30, 30, 30, 0.95);
@@ -57,9 +59,28 @@
         .tab-btn.active { background: #222; color: var(--accent-cyan); box-shadow: 0 0 10px rgba(0, 229, 255, 0.1); }
 
         /* PAGE TITLE */
-        .section-header { text-align: center; margin-bottom: 20px; animation: fadeIn 0.5s; }
-        .section-title { font-size: 1.1rem; letter-spacing: 1px; color: #fff; margin-bottom: 5px; }
-        .section-desc { font-size: 0.8rem; color: var(--text-muted); }
+        .section-header { text-align: center; margin-bottom: 25px; animation: fadeIn 0.5s; }
+        .header-badge {
+            display: inline-block;
+            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(10,10,10,0.95) 100%);
+            border: 1px solid #333;
+            border-top: 3px solid var(--accent-purple);
+            padding: 15px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .header-badge::after {
+            content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+            width: 60%; height: 2px; background: radial-gradient(circle, var(--accent-purple) 0%, transparent 100%);
+            opacity: 0.5;
+        }
+        .section-title { 
+            font-size: 1.4rem; font-weight: 800; letter-spacing: 2px; color: #fff; margin-bottom: 5px; 
+            text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 10px;
+            text-shadow: 0 0 15px rgba(155, 89, 182, 0.4);
+        }
+        .section-desc { font-size: 0.85rem; color: #999; font-weight: 500; }
 
         /* MINE GRID */
         .mine-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; animation: slideUp 0.6s ease; }
@@ -190,6 +211,50 @@
         .nav-item i { font-size: 1.4rem; margin-bottom: 3px; }
         .nav-item.active { color: var(--accent-cyan); }
 
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 2000;
+            display: none; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: #181818; width: 90%; max-width: 400px; padding: 25px; border-radius: 10px;
+            border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-gold);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
+        }
+        .req-list { 
+            text-align: center; 
+            margin: 20px 0; 
+            background: #222; 
+            padding: 15px; 
+            border-radius: 8px; 
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        .req-badge {
+            background: #333;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #ccc;
+            border: 1px solid #444;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .req-badge.ok { border-color: var(--accent-green); color: var(--accent-green); background: rgba(46, 204, 113, 0.1); }
+        .req-badge.fail { border-color: var(--accent-red); color: var(--accent-red); background: rgba(231, 76, 60, 0.1); }
+        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; }
+        .btn-confirm { background: var(--accent-green); color: #000; }
+        .btn-cancel { background: #333; color: #fff; }
+        .btn-confirm:disabled { background: #444; color: #888; cursor: not-allowed; }
+
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
@@ -201,16 +266,18 @@
         <!-- Header removed, injected by header-manager.js -->
 
         <main>
+            <div class="section-header">
+                <div class="header-badge">
+                    <div class="section-title"><i class="fas fa-gem" style="color:var(--accent-purple)"></i> MADEN BÖLGELERİ</div>
+                    <div class="section-desc">Maden kategorilerini inceleyebilir veya sahip olduğun madenleri görebilirsin.</div>
+                </div>
+            </div>
             <div class="tabs-container">
                 <button class="tab-btn active" onclick="switchTab('categories')">MADEN KATEGORİLERİ</button>
                 <button class="tab-btn" onclick="switchTab('my-mines')">MADENLERİM</button>
             </div>
 
             <div id="tab-categories">
-                <div class="section-header">
-                    <h2 class="section-title">MADEN KATEGORİLERİ</h2>
-                    <p class="section-desc">İşletmek istediğin maden türünü seç.</p>
-                </div>
 
                 <div id="minesContainer">
                     <!-- JS ile doldurulacak -->
@@ -222,24 +289,45 @@
                 <div id="myMinesList"></div>
             </div>
 
+            <!-- BUY MODAL -->
+            <div class="modal-overlay" id="buyModal">
+                <div class="modal-content">
+                    <h3 style="color:#fff; margin-bottom:10px;" id="mTitle">Maden Satın Al</h3>
+                    <p style="color:#888; font-size:0.9rem;">Bu madeni işletmek için gereksinimleri karşılamalısınız.</p>
+                    
+                    <div class="req-list" id="reqList">
+                        <!-- Requirements here -->
+                    </div>
+
+                    <div class="modal-btns">
+                        <button class="m-btn btn-cancel" onclick="closeModal()">İPTAL</button>
+                        <button class="m-btn btn-confirm" id="btnConfirmBuy" onclick="confirmBuy()">SATIN AL</button>
+                    </div>
+                </div>
+            </div>
+
         </main>
 
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script>
-        // Veriler
+        toastr.options = { "positionClass": "toast-top-right", "timeOut": "3000" };
+
+        // Veriler (Fiyatlar mine-list.html ile aynı)
         const mineTypes = [
-            { id: 'wood', category: 'basic', name: 'Odun Kampı', img: 'icons/mine-icon/wood.png', color: 'type-basic' },
-            { id: 'stone', category: 'basic', name: 'Taş Ocağı', img: 'icons/mine-icon/stone.png', color: 'type-basic' },
-            { id: 'sand', category: 'basic', name: 'Kum Madeni', img: 'icons/mine-icon/sand.png', color: 'type-basic' },
+            { id: 'wood', category: 'basic', name: 'Odun Kampı', img: 'icons/mine-icon/wood.png', color: 'type-basic', reqLevel: 1, costMoney: 1000, costGold: 0, costDiamond: 0 },
+            { id: 'stone', category: 'basic', name: 'Taş Ocağı', img: 'icons/mine-icon/stone.png', color: 'type-basic', reqLevel: 5, costMoney: 2000, costGold: 0, costDiamond: 0 },
+            { id: 'sand', category: 'basic', name: 'Kum Madeni', img: 'icons/mine-icon/sand.png', color: 'type-basic', reqLevel: 25, costMoney: 9000, costGold: 25, costDiamond: 0 },
             
-            { id: 'iron', category: 'industrial', name: 'Demir Madeni', img: 'icons/mine-icon/iron.png', color: 'type-industrial' },
-            { id: 'coal', category: 'industrial', name: 'Kömür Madeni', img: 'icons/mine-icon/coal.png', color: 'type-industrial' },
-            { id: 'copper', category: 'industrial', name: 'Bakır Madeni', img: 'icons/mine-icon/copper.png', color: 'type-industrial' },
+            { id: 'iron', category: 'industrial', name: 'Demir Madeni', img: 'icons/mine-icon/iron.png', color: 'type-industrial', reqLevel: 15, costMoney: 5000, costGold: 10, costDiamond: 0 },
+            { id: 'coal', category: 'industrial', name: 'Kömür Madeni', img: 'icons/mine-icon/coal.png', color: 'type-industrial', reqLevel: 20, costMoney: 8000, costGold: 20, costDiamond: 0 },
+            { id: 'copper', category: 'industrial', name: 'Bakır Madeni', img: 'icons/mine-icon/copper.png', color: 'type-industrial', reqLevel: 30, costMoney: 10000, costGold: 30, costDiamond: 0 },
             
-            { id: 'gold', category: 'precious', name: 'Altın Madeni', img: 'icons/mine-icon/gold-nugget.png', color: 'type-precious' },
-            { id: 'oil', category: 'precious', name: 'Petrol Kuyusu', img: 'icons/mine-icon/oil-barrel.png', color: 'type-precious' },
-            { id: 'uranium', category: 'precious', name: 'Uranyum Madeni', img: 'icons/mine-icon/uranium.png', color: 'type-precious' }
+            { id: 'gold', category: 'precious', name: 'Altın Madeni', img: 'icons/mine-icon/gold-nugget.png', color: 'type-precious', reqLevel: 40, costMoney: 25000, costGold: 50, costDiamond: 5 },
+            { id: 'oil', category: 'precious', name: 'Petrol Kuyusu', img: 'icons/mine-icon/oil-barrel.png', color: 'type-precious', reqLevel: 50, costMoney: 15000, costGold: 40, costDiamond: 10 },
+            { id: 'uranium', category: 'precious', name: 'Uranyum Madeni', img: 'icons/mine-icon/uranium.png', color: 'type-precious', reqLevel: 80, costMoney: 50000, costGold: 100, costDiamond: 20 }
         ];
 
         const categories = [
@@ -248,11 +336,47 @@
             { id: 'precious', name: 'DEĞERLİ & ENERJİ', icon: 'fa-gem', color: 'h-precious' }
         ];
 
+        let userData = {};
+        let userLicenses = {};
+        let userMines = [];
+        let selectedMine = null;
+
+        async function fetchUserData(userId) {
+             try {
+                const res = await fetch(`/api/profile/${userId}`);
+                if (res.ok) {
+                    const json = await res.json();
+                    userData = json.user || json;
+                }
+            } catch (e) { console.error(e); }
+        }
+        
+        async function fetchUserLicenses(userId) {
+             try {
+                const res = await fetch(`/api/licenses/${userId}`);
+                if (res.ok) {
+                    userLicenses = await res.json();
+                }
+            } catch (e) { console.error(e); }
+        }
+
         async function loadMines() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) return;
+
             try {
+                await Promise.all([
+                    fetchUserData(user.id),
+                    fetchUserLicenses(user.id)
+                ]);
+
                 // Fetch all city mines to count them
                 const res = await fetch('/api/mines/city');
                 const allMines = await res.json();
+
+                // Fetch My Mines
+                const mRes = await fetch(`/api/mines/my/${user.id}`);
+                userMines = await mRes.json();
 
                 // Count mines by type
                 const counts = {};
@@ -323,12 +447,133 @@
             });
         }
 
+        // Modal Logic
+        function openBuyModal(mineId) {
+            const mine = mineTypes.find(m => m.id === mineId);
+            if (!mine) return;
+            selectedMine = mine;
+
+            document.getElementById('mTitle').innerText = `${mine.name} Satın Al`;
+            const reqList = document.getElementById('reqList');
+            reqList.innerHTML = '';
+
+            // 1. Money
+            const userMoney = userData.money || 0;
+            const moneyOk = userMoney >= mine.costMoney;
+            reqList.innerHTML += `
+                <div class="req-badge ${moneyOk ? 'ok' : 'fail'}">
+                    ${moneyOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>'} 
+                    ${mine.costMoney.toLocaleString()} ₺
+                </div>
+            `;
+
+            // 2. Gold
+            if (mine.costGold > 0) {
+                const userGold = userData.gold || 0;
+                const goldOk = userGold >= mine.costGold;
+                reqList.innerHTML += `
+                    <div class="req-badge ${goldOk ? 'ok' : 'fail'}">
+                        ${goldOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>'} 
+                        ${mine.costGold} Altın
+                    </div>
+                `;
+            }
+
+            // 3. Diamond
+            if (mine.costDiamond > 0) {
+                const userDiamond = userData.diamond || 0;
+                const diaOk = userDiamond >= mine.costDiamond;
+                reqList.innerHTML += `
+                    <div class="req-badge ${diaOk ? 'ok' : 'fail'}">
+                        ${diaOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>'} 
+                        ${mine.costDiamond} Elmas
+                    </div>
+                `;
+            }
+
+            // 4. Education Skill (Level)
+            const userLevel = userData.education_skill || 1;
+            const levelOk = userLevel >= mine.reqLevel;
+            reqList.innerHTML += `
+                <div class="req-badge ${levelOk ? 'ok' : 'fail'}">
+                    ${levelOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>'} 
+                    Eğitim Seviyesi: ${mine.reqLevel}
+                </div>
+            `;
+
+            // 5. License
+            const licLevel = userLicenses[mine.id] || 0;
+            const licOk = licLevel >= 1;
+            reqList.innerHTML += `
+                <div class="req-badge ${licOk ? 'ok' : 'fail'}">
+                    ${licOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>'} 
+                    1. Seviye ${mine.name} Lisansı
+                </div>
+            `;
+
+            document.getElementById('buyModal').classList.add('active');
+            document.getElementById('buyModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('buyModal').classList.remove('active');
+            document.getElementById('buyModal').style.display = 'none';
+            selectedMine = null;
+        }
+
+        async function confirmBuy() {
+            if (!selectedMine) return;
+            
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) return;
+
+            const btn = document.getElementById('btnConfirmBuy');
+            btn.disabled = true;
+            btn.innerText = 'İşleniyor...';
+
+            try {
+                const res = await fetch('/api/mines/buy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: user.id,
+                        mineType: selectedMine.id
+                    })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    toastr.success(data.message);
+                    closeModal();
+                    // Refresh safely
+                    try {
+                        await loadMines();
+                        // If My Mines tab is active, refresh it too
+                        if (document.getElementById('tab-my-mines').style.display !== 'none') {
+                            loadMyMines();
+                        }
+                        if(window.updateHeader) window.updateHeader();
+                    } catch (refreshErr) {
+                        console.error('Refresh error:', refreshErr);
+                    }
+                } else {
+                    toastr.error(data.message);
+                }
+            } catch (error) {
+                console.error(error);
+                toastr.error('Satın alma hatası.');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'SATIN AL';
+            }
+        }
+
         // Tab Değiştirme
         function switchTab(tabName) {
             // Update Buttons
             document.querySelectorAll('.tab-btn').forEach(b => {
                 b.classList.remove('active');
-                // Simple check based on text or index would be better but let's rely on onclick context or manual update
                 if (tabName === 'categories' && b.innerText.includes('KATEGORİ')) b.classList.add('active');
                 if (tabName === 'my-mines' && b.innerText.includes('MADENLERİM')) b.classList.add('active');
             });
@@ -351,53 +596,47 @@
             container.innerHTML = '<div style="text-align:center; padding:20px;">Yükleniyor...</div>';
 
             try {
-                const res = await fetch(`/api/mines/my/${user.id}`);
-                const allMines = await res.json();
-
-                // Filter out non-mine types (factories etc.)
-                const validMineTypes = mineTypes.map(t => t.id);
-                const myMines = allMines.filter(m => validMineTypes.includes(m.mine_type));
-
-                if (myMines.length === 0) {
-                    container.innerHTML = `
-                        <div style="text-align:center; color:#666; padding-top:50px;">
-                            <i class="fas fa-hammer" style="font-size:3rem; margin-bottom:10px;"></i>
-                            <p>Henüz kurulu bir madeniniz yok.</p>
-                            <button class="action-btn btn-start" onclick="switchTab('categories')" style="margin-top:15px; width:auto; padding:10px 20px;">MADEN SATIN AL</button>
-                        </div>
-                    `;
-                    // Manually switch tab visual if needed, but onclick handles it. 
-                    // Actually onclick="switchTab('categories')" needs to update buttons too.
-                    // Let's fix switchTab to handle button state if called programmatically or via this button.
-                    // But for now, this button calls switchTab which expects event.target. 
-                    // We need a safer switchTab.
-                    return;
-                }
-
+                // We already have userMines from loadMines() if it was called.
+                // But to be safe, let's use what we have or fetch if empty (though loadMines is called on load)
+                
+                // In farm-category.html, "My Farms" lists ALL types and shows status.
+                // Let's do the same here.
+                
                 container.innerHTML = '';
                 const list = document.createElement('div');
                 list.className = 'mine-list-view';
 
-                myMines.forEach(mine => {
-                    const typeInfo = mineTypes.find(t => t.id === mine.mine_type) || {};
+                mineTypes.forEach(mine => {
+                    const owned = userMines.find(um => um.mine_type === mine.id);
+                    
                     const card = document.createElement('div');
-                    card.className = `mine-list-card ${typeInfo.color || ''}`;
+                    card.className = `mine-list-card ${mine.color}`;
                     
                     let iconHtml = '';
-                    if (typeInfo.img) {
-                        iconHtml = `<img src="${typeInfo.img}" alt="${mine.name}" style="width: 30px; height: 30px; object-fit: contain;">`;
+                    if (mine.img) {
+                        iconHtml = `<img src="${mine.img}" alt="${mine.name}" style="width: 30px; height: 30px; object-fit: contain;">`;
                     } else {
-                        iconHtml = `<i class="fas ${typeInfo.icon || 'fa-hammer'}"></i>`;
+                        iconHtml = `<i class="fas ${mine.icon}"></i>`;
                     }
 
                     card.innerHTML = `
                         <div class="m-icon-circle">${iconHtml}</div>
                         <div class="m-info">
                             <div class="m-name">${mine.name}</div>
-                            <div class="m-desc" style="color:var(--accent-gold)">Seviye: ${mine.level}</div>
+                            <div class="count-badge" style="color:var(--accent-gold)">${owned ? 'Seviye: ' + owned.level : 'Sahip Değilsin'}</div>
                         </div>
-                        <button class="action-btn btn-start" onclick="location.href='mine-management.html?id=${mine.id}'">YÖNET</button>
+                        <button class="action-btn" style="width:auto; padding:8px 20px; background:${owned ? 'var(--accent-cyan)' : 'var(--accent-green)'}; color:#000; font-weight:bold;">
+                            ${owned ? 'YÖNET' : 'SATIN AL'}
+                        </button>
                     `;
+
+                    const btn = card.querySelector('button');
+                    if (owned) {
+                        btn.onclick = () => location.href = `mine-management.html?id=${owned.id}`;
+                    } else {
+                        btn.onclick = () => openBuyModal(mine.id);
+                    }
+
                     list.appendChild(card);
                 });
                 container.appendChild(list);

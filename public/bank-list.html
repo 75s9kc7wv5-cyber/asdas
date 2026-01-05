@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim of World - Bankalar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="js/loader-manager.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #161616;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-gold: #ffd700;
+            --accent-red: #e74c3c;
+            --text-white: #ffffff;
+            --text-muted: #888;
+            --border-color: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/World_map_blank_without_borders.svg/2000px-World_map_blank_without_borders.svg.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* MAIN */
+        main {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+
+        .page-header { text-align: center; margin-bottom: 25px; animation: fadeInDown 0.5s; }
+        .header-badge {
+            display: inline-block;
+            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(10,10,10,0.95) 100%);
+            border: 1px solid #333;
+            border-top: 3px solid var(--accent-gold);
+            padding: 15px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .header-badge::after {
+            content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+            width: 60%; height: 2px; background: radial-gradient(circle, var(--accent-gold) 0%, transparent 100%);
+            opacity: 0.5;
+        }
+        .page-title { 
+            font-size: 1.4rem; font-weight: 800; letter-spacing: 2px; color: #fff; margin-bottom: 5px; 
+            text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 10px;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+        }
+        .page-desc { font-size: 0.85rem; color: #999; font-weight: 500; }
+
+        /* TABS */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
+        .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: #777; font-family: 'Rajdhani'; font-weight: bold; cursor: pointer; border-radius: 6px; transition: all 0.3s; }
+        .tab-btn.active { background: #222; color: var(--accent-gold); border: 1px solid var(--accent-gold); box-shadow: 0 0 10px rgba(255, 215, 0, 0.1); }
+        .tab-content { display: none; animation: fadeIn 0.4s; }
+        .tab-content.active { display: block; }
+
+        /* SEARCH BOX */
+        .search-box {
+            background: #181818; border: 1px solid #333; border-radius: 8px; padding: 10px;
+            display: flex; align-items: center; gap: 10px; margin-bottom: 15px;
+        }
+        .search-box input { background: transparent; border: none; color: #fff; width: 100%; font-family: 'Rajdhani'; outline: none; }
+
+        /* BANK CARD (Adapted from Hospital Card) */
+        .bank-card {
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            transition: transform 0.2s;
+        }
+        .bank-card:hover { transform: translateY(-2px); border-color: #555; }
+
+        .bank-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .bank-icon {
+            width: 50px; height: 50px;
+            background: #222;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+            border: 1px solid #444;
+            color: var(--accent-gold);
+        }
+        
+        .bank-info { flex: 1; }
+        .bank-name { font-size: 1.1rem; font-weight: bold; color: #fff; }
+        .bank-desc { font-size: 0.8rem; color: #888; }
+        .bank-stats { font-size: 0.9rem; margin-top: 5px; white-space: nowrap; overflow-x: auto; }
+
+        .btn-action {
+            width: 100%;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Rajdhani';
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+        .btn-open { background: var(--accent-green); color: #000; }
+        .btn-open:hover { box-shadow: 0 0 10px rgba(46, 204, 113, 0.4); }
+        .btn-view { background: var(--accent-cyan); color: #000; }
+        .btn-view:hover { box-shadow: 0 0 10px rgba(0, 229, 255, 0.4); }
+
+        /* BUY CARD */
+        .buy-card {
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: transform 0.2s;
+        }
+        .buy-card:hover { transform: translateY(-2px); border-color: #555; }
+        
+        .req-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
+        .req-badge {
+            background: #333;
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #ccc;
+            border: 1px solid #444;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            line-height: 1;
+        }
+        .req-badge img {
+            width: 16px !important;
+            height: 16px !important;
+            vertical-align: middle;
+        }
+        .req-badge.ok { border-color: var(--accent-green); color: var(--accent-green); background: rgba(46, 204, 113, 0.1); }
+        .req-badge.fail { border-color: var(--accent-red); color: var(--accent-red); background: rgba(231, 76, 60, 0.1); }
+        .btn-confirm:disabled { background: #444; color: #888; cursor: not-allowed; }
+
+        .buy-icon {
+            width: 50px; height: 50px;
+            background: #222;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+            border: 1px solid #444;
+            color: var(--accent-gold);
+        }
+        
+        .buy-info { flex: 1; }
+        .buy-name { font-size: 1.1rem; font-weight: bold; color: #fff; }
+        .buy-desc { font-size: 0.8rem; color: #888; }
+        .buy-stats { font-size: 0.9rem; color: var(--accent-green); margin-top: 5px; }
+
+        .btn-buy-action {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Rajdhani';
+            font-size: 0.9rem;
+            transition: 0.2s;
+            background: var(--accent-gold); color: #000;
+        }
+        .btn-buy-action:hover { box-shadow: 0 0 10px rgba(255, 215, 0, 0.4); }
+
+        /* MODAL */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+        .modal-content {
+            background: #181818; width: 90%; max-width: 400px; padding: 25px; border-radius: 10px;
+            border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-gold);
+        }
+        .m-input {
+            width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: #fff;
+            border-radius: 5px; margin: 15px 0; font-family: 'Rajdhani';
+        }
+        .m-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Header injected by header-manager.js -->
+
+        <main>
+            <div class="page-header">
+                <div class="header-badge">
+                    <div class="page-title"><i class="fas fa-university" style="color:var(--accent-gold)"></i> BANKACILIK</div>
+                    <div class="page-desc">Paranı yönet, kredi çek veya kendi bankanı kur.</div>
+                </div>
+            </div>
+
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('city')">ŞEHİRDEKİ BANKALAR</button>
+                <button class="tab-btn" onclick="switchTab('my')">BANKAM</button>
+            </div>
+
+            <!-- CITY BANKS TAB -->
+            <div id="tab-city" class="tab-content active">
+                <div class="search-box">
+                    <i class="fas fa-search" style="color:#666;"></i>
+                    <input type="text" id="searchInput" placeholder="Banka veya sahip adı ara..." onkeyup="filterBanks()">
+                </div>
+
+                <div id="cityBankList">
+                    <!-- JS will populate -->
+                </div>
+            </div>
+
+            <!-- MY BANK TAB -->
+            <div id="tab-my" class="tab-content">
+                <div id="myBankContent">
+                    <!-- JS will populate -->
+                </div>
+            </div>
+
+        </main>
+
+        <!-- CREATE BANK MODAL -->
+        <div class="modal-overlay" id="createBankModal">
+            <div class="modal-content">
+                <i class="fas fa-university" style="font-size:3rem; color:var(--accent-gold); margin-bottom:10px;"></i>
+                <h3 style="color:#fff;">Banka Kur</h3>
+                <p style="color:#aaa; font-size:0.9rem;">Kendi bankanı kurmak için gereksinimleri karşılamalısın.</p>
+                
+                <input type="text" id="newBankName" class="m-input" placeholder="Banka Adı Giriniz..." style="margin:10px 0;">
+                
+                <div class="req-list" id="reqList">
+                    <!-- Requirements here -->
+                </div>
+
+                <div class="m-btns">
+                    <button class="m-btn" style="background:#333; color:#fff;" onclick="closeModal('createBankModal')">İPTAL</button>
+                    <button class="m-btn btn-confirm" id="btnConfirmBuy" style="background:var(--accent-gold); color:#000;" onclick="createBank()">KUR</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Open Account Modal -->
+        <div id="openAccountModal" class="modal-overlay" style="display:none;">
+            <div class="modal-content">
+                <h3 class="m-title" style="color:#fff; margin-bottom:10px;">HESAP AÇ</h3>
+                <p style="color:#aaa; font-size:0.9rem; margin-bottom:10px;">
+                    <span id="openAccBankName" style="color:var(--accent-cyan); font-weight:bold;"></span> bankasında hesap açmak üzeresiniz.
+                </p>
+                <p style="color:var(--accent-gold); font-weight:bold; margin-bottom:20px;">
+                    Hesap Açılış Ücreti: <span id="openAccFee">0</span> ₺
+                </p>
+                <div class="m-btns">
+                    <button class="m-btn" style="background:#333; color:#fff;" onclick="closeModal('openAccountModal')">İPTAL</button>
+                    <button class="m-btn" style="background:var(--accent-green); color:#fff;" onclick="confirmOpenAccount()">ONAYLA</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirm Create Bank Modal -->
+        <div id="confirmCreateBankModal" class="modal-overlay" style="display:none;">
+            <div class="modal-content">
+                <i class="fas fa-university" style="font-size:3rem; color:var(--accent-gold); margin-bottom:15px;"></i>
+                <h3 style="color:#fff; margin-bottom:10px;">Banka Satın Alma Onayı</h3>
+                <p style="color:#aaa; font-size:0.9rem; margin-bottom:10px;">
+                    <span id="confirmBankName" style="color:var(--accent-gold); font-weight:bold; font-size:1.1rem;"></span> adlı bankayı satın almak üzeresiniz.
+                </p>
+                <div style="background:#222; padding:15px; border-radius:8px; margin:15px 0;">
+                    <p style="color:#ccc; font-size:0.9rem; margin-bottom:10px;"><strong>Harcanacak Kaynaklar:</strong></p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <div class="req-badge" style="border-color: var(--accent-gold); color: var(--accent-gold); background: rgba(255, 215, 0, 0.1);">
+                            <img src="icons/inventory-icon/money.png" style="width:16px; height:16px;">
+                            <span>100.000</span>
+                        </div>
+                        <div class="req-badge" style="border-color: var(--accent-gold); color: var(--accent-gold); background: rgba(255, 215, 0, 0.1);">
+                            <img src="icons/inventory-icon/gold.png" style="width:16px; height:16px;">
+                            <span>500</span>
+                        </div>
+                        <div class="req-badge" style="border-color: var(--accent-gold); color: var(--accent-gold); background: rgba(255, 215, 0, 0.1);">
+                            <img src="icons/inventory-icon/diamond.png" style="width:16px; height:16px;">
+                            <span>50</span>
+                        </div>
+                    </div>
+                </div>
+                <p style="color:#e74c3c; font-size:0.85rem; margin-top:10px;">
+                    ⚠️ Bu işlem geri alınamaz!
+                </p>
+                <div class="m-btns">
+                    <button class="m-btn" style="background:#333; color:#fff;" onclick="closeModal('confirmCreateBankModal')">İPTAL</button>
+                    <button class="m-btn" style="background:var(--accent-gold); color:#000;" onclick="confirmCreateBank()">ONAYLA VE SATIN AL</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="js/menu-manager.js"></script>
+    <script src="js/header-manager.js"></script>
+    <script>
+        const eduStages = [
+            { min: 1, max: 10, name: 'İlkokul' },
+            { min: 11, max: 20, name: 'Ortaokul' },
+            { min: 21, max: 30, name: 'Lise' },
+            { min: 31, max: 40, name: 'Önlisans' },
+            { min: 41, max: 50, name: 'Lisans' },
+            { min: 51, max: 60, name: 'Yüksek Lisans' },
+            { min: 61, max: 70, name: 'Doktora' },
+            { min: 71, max: 80, name: 'Post-Doc' },
+            { min: 81, max: 90, name: 'Doçentlik' },
+            { min: 91, max: 100, name: 'Profesörlük' }
+        ];
+
+        const getEducationName = (skill) => {
+            const stage = eduStages.find(s => skill >= s.min && skill <= s.max);
+            return stage ? stage.name : 'Yok';
+        };
+
+        const fmt = (num) => num.toLocaleString('tr-TR');
+        let allBanks = [];
+
+        async function initPage() {
+            await loadCityBanks();
+            await loadMyBank();
+        }
+
+        let userHasAccount = false;
+
+        async function loadCityBanks() {
+            try {
+                const user = JSON.parse(localStorage.getItem('simWorldUser'));
+                const response = await fetch('/api/banks?userId=' + (user ? user.id : 0));
+                allBanks = await response.json();
+                
+                // Check if user has any account
+                userHasAccount = allBanks.some(b => b.has_account > 0);
+                
+                renderBanks(allBanks);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        function renderBanks(banks) {
+            const container = document.getElementById('cityBankList');
+            container.innerHTML = '';
+
+            if (banks.length === 0) {
+                container.innerHTML = '<div style="text-align:center; color:#666; margin-top:20px;">Şehirde henüz banka yok.</div>';
+                return;
+            }
+
+            banks.forEach(b => {
+                const hasAccount = b.has_account > 0;
+                let btnText, btnClass, btnAction, btnDisabled = '';
+                
+                if (hasAccount) {
+                    btnText = 'HESABI GÖRÜNTÜLE';
+                    btnClass = 'btn-view';
+                    btnAction = `openAccountPage(${b.id})`;
+                } else if (userHasAccount) {
+                    // User has account in another bank
+                    btnText = 'HESAP AÇMA SINIRI';
+                    btnClass = 'btn-open';
+                    btnAction = `toastr.warning('Zaten bir banka hesabiniz var. Sadece 1 hesap acabilirsiniz.')`;
+                    btnDisabled = 'disabled';
+                } else {
+                    btnText = 'HESAP AÇ';
+                    btnClass = 'btn-open';
+                    btnAction = `openOpenAccountModal(${b.id}, '${b.name}', ${b.account_opening_fee || 0})`;
+                }
+
+                const card = document.createElement('div');
+                card.className = 'bank-card';
+                card.innerHTML = `
+                    <div class="bank-content">
+                        <div class="bank-icon">
+                            <i class="fas fa-landmark"></i>
+                        </div>
+                        <div class="bank-info">
+                            <div class="bank-name">${b.name}</div>
+                            <div class="bank-desc">Sahibi: <a href="profile.html?id=${b.owner_id}" style="color:var(--accent-cyan); text-decoration:none;">${b.owner_id} - ${b.owner_name}</a></div>
+                            <div class="bank-desc" style="margin-top:2px;">İşlem Hacmi: <span style="color:var(--accent-green); font-weight:bold;">${fmt(b.balance)} ₺</span></div>
+                            <div class="bank-stats">
+                                <span style="color:#00e5ff;">👥 ${b.customer_count || 0}/${b.capacity || 0}</span> <span style="color:#666;">|</span> 
+                                <span style="color:#2ecc71;">Mevduat: %${b.interest_rate}</span> <span style="color:#666;">|</span> 
+                                <span style="color:#e74c3c;">Kredi: %${b.loan_rate}</span> <span style="color:#666;">|</span> 
+                                <span style="color:#9b59b6;">Havale: %${b.transfer_fee}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn-action ${btnClass}" onclick="${btnAction}" ${btnDisabled} style="${btnDisabled ? 'opacity:0.5; cursor:not-allowed;' : ''}">${btnText}</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function filterBanks() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allBanks.filter(b => 
+                b.name.toLowerCase().includes(query) || 
+                b.owner_name.toLowerCase().includes(query)
+            );
+            renderBanks(filtered);
+        }
+
+        async function loadMyBank() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) return;
+
+            try {
+                const response = await fetch(`/api/banks/my/${user.id}`);
+                const result = await response.json();
+                const container = document.getElementById('myBankContent');
+
+                if (result.success && result.hasBank) {
+                    const b = result.bank;
+                    container.innerHTML = `
+                        <div class="bank-card">
+                            <div class="bank-content">
+                                <div class="bank-icon" style="color:var(--accent-cyan); border-color:var(--accent-cyan);">
+                                    <i class="fas fa-briefcase"></i>
+                                </div>
+                                <div class="bank-info">
+                                    <div class="bank-name">${b.name}</div>
+                                    <div class="bank-desc">Yönetici Paneli</div>
+                                    <div class="bank-stats">
+                                        <span class="bank-stat-item">Kasa: ${fmt(b.balance)} ₺</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn-action btn-view" onclick="window.location.href='bank-management.html'">BANKA YÖNET</button>
+                        </div>
+                    `;
+                } else {
+                    // Show create bank form
+                    await showCreateBankForm();
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        let selectedBankId = null;
+
+        function openOpenAccountModal(bankId, bankName, fee) {
+            selectedBankId = bankId;
+            document.getElementById('openAccBankName').innerText = bankName;
+            document.getElementById('openAccFee').innerText = fmt(fee);
+            document.getElementById('openAccountModal').style.display = 'flex';
+        }
+
+        async function confirmOpenAccount() {
+            if (!selectedBankId) return;
+            const btn = document.querySelector('#openAccountModal .m-btn:last-child');
+            btn.disabled = true;
+            btn.innerText = 'İŞLENİYOR...';
+
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            
+            try {
+                const response = await fetch('/api/bank-accounts/open', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, bankId: selectedBankId })
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server error:', response.status, errorText);
+                    toastr.error('Sunucu hatası: ' + response.status);
+                    btn.disabled = false;
+                    btn.innerText = 'ONAYLA';
+                    return;
+                }
+                
+                const result = await response.json();
+                console.log('Response:', result);
+                
+                if (result.success) {
+                    toastr.success(result.message);
+                    closeModal('openAccountModal');
+                    await loadCityBanks();
+                    if (window.updateHeaderStats) window.updateHeaderStats();
+                } else {
+                    toastr.error(result.message || 'Bilinmeyen hata');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                toastr.error('Bir hata oluştu: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'ONAYLA';
+            }
+        }
+
+        function openAccountPage(bankId) {
+            window.location.href = `bank-account-detail.html?bank_id=${bankId}`;
+        }
+
+        async function showCreateBankForm() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) {
+                toastr.error('Oturum bulunamadı. Lütfen giriş yapın.');
+                return;
+            }
+            
+            try {
+                // Fetch user data and licenses
+                const userResponse = await fetch(`/api/user-stats/${user.id}`);
+                if (!userResponse.ok) {
+                    throw new Error('Kullanıcı bilgileri alınamadı');
+                }
+                const userData = await userResponse.json();
+                
+                const licensesResponse = await fetch(`/api/licenses/${user.id}`);
+                let licenses = {};
+                if (licensesResponse.ok) {
+                    licenses = await licensesResponse.json();
+                }
+                
+                const hasLicense = (level) => {
+                    const bankLicense = licenses['bank'] || licenses['bank_license'] || 0;
+                    return bankLicense >= level;
+                };
+                
+                let canBuy = true;
+                
+                const reqs = [
+                    { label: 'Para', val: 100000, userVal: userData.money || 0, type: 'money' },
+                    { label: 'Altın', val: 500, userVal: userData.gold || 0, type: 'gold' },
+                    { label: 'Elmas', val: 50, userVal: userData.diamond || 0, type: 'diamond' },
+                    { label: 'Eğitim Seviyesi', val: 50, userVal: userData.education_skill || 1, type: 'education' },
+                    { label: '1. Seviye Banka Lisansı', val: 1, userVal: hasLicense(1) ? 1 : 0, type: 'license' }
+                ];
+                
+                let reqHTML = '';
+                reqs.forEach(r => {
+                    const isOk = r.userVal >= r.val;
+                    if (!isOk) canBuy = false;
+                    
+                    const gridSpan = r.type === 'license' ? 'style="grid-column: span 2;"' : '';
+                    let valText;
+                    if (r.type === 'license') {
+                        valText = r.label;
+                    } else if (r.type === 'education') {
+                        valText = getEducationName(r.val) + ' Eğitimi';
+                    } else {
+                        valText = fmt(r.val);
+                    }
+                    
+                    let iconHTML = '';
+                    if (r.type === 'money') {
+                        iconHTML = '<img src="icons/inventory-icon/money.png" style="width:16px; height:16px;">';
+                    } else if (r.type === 'gold') {
+                        iconHTML = '<img src="icons/inventory-icon/gold.png" style="width:16px; height:16px;">';
+                    } else if (r.type === 'diamond') {
+                        iconHTML = '<img src="icons/inventory-icon/diamond.png" style="width:16px; height:16px;">';
+                    } else if (r.type === 'education') {
+                        iconHTML = '<span style="font-size:1rem;">🎓</span>';
+                    } else {
+                        iconHTML = '<span style="font-size:1rem;">📜</span>';
+                    }
+                    
+                    reqHTML += `
+                        <div class="req-badge ${isOk ? 'ok' : 'fail'}" ${gridSpan}>
+                            ${iconHTML}
+                            <span>${valText}</span>
+                            <i class="fas ${isOk ? 'fa-check' : 'fa-times'}" style="margin-left:auto;"></i>
+                        </div>
+                    `;
+                });
+                
+                const container = document.getElementById('myBankContent');
+                container.innerHTML = `
+                    <div class="bank-card" style="padding:20px;">
+                        <div style="text-align:center; margin-bottom:20px;">
+                            <i class="fas fa-university" style="font-size:3rem; color:var(--accent-gold); margin-bottom:10px;"></i>
+                            <h3 style="color:#fff; margin:10px 0;">Banka Satın Al</h3>
+                            <p style="color:#aaa; font-size:0.9rem;">Kendi bankanı satın almak için gereksinimleri karşılamalısın.</p>
+                        </div>
+                        
+                        <input type="text" id="newBankName" class="m-input" placeholder="Banka Adı Giriniz..." 
+                            style="margin:15px 0;" minlength="5" maxlength="20" required>
+                        <p style="color:#888; font-size:0.85rem; margin-top:-10px; margin-bottom:10px;">
+                            Min: 5 karakter | Max: 20 karakter
+                        </p>
+                        
+                        <div class="req-list" style="margin:15px 0;">
+                            ${reqHTML}
+                        </div>
+                        
+                        <button class="btn-action" style="background:var(--accent-gold); color:#000; margin-top:15px;" 
+                            onclick="createBank()" ${!canBuy ? 'disabled' : ''}>
+                            BANKA SATIN AL
+                        </button>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Form yükleme hatası:', error);
+                toastr.error('Bilgiler yüklenirken hata oluştu: ' + error.message);
+            }
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function createBank() {
+            const name = document.getElementById('newBankName').value.trim();
+            
+            if (!name) return toastr.warning('Banka adı giriniz.');
+            if (name.length < 5) return toastr.warning('Banka adı en az 5 karakter olmalıdır.');
+            if (name.length > 20) return toastr.warning('Banka adı en fazla 20 karakter olabilir.');
+
+            // Show confirmation modal
+            document.getElementById('confirmBankName').innerText = name;
+            document.getElementById('confirmCreateBankModal').style.display = 'flex';
+        }
+
+        async function confirmCreateBank() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            const name = document.getElementById('newBankName').value.trim();
+            
+            const btn = document.querySelector('#confirmCreateBankModal .m-btn:last-child');
+            btn.disabled = true;
+            btn.innerText = 'SATIN ALINIYOR...';
+
+            try {
+                const response = await fetch('/api/banks/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, name: name })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    toastr.success(result.message);
+                    closeModal('confirmCreateBankModal');
+                    await loadMyBank();
+                    await loadCityBanks();
+                    if (window.updateHeaderStats) window.updateHeaderStats();
+                } else {
+                    toastr.error(result.message);
+                    btn.disabled = false;
+                    btn.innerText = 'ONAYLA VE SATIN AL';
+                }
+            } catch (error) {
+                console.error(error);
+                toastr.error('Bir hata oluştu.');
+                btn.disabled = false;
+                btn.innerText = 'ONAYLA VE SATIN AL';
+            }
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+        }
+
+        window.addEventListener('load', initPage);
+    </script>
+</body>
+</html>

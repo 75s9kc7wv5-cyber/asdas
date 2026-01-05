@@ -57,9 +57,28 @@
         .tab-btn.active { background: #222; color: var(--accent-cyan); box-shadow: 0 0 10px rgba(0, 229, 255, 0.1); }
 
         /* PAGE TITLE */
-        .section-header { text-align: center; margin-bottom: 20px; animation: fadeIn 0.5s; }
-        .section-title { font-size: 1.1rem; letter-spacing: 1px; color: #fff; margin-bottom: 5px; }
-        .section-desc { font-size: 0.8rem; color: var(--text-muted); }
+        .section-header { text-align: center; margin-bottom: 25px; animation: fadeIn 0.5s; }
+        .header-badge {
+            display: inline-block;
+            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(10,10,10,0.95) 100%);
+            border: 1px solid #333;
+            border-top: 3px solid var(--accent-cyan);
+            padding: 15px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .header-badge::after {
+            content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+            width: 60%; height: 2px; background: radial-gradient(circle, var(--accent-cyan) 0%, transparent 100%);
+            opacity: 0.5;
+        }
+        .section-title { 
+            font-size: 1.4rem; font-weight: 800; letter-spacing: 2px; color: #fff; margin-bottom: 5px; 
+            text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 10px;
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+        }
+        .section-desc { font-size: 0.85rem; color: #999; font-weight: 500; }
 
         /* FACTORY GRID */
         .factory-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; animation: slideUp 0.6s ease; }
@@ -246,16 +265,18 @@
         <!-- Header removed, injected by header-manager.js -->
 
         <main>
+            <div class="section-header">
+                <div class="header-badge">
+                    <div class="section-title"><i class="fas fa-industry" style="color:var(--accent-cyan)"></i> FABRİKALAR</div>
+                    <div class="section-desc">Fabrika kategorilerini inceleyebilir veya sahip olduğun fabrikaları görebilirsin.</div>
+                </div>
+            </div>
             <div class="tabs-container">
                 <button class="tab-btn active" onclick="switchTab('categories')">FABRİKA KATEGORİLERİ</button>
                 <button class="tab-btn" onclick="switchTab('my-factories')">FABRİKALARIM</button>
             </div>
 
             <div id="tab-categories">
-                <div class="section-header">
-                    <h2 class="section-title">FABRİKA KATEGORİLERİ</h2>
-                    <p class="section-desc">Kurmak istediğiniz işletme türünü seçin.</p>
-                </div>
 
                 <div id="factoriesContainer">
                     <!-- JS ile doldurulacak -->
@@ -375,7 +396,34 @@
             'steel': { icon: 'fa-industry', color: '#f1c40f', req: 'Demir', out: 'Çelik', outIcon: 'fa-layer-group' }
         };
 
+        async function fetchUserData(userId) {
+             try {
+                const res = await fetch(`/api/profile/${userId}`);
+                if (res.ok) {
+                    const json = await res.json();
+                    userData = json.user || json;
+                }
+            } catch (e) { console.error(e); }
+        }
+        
+        async function fetchUserLicenses(userId) {
+             try {
+                const res = await fetch(`/api/licenses/${userId}`);
+                if (res.ok) {
+                    userLicenses = await res.json();
+                }
+            } catch (e) { console.error(e); }
+        }
+
         async function loadFactories() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (user) {
+                await Promise.all([
+                    fetchUserData(user.id),
+                    fetchUserLicenses(user.id)
+                ]);
+            }
+
             try {
                 // Fetch all city mines to count them (assuming factories are stored as mines)
                 const res = await fetch('/api/mines/city');
@@ -481,18 +529,10 @@
             container.innerHTML = '<div style="text-align:center; padding:20px;">Yükleniyor...</div>';
 
             try {
-                // Fetch user data for money check
-                const uRes = await fetch('/api/login', { 
-                    method: 'POST', 
-                    headers: {'Content-Type': 'application/json'}, 
-                    body: JSON.stringify({ username: user.username, password: user.password }) 
-                });
-                const uData = await uRes.json();
-                if(uData.user) userData = uData.user;
-
-                // Fetch licenses
-                const licRes = await fetch(`/api/licenses/${user.id}`);
-                userLicenses = await licRes.json();
+                await Promise.all([
+                    fetchUserData(user.id),
+                    fetchUserLicenses(user.id)
+                ]);
 
                 // Fetch user's owned factories
                 const res = await fetch(`/api/mines/my/${user.id}`);
@@ -505,8 +545,7 @@
                 factoryTypes.forEach(fac => {
                     // Check if user owns at least one of this type
                     const ownedFactories = myMines.filter(m => m.mine_type === fac.id);
-                    const ownedCount = ownedFactories.length;
-                    const isOwned = ownedCount > 0;
+                    const isOwned = ownedFactories.length > 0;
 
                     // If owned, list EACH instance
                     if (isOwned) {
@@ -529,9 +568,9 @@
                                 <div class="f-icon-circle">${iconHtml}</div>
                                 <div class="f-info">
                                     <div class="f-name">${fac.name}</div>
-                                    <div class="f-desc" style="color:var(--accent-gold)">Seviye: ${mine.level}</div>
+                                    <div class="count-badge" style="color:var(--accent-gold)">Seviye: ${mine.level}</div>
                                 </div>
-                                <button class="action-btn btn-manage" onclick="location.href='${managePage}?id=${mine.id}'">YÖNET</button>
+                                <button class="action-btn" style="width:auto; padding:8px 20px; background:var(--accent-cyan); color:#000; font-weight:bold;" onclick="location.href='${managePage}?id=${mine.id}'">YÖNET</button>
                             `;
                             list.appendChild(card);
                         });
@@ -547,7 +586,7 @@
                             iconHtml = `<i class="fas ${fac.icon}"></i>`;
                         }
 
-                        let btnHtml = `<button class="action-btn btn-buy" onclick="openBuyModal('${fac.id}')">SATIN AL</button>`;
+                        let btnHtml = `<button class="action-btn" style="width:auto; padding:8px 20px; background:var(--accent-green); color:#000; font-weight:bold;" onclick="openBuyModal('${fac.id}')">SATIN AL</button>`;
                         if (fac.disabled) {
                             btnHtml = `<button class="action-btn" style="background:#333; color:#666; cursor:default;">YAKINDA</button>`;
                         }
@@ -556,7 +595,7 @@
                             <div class="f-icon-circle">${iconHtml}</div>
                             <div class="f-info">
                                 <div class="f-name">${fac.name}</div>
-                                <div class="f-desc">Henüz sahip değilsiniz.</div>
+                                <div class="count-badge" style="color:var(--accent-gold)">Sahip Değilsin</div>
                             </div>
                             ${btnHtml}
                         `;
@@ -571,54 +610,33 @@
             }
         }
 
-        function openBuyModal(typeId) {
+        async function openBuyModal(typeId) {
             selectedFactory = factoryTypes.find(f => f.id === typeId);
             if (!selectedFactory) return;
 
             document.getElementById('buyTitle').innerText = selectedFactory.name + " Satın Al";
             
-            // Check requirements
-            // Assuming license logic is same as mines or simplified. 
-            // If license system exists for factories, check it. If not, ignore.
-            // Based on mine-list.html, licenses are checked. Let's assume factories need licenses too if they are in the system.
-            // But usually basic factories don't need license or license is named after type.
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if(user) {
+                await fetchUserData(user.id);
+                await fetchUserLicenses(user.id);
+            }
             
-            const hasLicense = userLicenses[typeId] > 0; 
-            // Note: If license system doesn't support this type, this might be false. 
-            // For now, let's assume basic types don't need license or user has it if level is ok.
-            // Actually, let's check if reqLevel is met.
-            
-            // Fetch skill if needed, but userData has education_skill usually if we fetched it right.
-            // Let's assume userData.education_skill is available.
-            // We need to fetch it properly in loadMyFactories.
-            
-            // Re-fetch user data to be sure about money/skill
-             fetch('/api/login', { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({ username: userData.username, password: userData.password }) 
-            }).then(r=>r.json()).then(d=>{
-                if(d.user) userData = d.user;
-                renderBuyModalContent();
-            });
+            renderBuyModalContent();
         }
 
         function renderBuyModalContent() {
-            const hasSkill = (userData.education_skill || 0) >= selectedFactory.reqLevel;
             const hasMoney = userData.money >= selectedFactory.costMoney;
             const hasGold = userData.gold >= selectedFactory.costGold;
             const hasDiamond = (userData.diamond || 0) >= selectedFactory.costDiamond;
             
-            // License check: If it's a basic factory, maybe no license? 
-            // Let's assume license is required if cost > 0 or just check if license exists in DB.
-            // For simplicity, let's only enforce Money/Gold/Diamond/Level for now as per prompt "gereksinimleri onay modalında göster".
+            // License Check
+            const licLevel = userLicenses[selectedFactory.id] || 0;
+            const hasLicense = licLevel >= 1;
             
-            const canBuy = hasSkill && hasMoney && hasGold && hasDiamond;
+            const canBuy = hasMoney && hasGold && hasDiamond && hasLicense;
 
             let html = '';
-            
-            // Education
-            html += `<div class="req-badge ${hasSkill ? 'ok' : 'fail'}"><i class="fas fa-graduation-cap"></i> Lv. ${selectedFactory.reqLevel}</div>`;
             
             // Money
             html += `<div class="req-badge ${hasMoney ? 'ok' : 'fail'}"><img src="icons/inventory-icon/money.png" style="width:20px;height:20px;vertical-align:middle;"> ${selectedFactory.costMoney.toLocaleString()}</div>`;
@@ -633,19 +651,31 @@
                 html += `<div class="req-badge ${hasDiamond ? 'ok' : 'fail'}"><img src="icons/inventory-icon/diamond.png" style="width:20px;height:20px;vertical-align:middle;"> ${selectedFactory.costDiamond}</div>`;
             }
 
+            // License
+            html += `<div class="req-badge ${hasLicense ? 'ok' : 'fail'}"><i class="fas ${hasLicense ? 'fa-check' : 'fa-times'}"></i> 1. Seviye ${selectedFactory.name} Lisansı</div>`;
+
             document.getElementById('reqList').innerHTML = html;
-            document.getElementById('btnConfirmBuy').disabled = !canBuy;
+            // document.getElementById('btnConfirmBuy').disabled = !canBuy;
+            document.getElementById('btnConfirmBuy').disabled = false;
             document.getElementById('buyModal').classList.add('active');
+            document.getElementById('buyModal').style.display = 'flex';
         }
 
         function closeBuyModal() {
             document.getElementById('buyModal').classList.remove('active');
+            document.getElementById('buyModal').style.display = 'none';
         }
 
         async function confirmBuy() {
             if (!selectedFactory) return;
             const user = JSON.parse(localStorage.getItem('simWorldUser'));
             
+            const btn = document.getElementById('btnConfirmBuy');
+            if(btn) {
+                btn.disabled = true;
+                btn.innerText = 'İşleniyor...';
+            }
+
             try {
                 const response = await fetch('/api/mines/buy', {
                     method: 'POST',
@@ -656,15 +686,22 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    toastr.success(result.message);
+                    toastr.success(selectedFactory.name + ' satın alındı.');
                     closeBuyModal();
+                    loadFactories(); // Refresh grid
                     loadMyFactories(); // Refresh list
+                    if(window.updateHeaderStats) window.updateHeaderStats();
                 } else {
                     toastr.error(result.message);
                 }
             } catch (e) {
                 console.error(e);
                 toastr.error('İşlem başarısız.');
+            } finally {
+                if(btn) {
+                    btn.disabled = false;
+                    btn.innerText = 'SATIN AL';
+                }
             }
         }
 

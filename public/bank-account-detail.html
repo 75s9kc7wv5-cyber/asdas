@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Finans - Hesabım</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="js/loader-manager.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-main: #0a0a0a; --bg-card: #141414; --bg-input: #1a1a1a;
+            --accent: #00d2ff; --accent-dark: #005f73; 
+            --text-primary: #fff; --text-secondary: #888;
+            --border: #222; 
+            --success: #2ecc71; --danger: #e74c3c; --warning: #f1c40f;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: var(--bg-main); font-family: 'Rajdhani', sans-serif; color: var(--text-primary); display: flex; justify-content: center; min-height: 100vh; }
+        .game-container { width: 100%; max-width: 450px; background: var(--bg-main); display: flex; flex-direction: column; position: relative; box-shadow: 0 0 40px rgba(0,0,0,0.5); padding-top: 160px !important; }
+
+        main { flex: 1; padding: 0 20px 90px 20px; overflow-y: auto; }
+
+        /* BANK INFO (Hospital Style) */
+        .bank-info {
+            background: linear-gradient(145deg, #1a1a1a, #111);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            text-align: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        .bank-info::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--success));
+        }
+        .b-icon {
+            font-size: 2.5rem; color: var(--accent); margin-bottom: 10px; margin-top: 15px;
+            text-shadow: 0 0 20px rgba(0, 210, 255, 0.3);
+        }
+        .b-name { 
+            font-size: 1.6rem; font-weight: 900; color: #fff; margin-bottom: 5px;
+            text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+        }
+        .b-level-badge {
+            position: absolute; top: 0; right: 0;
+            background: var(--warning); color: #000;
+            padding: 5px 15px; font-weight: 800; font-size: 0.9rem;
+            border-bottom-left-radius: 12px;
+            box-shadow: -2px 2px 15px rgba(255, 215, 0, 0.2);
+        }
+        .b-owner { 
+            font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 20px; 
+            display: flex; justify-content: center; align-items: center; gap: 6px;
+        }
+        .b-stats { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; 
+        }
+        .b-stat { 
+            background: rgba(255,255,255,0.04); padding: 12px; border-radius: 8px; 
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .b-stat span { font-size: 1rem; font-weight: 700; color: #ddd; }
+
+        /* STATS ROW */
+        .stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 25px; }
+        .stat-box { background: var(--bg-input); border: 1px solid var(--border); padding: 12px; border-radius: 10px; text-align: center; }
+        .sb-label { font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px; }
+        .sb-val { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+        .val-green { color: var(--success); }
+        .val-gold { color: var(--warning); }
+
+        /* ACTION GRID */
+        .section-title { font-size: 0.9rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; border-left: 3px solid var(--accent); padding-left: 10px; }
+        
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 30px; }
+        .action-btn {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 15px 5px; display: flex; flex-direction: column; align-items: center; gap: 8px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .action-btn:hover { border-color: var(--accent); background: #1f1f1f; transform: translateY(-3px); }
+        .ab-icon { width: 40px; height: 40px; background: rgba(0, 210, 255, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: var(--accent); }
+        .ab-text { font-size: 0.75rem; font-weight: 700; color: var(--text-primary); }
+
+        /* LOAN PROGRESS */
+        .loan-progress-box { background: var(--bg-card); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 25px; }
+        .lpb-header { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px; }
+        .lpb-bar-bg { width: 100%; height: 8px; background: #222; border-radius: 4px; overflow: hidden; }
+        .lpb-bar-fill { height: 100%; background: var(--danger); width: 0%; transition: width 0.5s ease; }
+        .lpb-footer { display: flex; justify-content: space-between; margin-top: 8px; align-items: center; }
+        .lpb-debt { color: var(--text-primary); font-weight: 700; font-size: 1rem; }
+        .btn-pay-sm { background: var(--danger); color: #fff; border: none; padding: 5px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 0.8rem; }
+
+        /* CREDIT SCORE BAR */
+        .credit-score-box { background: var(--bg-card); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 25px; }
+        .cs-header { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px; }
+        .cs-bar-bg { width: 100%; height: 8px; background: #222; border-radius: 4px; overflow: hidden; }
+        .cs-bar-fill { height: 100%; background: linear-gradient(90deg, #e74c3c, #f1c40f, #2ecc71); width: 0%; transition: width 0.5s ease; }
+        .cs-val { font-weight: 700; color: #fff; }
+
+        /* MODAL (Standart) */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
+            z-index: 10000; display: none; align-items: center; justify-content: center;
+        }
+        .modal-box {
+            width: 90%; max-width: 360px; background: var(--bg-card);
+            border: 1px solid var(--border); border-radius: 16px; padding: 20px;
+            position: relative; animation: scaleUp 0.3s ease;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .close-modal {
+            position: absolute; top: 15px; right: 15px; background: none; border: none;
+            color: var(--text-secondary); font-size: 1.5rem; cursor: pointer;
+        }
+        .modal-header h3 { font-size: 1.2rem; margin-bottom: 20px; text-align: center; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; }
+        
+        .modern-input {
+            width: 100%; background: var(--bg-input); border: 1px solid var(--border);
+            padding: 12px; border-radius: 8px; color: #fff; font-family: 'Rajdhani'; font-size: 1rem;
+            margin-bottom: 15px; outline: none; transition: border-color 0.2s;
+        }
+        .modern-input:focus { border-color: var(--accent); }
+        
+        .btn-full {
+            width: 100%; background: var(--accent); color: #000; border: none;
+            padding: 12px; border-radius: 8px; font-weight: 800; font-size: 1rem;
+            cursor: pointer; font-family: 'Rajdhani'; text-transform: uppercase;
+            transition: all 0.2s;
+        }
+        .btn-full:hover { background: #fff; box-shadow: 0 0 15px rgba(255,255,255,0.3); }
+
+        /* CREDIT OFFERS */
+        .credit-offer-list { display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto; }
+        .credit-offer-item { 
+            background: var(--bg-input); border: 1px solid var(--border); padding: 15px; border-radius: 8px; 
+            display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;
+        }
+        .credit-offer-item:hover { border-color: var(--accent); background: #222; }
+        .co-info { display: flex; flex-direction: column; }
+        .co-amount { font-size: 1.1rem; font-weight: 700; color: #fff; }
+        .co-details { font-size: 0.8rem; color: var(--text-secondary); }
+        .co-btn { 
+            background: var(--accent); color: #000; border: none; padding: 8px 15px; 
+            border-radius: 6px; font-weight: 700; cursor: pointer; font-family: 'Rajdhani';
+        }
+        .co-btn:hover { background: #fff; }
+
+        /* LOGS */
+        .logs-section { margin-top: 30px; }
+        .log-list { display: flex; flex-direction: column; gap: 10px; }
+        .log-item { 
+            background: var(--bg-card); border: 1px solid var(--border); padding: 15px; border-radius: 12px; 
+            display: flex; align-items: center; justify-content: space-between; transition: all 0.2s;
+        }
+        .log-item:hover { border-color: var(--accent); transform: translateX(5px); background: #1a1a1a; }
+        .log-left { display: flex; align-items: center; gap: 15px; }
+        .log-icon { 
+            width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.05); 
+            display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: var(--text-secondary);
+        }
+        .log-info h4 { font-size: 0.9rem; color: #fff; margin-bottom: 2px; }
+        .log-info p { font-size: 0.75rem; color: var(--text-secondary); }
+        .log-amount { font-size: 1rem; font-weight: 700; color: #fff; }
+        .log-amount.plus { color: var(--success); }
+        .log-amount.minus { color: var(--danger); }
+
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes scaleUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* Prevent body scroll when modal is open */
+        body.modal-open { overflow: hidden; }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <!-- Header injected by header-manager.js -->
+
+    <main>
+        <div class="page-header" style="margin-bottom: 15px;">
+            <p class="page-desc" onclick="window.location.href='bank-list.html'" style="cursor:pointer; color: #888; font-size: 0.9rem;">&larr; Bankalara Dön</p>
+        </div>
+
+        <!-- Banka Bilgileri (Hospital Style) -->
+        <div class="bank-info">
+            <div class="b-level-badge" id="bankLevelBadge">SEVİYE 1</div>
+            <div class="b-icon"><i class="fas fa-university"></i></div>
+            <div class="b-name" id="bankNameDisplay">GLOBAL BANK</div>
+            <div class="b-owner">
+                <i class="fas fa-user-tie"></i> <span id="bankOwnerDisplay">Banka Sahibi: ...</span>
+            </div>
+            
+            <!-- Faiz Verileri (Banka Bilgilerinin Altında) -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                <div style="text-align: center;">
+                    <div style="font-size: 0.65rem; color: #888; margin-bottom: 3px;">MEVDUAT FAİZİ</div>
+                    <div style="font-size: 1rem; font-weight: 700; color: var(--success);" id="interestRateDisplay">%0</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 0.65rem; color: #888; margin-bottom: 3px;">KREDİ FAİZİ</div>
+                    <div style="font-size: 1rem; font-weight: 700; color: #fff;" id="loanRateDisplay">%0</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 0.65rem; color: #888; margin-bottom: 3px;">HAVALE ÜCRETİ</div>
+                    <div style="font-size: 1rem; font-weight: 700; color: var(--warning);" id="transferFeeDisplay">%0</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 0.65rem; color: #888; margin-bottom: 3px;">KAPASİTE</div>
+                    <div style="font-size: 1rem; font-weight: 700; color: var(--accent);" id="capacityDisplay">0/10</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Oyuncu Bakiyesi ve IBAN (Badges) -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px;">
+            
+            <!-- Bakiye Badge -->
+            <div style="background: linear-gradient(90deg, rgba(46, 204, 113, 0.1), rgba(46, 204, 113, 0.05)); border: 1px solid rgba(46, 204, 113, 0.3); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 5px;">
+                <div>
+                    <div style="font-size: 0.65rem; color: var(--success); text-transform: uppercase; font-weight: bold;">HESAP BAKİYESİ</div>
+                    <div style="font-size: 1.2rem; font-weight: 700; color: #fff;" id="bankBalance">0 ₺</div>
+                </div>
+            </div>
+
+            <!-- IBAN Badge -->
+            <div style="background: linear-gradient(90deg, rgba(0, 210, 255, 0.1), rgba(0, 210, 255, 0.05)); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 5px; position: relative;">
+                <button onclick="copyIban()" style="position: absolute; top: 5px; right: 5px; background: rgba(0, 210, 255, 0.1); border: none; color: var(--accent); width: 25px; height: 25px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-copy" style="font-size: 0.8rem;"></i>
+                </button>
+                <div>
+                    <div style="font-size: 0.65rem; color: var(--accent); text-transform: uppercase; font-weight: bold;">IBAN NUMARASI</div>
+                    <div style="font-size: 0.9rem; font-weight: 700; color: #fff; font-family: 'Courier New', monospace; letter-spacing: 1px;" id="ibanDisplay">TR-- ----</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Kredi Durumu -->
+        <div class="section-title" id="loanStatusTitle" style="display:none;">KREDİ DURUMU</div>
+        <div class="loan-progress-box" id="loanStatusBox" style="display:none;">
+            <div class="lpb-header">
+                <span>Kullanılan Limit</span>
+                <span id="loanPercentText">0%</span>
+            </div>
+            <div class="lpb-bar-bg">
+                <div class="lpb-bar-fill" id="loanBar"></div>
+            </div>
+            <div class="lpb-footer">
+                <div>
+                    <div style="font-size:0.7rem; color:#888">GÜNCEL BORÇ</div>
+                    <div class="lpb-debt" id="loanDebt">0 ₺</div>
+                </div>
+                <button class="btn-pay-sm" onclick="openModal('repay')">BORÇ ÖDE</button>
+            </div>
+        </div>
+
+        <!-- Aktif Mevduat Kartı (Varsa Görünür) -->
+        <div id="activeDepositCard" style="display:none; margin-bottom:25px;">
+            <div class="section-title">AKTİF MEVDUAT</div>
+            <div class="loan-progress-box" style="border-color: var(--success);">
+                <div class="lpb-header">
+                    <span style="color:var(--success); font-weight:bold;">MEVDUAT HESABI</span>
+                    <span id="depCountdown" style="color:#fff; font-family:monospace;">00:00:00</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-top:10px; font-size:0.9rem;">
+                    <div style="color:#888;">Anapara:</div>
+                    <div style="color:#fff; font-weight:bold;" id="depPrincipal">0 ₺</div>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-top:5px; font-size:0.9rem;">
+                    <div style="color:#888;">Süre / Faiz:</div>
+                    <div style="color:#fff; font-weight:bold;"><span id="depDurationDisplay">0dk</span> / <span id="depRate">%0</span></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-top:5px; font-size:0.9rem;">
+                    <div style="color:#888;">Vade Sonu Toplam:</div>
+                    <div style="color:var(--success); font-weight:bold;" id="depTotalReturn">0 ₺</div>
+                </div>
+                <div class="lpb-footer" style="margin-top:15px; border-top:1px solid #333; padding-top:10px;">
+                    <div style="font-size:0.75rem; color:#666;">
+                        <i class="fas fa-info-circle"></i> Erken bozumda %3 ceza kesilir.
+                    </div>
+                    <button class="btn-pay-sm" style="background:var(--danger);" onclick="breakActiveDeposit()">ERKEN BOZ</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- İşlemler -->
+        <div class="section-title">HIZLI İŞLEMLER</div>
+        <div class="action-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+            <!-- Row 1: Yatır, Çek, Transfer -->
+            <div class="action-btn" onclick="openModal('deposit')">
+                <div class="ab-icon"><i class="fas fa-arrow-down"></i></div>
+                <span class="ab-text">YATIR</span>
+            </div>
+            <div class="action-btn" onclick="openModal('withdraw')">
+                <div class="ab-icon"><i class="fas fa-arrow-up"></i></div>
+                <span class="ab-text">ÇEK</span>
+            </div>
+            <div class="action-btn" onclick="openModal('transfer')">
+                <div class="ab-icon"><i class="fas fa-paper-plane"></i></div>
+                <span class="ab-text">TRANSFER</span>
+            </div>
+        </div>
+        <!-- Row 2: Kredi, Mevduat (Side by Side) -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 30px;">
+            <div class="action-btn" onclick="openModal('loan')">
+                <div class="ab-icon"><i class="fas fa-hand-holding-dollar"></i></div>
+                <span class="ab-text">KREDİ TEKLİFLERİ</span>
+            </div>
+            <div class="action-btn" onclick="openMevduatModal()">
+                <div class="ab-icon"><i class="fas fa-piggy-bank"></i></div>
+                <span class="ab-text">MEVDUAT FAİZİ</span>
+            </div>
+            <div class="action-btn" onclick="openCloseAccountModal()" style="border-color:var(--danger);">
+                <div class="ab-icon" style="color:var(--danger); background:rgba(231, 76, 60, 0.1);"><i class="fas fa-ban"></i></div>
+                <span class="ab-text" style="color:var(--danger);">HESABI KAPAT</span>
+            </div>
+        </div>
+
+        <!-- İşlem Geçmişi -->
+        <div class="section-title" id="logsTitle">İŞLEM GEÇMİŞİ</div>
+        <div class="logs-section">
+            <div class="log-list" id="logsList">
+                <!-- JS ile dolacak -->
+                <div style="text-align:center; color:#888; font-size:0.8rem; padding:20px;">Yükleniyor...</div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal ve Toast -->
+    
+    <style>
+    /* NEW MODAL STYLES */
+    .modal-box { background: #121212; border: 1px solid #333; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+    .modal-header-styled {
+        background: #1a1a1a;
+        padding: 15px 20px;
+        display: flex; justify-content: space-between; align-items: center;
+        border-bottom: 1px solid #333;
+    }
+    .modal-header-styled.header-gold { background: #1a1a1a; }
+    .modal-header-styled h3 { margin: 0; font-size: 1.1rem; color: #fff; letter-spacing: 1px; font-weight: 800; }
+    .close-modal-btn { background: none; border: none; color: #aaa; font-size: 1.2rem; cursor: pointer; transition: 0.2s; }
+    .close-modal-btn:hover { color: #fff; transform: rotate(90deg); }
+    
+    .modal-content-body { padding: 20px; }
+    
+    .input-label { font-size: 0.75rem; color: #888; margin-bottom: 8px; display: block; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+    .input-wrapper { position: relative; margin-bottom: 5px; }
+    .input-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #666; font-size: 1rem; pointer-events: none; transition: 0.3s; }
+    .modern-input.with-icon { padding-left: 45px; }
+    .modern-input:focus + .input-icon, .modern-input:focus ~ .input-icon { color: #fff; }
+    
+    .info-summary-box { background: rgba(255,255,255,0.03); border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .summary-label { font-size: 0.9rem; color: #aaa; }
+    .summary-val { font-size: 1.1rem; font-weight: 700; color: #fff; }
+    
+    .btn-action-confirm { width: 100%; background: #333; color: #fff; border: 1px solid #444; padding: 15px; border-radius: 8px; font-weight: 800; font-size: 1rem; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 10px; transition: 0.3s; font-family: 'Rajdhani'; }
+    .btn-action-confirm:hover { background: #444; border-color: #666; }
+    .btn-action-confirm.btn-gold { background: #333; color: #fff; }
+    .btn-action-confirm.btn-gold:hover { background: #444; border-color: #666; }
+
+    /* Segmented Control */
+    .segmented-control { display: flex; background: #000; padding: 4px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333; }
+    .segment-btn { flex: 1; background: transparent; border: none; color: #666; padding: 8px; font-family: 'Rajdhani'; font-weight: 700; cursor: pointer; border-radius: 6px; transition: 0.3s; }
+    .segment-btn.active { background: #222; color: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+    
+    .rate-display-box { text-align: center; margin-bottom: 20px; padding: 12px; background: #1a1a1a; border-radius: 12px; border: 1px solid #333; }
+    .rate-label { font-size: 0.65rem; color: #888; letter-spacing: 1.5px; margin-bottom: 4px; }
+    .rate-val { font-size: 1.2rem; font-weight: 800; color: #fff; line-height: 1; }
+    .rate-sub { font-size: 0.7rem; color: #666; margin-top: 4px; }
+    
+    .est-return-box { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom: 20px; }
+    .est-label { font-size: 0.8rem; color: #aaa; font-weight: 700; }
+    .est-val { font-size: 1.2rem; color: #fff; font-weight: 700; }
+    
+    .custom-scroll-list { max-height: 300px; overflow-y: auto; padding-right: 5px; }
+    .custom-scroll-list::-webkit-scrollbar { width: 4px; }
+    .custom-scroll-list::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+    </style>
+
+    <!-- Mevduat Modal -->
+    <div class="modal-overlay" id="mevduatModal">
+        <div class="modal-box" style="width: 95%; max-width: 400px; padding: 0; overflow: hidden;">
+            <div class="modal-header-styled header-gold">
+                <h3>MEVDUAT HESABI</h3>
+                <button class="close-modal-btn" onclick="closeMevduatModal()"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="modal-content-body">
+                <div class="segmented-control">
+                    <button id="tabNewDep" class="segment-btn active" onclick="switchMevduatTab('new')">Yeni Hesap</button>
+                    <button id="tabActiveDep" class="segment-btn" onclick="switchMevduatTab('active')">Aktif Hesaplar</button>
+                </div>
+
+                <!-- New Deposit Tab -->
+                <div id="mevduatNewTab" class="tab-pane">
+                    <div class="rate-display-box">
+                        <div class="rate-label">MEVCUT FAİZ ORANI</div>
+                        <div class="rate-val" id="mevduatRateDisplay">%0</div>
+                        <div class="rate-sub">Günlük Getiri</div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label class="input-label">Yatırılacak Tutar</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="depAmount" class="modern-input" placeholder="0" oninput="calcEstInterest()">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label class="input-label">Vade Süresi</label>
+                        <div class="input-wrapper">
+                            <select id="depDuration" class="modern-input" onchange="calcEstInterest()">
+                                <option value="1440">1 Gün</option>
+                                <option value="4320">3 Gün</option>
+                                <option value="10080">7 Gün</option>
+                                <option value="20160">14 Gün</option>
+                                <option value="43200">30 Gün</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="est-return-box">
+                        <div class="est-label">TAHMİNİ KAZANÇ</div>
+                        <div class="est-val" id="estInterest">0 ₺</div>
+                    </div>
+
+                    <button class="btn-action-confirm btn-gold" onclick="createDeposit()">
+                        <span>HESAP AÇ</span>
+                    </button>
+                </div>
+
+                <!-- Active Deposits Tab -->
+                <div id="mevduatActiveTab" class="tab-pane" style="display:none;">
+                    <div id="activeDepositsList" class="custom-scroll-list">
+                        <!-- JS ile dolacak -->
+                        <div style="text-align:center; color:#888; padding: 20px;">Yükleniyor...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic Action Modal -->
+    <div class="modal-overlay" id="actionModal">
+        <div class="modal-box" style="width: 95%; max-width: 400px; padding: 0; overflow: hidden;">
+            <div class="modal-header-styled">
+                <h3 id="mTitle">İŞLEM</h3>
+                <button class="close-modal-btn" onclick="closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="modal-content-body">
+                <!-- Transfer Specific -->
+                <div id="transferGroup" style="display:none; margin-bottom:20px;">
+                    <label class="input-label">Alıcı IBAN</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="targetIbanInput" class="modern-input" placeholder="Örn: 123456" maxlength="6">
+                    </div>
+                </div>
+
+                <!-- Amount Input -->
+                <div id="amountGroup" style="margin-bottom: 20px;">
+                    <label class="input-label">Miktar</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="mAmount" class="modern-input" placeholder="0">
+                    </div>
+                    <div id="minAmountInfo" style="display:none; font-size: 0.75rem; color: #f1c40f; margin-top: 5px; text-align: left;">
+                        <i class="fas fa-info-circle"></i> Minimum tutar: 1.000 ₺
+                    </div>
+                </div>
+
+                <!-- Credit Offers List (Only for Loan) -->
+                <div id="creditOffersGroup" style="display:none; margin-bottom: 20px;">
+                    <div class="credit-offer-list" id="creditOffersList">
+                        <!-- JS ile dolacak -->
+                    </div>
+                </div>
+
+                <div class="info-summary-box" id="infoRow">
+                    <span id="mInfoLabel" class="summary-label">İşlem Bilgisi</span>
+                    <span id="mInfoVal" class="summary-val">-</span>
+                </div>
+
+                <button class="btn-action-confirm" id="confirmBtn" onclick="performAction()">
+                    <span>ONAYLA</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Break Deposit Confirmation Modal -->
+    <div id="breakDepositModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:99999; align-items:center; justify-content:center; background:rgba(0,0,0,0.8);">
+        <div class="modal-box" style="max-width:400px; position:relative; background:#121212; border:1px solid #333; border-radius:12px; padding:0; overflow:hidden;">
+            <div class="modal-header-styled" style="background: #1a1a1a;">
+                <h3>MEVDUAT BOZMA</h3>
+                <button class="close-modal-btn" onclick="closeBreakDepositModal()"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="modal-content-body" style="text-align:center;">
+                <div style="background: #1a1a1a; border: 1px solid #333; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; text-align: left;">
+                    <i class="fas fa-exclamation-triangle" style="color: #e74c3c; font-size: 2rem;"></i>
+                    <p style="color:#ccc; font-size:0.9rem; margin:0;">Mevduatınızı vadesinden önce bozmak üzeresiniz.<br>Erken bozum durumunda <b style="color:#fff;">%3 ceza kesintisi</b> uygulanacaktır.</p>
+                </div>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+                    <div style="background:#222; padding:10px; border-radius:8px;">
+                        <div style="font-size:0.75rem; color:#888;">Ana Para</div>
+                        <div id="breakPrincipal" style="font-weight:bold; color:#fff;">0 ₺</div>
+                    </div>
+                    <div style="background:#222; padding:10px; border-radius:8px; border:1px solid #333;">
+                        <div style="font-size:0.75rem; color:#888;">Ceza Tutarı</div>
+                        <div id="breakPenalty" style="font-weight:bold; color:#fff;">0 ₺</div>
+                    </div>
+                </div>
+
+                <div style="background:var(--bg-dark); border:1px solid #333; padding:15px; border-radius:8px; margin-bottom:20px;">
+                    <div style="color:#aaa; font-size:0.8rem;">Hesabınıza Geçecek Net Tutar</div>
+                    <div id="breakRefundAmount" style="color:#fff; font-size:1.4rem; font-weight:bold; margin-top:5px;">0 ₺</div>
+                </div>
+
+                <div style="display:flex; gap:10px; justify-content:center;">
+                    <button onclick="closeBreakDepositModal()" style="flex:1; padding:15px; background:#333; color:#fff; border:none; border-radius:8px; cursor:pointer; font-family:'Rajdhani'; font-weight:bold;">VAZGEÇ</button>
+                    <button id="btnConfirmBreak" style="flex:1; background:#1a1a1a; padding:15px; color:#fff; border:1px solid #333; border-radius:8px; cursor:pointer; font-weight:bold; font-family:'Rajdhani';">ONAYLA VE BOZ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- STATE ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const bankId = urlParams.get('bank_id') || 1;
+    let userId = 1; 
+    let username = 'KULLANICI';
+    
+    let accountData = {};
+    let currentAction = '';
+
+    const fmt = (n) => parseInt(n).toLocaleString('tr-TR');
+
+    // --- INIT ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const user = JSON.parse(localStorage.getItem('simWorldUser'));
+        if (user) {
+            userId = user.id;
+            username = user.username || 'KULLANICI';
+            loadAccountDetails();
+            loadBankLogs(); // Load logs independently
+        } else {
+            // Redirect to login if needed, or just show error
+            console.error("User not logged in");
+            window.location.href = 'login.html';
+        }
+    });
+
+    function loadAccountDetails() {
+        console.log('Loading account details for userId:', userId, 'bankId:', bankId);
+        fetch(`/api/bank-accounts/${userId}/${bankId}`)
+            .then(res => res.json())
+            .then(data => {
+                console.log('Account API Response:', data);
+                if (data.success) {
+                    accountData = data.account;
+                    try {
+                        renderUI();
+                        loadActiveDeposits(); // Load active deposits to update the card
+                    } catch (e) {
+                        console.error("Render UI Error:", e);
+                    }
+                } else {
+                    // Account not found or closed
+                    console.error('Account not found. UserId:', userId, 'BankId:', bankId);
+                    document.querySelector('main').innerHTML = `
+                        <div class="page-header" style="margin-bottom: 15px;">
+                            <p class="page-desc" onclick="window.location.href='bank-list.html'" style="cursor:pointer; color: #888; font-size: 0.9rem;">&larr; Bankalara Dön</p>
+                        </div>
+                        <div style="text-align:center; margin-top:50px;">
+                            <i class="fas fa-university" style="font-size:3rem; color:#333; margin-bottom:20px;"></i>
+                            <h3 style="color:#fff; margin-bottom:10px;">Hesap Bulunamadı</h3>
+                            <p style="color:#888; margin-bottom:15px;">Bu bankada aktif bir hesabınız bulunmuyor.</p>
+                            <p style="color:#666; font-size:0.8rem; margin-bottom:30px;">Kullanıcı ID: ${userId} | Banka ID: ${bankId}</p>
+                            <button class="btn-full" onclick="window.location.href='bank-list.html'" style="background:var(--success); color:#fff; max-width:200px; margin:0 auto;">BANKALARA DÖN</button>
+                        </div>
+                    `;
+                }
+            })
+            .catch(err => {
+                console.error('Account API Error:', err);
+                showToast('İşlem sırasında bir hata oluştu.', 'error');
+            });
+    }
+
+    function loadBankLogs() {
+        const list = document.getElementById('logsList');
+        fetch(`/api/bank-accounts/logs/${userId}/${bankId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('logsTitle').innerText = `İŞLEM GEÇMİŞİ (${data.total || 0})`;
+                    renderLogs(data.logs);
+                } else {
+                    list.innerHTML = '<div style="text-align:center; color:#e74c3c; font-size:0.8rem; padding:20px;">Geçmiş yüklenemedi.</div>';
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                list.innerHTML = '<div style="text-align:center; color:#e74c3c; font-size:0.8rem; padding:20px;">Bağlantı hatası.</div>';
+            });
+    }
+
+    function renderLogs(logs) {
+        const list = document.getElementById('logsList');
+        list.innerHTML = '';
+
+        if (!Array.isArray(logs) || logs.length === 0) {
+            list.innerHTML = '<div style="text-align:center; color:#888; font-size:0.8rem; padding:20px;">Henüz işlem yok.</div>';
+            return;
+        }
+
+        logs.forEach(log => {
+            let icon = 'fa-circle';
+            let title = 'İşlem';
+            let amountClass = '';
+            let amountPrefix = '';
+
+            if (log.transaction_type === 'deposit') {
+                icon = 'fa-plus';
+                title = 'Para Yatırma';
+                amountClass = 'plus';
+                amountPrefix = '+';
+            } else if (log.transaction_type === 'withdraw') {
+                icon = 'fa-minus';
+                title = 'Para Çekme';
+                amountClass = 'minus';
+                amountPrefix = '-';
+            } else if (log.transaction_type === 'transfer_out') {
+                icon = 'fa-arrow-right'; // Using arrow-right for sent
+                title = 'Giden Transfer';
+                amountClass = 'minus';
+                amountPrefix = '-';
+            } else if (log.transaction_type === 'transfer_in') {
+                icon = 'fa-arrow-left'; // Using arrow-left for received
+                // Parse sender info from description (format: "Gelen Transfer (userId - username)")
+                const match = log.description?.match(/\((\d+)\s*-\s*([^)]+)\)/);
+                if (match) {
+                    title = `Gelen Transfer (${match[1]} - ${match[2]})`;
+                } else {
+                    title = 'Gelen Transfer';
+                }
+                amountClass = 'plus';
+                amountPrefix = '+';
+            } else if (log.transaction_type === 'loan_taken') {
+                icon = 'fa-credit-card';
+                title = 'Kredi Kullanımı';
+                amountClass = 'plus';
+                amountPrefix = '+';
+            } else if (log.transaction_type === 'loan_paid') {
+                icon = 'fa-file-invoice-dollar';
+                title = 'Kredi Ödemesi';
+                amountClass = 'minus';
+                amountPrefix = '-';
+            } else if (log.transaction_type === 'score_update') {
+                icon = 'fa-chart-line';
+                title = 'Kredi Puanı';
+                amountClass = 'val-gold'; // Use gold color for score
+                amountPrefix = '';
+            }
+
+            const date = new Date(log.created_at);
+            const dateStr = date.toLocaleDateString('tr-TR') + ' ' + date.toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'});
+
+            let amountDisplay = '';
+            if (log.transaction_type === 'score_update') {
+                // Parse description for score change if possible, or just show description
+                amountDisplay = ''; // Don't show amount for score updates in the amount column, maybe show in description
+            } else {
+                amountDisplay = `${amountPrefix}${fmt(log.amount)} ₺`;
+            }
+
+            const item = document.createElement('div');
+            item.className = 'log-item';
+            item.innerHTML = `
+                <div class="log-left">
+                    <div class="log-icon"><i class="fas ${icon}"></i></div>
+                    <div class="log-info">
+                        <h4>${title}</h4>
+                        <p>${dateStr} • ${log.description || ''}</p>
+                    </div>
+                </div>
+                <div class="log-amount ${amountClass}">${amountDisplay}</div>
+            `;
+            list.appendChild(item);
+        });
+    }
+
+    function renderUI() {
+        // Safety check
+        if (!accountData || !accountData.bank_name) {
+            console.error('accountData is empty or invalid:', accountData);
+            return;
+        }
+
+        try {
+            document.getElementById('bankNameDisplay').innerText = accountData.bank_name.toUpperCase();
+            document.getElementById('bankLevelBadge').innerText = 'SEVİYE ' + (accountData.level || 1);
+        } catch (err) {
+            console.error('Error in renderUI (bank info section):', err);
+            throw err;
+        }
+
+        try {
+            document.getElementById('bankBalance').innerText = fmt(accountData.balance) + " ₺";
+            document.getElementById('ibanDisplay').innerText = accountData.iban || '----';
+            document.getElementById('bankOwnerDisplay').innerText = `Banka Sahibi: ${accountData.owner_name || 'Bilinmiyor'}`;
+
+            document.getElementById('interestRateDisplay').innerText = '%' + accountData.interest_rate;
+            document.getElementById('loanRateDisplay').innerText = '%' + accountData.loan_rate;
+            document.getElementById('transferFeeDisplay').innerText = '%' + accountData.transfer_fee;
+            
+            // Capacity display
+            const customerCount = accountData.customer_count || 0;
+            const maxCapacity = accountData.capacity || 10;
+            document.getElementById('capacityDisplay').innerText = customerCount + '/' + maxCapacity;
+        } catch (err) {
+            console.error('Error in renderUI (stats section):', err);
+            throw err;
+        }
+
+        try {
+            document.getElementById('loanDebt').innerText = fmt(accountData.loan_debt) + " ₺";
+            
+            // Loan Progress Visibility
+            const loanBox = document.getElementById('loanStatusBox');
+            const loanTitle = document.getElementById('loanStatusTitle');
+            
+            if (accountData.loan_debt > 0) {
+                loanBox.style.display = 'block';
+                loanTitle.style.display = 'block';
+                
+                // Loan Progress (Assuming max loan is dynamic or fixed, let's say 5M for visual)
+                const maxLoan = 5000000; 
+                const debtPercent = Math.min((accountData.loan_debt / maxLoan) * 100, 100);
+                document.getElementById('loanBar').style.width = debtPercent + "%";
+                document.getElementById('loanPercentText').innerText = debtPercent.toFixed(1) + "%";
+            } else {
+                loanBox.style.display = 'none';
+                loanTitle.style.display = 'none';
+            }
+        } catch (err) {
+            console.error('Error in renderUI (loan section):', err);
+            throw err;
+        }
+
+        try {
+            if (window.updateHeaderStats) window.updateHeaderStats();
+        } catch (err) {
+            console.error('Error updating header stats:', err);
+        }
+    }
+
+    // --- MODAL LOGIC ---
+    function openModal(action) {
+        if (action === 'loan') {
+            // Check active loan first
+            fetch(`/api/bank-accounts/has-loan/${userId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.hasLoan) {
+                        showToast('Aktif bir krediniz bulunuyor! Yeni kredi çekebilmeniz için mevcut krediyi ödemeniz gerekiyor.', 'error');
+                    } else {
+                        _showModal(action);
+                    }
+                })
+                .catch(err => showToast('Bağlantı hatası', 'error'));
+            return;
+        }
+        _showModal(action);
+    }
+
+    function _showModal(action) {
+        document.body.classList.add('modal-open');
+        currentAction = action;
+        const modal = document.getElementById('actionModal');
+        const title = document.getElementById('mTitle');
+        const transferGroup = document.getElementById('transferGroup');
+        const amountGroup = document.getElementById('amountGroup');
+        const creditOffersGroup = document.getElementById('creditOffersGroup');
+        const infoRow = document.getElementById('infoRow');
+        const confirmBtn = document.getElementById('confirmBtn');
+
+        // Reset
+        transferGroup.style.display = 'none';
+        amountGroup.style.display = 'block';
+        creditOffersGroup.style.display = 'none';
+        infoRow.style.display = 'flex';
+        confirmBtn.style.display = 'block';
+        document.getElementById('mAmount').value = '';
+        document.getElementById('targetIbanInput').value = '';
+
+        modal.style.display = 'flex';
+
+        // Hide minAmountInfo by default
+        const minAmountInfo = document.getElementById('minAmountInfo');
+        minAmountInfo.style.display = 'none';
+
+        if (action === 'deposit') {
+            title.innerText = 'Para Yatır';
+            document.getElementById('mInfoLabel').innerText = 'Mevcut Nakit';
+            const valEl = document.getElementById('mInfoVal');
+            valEl.innerText = 'Yükleniyor...';
+            valEl.style.color = 'var(--success)'; // Green
+            
+            // Show minimum amount info for deposit
+            minAmountInfo.style.display = 'block';
+            
+            // Fetch user stats
+            fetch(`/api/user-stats/${userId}`)
+                .then(r => r.json())
+                .then(d => {
+                    valEl.innerText = fmt(d.money) + ' ₺';
+                });
+        } else if (action === 'withdraw') {
+            title.innerText = 'Para Çek';
+            document.getElementById('mInfoLabel').innerText = 'Çekilebilir Bakiye';
+            const valEl = document.getElementById('mInfoVal');
+            valEl.innerText = fmt(accountData.balance) + ' ₺';
+            valEl.style.color = 'var(--success)'; // Green
+            
+            // Show minimum amount info for withdraw
+            minAmountInfo.style.display = 'block';
+        } else if (action === 'transfer') {
+            title.innerText = 'IBAN Transferi';
+            transferGroup.style.display = 'block';
+            document.getElementById('mInfoLabel').innerText = 'Transfer Ücreti';
+            const valEl = document.getElementById('mInfoVal');
+            valEl.innerText = '%' + accountData.transfer_fee;
+            valEl.style.color = '#fff'; // Reset color
+        } else if (action === 'repay') {
+            title.innerText = 'Borç Öde';
+            document.getElementById('mInfoLabel').innerText = 'Ödeme Detayları';
+            document.getElementById('mInfoVal').style.color = '#fff'; // Reset color
+            
+            const rate = accountData.loan_rate || 0;
+            const debt = accountData.loan_debt || 0;
+            
+            // Calculate interest portion (Bank's Profit)
+            // Formula: Principal = Debt / (1 + rate/100)
+            // Interest = Debt - Principal
+            const principal = debt / (1 + (rate / 100));
+            const interestProfit = debt - principal;
+            
+            document.getElementById('mInfoVal').innerHTML = `
+                <div style="text-align: left; font-size: 0.85rem; line-height: 1.4;">
+                    <div>Toplam Borç: <span style="float:right; font-weight:bold;">${fmt(debt)} ₺</span></div>
+                    <div>Faiz Oranı: <span style="float:right;">%${rate}</span></div>
+                    <div style="color: #2ecc71; border-top: 1px solid #444; margin-top: 4px; padding-top: 4px;">
+                        Bankanın Kârı (Faiz): <span style="float:right; font-weight:bold;">${fmt(Math.round(interestProfit))} ₺</span>
+                    </div>
+                </div>
+            `;
+            // Pre-fill amount with total debt
+            document.getElementById('mAmount').value = debt;
+        } else if (action === 'loan') {
+            title.innerText = 'Kredi Teklifleri';
+            amountGroup.style.display = 'none'; // Hide manual input
+            infoRow.style.display = 'none';
+            confirmBtn.style.display = 'none'; // Hide default confirm, use package buttons
+            creditOffersGroup.style.display = 'block';
+            renderCreditOffers();
+        }
+    }
+
+    function closeModal() {
+        document.body.classList.remove('modal-open');
+        document.getElementById('actionModal').style.display = 'none';
+    }
+
+    function renderCreditOffers() {
+        const list = document.getElementById('creditOffersList');
+        list.innerHTML = '';
+
+        // Define packages with required education levels
+        const packages = [
+            { amount: 5000, level: 0, levelName: '' },
+            { amount: 10000, level: 10, levelName: 'İlkokul' },
+            { amount: 30000, level: 20, levelName: 'Ortaokul' },
+            { amount: 50000, level: 40, levelName: 'Lise' },
+            { amount: 100000, level: 60, levelName: 'Lisans' },
+            { amount: 200000, level: 80, levelName: 'Yüksek Lisans' },
+            { amount: 500000, level: 90, levelName: 'Doktora' }
+        ];
+        const rate = accountData.loan_rate;
+        const userEducation = accountData.education_skill || 1;
+
+        packages.forEach(pkg => {
+            const amount = pkg.amount;
+            const reqLevel = pkg.level;
+            const levelName = pkg.levelName;
+            const interest = (amount * rate) / 100;
+            const total = amount + interest;
+            
+            const isLocked = userEducation < reqLevel;
+            const opacity = isLocked ? '0.5' : '1';
+            const cursor = isLocked ? 'not-allowed' : 'pointer';
+            const btnText = isLocked ? 'KİLİTLİ' : 'SEÇ';
+            const btnStyle = isLocked ? 'background:#444; color:#888;' : '';
+
+            const item = document.createElement('div');
+            item.className = 'credit-offer-item';
+            item.style.opacity = opacity;
+            
+            const requirementText = reqLevel > 0 ? `<i class="fas fa-graduation-cap"></i> Gerekli: ${levelName} (Sev. ${reqLevel})` : '<i class="fas fa-check-circle"></i> Eğitim Gerekmiyor';
+            
+            item.innerHTML = `
+                <div>
+                    <div class="co-amount">${fmt(amount)} ₺</div>
+                    <div class="co-details">Faiz: %${rate}</div>
+                    <div class="co-details" style="color: #e74c3c; font-weight: 600;">Geri Ödeme: ${fmt(total)} ₺</div>
+                    <div class="co-details" style="color: ${isLocked ? '#e74c3c' : '#2ecc71'}; font-size: 0.75rem; margin-top:5px;">
+                        ${requirementText}
+                    </div>
+                </div>
+                <button class="co-btn" style="${btnStyle}" onclick="checkLoanEligibility(${amount}, ${reqLevel}, '${levelName}', ${isLocked})">${btnText}</button>
+            `;
+            list.appendChild(item);
+        });
+    }
+
+    function checkLoanEligibility(amount, reqLevel, levelName, isLocked) {
+        if (isLocked) {
+            const message = reqLevel > 0 
+                ? `Bu krediyi çekebilmek için ${levelName} (Seviye ${reqLevel}) eğitim seviyesine sahip olmalısınız.`
+                : 'Bu kredi için eğitim gerekmiyor.';
+            showToast(message, 'error');
+            return;
+        }
+        takeLoan(amount);
+    }
+
+    // --- ACTIONS ---
+    function performAction() {
+        const amount = parseInt(document.getElementById('mAmount').value);
+        if (!amount || amount <= 0) {
+            closeModal();
+            setTimeout(() => showToast('Geçersiz miktar', 'error'), 300);
+            return;
+        }
+
+        // Minimum amount checks
+        if (currentAction === 'deposit' && amount < 1000) {
+            closeModal();
+            setTimeout(() => showToast('Minimum para yatırma tutarı 1.000 ₺', 'warning'), 300);
+            return;
+        }
+        
+        if (currentAction === 'withdraw' && amount < 1000) {
+            closeModal();
+            setTimeout(() => showToast('Minimum para çekme tutarı 1.000 ₺', 'warning'), 300);
+            return;
+        }
+
+        let endpoint = '';
+        let body = { userId, bankId, amount };
+
+        if (currentAction === 'deposit') endpoint = '/api/bank-accounts/deposit';
+        if (currentAction === 'withdraw') endpoint = '/api/bank-accounts/withdraw';
+        if (currentAction === 'repay') endpoint = '/api/bank-accounts/pay-loan';
+        if (currentAction === 'transfer') {
+            endpoint = '/api/bank-accounts/transfer';
+            body.targetIban = document.getElementById('targetIbanInput').value;
+            if (!body.targetIban) {
+                closeModal();
+                setTimeout(() => showToast('IBAN giriniz', 'error'), 300);
+                return;
+            }
+            // Self Transfer Check
+            if (body.targetIban === accountData.iban) {
+                closeModal();
+                setTimeout(() => showToast('Kendi hesabınıza para gönderemezsiniz.', 'error'), 300);
+                return;
+            }
+        }
+
+        // Close modal immediately
+        closeModal();
+
+        fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        })
+        .then(res => res.json())
+        .then(data => {
+            setTimeout(() => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    loadAccountDetails();
+                    loadBankLogs(); // Refresh logs
+                    // Trigger header update
+                    window.dispatchEvent(new Event('userStatsUpdated'));
+                } else {
+                    showToast(data.message, 'error');
+                }
+            }, 300);
+        })
+        .catch(err => {
+            setTimeout(() => showToast('Bağlantı hatası', 'error'), 300);
+        });
+    }
+
+    function takeLoan(amount) {
+        // Close modal immediately
+        closeModal();
+
+        fetch('/api/bank-accounts/loan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, bankId, amount })
+        })
+        .then(res => res.json())
+        .then(data => {
+            setTimeout(() => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    loadAccountDetails();
+                    loadBankLogs(); // Refresh logs
+                    // Trigger header update
+                    window.dispatchEvent(new Event('userStatsUpdated'));
+                } else {
+                    showToast(data.message, 'error');
+                }
+            }, 300);
+        })
+        .catch(err => {
+            setTimeout(() => showToast('Bağlantı hatası', 'error'), 300);
+        });
+    }
+
+    // --- MEVDUAT FUNCTIONS ---
+    function openMevduatModal() {
+        document.getElementById('mevduatModal').style.display = 'flex';
+        document.body.classList.add('modal-open');
+        document.getElementById('mevduatRateDisplay').innerText = '%' + (accountData.interest_rate || 0);
+        switchMevduatTab('new');
+    }
+
+    function closeMevduatModal() {
+        document.getElementById('mevduatModal').style.display = 'none';
+        document.body.classList.remove('modal-open');
+    }
+
+    function switchMevduatTab(tab) {
+        const newTab = document.getElementById('mevduatNewTab');
+        const activeTab = document.getElementById('mevduatActiveTab');
+        const btnNew = document.getElementById('tabNewDep');
+        const btnActive = document.getElementById('tabActiveDep');
+
+        // Reset inline styles if any
+        btnNew.style = '';
+        btnActive.style = '';
+
+        if (tab === 'new') {
+            newTab.style.display = 'block';
+            activeTab.style.display = 'none';
+            btnNew.classList.add('active');
+            btnActive.classList.remove('active');
+        } else {
+            newTab.style.display = 'none';
+            activeTab.style.display = 'block';
+            btnNew.classList.remove('active');
+            btnActive.classList.add('active');
+            loadActiveDeposits();
+        }
+    }
+
+    function calcEstInterest() {
+        const amount = parseInt(document.getElementById('depAmount').value) || 0;
+        const duration = parseInt(document.getElementById('depDuration').value) || 10;
+        const rate = accountData.interest_rate || 0;
+        
+        // Formula: Amount * (Rate/100) * (Duration/1440) - Daily interest
+        const interest = Math.floor(amount * (rate / 100) * (duration / 1440));
+        document.getElementById('estInterest').innerText = fmt(interest) + ' ₺';
+    }
+
+    function createDeposit() {
+        const amount = parseInt(document.getElementById('depAmount').value);
+        const duration = parseInt(document.getElementById('depDuration').value);
+
+        if (!amount || amount <= 0) return showToast('Geçersiz miktar', 'error');
+
+        closeMevduatModal();
+
+        fetch('/api/bank-accounts/deposit-create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, bankId, amount, durationMinutes: duration })
+        })
+        .then(res => res.json())
+        .then(data => {
+            setTimeout(() => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    // Kredi puanı değişimini göster
+                    if (data.creditPoints && data.creditPoints !== 0) {
+                        const pointsMsg = data.creditPoints > 0 
+                            ? `+${data.creditPoints} kredi puanı kazandınız! 🎉`
+                            : `${data.creditPoints} kredi puanı kaybettiniz! ⚠️`;
+                        setTimeout(() => showToast(pointsMsg, data.creditPoints > 0 ? 'success' : 'warning'), 1500);
+                    }
+                    loadAccountDetails();
+                    loadBankLogs();
+                    window.dispatchEvent(new Event('userStatsUpdated'));
+                } else {
+                    showToast(data.message, 'error');
+                }
+            }, 300);
+        })
+        .catch(err => showToast('Hata oluştu', 'error'));
+    }
+
+    function loadActiveDeposits() {
+        // This function is for the Modal List
+        const list = document.getElementById('activeDepositsList');
+        list.innerHTML = '<div style="text-align:center; color:#888;">Yükleniyor...</div>';
+
+        fetch(`/api/bank-accounts/deposits/${userId}/${bankId}`)
+        .then(res => res.json())
+        .then(data => {
+            // Also update the Main Screen Card
+            updateMainScreenDepositCard(data.deposits);
+
+            if (!data.success || !data.deposits || data.deposits.length === 0) {
+                list.innerHTML = '<div style="text-align:center; color:#888; padding:20px;">Aktif mevduatınız bulunmuyor.</div>';
+                return;
+            }
+
+            list.innerHTML = '';
+            data.deposits.forEach(dep => {
+                if (dep.status === 'broken' || dep.status === 'completed') return; 
+
+                const endTime = new Date(dep.end_time).getTime();
+                const now = new Date().getTime();
+                const timeLeft = Math.max(0, Math.floor((endTime - now) / 1000));
+                const isFinished = timeLeft === 0;
+
+                const item = document.createElement('div');
+                item.className = 'log-item'; 
+                item.style.flexDirection = 'column';
+                item.style.alignItems = 'stretch';
+                item.style.gap = '10px';
+
+                let actionBtn = '';
+                if (isFinished) {
+                    actionBtn = `<button class="btn-pay-sm" style="background:var(--success); width:100%;" onclick="collectDeposit(${dep.id})">TAHSİL ET (${fmt(dep.amount + dep.interest_amount)} ₺)</button>`;
+                } else {
+                    actionBtn = `<button class="btn-pay-sm" style="background:var(--danger); width:100%;" onclick="breakDeposit(${dep.id}, ${dep.amount})">BOZ (Anapara İade)</button>`;
+                }
+
+                item.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-weight:bold; color:#fff;">${fmt(dep.amount)} ₺ Mevduat</div>
+                            <div style="font-size:0.8rem; color:var(--success);">+${fmt(dep.interest_amount)} ₺ Faiz</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:0.9rem; color:#fff;" id="timer-${dep.id}">${formatTime(timeLeft)}</div>
+                            <div style="font-size:0.7rem; color:#888;">Kalan Süre</div>
+                        </div>
+                    </div>
+                    ${actionBtn}
+                `;
+                list.appendChild(item);
+
+                // Countdown for Modal
+                if (!isFinished) {
+                    const timerInterval = setInterval(() => {
+                        const now = new Date().getTime();
+                        const left = Math.max(0, Math.floor((endTime - now) / 1000));
+                        const el = document.getElementById(`timer-${dep.id}`);
+                        if (el) el.innerText = formatTime(left);
+                        
+                        if (left === 0) {
+                            clearInterval(timerInterval);
+                            loadActiveDeposits(); 
+                        }
+                    }, 1000);
+                }
+            });
+        })
+        .catch(err => console.error("Error loading active deposits:", err));
+    }
+
+    let mainDepositInterval = null;
+
+    function updateMainScreenDepositCard(deposits) {
+        const card = document.getElementById('activeDepositCard');
+        if (!deposits) {
+            card.style.display = 'none';
+            return;
+        }
+
+        // Find the first active deposit
+        const activeDep = deposits.find(d => d.status === 'active');
+        
+        if (!activeDep) {
+            card.style.display = 'none';
+            if (mainDepositInterval) clearInterval(mainDepositInterval);
+            return;
+        }
+
+        card.style.display = 'block';
+        document.getElementById('depPrincipal').innerText = fmt(activeDep.amount) + ' ₺';
+        document.getElementById('depTotalReturn').innerText = fmt(activeDep.amount + activeDep.interest_amount) + ' ₺';
+        
+        // Calculate duration in minutes (approx)
+        const start = new Date(activeDep.start_time).getTime();
+        const end = new Date(activeDep.end_time).getTime();
+        const durationMins = Math.round((end - start) / 60000);
+        
+        document.getElementById('depDurationDisplay').innerText = durationMins + 'dk';
+        document.getElementById('depRate').innerText = '%' + (activeDep.interest_rate || 0);
+        
+        // Store ID and Amount for break action
+        card.dataset.depositId = activeDep.id;
+        card.dataset.depositAmount = activeDep.amount;
+
+        const endTime = new Date(activeDep.end_time).getTime();
+        
+        if (mainDepositInterval) clearInterval(mainDepositInterval);
+
+        const updateTimer = () => {
+            const now = new Date().getTime();
+            const left = Math.max(0, Math.floor((endTime - now) / 1000));
+            document.getElementById('depCountdown').innerText = formatTime(left);
+
+            if (left === 0) {
+                clearInterval(mainDepositInterval);
+                // Auto Collect Logic
+                collectDeposit(activeDep.id, true); // true = silent/auto
+            }
+        };
+
+        updateTimer();
+        mainDepositInterval = setInterval(updateTimer, 1000);
+    }
+
+    function breakActiveDeposit() {
+        const id = document.getElementById('activeDepositCard').dataset.depositId;
+        const amount = document.getElementById('activeDepositCard').dataset.depositAmount;
+        if (id && amount) breakDeposit(id, amount);
+    }
+
+    function formatTime(seconds) {
+        const d = Math.floor(seconds / 86400);
+        const h = Math.floor((seconds % 86400) / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        
+        if (d > 0) {
+            return `${d}g ${h}sa ${m}dk ${s}sn`;
+        } else if (h > 0) {
+            return `${h}sa ${m}dk ${s}sn`;
+        } else {
+            return `${m}dk ${s}sn`;
+        }
+    }
+
+    function closeBreakDepositModal() {
+        document.getElementById('breakDepositModal').style.display = 'none';
+        document.body.classList.remove('modal-open');
+    }
+
+    function breakDeposit(id, amount) {
+        // Open Confirmation Modal
+        const modal = document.getElementById('breakDepositModal');
+        const principalEl = document.getElementById('breakPrincipal');
+        const penaltyEl = document.getElementById('breakPenalty');
+        const refundEl = document.getElementById('breakRefundAmount');
+        const btn = document.getElementById('btnConfirmBreak');
+
+        // Calculate Refund: Amount - 3%
+        const penalty = Math.floor(amount * 0.03);
+        const refund = amount - penalty;
+
+        principalEl.innerText = fmt(amount) + ' ₺';
+        penaltyEl.innerText = '-' + fmt(penalty) + ' ₺';
+        refundEl.innerText = fmt(refund) + ' ₺';
+        
+        modal.style.display = 'flex';
+        document.body.classList.add('modal-open');
+
+        // Set OnClick for Confirm Button
+        btn.onclick = function() {
+            closeBreakDepositModal();
+            closeMevduatModal(); // Close main modal if open
+            
+            fetch('/api/bank-accounts/deposit-break', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, depositId: id })
+            })
+            .then(res => res.json())
+            .then(data => {
+                setTimeout(() => {
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                        loadAccountDetails();
+                        loadActiveDeposits(); // Refresh both lists
+                        window.dispatchEvent(new Event('userStatsUpdated'));
+                    } else {
+                        showToast(data.message, 'error');
+                    }
+                }, 300);
+            })
+            .catch(err => showToast('İşlem hatası', 'error'));
+        };
+    }
+
+    function collectDeposit(id, isAuto = false) {
+        if (!isAuto) closeMevduatModal();
+        
+        fetch('/api/bank-accounts/deposit-collect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, depositId: id })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (isAuto) {
+                // If auto collected, just refresh UI and show toast
+                if (data.success) {
+                    showToast('Mevduat vadesi doldu ve tahsil edildi.', 'success');
+                    loadAccountDetails();
+                    loadActiveDeposits();
+                    window.dispatchEvent(new Event('userStatsUpdated'));
+                }
+            } else {
+                setTimeout(() => {
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                        loadAccountDetails();
+                        loadActiveDeposits();
+                        window.dispatchEvent(new Event('userStatsUpdated'));
+                    } else {
+                        showToast(data.message, 'error');
+                    }
+                }, 300);
+            }
+        })
+        .catch(err => showToast('İşlem hatası', 'error'));
+    }
+
+    function showToast(msg, type = 'success') {
+        if (type === 'success') {
+            toastr.success(msg);
+        } else if (type === 'error') {
+            toastr.error(msg);
+        } else if (type === 'warning') {
+            toastr.warning(msg);
+        } else if (type === 'info') {
+            toastr.info(msg);
+        }
+    }
+
+    function copyIban() {
+        const iban = document.getElementById('ibanDisplay').innerText;
+        if (!iban || iban === '----') return;
+        
+        navigator.clipboard.writeText(iban).then(() => {
+            showToast('IBAN Kopyalandı!', 'success');
+        }).catch(err => {
+            console.error('Copy failed', err);
+            showToast('Kopyalama başarısız', 'error');
+        });
+    }
+
+</script>
+    <!-- Close Account Confirmation Modal -->
+    <div id="closeAccountModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:99999; align-items:center; justify-content:center; background:rgba(0,0,0,0.8);">
+        <div class="modal-box" style="width:95%; max-width:400px; position:relative; background:#121212; border:1px solid #333; border-radius:12px; padding:0; overflow:hidden;">
+            <div class="modal-header-styled" style="background: #1a1a1a;">
+                <h3>HESAP KAPATMA</h3>
+                <button class="close-modal-btn" onclick="closeCloseAccountModal()"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="modal-content-body" style="text-align:center;">
+                <div style="background: #1a1a1a; border: 1px solid #333; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; text-align: left;">
+                    <i class="fas fa-triangle-exclamation" style="color: #c0392b; font-size: 2.5rem;"></i>
+                    <p style="color:#ccc; font-size:0.95rem; margin:0; line-height: 1.5;">
+                        Bu hesabı kapatmak üzeresiniz.<br>
+                        İşlem ücreti: <b style="color:#fff; font-size: 1.1rem;">5.000 ₺</b>
+                    </p>
+                </div>
+                
+                <div style="display:flex; gap:10px; justify-content:center;">
+                    <button onclick="closeCloseAccountModal()" style="flex:1; padding:15px; background:#333; color:#fff; border:none; border-radius:8px; cursor:pointer; font-family:'Rajdhani'; font-weight:bold;">VAZGEÇ</button>
+                    <button onclick="confirmCloseAccount()" style="flex:1; background:#1a1a1a; padding:15px; color:#fff; border:1px solid #333; border-radius:8px; cursor:pointer; font-weight:bold; font-family:'Rajdhani';">EVET, KAPAT</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function openCloseAccountModal() {
+        document.getElementById('closeAccountModal').style.display = 'flex';
+        document.body.classList.add('modal-open');
+    }
+
+    function closeCloseAccountModal() {
+        document.getElementById('closeAccountModal').style.display = 'none';
+        document.body.classList.remove('modal-open');
+    }
+
+    function confirmCloseAccount() {
+        closeCloseAccountModal();
+        
+        fetch('/api/bank-accounts/close', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, bankId })
+        })
+        .then(res => res.json())
+        .then(data => {
+            setTimeout(() => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    // Refresh UI to show "Open Account" state
+                    loadAccountDetails();
+                    window.dispatchEvent(new Event('userStatsUpdated'));
+                } else {
+                    showToast(data.message, 'error');
+                }
+            }, 200);
+        });
+    }
+    </script>
+
+<script src="js/header-manager.js"></script>
+<script src="js/menu-manager.js"></script>
+<script src="js/global-menu.js"></script>
+</body>
+</html>

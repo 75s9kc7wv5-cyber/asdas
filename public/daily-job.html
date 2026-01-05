@@ -40,9 +40,28 @@
         /* MAIN */
         main { flex: 1; padding: 15px; overflow-y: auto; padding-bottom: 80px; position: relative; }
 
-        .page-header { text-align: center; margin-bottom: 20px; animation: fadeInDown 0.5s; }
-        .page-title { font-size: 1.4rem; letter-spacing: 1px; color: #fff; text-transform: uppercase; font-weight: 800; }
-        .page-desc { font-size: 0.8rem; color: var(--text-muted); }
+        .page-header { text-align: center; margin-bottom: 25px; animation: fadeInDown 0.5s; }
+        .header-badge {
+            display: inline-block;
+            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(10,10,10,0.95) 100%);
+            border: 1px solid #333;
+            border-top: 3px solid var(--accent);
+            padding: 15px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .header-badge::after {
+            content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+            width: 60%; height: 2px; background: radial-gradient(circle, var(--accent) 0%, transparent 100%);
+            opacity: 0.5;
+        }
+        .page-title { 
+            font-size: 1.4rem; font-weight: 800; letter-spacing: 2px; color: #fff; margin-bottom: 5px; 
+            text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 10px;
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+        }
+        .page-desc { font-size: 0.85rem; color: #999; font-weight: 500; }
 
         /* AKTİF İŞ SAYACI (TOP PANEL) - REMOVED */
         /* .active-job-panel styles removed */
@@ -171,8 +190,10 @@
         <main>
             
             <div class="page-header">
-                <h1 class="page-title">GÜNLÜK İŞLER</h1>
-                <p class="page-desc">Günde 1 kez çalışarak kaynak kazan.</p>
+                <div class="header-badge">
+                    <div class="page-title"><i class="fas fa-briefcase" style="color:var(--accent)"></i> GÜNLÜK İŞLER</div>
+                    <div class="page-desc">Günde 1 kez çalışarak kaynak kazan.</div>
+                </div>
             </div>
 
             <!-- İŞ LİSTESİ -->

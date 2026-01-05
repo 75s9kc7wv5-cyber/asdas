@@ -1,4 +1,5 @@
 nohup: ignoring input
+Attempting to start server on port 3000
 Server running at http://localhost:3000
 Connected to database: simworld
 Hospitals table ready
@@ -7,34 +8,3 @@ Hospital Active Treatments table ready
 Notifications table ready
 Toxic Logs table ready
 Profile Visits table ready
-Requesting ranch detail for ID: 2 User: 3
-Requesting ranch detail for ID: 2 User: 3
-Requesting ranch detail for ID: 2 User: 3
-Requesting ranch detail for ID: 2 User: 3
-Requesting ranch detail for ID: 2 User: 3
-[Generic] License Buy Debug: UserEdu=53, Required=10, NextLevel=1, MineType=cow_farm
-[Generic] License Buy Debug: UserEdu=53, Required=10, NextLevel=1, MineType=sheep_farm
-[Generic] License Buy Debug: UserEdu=53, Required=10, NextLevel=1, MineType=bee_farm
-[Generic] License Buy Debug: UserEdu=53, Required=10, NextLevel=1, MineType=chicken_farm
-[Generic] License Buy Debug: UserEdu=53, Required=20, NextLevel=2, MineType=chicken_farm
-[Generic] License Buy Debug: UserEdu=53, Required=20, NextLevel=2, MineType=cow_farm
-[Generic] License Buy Debug: UserEdu=53, Required=20, NextLevel=2, MineType=sheep_farm
-[Generic] License Buy Debug: UserEdu=53, Required=20, NextLevel=2, MineType=bee_farm
-Requesting ranch detail for ID: 2 User: 3
-Requesting ranch detail for ID: 2 User: 3
-Requesting ranch detail for ID: 2 User: 3
-Requesting ranch detail for ID: 2 User: 3
-[Generic] License Buy Debug: UserEdu=53, Required=30, NextLevel=3, MineType=cow_farm
-[Generic] License Buy Debug: UserEdu=53, Required=30, NextLevel=3, MineType=sheep_farm
-Requesting ranch detail for ID: 2 User: 3
-Requesting ranch detail for ID: 2 User: 3
-[Generic] License Buy Debug: UserEdu=53, Required=40, NextLevel=4, MineType=cow_farm
-[Generic] License Buy Debug: UserEdu=53, Required=50, NextLevel=5, MineType=cow_farm
-[Generic] License Buy Debug: UserEdu=53, Required=40, NextLevel=4, MineType=sheep_farm
-[Generic] License Buy Debug: UserEdu=53, Required=50, NextLevel=5, MineType=sheep_farm
-Requesting ranch detail for ID: 2 User: 3
-[Generic] License Buy Debug: UserEdu=53, Required=20, NextLevel=2, MineType=sheep
-[Generic] License Buy Debug: UserEdu=53, Required=20, NextLevel=2, MineType=cow
-[Generic] License Buy Debug: UserEdu=53, Required=30, NextLevel=3, MineType=sheep
-Requesting ranch detail for ID: 2 User: 3
-Requesting ranch detail for ID: 2 User: 3

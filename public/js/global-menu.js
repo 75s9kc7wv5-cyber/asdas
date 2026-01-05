@@ -2,12 +2,12 @@
 (() => {
   const pages = [
     { href: 'profile.html', icon: 'fas fa-user', label: 'Profilim', dynamic: true },
-    { href: 'bank.html', icon: 'fas fa-university', label: 'Banka' },
+    { href: 'bank-list.html', icon: 'fas fa-university', label: 'Banka' },
     { href: 'inventory.html', icon: 'fas fa-briefcase', label: 'Envanter' },
     { href: 'daily-job.html', icon: 'fas fa-calendar-check', label: 'Günlük İşler' },
     { href: 'factory.html', icon: 'fas fa-industry', label: 'Fabrikalar' },
     { href: 'education.html', icon: 'fas fa-graduation-cap', label: 'Eğitim' },
-    { href: 'hospital.html', icon: 'fas fa-hospital-alt', label: 'Hastane' },
+    { href: 'hospital-list.html', icon: 'fas fa-hospital-alt', label: 'Hastane' },
     { href: 'market.html', icon: 'fas fa-shopping-basket', label: 'Pazar' },
     { href: 'council.html', icon: 'fas fa-landmark', label: 'Meclis' },
     { href: 'mine-list.html', icon: 'fas fa-coins', label: 'Madenler' },

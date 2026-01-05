@@ -121,6 +121,64 @@
             margin-bottom: 15px;
             display: none;
         }
+
+        /* Cookie Banner */
+        .cookie-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(13, 13, 13, 0.98);
+            border-top: 2px solid var(--accent-cyan);
+            padding: 20px;
+            z-index: 10000;
+            display: none;
+        }
+
+        .cookie-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .cookie-text {
+            flex: 1;
+            color: #ccc;
+            font-size: 0.9rem;
+        }
+
+        .cookie-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-cookie {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-accept {
+            background: var(--accent-green);
+            color: #000;
+        }
+
+        .btn-reject {
+            background: #333;
+            color: #fff;
+        }
+
+        .btn-cookie:hover {
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
@@ -149,7 +207,53 @@
         </div>
     </div>
 
+    <!-- Cookie Banner -->
+    <div class="cookie-banner" id="cookieBanner">
+        <div class="cookie-content">
+            <div class="cookie-text">
+                <strong>🍪 Çerez Politikası</strong><br>
+                Web sitemizde deneyiminizi geliştirmek için çerezler kullanıyoruz. Çerezleri kabul ederek sitemizin daha iyi çalışmasına yardımcı olursunuz.
+            </div>
+            <div class="cookie-buttons">
+                <button class="btn-cookie btn-reject" onclick="rejectCookies()">Reddet</button>
+                <button class="btn-cookie btn-accept" onclick="acceptCookies()">Kabul Et</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Sayfa yüklendiğinde çerez bannerını kontrol et
+        window.addEventListener('load', () => {
+            const cookieConsent = localStorage.getItem('cookieConsent');
+            if (!cookieConsent) {
+                document.getElementById('cookieBanner').style.display = 'block';
+            }
+        });
+
+        async function acceptCookies() {
+            localStorage.setItem('cookieConsent', 'accepted');
+            document.getElementById('cookieBanner').style.display = 'none';
+            
+            // Sunucuya çerez onayını gönder
+            try {
+                await fetch('/api/cookie-consent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        consent: true,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+            } catch (err) {
+                console.error('Cookie consent error:', err);
+            }
+        }
+
+        function rejectCookies() {
+            localStorage.setItem('cookieConsent', 'rejected');
+            document.getElementById('cookieBanner').style.display = 'none';
+        }
+
         async function handleLogin(e) {
             e.preventDefault();
             const username = document.getElementById('username').value;

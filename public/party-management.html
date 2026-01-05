@@ -543,6 +543,16 @@
         }
 
         function updateUI() {
+            // Security Check: Redirect if not leader
+            if (Number(party.leader_id) !== Number(user.id)) {
+                toastr.error("Bu sayfaya sadece parti başkanı erişebilir!");
+                setTimeout(() => {
+                    window.location.href = `party-detail.html?id=${party.id}`;
+                }, 2000);
+                document.querySelector('main').innerHTML = '<div style="text-align:center; padding:50px; color:red; font-weight:bold;">YETKİSİZ ERİŞİM<br><span style="color:#aaa; font-size:0.9rem;">Yönlendiriliyorsunuz...</span></div>';
+                return;
+            }
+
             const setVal = (id, val) => {
                 const el = document.getElementById(id);
                 if(el) {
@@ -783,6 +793,12 @@
                 endpoint = `/api/party/deposit`;
             }
 
+            if (!endpoint) {
+                console.error("Endpoint missing for action:", pendingAction);
+                toastr.error("İşlem tanımlanamadı.");
+                return;
+            }
+
             fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -929,12 +945,20 @@
                 let roleClass = 'role-member';
                 let roleText = m.role || 'Üye';
                 
+                // Fix for Leader Role Display
+                if (m.id == party.leader_id) {
+                    roleText = 'Genel Başkan';
+                }
+
                 if(roleText === 'Genel Başkan') roleClass = 'role-leader';
                 else if(roleText === 'Başkan Yardımcısı') roleClass = 'role-vice';
                 else if(roleText === 'Teşkilat Sorumlusu') roleClass = 'role-org';
 
                 const isMe = (user.id === m.id);
                 const isLeader = (roleText === 'Genel Başkan');
+                
+                // Reputation Calculation
+                const reputation = Math.floor(Number(m.total_donated || 0) / 5000);
 
                 div.innerHTML = `
                     <div class="mc-left">
@@ -943,7 +967,7 @@
                             <div class="mc-name">#${m.id} - ${m.username} <span style="color:#888; font-size:0.8em;">(Lvl ${m.level || 1})</span></div>
                             <div style="display:flex; gap:10px; align-items:center; margin-top:2px;">
                                 <div class="mc-role ${roleClass}">${roleText}</div>
-                                <div style="font-size:0.75rem; color:#aaa;"><i class="fas fa-star" style="color:gold;"></i> İtibar: ${fmt(m.total_donated || 0)}</div>
+                                <div style="font-size:0.75rem; color:#aaa;"><i class="fas fa-star" style="color:gold;"></i> İtibar: ${reputation}</div>
                             </div>
                         </div>
                     </div>
@@ -1038,12 +1062,14 @@
                 return;
             }
 
+            const isLeader = (Number(user.id) === Number(party.leader_id));
+
             party.applications.forEach(app => {
                 const div = document.createElement('div');
                 div.className = 'member-card'; // Use member-card style for consistency
 
                 let actionBtns = '';
-                if(user.role === 'Genel Başkan' || user.party_role === 'Genel Başkan') {
+                if(isLeader) {
                     actionBtns = `
                         <button class="btn-icon btn-accept" onclick="confirmAppAction('accept', ${app.id}, '${app.username}')" title="Kabul Et" style="color: var(--accent-green); border-color: var(--accent-green); margin-right: 5px;"><i class="fas fa-check"></i></button>
                         <button class="btn-icon btn-reject" onclick="confirmAppAction('reject', ${app.id}, '${app.username}')" title="Reddet" style="color: var(--accent-red); border-color: var(--accent-red);"><i class="fas fa-times"></i></button>
@@ -1067,7 +1093,8 @@
         }
 
         function confirmAppAction(type, appId, appName) {
-            if(user.party_role !== 'Genel Başkan' && user.role !== 'Genel Başkan') return toastr.error("Bu işlem için yetkiniz yok.");
+            const isLeader = (Number(user.id) === Number(party.leader_id));
+            if(!isLeader) return toastr.error("Bu işlem için yetkiniz yok.");
 
             pendingAction = { type: 'application', action: type, appId: appId };
             

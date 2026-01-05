@@ -1,4 +1,10 @@
 (function() {
+    // Prevent Duplicate Execution
+    if (document.getElementById('gameHeader')) {
+        console.warn("Header Manager already initialized.");
+        return;
+    }
+
     // 1. Check Authentication
     const userStr = localStorage.getItem('simWorldUser');
     if (!userStr) {
@@ -35,40 +41,41 @@
     const headerHTML = `
     <header class="game-header-v2" id="gameHeader">
         
-        <div class="gh-top">
-            <a href="index.html" class="gh-logo">SIM <span>OF WORLD</span></a>
-            <div style="display:flex; align-items:center;">
-                <div class="gh-avatar" onclick="location.href='profile.html?id=${userId}'" style="cursor:pointer; margin-right:10px; display:flex; align-items:center;">
-                    <img id="headerAvatar" src="" style="width:32px; height:32px; border-radius:50%; border:1px solid #444; object-fit:cover;">
-                </div>
-                <div class="gh-notif-btn" onclick="toggleNotifications()">
-                    <i class="fas fa-bell"></i>
-                    <span class="gh-notif-badge" id="notifBadge" style="display:none">0</span>
-                </div>
-                <div class="gh-level-badge">
-                    <i class="fas fa-crown"></i>
-                    <span id="headerLevel">Lv. ...</span>
-                </div>
-                <button class="gh-menu-btn" onclick="toggleGlobalMenu()">☰</button>
+        <div class="gh-top" style="display: flex; justify-content: space-between; align-items: center; padding: 0 5px;">
+            <div class="gh-notif-btn" onclick="toggleNotifications()" style="margin-right: 0;">
+                <i class="fas fa-bell"></i>
+                <span class="gh-notif-badge" id="notifBadge" style="display:none">0</span>
             </div>
+            
+            <a href="index.html" class="gh-logo" style="margin: 0 auto;">SIM <span>OF WORLD</span></a>
+            
+            <button class="gh-menu-btn" onclick="toggleGlobalMenu()">☰</button>
         </div>
 
         <div class="gh-currencies">
             <div class="gh-curr-item">
-                <img src="icons/inventory-icon/money.png" style="width: 24px; height: 24px; margin-bottom: 2px; object-fit: contain;" alt="Para">
+                <img src="icons/inventory-icon/money.png" style="width: 18px; height: 18px; object-fit: contain;" alt="Para">
                 <span class="gh-curr-val" id="headerMoney">...</span>
             </div>
             <div class="gh-curr-item">
-                <img src="icons/inventory-icon/gold.png" style="width: 24px; height: 24px; margin-bottom: 2px; object-fit: contain;" alt="Altın">
+                <img src="icons/inventory-icon/gold.png" style="width: 18px; height: 18px; object-fit: contain;" alt="Altın">
                 <span class="gh-curr-val" id="headerGold">...</span>
             </div>
             <div class="gh-curr-item">
-                <img src="icons/inventory-icon/diamond.png" style="width: 24px; height: 24px; margin-bottom: 2px; object-fit: contain;" alt="Elmas">
+                <img src="icons/inventory-icon/diamond.png" style="width: 18px; height: 18px; object-fit: contain;" alt="Elmas">
                 <span class="gh-curr-val" id="headerDiamond">...</span>
             </div>
         </div>
 
         <div class="gh-stats">
+            <div class="gh-stat-row">
+                <i class="fas fa-crown gh-stat-icon icon-level" style="color: var(--c-level);"></i>
+                <div class="gh-progress-bg">
+                    <div class="gh-progress-fill fill-level" id="barLevel" style="width: 0%; background: var(--c-level); box-shadow: 0 0 8px var(--c-level);"></div>
+                </div>
+                <span class="gh-stat-text" id="textLevel">...</span>
+            </div>
+
             <div class="gh-stat-row">
                 <i class="fas fa-heart gh-stat-icon icon-health"></i>
                 <div class="gh-progress-bg">
@@ -100,8 +107,13 @@
     </div>
     `;
 
-    // Insert Header at the beginning of body
-    document.body.insertAdjacentHTML('afterbegin', headerHTML);
+    // Insert Header into .game-container if exists, otherwise body
+    const gameContainer = document.querySelector('.game-container');
+    if (gameContainer) {
+        gameContainer.insertAdjacentHTML('afterbegin', headerHTML);
+    } else {
+        document.body.insertAdjacentHTML('afterbegin', headerHTML);
+    }
 
     // 4. Fetch and Update Data
     async function updateHeaderStats() {
@@ -143,16 +155,13 @@
         if(data.money !== undefined) document.getElementById('headerMoney').innerText = fmt(data.money) + " ₺";
         if(data.gold !== undefined) document.getElementById('headerGold').innerText = fmt(data.gold);
         if(data.diamond !== undefined) document.getElementById('headerDiamond').innerText = fmt(data.diamond);
-        if(data.level !== undefined) document.getElementById('headerLevel').innerText = "Lv. " + data.level;
-
-        // Avatar Güncelleme
-        const avatarImg = document.getElementById('headerAvatar');
-        if (avatarImg) {
-            if (data.avatar) {
-                avatarImg.src = data.avatar;
-            } else {
-                avatarImg.src = 'uploads/avatars/default.png';
-            }
+        
+        // Level Bar Update
+        if(data.level !== undefined) {
+            const lvlText = document.getElementById('textLevel');
+            const lvlBar = document.getElementById('barLevel');
+            if(lvlText) lvlText.innerText = "Lv." + data.level;
+            if(lvlBar) lvlBar.style.width = "100%";
         }
 
         // Barların güncellenmesi
@@ -183,10 +192,10 @@
 
     // --- GLOBAL MENU LOGIC (Merged) ---
     const menuPages = [
-        { href: 'bank.html', icon: 'fas fa-university', label: 'Banka' },
+        { href: 'bank-list.html', icon: 'fas fa-university', label: 'Banka' },
         { href: 'inventory.html', icon: 'fas fa-briefcase', label: 'Envanter' },
         { href: 'factory.html', icon: 'fas fa-industry', label: 'Fabrikalar' },
-        { href: 'hospital.html', icon: 'fas fa-hospital-alt', label: 'Hastane' },
+        { href: 'hospital-list.html', icon: 'fas fa-hospital-alt', label: 'Hastane' },
         { href: 'market.html', icon: 'fas fa-shopping-basket', label: 'Pazar' },
         { href: 'council.html', icon: 'fas fa-landmark', label: 'Meclis' },
         { href: 'mine-list.html', icon: 'fas fa-coins', label: 'Madenler' },
@@ -364,5 +373,8 @@
     fetchNotifications();
     // Poll every 30 seconds
     setInterval(fetchNotifications, 30000);
+
+    // Expose globally
+    window.fetchNotifications = fetchNotifications;
 
 })();

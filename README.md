@@ -113,6 +113,6 @@ Bu sistemlerin arayüzleri (`factory.html`, `market.html`, `council.html`) hazı
 ### Önemli Dosyalar
 *   `server.js`: Tüm backend mantığı, API endpoint'leri ve oyun döngüleri.
 *   `game-engine.js`: İstemci taraflı oyun döngüsü ve UI yardımcıları.
-*   `hospital.html`: Hastane listesi ve tedavi ekranı.
+*   `hospital-list.html`: Hastane listesi ve tedavi ekranı.
 *   `hospital-management.html`: Hastane yönetim paneli.
 *   `bank.html` & `bank-management.html`: Banka arayüzleri.

@@ -54,7 +54,7 @@
         main {
             flex: 1;
             overflow-y: auto;
-            padding-bottom: 70px; /* Bottom nav boşluğu */
+            padding-bottom: 160px; /* Bottom nav boşluğu */
         }
 
         /* PROFİL KARTI (Yeni Tasarım - Üst Kısım) */
@@ -76,51 +76,88 @@
         .c-gold { color: var(--accent-gold); }
         .c-cyan { color: var(--accent-cyan); }
 
-        /* SEKMELER (TABS) */
-        .tabs-container {
-            background: var(--bg-card);
-            padding: 10px 15px 0;
-            display: flex;
-            gap: 10px;
-            border-bottom: 1px solid var(--border-color);
+        /* Override Body Padding for this page to remove gap */
+        body { padding-top: 0 !important; }
+
+        .header-badge {
+            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(20,20,20,0.95) 100%);
+            padding: 20px;
+            border-radius: 0 0 20px 20px;
+            margin: 0 0 25px 0;
+            border-top: 3px solid var(--accent-gold);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             position: relative;
+            overflow: hidden;
+            text-align: center;
         }
-        .tab-btn {
-            padding: 10px 15px;
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            font-family: 'Rajdhani';
-            font-weight: bold;
-            font-size: 0.95rem;
-            cursor: pointer;
+        .header-badge::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: radial-gradient(circle, var(--accent-gold) 0%, transparent 100%);
+            opacity: 0.7;
+        }
+        .header-badge h1 {
+            font-size: 1.8rem;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
             display: flex;
             align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .header-badge h1 i { color: var(--accent-gold); }
+        .header-badge p {
+            font-size: 0.9rem;
+            color: #aaa;
+            font-weight: 500;
+        }
+
+        /* SEKMELER (TABS) */
+        .tabs-container {
+            display: flex; 
+            gap: 10px; 
+            margin: 0 15px 15px 15px; 
+            background: #111; 
+            padding: 5px; 
+            border-radius: 8px; 
+            border: 1px solid #333;
+        }
+        .tab-btn {
+            flex: 1; 
+            padding: 10px; 
+            border: none; 
+            background: transparent; 
+            color: #777; 
+            font-family: 'Rajdhani'; 
+            font-weight: bold; 
+            cursor: pointer; 
+            border-radius: 6px; 
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             gap: 8px;
-            position: relative;
-            transition: color 0.3s;
+            font-size: 0.9rem;
         }
-        .tab-btn i { font-size: 1.1rem; }
-        .tab-btn.active { color: var(--accent-cyan); }
-        
-        /* Aktif Sekme Göstergesi (Ok) */
-        .tab-indicator {
-            position: absolute;
-            bottom: -1px;
-            left: 0;
-            width: 120px; /* İlk sekme genişliği */
-            height: 2px;
-            background: var(--accent-cyan);
-            transition: all 0.3s ease;
-        }
-        .tab-indicator::after {
-            content: ''; position: absolute; top: -5px; left: 50%; transform: translateX(-50%);
-            border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 5px solid var(--accent-cyan);
+        .tab-btn i { font-size: 1rem; }
+        .tab-btn.active { 
+            background: #222; 
+            color: var(--accent-cyan); 
+            border: 1px solid var(--accent-cyan); 
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2); 
         }
 
         /* ENVANTER GRID LİSTESİ */
         .inventory-list {
             padding: 15px;
+            padding-bottom: 100px; /* Extra space for bottom menu */
             display: grid;
             grid-template-columns: 1fr 1fr; /* 2 Sütun */
             gap: 12px;
@@ -205,22 +242,26 @@
 
     <div class="game-container">
         <!-- Header removed, injected by header-manager.js -->
+        
+        <div class="header-badge">
+            <h1><i class="fas fa-boxes"></i> Envanter</h1>
+            <p>Varlık ve kaynak yönetimi</p>
+        </div>
+
+        <div class="tabs-container">
+            <button class="tab-btn active" onclick="switchTab('kaynaklar', this)">
+                <i class="fas fa-cubes"></i> KAYNAKLAR
+            </button>
+            <button class="tab-btn" onclick="switchTab('gidalar', this)">
+                <i class="fas fa-utensils"></i> GIDALAR
+            </button>
+            <button class="tab-btn" onclick="switchTab('diger', this)">
+                <i class="fas fa-box-open"></i> DİĞER
+            </button>
+        </div>
 
         <main>
             <!-- Profile Card Removed -->
-
-            <div class="tabs-container">
-                <button class="tab-btn active" onclick="switchTab('kaynaklar', this)">
-                    <i class="fas fa-cubes"></i> KAYNAKLAR
-                </button>
-                <button class="tab-btn" onclick="switchTab('gidalar', this)">
-                    <i class="fas fa-utensils"></i> GIDALAR
-                </button>
-                <button class="tab-btn" onclick="switchTab('diger', this)">
-                    <i class="fas fa-box-open"></i> DİĞER
-                </button>
-                <div class="tab-indicator" id="tabIndicator"></div>
-            </div>
 
             <div class="inventory-list" id="inventoryList">
             </div>
@@ -334,11 +375,6 @@
             // Aktif sınıfını güncelle
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             element.classList.add('active');
-
-            // Göstergeyi (Indicator) kaydır
-            const indicator = document.getElementById('tabIndicator');
-            indicator.style.width = element.offsetWidth + 'px';
-            indicator.style.left = element.offsetLeft + 'px';
 
             // Listeyi render et
             renderItems(tabName);
@@ -495,13 +531,6 @@
             const firstTab = document.querySelector('.tab-btn.active');
             // switchTab çağrısı yerine fetchInventory çağırıyoruz, o render edecek
             fetchInventory();
-            
-            // Indicator'ı ilk sekmeye ayarla
-            if(firstTab) {
-                const indicator = document.getElementById('tabIndicator');
-                indicator.style.width = firstTab.offsetWidth + 'px';
-                indicator.style.left = firstTab.offsetLeft + 'px';
-            }
         }
     </script>
     <script src="js/loader-manager.js"></script>

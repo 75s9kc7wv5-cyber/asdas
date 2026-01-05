@@ -41,7 +41,7 @@ This is a web-based strategy and simulation game ("Sim of World") built with a *
 
 ### Frontend (`public/`)
 - **Interaction:** Frontend pages use `fetch` or `XMLHttpRequest` to communicate with the backend API.
-- **Structure:** Separate HTML files for different game modules (e.g., `bank.html`, `hospital.html`).
+- **Structure:** Separate HTML files for different game modules (e.g., `bank.html`, `hospital-list.html`).
 
 ### Specific Implementation Details
 - **Game Logic:** Logic for systems like Hospitals (upgrades, treatments) and Banks (loans, accounts) is implemented directly in the API endpoints in `server.js`.

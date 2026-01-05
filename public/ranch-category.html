@@ -47,9 +47,28 @@
         .tabs-container { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
         .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: #777; font-family: 'Rajdhani'; font-weight: bold; cursor: pointer; border-radius: 6px; transition: all 0.3s; }
         .tab-btn.active { background: #222; color: var(--accent-cyan); box-shadow: 0 0 10px rgba(0, 229, 255, 0.1); }
-        .section-header { text-align: center; margin-bottom: 20px; animation: fadeIn 0.5s; }
-        .section-title { font-size: 1.1rem; letter-spacing: 1px; color: #fff; margin-bottom: 5px; }
-        .section-desc { font-size: 0.8rem; color: var(--text-muted); }
+        .section-header { text-align: center; margin-bottom: 25px; animation: fadeIn 0.5s; }
+        .header-badge {
+            display: inline-block;
+            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(10,10,10,0.95) 100%);
+            border: 1px solid #333;
+            border-top: 3px solid var(--accent-orange);
+            padding: 15px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .header-badge::after {
+            content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+            width: 60%; height: 2px; background: radial-gradient(circle, var(--accent-orange) 0%, transparent 100%);
+            opacity: 0.5;
+        }
+        .section-title { 
+            font-size: 1.4rem; font-weight: 800; letter-spacing: 2px; color: #fff; margin-bottom: 5px; 
+            text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 10px;
+            text-shadow: 0 0 15px rgba(230, 126, 34, 0.4);
+        }
+        .section-desc { font-size: 0.85rem; color: #999; font-weight: 500; }
         .factory-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; animation: slideUp 0.6s ease; }
         .factory-card {
             background: var(--card-bg);
@@ -83,6 +102,51 @@
             background: #222; padding: 2px 6px; border-radius: 4px; border: 1px solid #444;
             display: inline-block; margin-top: 4px; font-size: 0.7rem; color: #aaa;
         }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 2000;
+            display: none; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: #181818; width: 90%; max-width: 400px; padding: 25px; border-radius: 10px;
+            border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-gold);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
+        }
+        .req-list { 
+            text-align: center; 
+            margin: 20px 0; 
+            background: #222; 
+            padding: 15px; 
+            border-radius: 8px; 
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        .req-badge {
+            background: #333;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #ccc;
+            border: 1px solid #444;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .req-badge.ok { border-color: var(--accent-green); color: var(--accent-green); background: rgba(46, 204, 113, 0.1); }
+        .req-badge.fail { border-color: var(--accent-red); color: var(--accent-red); background: rgba(231, 76, 60, 0.1); }
+        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; }
+        .btn-confirm { background: var(--accent-green); color: #000; }
+        .btn-cancel { background: #333; color: #fff; }
+        .btn-confirm:disabled { background: #444; color: #888; cursor: not-allowed; }
+
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
@@ -92,8 +156,10 @@
         <!-- Header injected by header-manager.js -->
         <main>
         <div class="section-header">
-            <div class="section-title">ÇİFTLİKLER</div>
-            <div class="section-desc">Çiftlik kategorilerini inceleyebilir veya sahip olduğun çiftlikleri görebilirsin.</div>
+            <div class="header-badge">
+                <div class="section-title"><i class="fas fa-paw" style="color:var(--accent-orange)"></i> ÇİFTLİKLER</div>
+                <div class="section-desc">Çiftlik kategorilerini inceleyebilir veya sahip olduğun çiftlikleri görebilirsin.</div>
+            </div>
         </div>
         <div class="tabs-container">
             <button class="tab-btn active" id="tabKategori" onclick="switchTab('kategori')">Çiftlik Kategorileri</button>
@@ -109,29 +175,60 @@
             </div>
         </div>
         <!-- Satın Al Modal (Modern, badge'li, app uyumlu) -->
-        <div id="buyRanchModal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.75); justify-content:center; align-items:center;">
-            <div style="background:#181818; border-radius:18px; padding:36px 22px 22px 22px; min-width:320px; max-width:95vw; box-shadow:0 8px 32px #000a; position:relative; display:flex; flex-direction:column; align-items:center; border:1.5px solid #222;">
-                <button onclick="closeBuyModal()" style="position:absolute; right:18px; top:14px; background:none; border:none; color:#aaa; font-size:1.7rem; cursor:pointer; transition:color .2s;">&times;</button>
-                <div id="buyModalIcon" style="margin-bottom:12px;"></div>
-                <div id="buyModalTitle" style="font-size:1.18rem; font-weight:700; color:#fff; margin-bottom:10px; text-align:center; letter-spacing:.5px;"></div>
-                <div id="buyModalReqs" style="margin-bottom:20px; width:100%; display:flex; flex-direction:column; gap:7px;"></div>
-                <div style="display:flex; flex-direction:column; gap:10px; width:100%; margin-top:8px;">
-                    <button id="buyModalConfirmBtn" style="width:100%; padding:12px 0; background:var(--accent-green); color:#fff; border:none; border-radius:7px; font-size:1.08rem; font-family:'Rajdhani'; font-weight:700; cursor:pointer; letter-spacing:.5px;">Satın Al</button>
-                    <button onclick="closeBuyModal()" style="width:100%; padding:11px 0; background:#232323; color:#fff; border:none; border-radius:7px; font-size:1.02rem; font-family:'Rajdhani'; font-weight:600; cursor:pointer;">İptal</button>
+        <div class="modal-overlay" id="buyRanchModal">
+            <div class="modal-content">
+                <h3 style="color:#fff; margin-bottom:10px;" id="buyModalTitle">Çiftlik Satın Al</h3>
+                <p style="color:#888; font-size:0.9rem;">Bu çiftliği işletmek için gereksinimleri karşılamalısınız.</p>
+                <div class="req-list" id="buyModalReqs">
+                    <!-- Requirements here -->
+                </div>
+                <div class="modal-btns">
+                    <button class="m-btn btn-cancel" onclick="closeBuyModal()">İPTAL</button>
+                    <button class="m-btn btn-confirm" id="buyModalConfirmBtn" onclick="confirmBuyRanch()">SATIN AL</button>
                 </div>
             </div>
         </div>
         </main>
     </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <script src="js/header-manager.js"></script>
     <script src="js/menu-manager.js"></script>
     <script>
+        toastr.options = { "positionClass": "toast-top-right", "timeOut": "3000" };
+
+        // Hardcoded ranch types with price info (fetched from DB manually)
         const ranchTypes = [
-            { id: 'chicken', name: 'Tavuk Kümesi', img: 'icons/ranch-icon/chicken.png', color: 'c-basic' },
-            { id: 'sheep', name: 'Koyun Ağılı', img: 'icons/ranch-icon/sheep.png', color: 'c-basic' },
-            { id: 'bee', name: 'Arı Kovanı', img: 'icons/ranch-icon/bee.png', color: 'c-basic' },
-            { id: 'cow', name: 'İnek Çiftliği', img: 'icons/ranch-icon/cow.png', color: 'c-ind' }
+            { id: 'chicken', name: 'Tavuk Kümesi', img: 'icons/ranch-icon/chicken.png', color: 'c-basic', price: 10000, gold_price: 0, diamond_price: 0, license_req: 1 },
+            { id: 'sheep', name: 'Koyun Ağılı', img: 'icons/ranch-icon/sheep.png', color: 'c-basic', price: 15000, gold_price: 0, diamond_price: 0, license_req: 1 },
+            { id: 'bee', name: 'Arı Kovanı', img: 'icons/ranch-icon/bee.png', color: 'c-basic', price: 12000, gold_price: 0, diamond_price: 0, license_req: 1 },
+            { id: 'cow', name: 'İnek Çiftliği', img: 'icons/ranch-icon/cow.png', color: 'c-ind', price: 25000, gold_price: 5, diamond_price: 0, license_req: 1 }
         ];
+
+        let userData = {};
+        let userLicenses = {};
+        let currentUserRanches = [];
+
+        async function fetchUserData(userId) {
+             try {
+                const res = await fetch(`/api/profile/${userId}`);
+                if (res.ok) {
+                    const json = await res.json();
+                    userData = json.user || json;
+                }
+            } catch (e) { console.error(e); }
+        }
+        
+        async function fetchUserLicenses(userId) {
+             try {
+                const res = await fetch(`/api/licenses/${userId}`);
+                if (res.ok) {
+                    userLicenses = await res.json();
+                }
+            } catch (e) { console.error(e); }
+        }
+
         async function fetchCityRanchCounts() {
             try {
                 const res = await fetch('/api/ranches/counts');
@@ -142,6 +239,7 @@
                 return {};
             }
         }
+
         async function fetchMyRanches() {
             try {
                 const user = JSON.parse(localStorage.getItem('simWorldUser'));
@@ -154,20 +252,32 @@
                 return [];
             }
         }
+
+        function openBuyModalById(id) {
+            const type = ranchTypes.find(t => t.id === id);
+            if (type) openBuyModal(type);
+        }
+
         function renderRanchGrid(counts) {
             const grid = document.getElementById('ranchGrid');
             grid.innerHTML = '';
             ranchTypes.forEach(ranch => {
                 const count = counts[ranch.id] || 0;
-                const card = document.createElement('a');
-                card.href = `ranch-list.html?type=${ranch.id}`;
+                const owned = currentUserRanches.find(r => r.slug === ranch.id);
+
+                const card = document.createElement('div'); 
                 card.className = 'factory-card';
+                card.onclick = () => {
+                    window.location.href = `ranch-list.html?type=${ranch.id}`;
+                };
+                
                 let iconHtml = '';
                 if (ranch.img) {
                     iconHtml = `<span class=\"f-icon-circle\"><img src=\"${ranch.img}\" alt=\"${ranch.name}\" style=\"width: 32px; height: 32px; object-fit: contain;\"></span>`;
                 } else {
                     iconHtml = `<span class=\"f-icon-circle ${ranch.color}\"><i class=\"fas ${ranch.icon}\"></i></span>`;
                 }
+
                 card.innerHTML = `
                     ${iconHtml}
                     <div class=\"f-name\">${ranch.name}</div>
@@ -181,7 +291,18 @@
             const list = document.getElementById('myRanchList');
             list.innerHTML = '';
             ranchTypes.forEach(type => {
-                const owned = ranches.find(r => r.id === type.id);
+                // Check if user owns this ranch type
+                // myRanches returns objects like { ranch_id, ranch_type_id, ... }
+                // We need to match type.id (slug) with ranch_type_id or slug from API
+                // The API /api/ranches/my/:userId returns join with ranch_types, so it should have 'slug' or 'type'
+                // Let's assume it has 'slug' or we match by ID if we had IDs. 
+                // But ranchTypes here uses slugs as IDs ('chicken').
+                // Let's check fetchMyRanches response structure if possible. 
+                // Based on server.js: SELECT pr.*, rt.name, rt.slug, rt.image_path ...
+                // So it has 'slug'.
+                
+                const owned = ranches.find(r => r.slug === type.id);
+                
                 const row = document.createElement('div');
                 row.style.display = 'flex';
                 row.style.alignItems = 'center';
@@ -191,23 +312,26 @@
                 row.style.borderRadius = '8px';
                 row.style.padding = '10px 15px';
                 row.style.marginBottom = '10px';
+                
                 let iconHtml = '';
                 if (type.img) {
                     iconHtml = `<span class=\"f-icon-circle\"><img src=\"${type.img}\" alt=\"${type.name}\" style=\"width: 32px; height: 32px; object-fit: contain;\"></span>`;
                 } else {
                     iconHtml = `<span class=\"f-icon-circle ${type.color}\"><i class=\"fas ${type.icon}\"></i></span>`;
                 }
+                
                 row.innerHTML = `
                     ${iconHtml}
                     <div style=\"flex:1;\">
                         <div class=\"f-name\">${type.name}</div>
-                        <div class=\"count-badge\">${owned ? (owned.count + ' Adet Senin') : 'Sahip Değilsin'}</div>
+                        <div class=\"count-badge\" style=\"color: var(--accent-gold);\">${owned ? 'Seviye: ' + owned.level : 'Sahip Değilsin'}</div>
                     </div>
-                    <button class=\"ranch-action-btn\" style=\"padding:7px 18px; border:none; border-radius:5px; font-family:'Rajdhani'; font-weight:bold; font-size:0.95rem; cursor:pointer; background:${owned ? 'var(--accent-cyan)' : 'var(--accent-green)'}; color:#fff;\">${owned ? 'Yönet' : 'Satın Al'}</button>
+                    <button class=\"ranch-action-btn\" style=\"padding:7px 18px; border:none; border-radius:5px; font-family:'Rajdhani'; font-weight:bold; font-size:0.95rem; cursor:pointer; background:${owned ? 'var(--accent-cyan)' : 'var(--accent-green)'}; color:#000;\">${owned ? 'YÖNET' : 'SATIN AL'}</button>
                 `;
+                
                 const btn = row.querySelector('.ranch-action-btn');
                 if (owned) {
-                    btn.onclick = () => location.href = `ranch-management.html?id=${owned.ranch_id}`;
+                    btn.onclick = () => location.href = `ranch-management.html?id=${owned.ranch_id}`; // Use ranch_id from DB
                 } else {
                     btn.onclick = () => openBuyModal(type);
                 }
@@ -217,36 +341,133 @@
 
         // Modal işlemleri
         let selectedRanchType = null;
+        
         function openBuyModal(type) {
             selectedRanchType = type;
-            // Icon
-            let iconHtml = '';
-            if (type.img) {
-                iconHtml = `<span class=\"f-icon-circle\"><img src=\"${type.img}\" alt=\"${type.name}\" style=\"width: 44px; height: 44px; object-fit: contain;\"></span>`;
-            } else {
-                iconHtml = `<span class=\"f-icon-circle ${type.color}\"><i class=\"fas ${type.icon}\"></i></span>`;
-            }
-            document.getElementById('buyModalIcon').innerHTML = iconHtml;
+            
             document.getElementById('buyModalTitle').innerText = `${type.name} Satın Al`;
-            // Gereksinimler örnek: seviye, para, lisans, vb.
-            // Burada örnek olarak sabit gereksinimler gösteriliyor, backend'den alınabilir
-            let reqs = '';
-            reqs += `<div style='background:#232; color:#b6ffb6; border-radius:5px; padding:7px 12px; font-size:.98rem;'><b>Gereken Seviye:</b> 1</div>`;
-            reqs += `<div style='background:#222; color:#ffe066; border-radius:5px; padding:7px 12px; font-size:.98rem;'><b>Fiyat:</b> 10.000 ₺</div>`;
-            reqs += `<div style='background:#223; color:#aeeaff; border-radius:5px; padding:7px 12px; font-size:.98rem;'><b>Lisans:</b> Gerekli değil</div>`;
-            document.getElementById('buyModalReqs').innerHTML = reqs;
+            
+            const reqList = document.getElementById('buyModalReqs');
+            reqList.innerHTML = '';
+
+            // 1. Price (Money)
+            if (type.price > 0) {
+                const price = type.price;
+                const userMoney = userData.money || 0;
+                const priceOk = userMoney >= price;
+                const priceClass = priceOk ? 'ok' : 'fail';
+                const priceIcon = priceOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
+                const priceFormatted = new Intl.NumberFormat('tr-TR').format(price);
+                
+                reqList.innerHTML += `
+                    <div class="req-badge ${priceClass}">
+                        ${priceIcon} ${priceFormatted} ₺
+                    </div>
+                `;
+            }
+
+            // 2. Gold Price
+            if (type.gold_price > 0) {
+                const gold = type.gold_price;
+                const userGold = userData.gold || 0;
+                const goldOk = userGold >= gold;
+                const goldClass = goldOk ? 'ok' : 'fail';
+                const goldIcon = goldOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
+                
+                reqList.innerHTML += `
+                    <div class="req-badge ${goldClass}">
+                        ${goldIcon} ${gold} Altın
+                    </div>
+                `;
+            }
+
+            // 3. License
+            const licenseSlug = type.id; // 'chicken', 'cow' etc.
+            const licLevel = userLicenses[licenseSlug] || 0;
+            const reqLevel = type.license_req || 1;
+            
+            const licOk = licLevel >= reqLevel;
+            const licClass = licOk ? 'ok' : 'fail';
+            const licIcon = licOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
+            
+            reqList.innerHTML += `
+                <div class="req-badge ${licClass}">
+                    ${licIcon} 1. Seviye ${type.name} Lisansı
+                </div>
+            `;
+
+            document.getElementById('buyRanchModal').classList.add('active');
             document.getElementById('buyRanchModal').style.display = 'flex';
-            document.getElementById('buyModalConfirmBtn').onclick = confirmBuyRanch;
         }
+
         function closeBuyModal() {
+            document.getElementById('buyRanchModal').classList.remove('active');
             document.getElementById('buyRanchModal').style.display = 'none';
             selectedRanchType = null;
         }
-        function confirmBuyRanch() {
+
+        async function confirmBuyRanch() {
             if (!selectedRanchType) return;
-            alert(`${selectedRanchType.name} satın alma işlemi (API entegrasyonu yapılacak)`);
-            closeBuyModal();
+            
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) {
+                toastr.error('Giriş yapmalısınız.');
+                return;
+            }
+
+            // Client-side check for existing ranch
+            const alreadyOwned = currentUserRanches.find(r => r.slug === selectedRanchType.id);
+            if (alreadyOwned) {
+                toastr.error('Bu çiftlik türünden zaten bir tane sahibisiniz!');
+                return;
+            }
+
+            const btn = document.getElementById('buyModalConfirmBtn');
+            btn.disabled = true;
+            btn.innerText = 'İşleniyor...';
+
+            try {
+                const res = await fetch('/api/ranches/buy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: user.id,
+                        ranchType: selectedRanchType.id // slug
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    toastr.success(data.message || 'Satın alma başarılı!');
+                    closeBuyModal();
+                    
+                    // Refresh data safely
+                    try {
+                        await fetchUserData(user.id);
+                        const cCounts = await fetchCityRanchCounts();
+                        const mRanches = await fetchMyRanches();
+                        currentUserRanches = mRanches;
+
+                        renderRanchGrid(cCounts);
+                        renderMyRanchGrid(mRanches);
+                        
+                        if(window.updateHeader) window.updateHeader();
+                    } catch (refreshErr) {
+                        console.error('Refresh error:', refreshErr);
+                    }
+                } else {
+                    toastr.error(data.message || 'Satın alma başarısız.');
+                }
+            } catch (error) {
+                console.error('Buy Error:', error);
+                toastr.error('Bir hata oluştu.');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Satın Al';
+            }
         }
+
         function switchTab(tab) {
             document.getElementById('tabKategori').classList.remove('active');
             document.getElementById('tabBenim').classList.remove('active');
@@ -260,11 +481,21 @@
                 document.getElementById('tabContentBenim').style.display = 'block';
             }
         }
+
         window.addEventListener('load', async () => {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (user) {
+                await Promise.all([
+                    fetchUserData(user.id),
+                    fetchUserLicenses(user.id)
+                ]);
+            }
+
             const [cityCounts, myRanches] = await Promise.all([
                 fetchCityRanchCounts(),
                 fetchMyRanches()
             ]);
+            currentUserRanches = myRanches;
             renderRanchGrid(cityCounts);
             renderMyRanchGrid(myRanches);
         });

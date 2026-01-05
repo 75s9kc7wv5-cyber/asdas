@@ -52,9 +52,45 @@
         }
 
         /* Sayfa Başlıkları */
-        .page-title-block { text-align: center; margin-bottom: 25px; animation: fadeInDown 0.6s ease; }
-        .main-title { font-size: 1.5rem; font-weight: 700; letter-spacing: 1px; margin-bottom: 5px; }
-        .sub-title { font-size: 0.9rem; color: var(--text-muted); }
+        .header-badge {
+            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(20,20,20,0.95) 100%);
+            padding: 20px;
+            border-radius: 0 0 20px 20px;
+            margin: 0 0 25px 0;
+            border-top: 3px solid var(--accent-gold);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+        }
+        .header-badge::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: radial-gradient(circle, var(--accent-gold) 0%, transparent 100%);
+            opacity: 0.7;
+        }
+        .header-badge h1 {
+            font-size: 1.8rem;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .header-badge h1 i { color: var(--accent-gold); }
+        .header-badge p {
+            font-size: 0.9rem;
+            color: #aaa;
+            font-weight: 500;
+        }
 
         /* Aksiyon Butonları */
         .action-buttons-container {
@@ -173,10 +209,10 @@
         <!-- Header removed, injected by header-manager.js -->
 
         <main>
-            <div class="page-title-block">
-                <h1 class="main-title">PARLAMENTO</h1>
-                <p class="sub-title">Devlet Yönetimi</p>
-            </div>
+        <div class="header-badge">
+            <h1><i class="fas fa-landmark"></i> Parlamento</h1>
+            <p>Devlet yönetimi ve meclis</p>
+        </div>
 
             <div class="action-buttons-container">
                 <button class="action-btn btn-blue" onclick="alert('Yasa teklifi ekranı açılıyor...')">

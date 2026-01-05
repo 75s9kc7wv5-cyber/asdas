@@ -48,6 +48,46 @@
         .status-bars { display: flex; gap: 5px; }
         .bar-item { background: var(--bg-input); padding: 4px; border-radius: 15px; font-size: 0.75rem; flex: 1; text-align: center; font-weight: bold; }
 
+        .header-badge {
+            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(20,20,20,0.95) 100%);
+            padding: 20px;
+            border-radius: 0 0 20px 20px;
+            margin: 0 0 25px 0;
+            border-top: 3px solid var(--accent-purple);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+        }
+        .header-badge::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: radial-gradient(circle, var(--accent-purple) 0%, transparent 100%);
+            opacity: 0.7;
+        }
+        .header-badge h1 {
+            font-size: 1.8rem;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .header-badge h1 i { color: var(--accent-purple); }
+        .header-badge p {
+            font-size: 0.9rem;
+            color: #aaa;
+            font-weight: 500;
+        }
+
         /* MAIN */
         main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
 
@@ -181,6 +221,11 @@
 
     <div class="game-container">
         <!-- HEADER removed, using header-manager.js -->
+        
+        <div class="header-badge">
+            <h1><i class="fas fa-user-circle"></i> Profil</h1>
+            <p>Oyuncu istatistikleri ve başarılar</p>
+        </div>
 
         <main>
             <!-- PROFIL KARTI -->

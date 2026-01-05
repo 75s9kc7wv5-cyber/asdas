@@ -6,6 +6,7 @@
     <title>Sim of World - Tarlalar</title>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <link rel="stylesheet" href="css/global-menu.css">
     
     <style>
@@ -49,9 +50,28 @@
         .tabs-container { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
         .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: #777; font-family: 'Rajdhani'; font-weight: bold; cursor: pointer; border-radius: 6px; transition: all 0.3s; }
         .tab-btn.active { background: #222; color: var(--accent-cyan); box-shadow: 0 0 10px rgba(0, 229, 255, 0.1); }
-        .section-header { text-align: center; margin-bottom: 20px; animation: fadeIn 0.5s; }
-        .section-title { font-size: 1.1rem; letter-spacing: 1px; color: #fff; margin-bottom: 5px; }
-        .section-desc { font-size: 0.8rem; color: var(--text-muted); }
+        .section-header { text-align: center; margin-bottom: 25px; animation: fadeIn 0.5s; }
+        .header-badge {
+            display: inline-block;
+            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(10,10,10,0.95) 100%);
+            border: 1px solid #333;
+            border-top: 3px solid var(--accent-green);
+            padding: 15px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .header-badge::after {
+            content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+            width: 60%; height: 2px; background: radial-gradient(circle, var(--accent-green) 0%, transparent 100%);
+            opacity: 0.5;
+        }
+        .section-title { 
+            font-size: 1.4rem; font-weight: 800; letter-spacing: 2px; color: #fff; margin-bottom: 5px; 
+            text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 10px;
+            text-shadow: 0 0 15px rgba(46, 204, 113, 0.4);
+        }
+        .section-desc { font-size: 0.85rem; color: #999; font-weight: 500; }
         .factory-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; animation: slideUp 0.6s ease; }
         .factory-card {
             background: var(--card-bg);
@@ -85,6 +105,51 @@
             background: #222; padding: 2px 6px; border-radius: 4px; border: 1px solid #444;
             display: inline-block; margin-top: 4px; font-size: 0.7rem; color: #aaa;
         }
+        
+        /* Modal Styles from farm-list.html */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 2000;
+            display: none; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: #181818; width: 90%; max-width: 400px; padding: 25px; border-radius: 10px;
+            border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-gold);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
+        }
+        .req-list { 
+            text-align: center; 
+            margin: 20px 0; 
+            background: #222; 
+            padding: 15px; 
+            border-radius: 8px; 
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        .req-badge {
+            background: #333;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #ccc;
+            border: 1px solid #444;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .req-badge.ok { border-color: var(--accent-green); color: var(--accent-green); background: rgba(46, 204, 113, 0.1); }
+        .req-badge.fail { border-color: var(--accent-red); color: var(--accent-red); background: rgba(231, 76, 60, 0.1); }
+        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; }
+        .btn-confirm { background: var(--accent-green); color: #000; }
+        .btn-cancel { background: #333; color: #fff; }
+        .btn-confirm:disabled { background: #444; color: #888; cursor: not-allowed; }
+
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
@@ -95,8 +160,10 @@
         <!-- Header injected by header-manager.js -->
         <main>
         <div class="section-header">
-            <div class="section-title">TARLALAR</div>
-            <div class="section-desc">Tarla kategorilerini inceleyebilir veya sahip olduğun tarlaları görebilirsin.</div>
+            <div class="header-badge">
+                <div class="section-title"><i class="fas fa-tractor" style="color:var(--accent-green)"></i> TARLALAR</div>
+                <div class="section-desc">Tarla kategorilerini inceleyebilir veya sahip olduğun tarlaları görebilirsin.</div>
+            </div>
         </div>
         <div class="tabs-container">
             <button class="tab-btn active" id="tabKategori" onclick="switchTab('kategori')">Tarla Kategorileri</button>
@@ -111,38 +178,68 @@
             </div>
         </div>
         <!-- Satın Al Modal (Modern, badge'li, app uyumlu) -->
-        <div id="buyFarmModal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.75); justify-content:center; align-items:center;">
-            <div style="background:#181818; border-radius:18px; padding:36px 22px 22px 22px; min-width:320px; max-width:95vw; box-shadow:0 8px 32px #000a; position:relative; display:flex; flex-direction:column; align-items:center; border:1.5px solid #222;">
-                <button onclick="closeBuyModal()" style="position:absolute; right:18px; top:14px; background:none; border:none; color:#aaa; font-size:1.7rem; cursor:pointer; transition:color .2s;">&times;</button>
-                <div id="buyModalIcon" style="margin-bottom:12px;"></div>
-                <div id="buyModalTitle" style="font-size:1.18rem; font-weight:700; color:#fff; margin-bottom:10px; text-align:center; letter-spacing:.5px;"></div>
-                <div id="buyModalReqs" style="margin-bottom:20px; width:100%; display:flex; flex-direction:column; gap:7px;"></div>
-                <div style="display:flex; flex-direction:column; gap:10px; width:100%; margin-top:8px;">
-                    <button id="buyModalConfirmBtn" style="width:100%; padding:12px 0; background:var(--accent-green); color:#fff; border:none; border-radius:7px; font-size:1.08rem; font-family:'Rajdhani'; font-weight:700; cursor:pointer; letter-spacing:.5px;">Satın Al</button>
-                    <button onclick="closeBuyModal()" style="width:100%; padding:11px 0; background:#232323; color:#fff; border:none; border-radius:7px; font-size:1.02rem; font-family:'Rajdhani'; font-weight:600; cursor:pointer;">İptal</button>
+        <div class="modal-overlay" id="buyFarmModal">
+            <div class="modal-content">
+                <h3 style="color:#fff; margin-bottom:10px;" id="buyModalTitle">Tarla Satın Al</h3>
+                <p style="color:#888; font-size:0.9rem;">Bu tarlayı işletmek için gereksinimleri karşılamalısınız.</p>
+                <div class="req-list" id="buyModalReqs">
+                    <!-- Requirements here -->
+                </div>
+                <div class="modal-btns">
+                    <button class="m-btn btn-cancel" onclick="closeBuyModal()">İPTAL</button>
+                    <button class="m-btn btn-confirm" id="buyModalConfirmBtn" onclick="confirmBuyFarm()">SATIN AL</button>
                 </div>
             </div>
         </div>
         </main>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script src="js/header-manager.js"></script>
     <script src="js/menu-manager.js"></script>
     <script>
-        // Tarla kategorileri sabit dizi
-        const farmTypes = [
-            { id: 'wheat', name: 'Buğday Tarlası', img: 'icons/farm-icon/wheat.png', color: 'c-basic' },
-            { id: 'corn', name: 'Mısır Tarlası', img: 'icons/farm-icon/corn.png', color: 'c-basic' },
-            { id: 'fruit', name: 'Meyve Bahçesi', img: 'icons/farm-icon/fruit.png', color: 'c-basic' },
-            { id: 'vegetable', name: 'Sebze Bahçesi', img: 'icons/farm-icon/vegetables.png', color: 'c-basic' },
-            { id: 'rice', name: 'Pirinç Tarlası', img: 'icons/farm-icon/rice.png', color: 'c-basic' },
-            { id: 'potato', name: 'Patates Tarlası', img: 'icons/farm-icon/potato.png', color: 'c-basic' },
-            { id: 'olive', name: 'Zeytinlik', img: 'icons/farm-icon/olive.png', color: 'c-basic' },
-            { id: 'wind_turbine', name: 'Rüzgar Türbini', img: 'icons/energy-factory-icon/wind-turbine.png', color: 'c-basic' },
-            { id: 'solar_plant', name: 'Güneş Enerjisi Santrali', img: 'icons/energy-factory-icon/solar-panel.png', color: 'c-basic' },
-            { id: 'coal_plant', name: 'Kömür Enerji Santrali', img: 'icons/energy-factory-icon/fossil-fuel.png', color: 'c-basic' },
-            { id: 'nuclear_plant', name: 'Nükleer Enerji Santrali', img: 'icons/energy-factory-icon/nuclear-plant.png', color: 'c-basic' }
-        ];
+        toastr.options = { "positionClass": "toast-top-right", "timeOut": "3000" };
+
+        let farmTypes = [];
+        let myFarms = [];
+        let cityCounts = {};
+        let userData = {};
+        let userLicenses = {}; // Changed to object to match API response
+
+        async function fetchUserData(userId) {
+             try {
+                const res = await fetch(`/api/profile/${userId}`);
+                if (res.ok) {
+                    const json = await res.json();
+                    userData = json.user || json;
+                }
+            } catch (e) { console.error(e); }
+        }
+        
+        async function fetchUserLicenses(userId) {
+             try {
+                const res = await fetch(`/api/licenses/${userId}`);
+                if (res.ok) {
+                    userLicenses = await res.json();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function fetchFarmTypes() {
+            try {
+                const res = await fetch('/api/farm-types');
+                if (!res.ok) throw new Error('Tarla türleri yüklenemedi');
+                const allTypes = await res.json();
+                // Filter out "Çiftlik" (Ranch) types. Assuming they have '_farm' in slug or 'Çiftlik' in name.
+                // Based on DB check: chicken_farm, cow_farm, sheep_farm, bee_farm are ranches.
+                return allTypes.filter(t => !t.slug.includes('_farm') && !t.name.includes('Çiftlik'));
+            } catch (e) {
+                console.error(e);
+                return [];
+            }
+        }
+
         async function fetchCityFarmCounts() {
             try {
                 const res = await fetch('/api/farms/counts');
@@ -153,6 +250,7 @@
                 return {};
             }
         }
+
         async function fetchMyFarms() {
             try {
                 const user = JSON.parse(localStorage.getItem('simWorldUser'));
@@ -165,36 +263,50 @@
                 return [];
             }
         }
+
         function renderFarmGrid(counts) {
             const grid = document.getElementById('farmGrid');
             grid.innerHTML = '';
             farmTypes.forEach(farm => {
-                const count = counts[farm.id] || 0;
+                const count = counts[farm.slug] || 0; // Assuming counts use slug or id
                 const card = document.createElement('div');
                 card.className = 'factory-card';
                 card.style.cursor = 'pointer';
                 card.onclick = () => {
-                    window.location.href = `farm-list.html?type=${farm.id}`;
+                    window.location.href = `farm-list.html?type=${farm.slug}`;
                 };
+                
                 let iconHtml = '';
-                if (farm.img) {
-                    iconHtml = `<span class=\"f-icon-circle\"><img src=\"${farm.img}\" alt=\"${farm.name}\" style=\"width: 32px; height: 32px; object-fit: contain;\"></span>`;
+                if (farm.image_path) {
+                    iconHtml = `<span class="f-icon-circle"><img src="${farm.image_path}" alt="${farm.name}" style="width: 32px; height: 32px; object-fit: contain;"></span>`;
                 } else {
-                    iconHtml = `<span class=\"f-icon-circle ${farm.color}\"><i class=\"fas ${farm.icon}\"></i></span>`;
+                    iconHtml = `<span class="f-icon-circle c-basic"><i class="fas fa-tractor"></i></span>`;
                 }
+                
                 card.innerHTML = `
                     ${iconHtml}
-                    <div class=\"f-name\">${farm.name}</div>
-                    <div class=\"count-badge\">${count} Adet Kurulu</div>
+                    <div class="f-name">${farm.name}</div>
+                    <div class="count-badge">${count} Adet Kurulu</div>
                 `;
                 grid.appendChild(card);
             });
         }
+
         function renderMyFarmGrid(farms) {
             const list = document.getElementById('myFarmList');
             list.innerHTML = '';
+            
+            if (farmTypes.length === 0) {
+                list.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Tarla türleri yükleniyor...</div>';
+                return;
+            }
+
             farmTypes.forEach(type => {
-                const owned = farms.find(f => f.id === type.id);
+                // Check if user owns this farm type
+                // myFarms returns objects like { farm_id, id (slug), name, count }
+                // We match myFarms.id (slug) with type.slug
+                const owned = farms.find(f => f.id === type.slug);
+                
                 const row = document.createElement('div');
                 row.style.display = 'flex';
                 row.style.alignItems = 'center';
@@ -204,20 +316,23 @@
                 row.style.borderRadius = '8px';
                 row.style.padding = '10px 15px';
                 row.style.marginBottom = '10px';
+                
                 let iconHtml = '';
-                if (type.img) {
-                    iconHtml = `<span class=\"f-icon-circle\"><img src=\"${type.img}\" alt=\"${type.name}\" style=\"width: 32px; height: 32px; object-fit: contain;\"></span>`;
+                if (type.image_path) {
+                    iconHtml = `<span class="f-icon-circle"><img src="${type.image_path}" alt="${type.name}" style="width: 32px; height: 32px; object-fit: contain;"></span>`;
                 } else {
-                    iconHtml = `<span class=\"f-icon-circle ${type.color}\"><i class=\"fas ${type.icon}\"></i></span>`;
+                    iconHtml = `<span class="f-icon-circle c-basic"><i class="fas fa-tractor"></i></span>`;
                 }
+                
                 row.innerHTML = `
                     ${iconHtml}
-                    <div style=\"flex:1;\">
-                        <div class=\"f-name\">${type.name}</div>
-                        <div class=\"count-badge\">${owned ? (owned.count + ' Adet Senin') : 'Sahip Değilsin'}</div>
+                    <div style="flex:1;">
+                        <div class="f-name">${type.name}</div>
+                        <div class=\"count-badge\" style=\"color: var(--accent-gold);\">${owned ? 'Seviye: ' + owned.level : 'Sahip Değilsin'}</div>
                     </div>
-                    <button class=\"farm-action-btn\" style=\"padding:7px 18px; border:none; border-radius:5px; font-family:'Rajdhani'; font-weight:bold; font-size:0.95rem; cursor:pointer; background:${owned ? 'var(--accent-cyan)' : 'var(--accent-green)'}; color:#fff;\">${owned ? 'Yönet' : 'Satın Al'}</button>
+                    <button class="farm-action-btn" style="padding:7px 18px; border:none; border-radius:5px; font-family:'Rajdhani'; font-weight:bold; font-size:0.95rem; cursor:pointer; background:${owned ? 'var(--accent-cyan)' : 'var(--accent-green)'}; color:#fff;">${owned ? 'Yönet' : 'Satın Al'}</button>
                 `;
+                
                 const btn = row.querySelector('.farm-action-btn');
                 if (owned) {
                     btn.onclick = () => location.href = `farm-management.html?id=${owned.farm_id}`;
@@ -227,42 +342,141 @@
                 list.appendChild(row);
             });
         }
+
         // Modal işlemleri
         let selectedFarmType = null;
+        
         function openBuyModal(type) {
             selectedFarmType = type;
-            // Icon
-            let iconHtml = '';
-            if (type.img) {
-                iconHtml = `<span class=\"f-icon-circle\"><img src=\"${type.img}\" alt=\"${type.name}\" style=\"width: 44px; height: 44px; object-fit: contain;\"></span>`;
-            } else {
-                iconHtml = `<span class=\"f-icon-circle ${type.color}\"><i class=\"fas ${type.icon}\"></i></span>`;
-            }
-            document.getElementById('buyModalIcon').innerHTML = iconHtml;
+            
             document.getElementById('buyModalTitle').innerText = `${type.name} Satın Al`;
-            // Gereksinimler örnek: seviye, para, lisans, vb.
-            let reqs = '';
-            reqs += `<div style='background:#232; color:#b6ffb6; border-radius:5px; padding:7px 12px; font-size:.98rem;'><b>Gereken Seviye:</b> 1</div>`;
-            reqs += `<div style='background:#222; color:#ffe066; border-radius:5px; padding:7px 12px; font-size:.98rem;'><b>Fiyat:</b> 10.000 ₺</div>`;
-            reqs += `<div style='background:#223; color:#aeeaff; border-radius:5px; padding:7px 12px; font-size:.98rem;'><b>Lisans:</b> Gerekli değil</div>`;
-            document.getElementById('buyModalReqs').innerHTML = reqs;
+            
+            const reqList = document.getElementById('buyModalReqs');
+            reqList.innerHTML = '';
+
+            // 1. Price (Money)
+            const price = type.price;
+            const userMoney = userData.money || 0;
+            const priceOk = userMoney >= price;
+            const priceClass = priceOk ? 'ok' : 'fail';
+            const priceIcon = priceOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
+            const priceFormatted = new Intl.NumberFormat('tr-TR').format(price);
+            
+            reqList.innerHTML += `
+                <div class="req-badge ${priceClass}">
+                    ${priceIcon} ${priceFormatted} ₺
+                </div>
+            `;
+
+            // 2. Gold
+            if (type.price_gold > 0) {
+                const userGold = userData.gold || 0;
+                const goldOk = userGold >= type.price_gold;
+                const goldClass = goldOk ? 'ok' : 'fail';
+                const goldIcon = goldOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
+                
+                reqList.innerHTML += `
+                    <div class="req-badge ${goldClass}">
+                        ${goldIcon} ${type.price_gold} Altın
+                    </div>
+                `;
+            }
+
+            // 3. Diamond
+            if (type.price_diamond > 0) {
+                const userDiamond = userData.diamond || 0;
+                const diaOk = userDiamond >= type.price_diamond;
+                const diaClass = diaOk ? 'ok' : 'fail';
+                const diaIcon = diaOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
+                
+                reqList.innerHTML += `
+                    <div class="req-badge ${diaClass}">
+                        ${diaIcon} ${type.price_diamond} Elmas
+                    </div>
+                `;
+            }
+
+            // 4. License (Assuming Level 1)
+            const licenseSlug = type.slug; 
+            // API returns object { "wheat": 1, "corn": 2 }
+            const licLevel = userLicenses[licenseSlug] || 0;
+            const reqLevel = 1; // Hardcoded as 1 in server.js logic override
+            
+            const licOk = licLevel >= reqLevel;
+            const licClass = licOk ? 'ok' : 'fail';
+            const licIcon = licOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
+            
+            reqList.innerHTML += `
+                <div class="req-badge ${licClass}">
+                    ${licIcon} 1. Seviye ${type.name} Lisansı
+                </div>
+            `;
+
+            document.getElementById('buyFarmModal').classList.add('active');
             document.getElementById('buyFarmModal').style.display = 'flex';
-            document.getElementById('buyModalConfirmBtn').onclick = confirmBuyFarm;
         }
+
         function closeBuyModal() {
+            document.getElementById('buyFarmModal').classList.remove('active');
             document.getElementById('buyFarmModal').style.display = 'none';
             selectedFarmType = null;
         }
-        function confirmBuyFarm() {
+
+        async function confirmBuyFarm() {
             if (!selectedFarmType) return;
-            alert(`${selectedFarmType.name} satın alma işlemi (API entegrasyonu yapılacak)`);
-            closeBuyModal();
+            
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) {
+                toastr.error('Giriş yapmalısınız.');
+                return;
+            }
+
+            const btn = document.getElementById('buyModalConfirmBtn');
+            btn.disabled = true;
+            btn.innerText = 'İşleniyor...';
+
+            try {
+                const res = await fetch('/api/buy-farm', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: user.id,
+                        farm_type_id: selectedFarmType.id
+                    })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    toastr.success(data.message);
+                    closeBuyModal();
+                    // Refresh data safely
+                    try {
+                        myFarms = await fetchMyFarms();
+                        renderMyFarmGrid(myFarms);
+                        // Update header money etc.
+                        if(window.updateHeader) window.updateHeader();
+                    } catch (refreshErr) {
+                        console.error('Refresh error:', refreshErr);
+                    }
+                } else {
+                    toastr.error(data.message || 'Satın alma başarısız.');
+                }
+            } catch (error) {
+                console.error('Buy Error:', error);
+                toastr.error('Bir hata oluştu.');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Satın Al';
+            }
         }
+
         function switchTab(tab) {
             document.getElementById('tabKategori').classList.remove('active');
             document.getElementById('tabBenim').classList.remove('active');
             document.getElementById('tabContentKategori').style.display = 'none';
             document.getElementById('tabContentBenim').style.display = 'none';
+            
             if (tab === 'kategori') {
                 document.getElementById('tabKategori').classList.add('active');
                 document.getElementById('tabContentKategori').style.display = 'block';
@@ -271,11 +485,27 @@
                 document.getElementById('tabContentBenim').style.display = 'block';
             }
         }
+
         window.addEventListener('load', async () => {
-            const [cityCounts, myFarms] = await Promise.all([
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (user) {
+                await Promise.all([
+                    fetchUserData(user.id),
+                    fetchUserLicenses(user.id)
+                ]);
+            }
+
+            // Load farm types first
+            farmTypes = await fetchFarmTypes();
+            
+            const [cCounts, mFarms] = await Promise.all([
                 fetchCityFarmCounts(),
                 fetchMyFarms()
             ]);
+            
+            cityCounts = cCounts;
+            myFarms = mFarms;
+            
             renderFarmGrid(cityCounts);
             renderMyFarmGrid(myFarms);
         });

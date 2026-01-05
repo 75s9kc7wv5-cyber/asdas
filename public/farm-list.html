@@ -48,8 +48,45 @@
             overflow-y: auto;
             padding-bottom: 80px;
         }
-        .page-header { text-align: center; margin-bottom: 20px; }
-        .page-title { font-size: 1.5rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+        .header-badge {
+            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(20,20,20,0.95) 100%);
+            padding: 20px;
+            border-radius: 0 0 20px 20px;
+            margin: 0 0 25px 0;
+            border-top: 3px solid var(--accent-green);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+        }
+        .header-badge::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: radial-gradient(circle, var(--accent-green) 0%, transparent 100%);
+            opacity: 0.7;
+        }
+        .header-badge h1 {
+            font-size: 1.8rem;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .header-badge h1 i { color: var(--accent-green); }
+        .header-badge p {
+            font-size: 0.9rem;
+            color: #aaa;
+            font-weight: 500;
+        }
         .tabs { display: flex; border-bottom: 1px solid #333; margin-bottom: 20px; }
         .tab-btn {
             flex: 1;
@@ -160,9 +197,10 @@
     <div class="game-container">
         <!-- Header injected by header-manager.js -->
         <main>
-            <div class="page-header">
-                <h1 class="page-title">TARLALAR</h1>
-            </div>
+        <div class="header-badge">
+            <h1><i class="fas fa-seedling"></i> Tarlalar</h1>
+            <p>Tarımsal üretim ve yönetim merkezi</p>
+        </div>
             <div class="tabs">
                 <button class="tab-btn active" onclick="switchTab('city')">Şehirdeki Tarlalar</button>
                 <button class="tab-btn" onclick="switchTab('my')">Tarlalarım</button>

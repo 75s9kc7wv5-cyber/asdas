@@ -24,8 +24,8 @@
     width: 100%;
     max-width: 450px; /* Mobilde tam ekran hissi için max-width */
     
-    /* Fixed Positioning & Centering */
-    position: fixed;
+    /* Absolute Positioning relative to game-container */
+    position: absolute;
     top: 0;
     left: 0;
     right: 0;
@@ -35,9 +35,14 @@
     box-sizing: border-box;
 }
 
-/* Body Padding to prevent content overlap */
+/* Body Padding removed, handled by game-container */
 body {
-    padding-top: 170px; /* Header yüksekliğine göre ayarlandı */
+    padding-top: 0;
+}
+
+/* Game Container Padding to prevent content overlap */
+.game-container {
+    padding-top: 200px; /* Header yüksekliği + biraz boşluk */
 }
 
 /* 1. SATIR: LOGO ve LEVEL */
@@ -84,13 +89,14 @@ body {
     border-radius: 6px;
     padding: 6px;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     justify-content: center;
+    gap: 6px;
     font-size: 0.85rem;
     font-weight: 600;
 }
-.gh-curr-item i { font-size: 1rem; margin-bottom: 2px; }
+.gh-curr-item i { font-size: 1rem; margin-bottom: 0; }
 .gh-curr-val { letter-spacing: 0.5px; color: #fff; }
 
 /* Renk Sınıfları */
