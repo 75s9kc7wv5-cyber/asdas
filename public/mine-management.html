@@ -46,68 +46,153 @@
         /* Header injected by header-manager.js */
 
         /* MAIN */
-        main { flex: 1; padding: 20px; padding-top: 10px; overflow-y: auto; padding-bottom: 80px; }
+        main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
 
         .page-header { 
-            text-align: left; 
-            margin-bottom: 20px; 
-            margin-top: 0;
-            padding: 15px 0;
+            margin-bottom: 25px; 
+            animation: fadeInDown 0.5s; 
+            position: relative;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 15px;
         }
+        
         .back-btn {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid #333;
-            border-radius: 8px;
-            width: 40px;
-            height: 40px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--accent-cyan);
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--accent);
             cursor: pointer;
             transition: all 0.3s;
+            font-size: 1.2rem;
             flex-shrink: 0;
         }
+        
         .back-btn:hover {
-            background: rgba(255,255,255,0.1);
-            border-color: var(--accent);
+            background: var(--accent-cyan);
+            color: #000;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
         }
-        .page-title-section {
+        
+        .header-content {
             flex: 1;
         }
+        
         .page-title { 
-            font-size: 1.3rem; 
+            font-size: 1.5rem; 
             letter-spacing: 1px; 
-            color: var(--accent);
-            text-transform: uppercase; 
-            font-weight: 700;
-            margin-bottom: 5px;
+            color: #fff; 
+            font-weight: 800;
+            margin-bottom: 8px;
+            text-align: left;
         }
-        .page-desc {
-            font-size: 0.8rem;
-            color: #888;
-            font-weight: 400;
-            line-height: 1.3;
+        
+        .page-description {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-align: left;
+        }
+
+        /* İŞLETME KARTI */
+        .business-card {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.1), var(--bg-card));
+            border: 1px solid var(--accent);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 0 20px rgba(231, 76, 60, 0.15);
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .business-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(231, 76, 60, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        
+        .business-icon-wrapper {
+            position: relative;
+            width: 65px;
+            height: 65px;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(231, 76, 60, 0.05));
+            border: 2px solid var(--accent);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(231, 76, 60, 0.3), inset 0 0 20px rgba(231, 76, 60, 0.1);
+        }
+        
+        .business-icon {
+            width: 45px;
+            height: 45px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 10px rgba(231, 76, 60, 0.5));
+        }
+        
+        .business-info {
+            flex: 1;
+            z-index: 1;
+        }
+        
+        .business-name {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .page-author {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: left;
+        }
+        
+        .page-author span {
+            color: var(--accent-cyan);
+            font-weight: 600;
         }
 
         /* FABRİKA KARTI */
         .factory-card {
-            background: linear-gradient(135deg, rgba(231, 76, 60, 0.15), var(--bg-card));
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.1), var(--bg-card));
             border: 1px solid var(--accent); border-radius: 12px; padding: 20px;
-            position: relative;
+            margin-bottom: 20px; position: relative; text-align: center;
             box-shadow: 0 0 15px rgba(231, 76, 60, 0.1);
-            margin-bottom: 20px;
         }
-        .fc-header { display: flex; align-items: center; gap: 15px; }
-        .fc-icon { width: 60px; height: 60px; object-fit: contain; flex-shrink: 0; }
-        .fc-title-section { flex: 1; text-align: left; }
+        .fc-icon { font-size: 3rem; color: var(--accent); margin-bottom: 10px; }
         .fc-name { font-size: 1.3rem; font-weight: 800; text-transform: uppercase; }
-        .fc-owner { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #aaa; }
-        .fc-owner i { color: var(--accent-gold); font-size: 1rem; }
-        .fc-owner-name { color: #fff; font-weight: 600; }
+        .fc-level { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px; }
         
         .fc-stats { display: flex; justify-content: space-around; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid #333; }
         .fs-item { text-align: center; }
@@ -122,7 +207,7 @@
         .card-header { font-size: 1rem; color: var(--accent); font-weight: 700; border-bottom: 1px solid #333; padding-bottom: 5px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
         
         .form-group { margin-bottom: 15px; }
-        .form-label { display: block; font-size: 0.8rem; color: #aaa; margin-bottom: 5px; }
+        .form-label { display: block; font-size: 0.8rem; color: #fff; margin-bottom: 5px; font-weight: 600; }
         .form-input { 
             width: 100%; background: #000; border: 1px solid #444; color: #fff; 
             padding: 10px; border-radius: 5px; font-family: 'Rajdhani'; font-size: 1rem;
@@ -133,21 +218,105 @@
         }
         .btn-save:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
 
+        /* KASA YÖNETİMİ */
+        .vault-balance-section {
+            text-align: center;
+            padding: 10px 0;
+        }
+        
+        .vault-balance-label {
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 10px;
+        }
+        
+        .vault-balance-amount {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--accent-green);
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+        
+        .vault-balance-amount::after {
+            content: ' ₺';
+            font-size: 1.5rem;
+            color: var(--accent-green);
+            margin-left: 8px;
+        }
+        
+        .vault-balance-capacity {
+            font-size: 0.8rem;
+            color: #555;
+        }
+        
+        .vault-add-section {
+            padding: 5px 0;
+        }
+        
+        .vault-add-limit {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        
+        .vault-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .vault-btn {
+            width: 100%;
+            background: var(--accent-cyan);
+            color: #000;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            font-family: 'Rajdhani';
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+        }
+        
+        .vault-btn:hover {
+            background: #00d4e6;
+            box-shadow: 0 0 25px rgba(0, 229, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
         /* DEPO YÖNETİMİ */
         .warehouse-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
         
         .wh-card {
             background: var(--bg-input); border: 1px solid var(--border-color);
             border-radius: 10px; padding: 15px; text-align: center;
+            position: relative;
         }
+        
         .wh-card-full {
             grid-column: span 2;
         }
-        .wh-icon { font-size: 2rem; margin-bottom: 10px; display: block; }
-        .wh-title { font-size: 0.9rem; font-weight: 700; color: #fff; }
-        .wh-type-label { font-size: 0.65rem; color: #666; margin-top: 2px; margin-bottom: 5px; font-weight: 600; }
-        .wh-amount { font-size: 1.2rem; font-weight: 800; margin: 5px 0; }
-        .wh-cap { font-size: 0.7rem; color: #666; margin-bottom: 10px; }
+        
+        .wh-icon { 
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            margin: 0 auto 12px auto;
+            display: block;
+        }
+        
+        .wh-title { font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: 3px; }
+        .wh-label { font-size: 0.75rem; color: #666; margin-bottom: 8px; font-style: italic; }
+        .wh-amount { font-size: 1.5rem; font-weight: 800; margin: 8px 0 5px 0; color: var(--accent-cyan); }
+        .wh-cap { font-size: 0.75rem; color: #555; margin-bottom: 10px; }
         
         .wh-input { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 5px; text-align: center; margin-bottom: 5px; border-radius: 4px; font-family: 'Rajdhani'; }
         
@@ -157,28 +326,10 @@
 
         /* GELİŞTİRME */
         .upgrade-card {
-            background: var(--bg-card);
-            border: 1px solid #222; border-radius: 10px; padding: 15px;
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.05), var(--bg-card));
+            border: 1px solid var(--accent-gold); border-radius: 10px; padding: 15px;
             margin-bottom: 20px; text-align: center;
         }
-        .upgrade-costs, .upgrade-benefits { margin: 15px 0; }
-        .upgrade-duration { background: #0a0a0a; padding: 10px; border-radius: 6px; border: 1px solid #222; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; color: #fff; font-weight: 700; font-size: 0.9rem; }
-        .upgrade-section-title { font-size: 0.85rem; color: #fff; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; text-align: left; }
-        .upgrade-items { display: flex; flex-direction: column; gap: 3px; }
-        .upgrade-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #222; }
-        .upgrade-item:last-child { border-bottom: none; }
-        .upgrade-item-left { display: flex; align-items: center; gap: 10px; }
-        .upgrade-item-icon { width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; }
-        .upgrade-item-icon i { font-size: 1rem; color: #888; }
-        .upgrade-item-label { font-size: 0.9rem; color: #aaa; font-weight: 500; }
-        .upgrade-item-right { display: flex; align-items: center; gap: 8px; }
-        .upgrade-item-amount { font-weight: 700; color: #fff; font-size: 0.95rem; }
-        .upgrade-item-status { font-size: 1.1rem; }
-        .upgrade-item-status.check { color: var(--accent-green); }
-        .upgrade-item-status.cross { color: #ff4444; }
-        .upgrade-item.benefit .upgrade-item-label { color: #fff; }
-        .upgrade-item.benefit .upgrade-item-amount { color: var(--accent-green); font-weight: 800; }
-        .license-badge-main { background: rgba(255, 215, 0, 0.1); border: 1px solid var(--accent-gold); padding: 8px; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; font-size: 0.9rem; color: #fff; margin-top: 5px; }
         .u-info { display: flex; justify-content: space-between; margin-bottom: 15px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 5px; }
         .u-col h4 { font-size: 0.8rem; color: var(--accent-gold); margin-bottom: 5px; }
         .u-col p { font-size: 1rem; font-weight: bold; }
@@ -203,7 +354,7 @@
 
         /* MODAL */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; display: none; justify-content: center; align-items: center; animation: fadeIn 0.3s; }
-        .modal-content { background: #181818; width: 85%; padding: 25px; border-radius: 12px; border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-gold); }
+        .modal-content { background: #181818; width: 90%; max-width: 420px; padding: 25px; border-radius: 12px; border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-gold); }
         .m-title { font-size: 1.3rem; margin-bottom: 10px; color: #fff; font-weight: bold; }
         .m-price { font-size: 1.5rem; color: var(--accent-gold); font-weight: bold; margin: 15px 0; display: block; }
         
@@ -239,58 +390,134 @@
         .btn-cancel { background: #333; color: #fff; }
 
         /* CONFIRM MODAL */
-        #confirmModal .modal-content { border-top-color: var(--accent-cyan); }
+        #confirmModal .modal-content { 
+            border-top-color: var(--accent-gold);
+        }
         #confirmModal .btn-confirm { background: var(--accent-cyan); }
+
+        /* GELİŞTİRME MALİYETLERİ */
+        .upgrade-costs-list {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .upgrade-cost-item {
+            display: flex;
+            align-items: center;
+            padding: 5px 0;
+        }
+        
+        .upgrade-cost-item:last-child {
+            border-bottom: none;
+        }
+        
+        .upgrade-cost-icon {
+            width: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .upgrade-cost-icon img {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+        }
+        
+        .upgrade-cost-icon i {
+            font-size: 1rem;
+        }
+        
+        .upgrade-cost-name {
+            flex: 1;
+            font-size: 0.85rem;
+            color: #aaa;
+        }
+        
+        .upgrade-cost-value {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .upgrade-cost-amount {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #fff;
+            text-align: right;
+        }
+        
+        .upgrade-cost-status {
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 0.7rem;
+        }
+        
+        .upgrade-cost-status.ok {
+            color: var(--accent-green);
+            background: rgba(46, 204, 113, 0.15);
+        }
+        
+        .upgrade-cost-status.fail {
+            color: var(--accent);
+            background: rgba(231, 76, 60, 0.15);
+        }
+        
+        .upgrade-btn-container {
+            margin-top: 20px;
+        }
+        
+        .btn-start-upgrade {
+            width: 100%;
+            background: var(--accent-gold);
+            color: #000;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 1.05rem;
+            cursor: pointer;
+            font-family: 'Rajdhani';
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+        
+        .btn-start-upgrade:hover {
+            background: #ffd700;
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
+            transform: translateY(-2px);
+        }
+        
+        .btn-start-upgrade:disabled {
+            background: #444;
+            color: #666;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
 
         /* TABS */
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
         .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: #777; font-family: 'Rajdhani'; font-weight: bold; cursor: pointer; border-radius: 6px; transition: all 0.3s; font-size: 0.85rem; }
         .tab-btn.active { background: #222; color: var(--accent-cyan); border: 1px solid var(--accent-cyan); box-shadow: 0 0 10px rgba(0, 229, 255, 0.1); }
 
-        /* INFO LIST ITEMS */
-        .info-list-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px 0;
-            transition: all 0.2s;
-        }
-        .info-list-item:hover {
-            opacity: 0.8;
-        }
-        .info-left {
-            display: flex;
-            align-items: center;
-            gap: 0;
-        }
-        .info-left i,
-        .info-left img {
-            width: 28px;
-            min-width: 28px;
-            text-align: center;
-            margin-right: 10px;
-        }
-        .info-label {
-            color: #aaa;
-            font-size: 0.88rem;
-            font-weight: 500;
-            flex: 1;
-        }
-        .info-value {
-            color: #fff;
-            font-size: 0.9rem;
-            font-weight: 600;
-            text-align: right;
-        }
-
-        /* VAULT BOX */
-        .vault-box {
-            background: linear-gradient(45deg, #1a1a1a, #000);
-            border: 1px solid var(--accent-gold);
-            border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 20px;
-        }
-        .vb-title { color: var(--accent-gold); font-size: 0.9rem; margin-bottom: 5px; }
-        .vb-amount { font-size: 1.8rem; font-weight: bold; color: #fff; }
+        /* BİLGİ LİSTESİ */
+        .info-list { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; margin-bottom: 20px; }
+        .info-list-header { font-size: 0.85rem; color: var(--accent-cyan); font-weight: 700; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .info-item { display: flex; align-items: center; padding: 5px 0; }
+        .info-item:last-child { border-bottom: none; }
+        .info-item i { font-size: 1.1rem; width: 28px; }
+        .info-item .info-label { flex: 1; font-size: 0.85rem; color: #aaa; }
+        .info-item .info-value { font-size: 0.95rem; font-weight: bold; color: #fff; text-align: right; }
 
         /* BOTTOM NAV */
         .bottom-nav { position: absolute; bottom: 0; width: 100%; background: #0a0a0a; border-top: 1px solid #333; display: flex; justify-content: space-around; padding: 10px 0; z-index: 10; }
@@ -310,218 +537,124 @@
         <!-- Header injected by header-manager.js -->
 
         <main>
+            <!-- Sayfa Başlığı -->
             <div class="page-header">
-                <div class="back-btn" onclick="window.location.href='mine-list.html'">
+                <button class="back-btn" onclick="window.history.back()">
                     <i class="fas fa-arrow-left"></i>
-                </div>
-                <div class="page-title-section">
-                    <h1 class="page-title">MADEN YÖNETİMİ</h1>
-                    <p class="page-desc">Madenlerinizi yönetin, kaynakları çıkarın</p>
+                </button>
+                <div class="header-content">
+                    <h1 class="page-title">Maden Yönetimi</h1>
+                    <p class="page-description">Madenlerinizi yönetin, geliştirin ve üretin</p>
                 </div>
             </div>
 
-            <!-- FABRİKA KARTI -->
-            <div class="factory-card" style="padding:8px 15px;">
-                <div class="fc-header">
-                    <img src="icons/factory-icon/wood-plank.png" id="fIcon" class="fc-icon">
-                    <div class="fc-title-section">
-                        <div class="fc-name" id="fName">DEMİR ÇELİK A.Ş.</div>
-                        <div class="fc-owner"><i class="fas fa-user-tie"></i> Sahip: <span class="fc-owner-name" id="fOwner">-</span></div>
-                    </div>
+            <!-- İŞLETME KARTI -->
+            <div class="business-card">
+                <div class="business-icon-wrapper">
+                    <img id="businessIcon" src="icons/mine-icon/wood.png" alt="Mine Icon" class="business-icon">
                 </div>
-                
-                <div class="fc-stats" style="margin-top:15px;">
-                    <div class="fs-item">
-                        <span class="fs-lbl">Çalışan</span>
-                        <span class="fs-val" id="fWorker">0/0</span>
-                    </div>
-                    <div class="fs-item">
-                        <span class="fs-lbl">Rezerv</span>
-                        <span class="fs-val" id="fReserve" style="color:var(--accent-green)">0</span>
-                    </div>
-                    <div class="fs-item">
-                        <span class="fs-lbl">Hız</span>
-                        <span class="fs-val" id="fSpeed" style="color:var(--accent-cyan)">0s</span>
-                    </div>
-                    <div class="fs-item">
-                        <span class="fs-lbl">Verim</span>
-                        <span class="fs-val" id="fEfficiency" style="color:var(--accent-gold)">%0</span>
-                    </div>
+                <div class="business-info">
+                    <h2 id="businessName" class="business-name">Yükleniyor...</h2>
                 </div>
             </div>
 
             <!-- TABS -->
             <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('info', event)">BİLGİLER</button>
-                <button class="tab-btn" onclick="switchTab('settings', event)">AYARLAR</button>
-                <button class="tab-btn" onclick="switchTab('warehouse', event)">DEPO</button>
-                <button class="tab-btn" onclick="switchTab('vault', event)">KASA</button>
+                <button class="tab-btn active" onclick="switchTab('bilgiler', event)">BİLGİLER</button>
+                <button class="tab-btn" onclick="switchTab('ayarlar', event)">AYARLAR</button>
+                <button class="tab-btn" onclick="switchTab('depo', event)">DEPO</button>
+                <button class="tab-btn" onclick="switchTab('kasa', event)">KASA</button>
             </div>
 
             <!-- BİLGİLER TAB -->
-            <div id="tab-info">
-            <!-- MADEN DETAYLARI -->
-            <div class="settings-card">
-                <div class="card-header"><i class="fas fa-info-circle"></i> MADEN DETAYLARI</div>
-                <div style="display:flex; flex-direction:column; gap:4px;">
-                    <div class="info-list-item">
-                        <div class="info-left">
-                            <i class="fas fa-user-tie" style="color:var(--accent-gold);"></i>
-                            <span class="info-label">Sahip</span>
-                        </div>
-                        <span class="info-value" id="fOwnerDetail">-</span>
+            <div id="tab-bilgiler">
+                <div class="info-list">
+                    <div class="info-list-header">
+                        <i class="fas fa-info-circle"></i>
+                        İŞLETME BİLGİLERİ
                     </div>
-                    <div class="info-list-item">
-                        <div class="info-left">
-                            <i class="fas fa-industry" style="color:var(--accent);"></i>
-                            <span class="info-label">Maden Türü</span>
-                        </div>
-                        <span class="info-value" id="fCategoryDetail">-</span>
+                    <div class="info-item">
+                        <i class="fas fa-user" style="color: #3498db;"></i>
+                        <span class="info-label">İşletme Sahibi</span>
+                        <span class="info-value" id="info-owner">-</span>
                     </div>
-                    <div class="info-list-item">
-                        <div class="info-left">
-                            <i class="fas fa-arrow-up" style="color:var(--accent-cyan);"></i>
-                            <span class="info-label">Seviye</span>
-                        </div>
-                        <span class="info-value" id="fLevelDetail">-</span>
+                    <div class="info-item">
+                        <i class="fas fa-layer-group" style="color: #9b59b6;"></i>
+                        <span class="info-label">İşletme Seviyesi</span>
+                        <span class="info-value" id="info-level">-</span>
                     </div>
-                    <div class="info-list-item">
-                        <div class="info-left">
-                            <i class="fas fa-users" style="color:var(--accent-green);"></i>
-                            <span class="info-label">Çalışan Sayısı</span>
-                        </div>
-                        <span class="info-value" id="fWorkerDetail">-</span>
+                    <div class="info-item">
+                        <i class="fas fa-gem" style="color: #e74c3c;"></i>
+                        <span class="info-label">İşletme Kategorisi</span>
+                        <span class="info-value" id="info-product">-</span>
                     </div>
-                    <div class="info-list-item">
-                        <div class="info-left">
-                            <i class="fas fa-users" style="color:#888;"></i>
-                            <span class="info-label">Maksimum Çalışan</span>
-                        </div>
-                        <span class="info-value" id="fMaxWorkerDetail">-</span>
+                    <div class="info-item">
+                        <i class="fas fa-users" style="color: #2ecc71;"></i>
+                        <span class="info-label">İşçi Kapasitesi</span>
+                        <span class="info-value" id="info-worker">-</span>
                     </div>
-                    <div class="info-list-item">
-                        <div class="info-left">
-                            <i class="fas fa-money-bill-wave" style="color:var(--accent-gold);"></i>
-                            <span class="info-label">Birim Maaş</span>
-                        </div>
-                        <span class="info-value" id="fWageDetail">-</span>
+                    <div class="info-item">
+                        <i class="fas fa-warehouse" style="color: #3498db;"></i>
+                        <span class="info-label">Depo Kapasitesi</span>
+                        <span class="info-value" id="info-warehouse">-</span>
                     </div>
-                    <div class="info-list-item">
-                        <div class="info-left">
-                            <i class="fas fa-gem" style="color:var(--accent-green);"></i>
-                            <span class="info-label">Rezerv</span>
-                        </div>
-                        <span class="info-value" id="fReserveDetail">-</span>
+                    <div class="info-item">
+                        <i class="fas fa-cash-register" style="color: #00e5ff;"></i>
+                        <span class="info-label">Kasa Kapasitesi</span>
+                        <span class="info-value" id="info-vault-capacity">-</span>
                     </div>
-                    <div class="info-list-item">
-                        <div class="info-left">
-                            <i class="fas fa-tachometer-alt" style="color:var(--accent-cyan);"></i>
-                            <span class="info-label">Üretim Hızı</span>
-                        </div>
-                        <span class="info-value" id="fSpeedDetail">-</span>
+                    <div class="info-item">
+                        <i class="fas fa-flask" style="color: #00e5ff;"></i>
+                        <span class="info-label">Arge</span>
+                        <span class="info-value" id="info-efficiency">-</span>
                     </div>
-                    <div class="info-list-item">
-                        <div class="info-left">
-                            <i class="fas fa-chart-line" style="color:var(--accent-gold);"></i>
-                            <span class="info-label">Verimlilik</span>
-                        </div>
-                        <span class="info-value" id="fEfficiencyDetail">-</span>
+                    <div class="info-item">
+                        <i class="fas fa-tachometer-alt" style="color: #f39c12;"></i>
+                        <span class="info-label">Üretim Hızı</span>
+                        <span class="info-value" id="info-speed">-</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-money-bill-wave" style="color: #27ae60;"></i>
+                        <span class="info-label">Birim Maaş</span>
+                        <span class="info-value" id="info-wage">-</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-calendar-alt" style="color: #e67e22;"></i>
+                        <span class="info-label">Kuruluş Tarihi</span>
+                        <span class="info-value" id="info-created">-</span>
                     </div>
                 </div>
-            </div>
-
-            <!-- KAPASİTE BİLGİLERİ -->
-            <div class="settings-card">
-                <div class="card-header"><i class="fas fa-warehouse"></i> KAPASİTE BİLGİLERİ</div>
-                <div style="display:flex; flex-direction:column; gap:4px;">
-                    <div class="info-list-item">
-                        <div class="info-left">
-                            <img src="" id="fProdIcon" style="width:28px; height:28px; object-fit:contain;">
-                            <span class="info-label" id="fProdName">Üretilen Ürün</span>
-                        </div>
-                        <span class="info-value" id="fProdAmount">-</span>
-                    </div>
-                    <div class="info-list-item">
-                        <div class="info-left">
-                            <i class="fas fa-box" style="color:#888;"></i>
-                            <span class="info-label">Maksimum Kapasite</span>
-                        </div>
-                        <span class="info-value" id="fMaxCapacity">-</span>
-                    </div>
-                    <div class="info-list-item">
-                        <div class="info-left">
-                            <i class="fas fa-percentage" style="color:var(--accent-green);"></i>
-                            <span class="info-label">Doluluk Oranı</span>
-                        </div>
-                        <span class="info-value" id="fCapacityPercent">-</span>
-                    </div>
-                </div>
-            </div>
             </div>
 
             <!-- AYARLAR TAB -->
-            <div id="tab-settings" style="display:none;">
+            <div id="tab-ayarlar" style="display:none;">
             <!-- AYARLAR -->
             <div class="settings-card">
                 <div class="card-header"><i class="fas fa-cogs"></i> GENEL AYARLAR</div>
                 <div class="form-group">
-                    <label class="form-label">Maden Adı (3-40 karakter)</label>
-                    <input type="text" id="fNameInput" class="form-input" value="Maden İşletmesi" minlength="3" maxlength="40">
+                    <label class="form-label">İşletme Adı (3-40 karakter)</label>
+                    <input type="text" id="fNameInput" class="form-input" value="Maden İşletmesi" minlength="3" maxlength="40" style="color: #fff;">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Birim Maaş (₺) (1-1000)</label>
-                    <input type="number" id="fWageInput" class="form-input" value="2500" min="1" max="1000">
+                    <label class="form-label">Birim Maaş (₺) (0-1000)</label>
+                    <input type="number" id="fWageInput" class="form-input" value="2500" min="0" max="1000" style="color: #fff;">
                 </div>
-                <button class="btn-save" onclick="saveSettings()">KAYDET</button>
+                <button class="btn-save" onclick="saveSettings()" style="background: var(--accent-green); color: #000; border-color: var(--accent-green);">GÜNCELLE</button>
             </div>
 
             <!-- GELİŞTİRME -->
-            <div class="upgrade-card">
-                <div class="card-header" style="color:var(--accent-gold); border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:15px;">
-                    <i class="fas fa-arrow-circle-up"></i> MADEN YÜKSELTME
-                </div>
-                
-                <div class="u-info">
-                    <div class="u-col">
-                        <h4>MEVCUT</h4>
-                        <p>Seviye <span id="curLvl">3</span></p>
-                    </div>
-                    <div style="display:flex; align-items:center; color:#555;"><i class="fas fa-chevron-right"></i></div>
-                    <div class="u-col">
-                        <h4>SONRAKİ</h4>
-                        <p style="color:var(--accent-gold)">Seviye <span id="nextLvl">2</span></p>
-                    </div>
-                </div>
-
-                <!-- Geliştirme Maliyetleri -->
-                <div id="upgradeCostsCard" class="upgrade-costs">
-                    <div class="upgrade-section-title">GEREKSİNİMLER</div>
-                    <div id="upgradeCostItems" class="upgrade-items"></div>
-                </div>
-
-                <!-- Geliştirme Kazanımları -->
-                <div id="upgradeBenefitsCard" class="upgrade-benefits">
-                    <div class="upgrade-section-title">KAZANIMLAR</div>
-                    <div id="upgradeBenefitItems" class="upgrade-items"></div>
-                </div>
-
-                <button id="upgradeBtn" class="btn-upgrade" onclick="openUpgradeModal()"><i class="fas fa-arrow-circle-up"></i> YÜKSELT</button>
-                <div id="maxLevelMsg" style="display:none; color:var(--accent-gold); text-align:center; font-weight:bold; margin-top:10px; border: 1px solid var(--accent-gold); padding: 10px; border-radius: 5px; background: rgba(255, 215, 0, 0.1);">
-                    <i class="fas fa-check-circle"></i> Maksimum geliştirme seviyesine ulaştınız.
-                </div>
-
-                <!-- Sayaç -->
-                <div id="upgradeProgress" class="upgrade-progress">
-                    <div class="up-bg"><div id="upBar" class="up-fill"></div></div>
-                    <div id="upTimer" class="up-text">Geliştiriliyor... 10s</div>
+            <div class="settings-card">
+                <div class="card-header" style="color: var(--accent-gold);"><i class="fas fa-arrow-up"></i> GELİŞTİRME</div>
+                <div id="upgradeCostsContainer">
+                    <!-- JS ile doldurulacak -->
                 </div>
             </div>
             </div>
 
-            <!-- DEPO YÖNETİMİ TAB -->
-            <div id="tab-warehouse" style="display:none;">
+            <!-- DEPO TAB -->
+            <div id="tab-depo" style="display:none;">
             <!-- DEPO YÖNETİMİ -->
-            <div class="settings-card" style="border-color:var(--accent-green)">
+            <div class="settings-card">
                 <div class="card-header" style="color:var(--accent-green)"><i class="fas fa-boxes"></i> DEPO YÖNETİMİ</div>
                 
                 <div class="warehouse-grid" id="warehouseGrid">
@@ -530,35 +663,47 @@
             </div>
             </div>
 
-            <!-- KASA YÖNETİMİ TAB -->
-            <div id="tab-vault" style="display:none;">
-            <!-- KASA YÖNETİMİ -->
-            <div class="settings-card" style="border-color:var(--accent-cyan)">
-                <div class="card-header" style="color:var(--accent-cyan)"><img src="icons/inventory-icon/money.png" style="width:24px;height:24px;vertical-align:middle;"> MADEN KASASI</div>
-                <div class="vault-box">
-                    <div class="vb-title">Kasa Bakiyesi</div>
-                    <div class="vb-amount"><span id="fVault2">0</span> ₺</div>
-                    <div style="font-size:0.8rem; color:#888; margin-top:5px;">Kapasite: <span id="vaultCapacity">50.000</span> ₺</div>
-                </div>
-                <div class="form-group">
-                    <input type="number" id="vaultInput" class="form-input" placeholder="Miktar" min="1">
-                </div>
-                <div style="display:flex; gap:10px;">
-                    <button class="btn-save" style="flex:1; background:var(--accent-green); color:#000; border:none;" onclick="confirmAction('vault', 'deposit')">YATIR</button>
-                    <button class="btn-save" style="flex:1; background:var(--accent-cyan); color:#000; border:none;" onclick="confirmAction('vault', 'withdraw')">ÇEK</button>
-                </div>
-            </div>
-
-            <!-- LOGLAR -->
-            <div class="log-container">
-                <div class="card-header" style="font-size:0.9rem; margin-bottom:10px;"><i class="fas fa-history"></i> SON ÇALIŞANLAR</div>
-                <div class="log-list" id="logList">
-                    <div class="log-item">
-                        <span>Ali Y. - Üretim</span>
-                        <span class="log-time">10:42</span>
+            <!-- KASA TAB -->
+            <div id="tab-kasa" style="display:none;">
+                <!-- KASA BAKİYESİ -->
+                <div class="settings-card">
+                    <div class="card-header" style="color:var(--accent-cyan)">
+                        <i class="fas fa-wallet"></i> KASA BAKİYESİ
+                    </div>
+                    
+                    <div class="vault-balance-section">
+                        <div class="vault-balance-label">Bakiye</div>
+                        <div class="vault-balance-amount" id="fVault">0</div>
+                        <div class="vault-balance-capacity" id="vaultCapacityText">Kapasite: 0/0</div>
                     </div>
                 </div>
-            </div>
+
+                <!-- PARA EKLE -->
+                <div class="settings-card">
+                    <div class="card-header" style="color:var(--accent-green)">
+                        <i class="fas fa-plus-circle"></i> PARA EKLE
+                    </div>
+                    
+                    <div class="vault-add-section">
+                        <div class="vault-add-limit">Maksimum: <span id="maxVaultAdd" style="color:var(--accent-green); font-weight:700;">100.000</span> ₺</div>
+                        <div class="vault-input-group">
+                            <input type="number" id="vaultInput" class="form-input" placeholder="Miktar giriniz" style="color:#fff;">
+                            <button class="vault-btn" onclick="confirmAction('vault', 'add')">
+                                <i class="fas fa-arrow-right"></i> KASAYA EKLE
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- İŞLEM GEÇMİŞİ -->
+                <div class="log-container">
+                    <div class="card-header" style="color:var(--accent); margin-bottom:10px;">
+                        <i class="fas fa-history"></i> İŞLEM GEÇMİŞİ
+                    </div>
+                    <div class="log-list" id="logList">
+                        <div style="text-align:center; color:#555; font-size:0.8rem;">Henüz işlem yok.</div>
+                    </div>
+                </div>
             </div>
 
         </main>
@@ -566,16 +711,17 @@
         <!-- MODAL -->
         <div class="modal-overlay" id="upgradeModal">
             <div class="modal-content">
-                <i class="fas fa-arrow-circle-up" style="font-size:3rem; color:var(--accent-gold); margin-bottom:10px;"></i>
-                <h3 class="m-title">Maden Yükseltme</h3>
-                <p class="m-desc">
-                    Madeninizi <strong><span id="modalCurrentLevel">1</span>. seviye</strong>'den 
-                    <strong><span id="modalNextLevel">2</span>. seviye</strong>'ye yükseltmek istediğinizden emin misiniz?
-                </p>
+                <i class="fas fa-hammer" style="font-size:3rem; color:var(--accent-gold); margin-bottom:10px;"></i>
+                <h3 class="m-title">Seviye Yükselt</h3>
+                <p class="m-desc">Kapasiteyi ve üretim hızını artırmak için madeni geliştir.</p>
+                
+                <div id="upgradeCosts" style="text-align:left; background:#111; padding:10px; border-radius:8px; margin-bottom:15px; font-size:0.9rem;">
+                    <!-- JS will fill this -->
+                </div>
 
                 <div class="m-btns">
                     <button class="m-btn btn-cancel" onclick="closeModal('upgradeModal')">İPTAL</button>
-                    <button class="m-btn btn-confirm" onclick="startUpgrade()">YÜKSELT</button>
+                    <button class="m-btn btn-confirm" onclick="startUpgrade()">ONAYLA</button>
                 </div>
             </div>
         </div>
@@ -583,13 +729,13 @@
         <!-- CONFIRM MODAL -->
         <div class="modal-overlay" id="confirmModal">
             <div class="modal-content">
-                <i class="fas fa-question-circle" style="font-size:3rem; color:var(--accent-cyan); margin-bottom:10px;"></i>
-                <h3 class="m-title">Onaylıyor musunuz?</h3>
-                <p class="m-desc" id="confirmDesc">İşlemi onaylıyor musunuz?</p>
+                <i class="fas fa-arrow-up" style="font-size:3.5rem; color:var(--accent-gold); margin-bottom:15px;"></i>
+                <h3 class="m-title" id="confirmModalTitle" style="font-size: 1.5rem; margin-bottom: 20px;">GELİŞTİRMEYİ BAŞLAT</h3>
+                <div id="confirmModalMsg" style="margin-bottom: 25px; line-height: 1.6;"></div>
                 
                 <div class="m-btns">
-                    <button class="m-btn btn-cancel" onclick="closeModal('confirmModal')">İPTAL</button>
-                    <button class="m-btn btn-confirm" id="btnConfirmAction">ONAYLA</button>
+                    <button class="m-btn btn-cancel" onclick="closeModal('confirmModal')">VAZGEÇ</button>
+                    <button class="m-btn btn-confirm" id="confirmActionBtn">ONAYLA</button>
                 </div>
             </div>
         </div>
@@ -605,6 +751,20 @@
                 <div class="m-btns">
                     <button class="m-btn btn-cancel" onclick="closeModal('speedUpModal')">İPTAL</button>
                     <button class="m-btn btn-confirm" style="background: var(--accent-cyan);" onclick="confirmSpeedUp()">HIZLANDIR</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SETTINGS CONFIRM MODAL -->
+        <div class="modal-overlay" id="settingsModal">
+            <div class="modal-content" style="border-top-color: var(--accent-green);">
+                <i class="fas fa-question-circle" style="font-size:3rem; color:var(--accent-green); margin-bottom:10px;"></i>
+                <h3 class="m-title">Güncellemeyi Onaylıyor Musunuz?</h3>
+                <p class="m-desc">İşletme ayarlarınız güncellenecektir.</p>
+                
+                <div class="m-btns">
+                    <button class="m-btn btn-cancel" onclick="closeModal('settingsModal')">İPTAL</button>
+                    <button class="m-btn btn-confirm" style="background: var(--accent-green);" onclick="confirmSettings()">GÜNCELLE</button>
                 </div>
             </div>
         </div>
@@ -634,20 +794,7 @@
         let upgradeTimerInterval = null;
         let userLicenses = {}; // To store user licenses
 
-        const fmt = (n) => n.toLocaleString('tr-TR');
-
-        // --- TAB SİSTEMİ ---
-        function switchTab(tab, event) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
-
-            document.getElementById('tab-info').style.display = 'none';
-            document.getElementById('tab-settings').style.display = 'none';
-            document.getElementById('tab-warehouse').style.display = 'none';
-            document.getElementById('tab-vault').style.display = 'none';
-            
-            document.getElementById('tab-' + tab).style.display = 'block';
-        }
+        const fmt = (n) => Math.floor(Number(n) || 0).toLocaleString('tr-TR', { maximumFractionDigits: 0, minimumFractionDigits: 0 });
 
         // Resource Configuration
         const resourceMap = {
@@ -719,6 +866,11 @@
                         return;
                     }
 
+                    // Update business card
+                    document.getElementById('businessName').innerText = m.name;
+                    const config = resourceMap[m.mine_type] || resourceMap['wood'];
+                    document.getElementById('businessIcon').src = config.prod.icon;
+
                     factory = {
                         name: m.name,
                         level: m.level,
@@ -732,9 +884,12 @@
                         maxWorkers: m.max_workers,
                         efficiency: m.efficiency || 30,
                         productionTime: m.production_time || 10,
-                        vault: m.vault || 0,
-                        reserve: m.reserve || 0,
-                        type: m.mine_type
+                        vault: Math.floor(Number(m.vault) || 0),
+                        reserve: Math.floor(Number(m.reserve) || 0),
+                        type: m.mine_type,
+                        owner_id: m.owner_id,
+                        owner_username: m.owner_username || user.username,
+                        created_at: m.created_at
                     };
 
                     // 2. Get Upgrade Info
@@ -744,6 +899,10 @@
                             if(upData.success) {
                                 upgradeInfo = upData;
                                 updateUpgradeUI();
+                                // Ayarlar sekmesindeki geliştirme maliyetlerini de güncelle
+                                fetchUser().then(() => {
+                                    updateUpgradeCostsUI();
+                                });
                             }
                         });
 
@@ -776,94 +935,49 @@
         }
 
         function updateUI() {
-            document.getElementById('fName').innerText = factory.name;
-            document.getElementById('fNameInput').value = factory.name;
-            document.getElementById('fWageInput').value = factory.wage;
+            // Bilgiler sekmesi - Yeni alanlar
+            document.getElementById('info-owner').innerText = `${factory.owner_id} - ${factory.owner_username}`;
+            document.getElementById('info-level').innerText = factory.level + '. Seviye';
+            document.getElementById('info-product').innerText = factory.type ? (resourceMap[factory.type]?.prod.name || '-') : '-';
+            document.getElementById('info-worker').innerText = `${factory.workers}/${factory.maxWorkers}`;
             
-            document.getElementById('fWorker').innerText = `${factory.workers}/${factory.maxWorkers}`;
-            document.getElementById('fReserve').innerText = fmt(factory.reserve);
-            document.getElementById('fEfficiency').innerText = `%${factory.efficiency}`;
+            // Depo Kapasitesi (Hammadde + Ürün toplamı)
+            const totalWarehouseUsed = (factory.raw || 0) + (factory.raw2 || 0) + (factory.prod || 0);
+            const totalWarehouseCapacity = factory.rawCap + factory.prodCap;
+            document.getElementById('info-warehouse').innerText = `${fmt(totalWarehouseUsed)}/${fmt(totalWarehouseCapacity)}`;
+            
+            // Kasa Kapasitesi
+            const vaultCapacity = factory.level * 100000;
+            document.getElementById('info-vault-capacity').innerText = `${fmt(factory.vault)}/${fmt(vaultCapacity)}`;
+            
+            document.getElementById('info-efficiency').innerText = '%' + factory.efficiency;
             
             let t = factory.productionTime;
-            let tStr = t < 60 ? `${t}sn` : (t % 60 === 0 ? `${t/60}dk` : `${Math.floor(t/60)}dk ${t%60}sn`);
-            document.getElementById('fSpeed').innerText = tStr;
-
-            // BİLGİLER TAB - Sahip Bilgisi
-            const fOwner = document.getElementById('fOwner');
-            const fOwnerDetail = document.getElementById('fOwnerDetail');
-            if (fOwner) fOwner.innerText = factory.ownerName || '-';
-            if (fOwnerDetail) fOwnerDetail.innerText = factory.ownerName || '-';
-
-            // BİLGİLER TAB - Kategori
-            const fCategoryDetail = document.getElementById('fCategoryDetail');
-            if (fCategoryDetail && factory.category && resourceMap[factory.category]) {
-                fCategoryDetail.innerText = resourceMap[factory.category].prod.name;
-            }
-
-            // BİLGİLER TAB - Seviye
-            const fLevelDetail = document.getElementById('fLevelDetail');
-            if (fLevelDetail) fLevelDetail.innerText = `Seviye ${factory.level}`;
-
-            // BİLGİLER TAB - Çalışan Bilgileri
-            const fWorkerDetail = document.getElementById('fWorkerDetail');
-            const fMaxWorkerDetail = document.getElementById('fMaxWorkerDetail');
-            if (fWorkerDetail) fWorkerDetail.innerText = fmt(factory.workers);
-            if (fMaxWorkerDetail) fMaxWorkerDetail.innerText = fmt(factory.maxWorkers);
-
-            // BİLGİLER TAB - Maaş
-            const fWageDetail = document.getElementById('fWageDetail');
-            if (fWageDetail) fWageDetail.innerText = `₺${fmt(factory.wage)}`;
-
-            // BİLGİLER TAB - Rezerv
-            const fReserveDetail = document.getElementById('fReserveDetail');
-            if (fReserveDetail) fReserveDetail.innerText = fmt(factory.reserve);
-
-            // BİLGİLER TAB - Hız
-            const fSpeedDetail = document.getElementById('fSpeedDetail');
-            if (fSpeedDetail) fSpeedDetail.innerText = tStr;
-
-            // BİLGİLER TAB - Verimlilik
-            const fEfficiencyDetail = document.getElementById('fEfficiencyDetail');
-            if (fEfficiencyDetail) fEfficiencyDetail.innerText = `%${factory.efficiency}`;
-
-            // KAPASİTE BİLGİLERİ
-            if (factory.category && resourceMap[factory.category]) {
-                const prod = resourceMap[factory.category].prod;
-                const fProdIcon = document.getElementById('fProdIcon');
-                const fProdName = document.getElementById('fProdName');
-                const fProdAmount = document.getElementById('fProdAmount');
-                const fMaxCapacity = document.getElementById('fMaxCapacity');
-                const fCapacityPercent = document.getElementById('fCapacityPercent');
-
-                if (fProdIcon) fProdIcon.src = prod.icon;
-                if (fProdName) fProdName.innerText = prod.name;
-                
-                const amount = factory[prod.key] || 0;
-                const maxCap = factory.capacity || 0;
-                const percent = maxCap > 0 ? Math.round((amount / maxCap) * 100) : 0;
-
-                if (fProdAmount) fProdAmount.innerText = fmt(amount);
-                if (fMaxCapacity) fMaxCapacity.innerText = fmt(maxCap);
-                if (fCapacityPercent) fCapacityPercent.innerText = `%${percent}`;
-                
-                // Ana kart ikonunu güncelle
-                const fIcon = document.getElementById('fIcon');
-                if (fIcon) fIcon.src = prod.icon;
-            }
-
-            // KASA TAB için de güncelle
-            const fVault2 = document.getElementById('fVault2');
-            const vaultCapacity = document.getElementById('vaultCapacity');
-            const vaultInput = document.getElementById('vaultInput');
-            const vaultCap = factory.level * 50000;
-            const maxDeposit = Math.max(0, vaultCap - factory.vault);
+            let tStr = t < 60 ? `${t} saniye` : (t % 60 === 0 ? `${t/60} dakika` : `${Math.floor(t/60)}dk ${t%60}sn`);
+            document.getElementById('info-speed').innerText = tStr;
             
-            if (fVault2) fVault2.innerText = fmt(factory.vault);
-            if (vaultCapacity) vaultCapacity.innerText = fmt(vaultCap);
-            if (vaultInput) {
-                vaultInput.max = Math.min(user.money, maxDeposit);
-                vaultInput.placeholder = `Max: ${fmt(Math.min(user.money, maxDeposit))} ₺`;
+            document.getElementById('info-wage').innerText = fmt(factory.wage) + ' ₺/Adet';
+            
+            // Format creation date
+            if (factory.created_at) {
+                const date = new Date(factory.created_at);
+                const formattedDate = date.toLocaleDateString('tr-TR', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                document.getElementById('info-created').innerText = formattedDate;
+            } else {
+                document.getElementById('info-created').innerText = '-';
             }
+            
+            document.getElementById('fNameInput').value = factory.name;
+            document.getElementById('fWageInput').value = factory.wage;
+
+            // Kasa bilgilerini güncelle (vaultCapacity zaten yukarıda tanımlandı)
+            document.getElementById('fVault').innerText = fmt(factory.vault);
+            document.getElementById('vaultCapacityText').innerText = `Kapasite: ${fmt(factory.vault)}/${fmt(vaultCapacity)}`;
+            document.getElementById('maxVaultAdd').innerText = fmt(factory.level * 100000);
 
             // Dynamic Warehouse Grid
             const grid = document.getElementById('warehouseGrid');
@@ -871,28 +985,42 @@
 
             const config = resourceMap[factory.type] || resourceMap['wood'];
 
-            // Update Main Icon
-            document.getElementById('fIcon').src = config.prod.icon;
+            // Update Main Icon (sadece element varsa)
+            const fIcon = document.getElementById('fIcon');
+            if (fIcon) {
+                fIcon.src = config.prod.icon;
+            }
+
+            // Kart sayısını hesapla
+            let cardCount = 1; // Ürün kartı her zaman var
+            if (config.raw && config.raw.length > 0) cardCount++;
+            if (config.raw && config.raw.length > 1) cardCount++;
 
             // Raw 1
             if (config.raw && config.raw.length > 0) {
-                grid.innerHTML += createCardHTML('raw', config.raw[0], factory.raw, factory.rawCap, 'add');
+                grid.innerHTML += createCardHTML('raw', config.raw[0], factory.raw, factory.rawCap, 'add', cardCount === 1);
             }
 
             // Raw 2 (if exists)
             if (config.raw && config.raw.length > 1) {
-                grid.innerHTML += createCardHTML('raw2', config.raw[1], factory.raw2, factory.rawCap, 'add');
+                grid.innerHTML += createCardHTML('raw2', config.raw[1], factory.raw2, factory.rawCap, 'add', cardCount === 1);
             }
 
-            // Product (tek ürün varsa full genişlikte)
-            const hasRaw = config.raw && config.raw.length > 0;
-            grid.innerHTML += createCardHTML('prod', config.prod, factory.prod, factory.prodCap, 'pull', !hasRaw);
+            // Product
+            grid.innerHTML += createCardHTML('prod', config.prod, factory.prod, factory.prodCap, 'pull', cardCount === 1);
 
-
-            document.getElementById('curLvl').innerText = factory.level;
-            document.getElementById('nextLvl').innerText = factory.level + 1;
-            document.getElementById('uPrice').innerText = fmt(factory.upgradeCost) + " ₺";
-            document.getElementById('upgradeBtn').innerText = `YÜKSELT (${fmt(factory.upgradeCost)} ₺)`;
+            // Upgrade UI elementleri (sadece varsa güncelle)
+            const curLvl = document.getElementById('curLvl');
+            if (curLvl) curLvl.innerText = factory.level;
+            
+            const nextLvl = document.getElementById('nextLvl');
+            if (nextLvl) nextLvl.innerText = factory.level + 1;
+            
+            const uPrice = document.getElementById('uPrice');
+            if (uPrice) uPrice.innerText = fmt(factory.upgradeCost) + " ₺";
+            
+            const upgradeBtn = document.getElementById('upgradeBtn');
+            if (upgradeBtn) upgradeBtn.innerText = `YÜKSELT (${fmt(factory.upgradeCost)} ₺)`;
 
             // Requirements
             const reqList = document.getElementById('uReqs');
@@ -917,21 +1045,20 @@
             }
         }
 
-        function createCardHTML(type, item, amount, cap, action, fullWidth = false) {
+        function createCardHTML(type, item, amount, cap, action, isFullWidth = false) {
             const btnClass = action === 'add' ? 'btn-add' : 'btn-pull';
-            const btnText = action === 'add' ? 'EKLE' : 'ÇEK';
+            const btnText = action === 'add' ? 'EKLE' : 'ENVANTERE AKTAR';
             const inputId = `${type}Input`;
-            const cardClass = fullWidth ? 'wh-card wh-card-full' : 'wh-card';
-            
-            const typeLabel = action === 'add' ? 'HAMMADDE' : 'ÜRÜN';
+            const label = action === 'add' ? 'Hammadde' : 'Ürün';
+            const widthClass = isFullWidth ? 'wh-card-full' : '';
             
             return `
-                <div class="${cardClass}">
-                    <img src="${item.icon}" class="wh-icon" style="width:50px; height:50px; object-fit:contain; margin:0 auto 10px auto;">
-                    <div class="wh-title">${item.name.toUpperCase()}</div>
-                    <div class="wh-type-label">${typeLabel}</div>
-                    <div class="wh-amount">${amount}</div>
-                    <div class="wh-cap">Kapasite: ${cap}</div>
+                <div class="wh-card ${widthClass}">
+                    <img src="${item.icon}" class="wh-icon">
+                    <div class="wh-title">${item.name}</div>
+                    <div class="wh-label">(${label})</div>
+                    <div class="wh-amount">${fmt(amount)}</div>
+                    <div class="wh-cap">Kapasite: ${fmt(cap)}</div>
                     
                     <input type="number" id="${inputId}" class="wh-input" placeholder="Miktar">
                     <button class="btn-wh ${btnClass}" onclick="confirmAction('${type}', '${action}', '${item.key}', '${item.name}')">${btnText}</button>
@@ -978,13 +1105,26 @@
         }
 
         // --- AYARLAR ---
+        let pendingSettings = null;
+
         function saveSettings() {
             const name = document.getElementById('fNameInput').value.trim();
             const wage = parseInt(document.getElementById('fWageInput').value);
             
-            if(name.length < 3) return toastr.warning("Maden adı en az 3 karakter olmalıdır.");
-            if(name.length > 40) return toastr.warning("Maden adı en fazla 40 karakter olabilir.");
-            if(wage < 1 || wage > 1000) return toastr.warning("Birim maaş 1 ile 1000 arasında olmalıdır.");
+            if(name.length < 3) return toastr.warning("İşletme adı en az 3 karakter olmalıdır.");
+            if(name.length > 40) return toastr.warning("İşletme adı en fazla 40 karakter olabilir.");
+            if(isNaN(wage) || wage < 0 || wage > 1000) return toastr.warning("Birim maaş 0 ile 1000 arasında olmalıdır.");
+
+            pendingSettings = { name, wage };
+            
+            document.getElementById('settingsModal').style.display = 'flex';
+        }
+
+        function confirmSettings() {
+            if(!pendingSettings) return;
+            closeModal('settingsModal');
+            
+            const { name, wage } = pendingSettings;
 
             fetch(`/api/mines/update/${mineId}`, {
                 method: 'POST',
@@ -997,10 +1137,18 @@
                     toastr.success(data.message);
                     factory.name = name;
                     factory.wage = wage;
+                    // Update business card
+                    document.getElementById('businessName').innerText = name;
                     updateUI();
                 } else {
                     toastr.error(data.message);
                 }
+                pendingSettings = null;
+            })
+            .catch(err => {
+                toastr.error('Bir hata oluştu!');
+                console.error(err);
+                pendingSettings = null;
             });
         }
 
@@ -1018,16 +1166,10 @@
             
             if(!amount || amount <= 0) return toastr.warning("Miktar giriniz.");
 
-            // Kasa kapasitesi kontrolü
-            if(type === 'vault' && action === 'deposit') {
-                const vaultCapacity = factory.level * 50000;
-                const remainingCapacity = vaultCapacity - factory.vault;
-                if(amount > remainingCapacity) {
-                    return toastr.error(`Kasa kapasitesi yetersiz! Maksimum ${fmt(remainingCapacity)} ₺ yatırabilirsiniz.`);
-                }
-                if(amount > user.money) {
-                    return toastr.error('Yetersiz bakiye!');
-                }
+            // Vault Limit Check
+            if(type === 'vault' && action === 'add') {
+                const limit = factory.level * 100000;
+                if(amount > limit) return toastr.warning(`Seviye ${factory.level} için maksimum ${fmt(limit)} ₺ ekleyebilirsiniz.`);
             }
 
             pendingAction = { type, action, amount, itemKey };
@@ -1037,10 +1179,8 @@
                 desc = `${amount} adet ${itemName} envanterden düşülüp madene eklenecek.`;
             } else if(type === 'prod' && action === 'pull') {
                 desc = `${amount} adet ürün madenden çekilip envantere eklenecek.`;
-            } else if(type === 'vault' && action === 'deposit') {
-                desc = `${fmt(amount)} ₺ kasaya yatırılacak. Onaylıyor musunuz?`;
-            } else if(type === 'vault' && action === 'withdraw') {
-                desc = `${fmt(amount)} ₺ kasadan çekilecek. Onaylıyor musunuz?`;
+            } else if(type === 'vault' && action === 'add') {
+                desc = `${fmt(amount)} ₺ hesabınızdan çekilip maden kasasına eklenecek.`;
             }
             
             document.getElementById('confirmDesc').innerText = desc;
@@ -1067,16 +1207,8 @@
                 body.itemKey = itemKey;
             } else if(type === 'prod' && action === 'pull') {
                 endpoint = `/api/mines/withdraw/${mineId}`;
-            } else if(type === 'vault' && action === 'deposit') {
-                endpoint = `/api/mines/action`;
-                body.mineId = mineId;
-                body.type = 'vault';
-                body.action = 'deposit';
-            } else if(type === 'vault' && action === 'withdraw') {
-                endpoint = `/api/mines/action`;
-                body.mineId = mineId;
-                body.type = 'vault';
-                body.action = 'withdraw';
+            } else if(type === 'vault' && action === 'add') {
+                endpoint = `/api/mines/deposit/${mineId}`;
             }
 
             fetch(endpoint, {
@@ -1098,17 +1230,19 @@
 
         function updateUpgradeUI() {
             if (!upgradeInfo) return;
+            
+            // Eğer upgrade elementleri sayfada yoksa, fonksiyondan çık
+            const curLvl = document.getElementById('curLvl');
+            if (!curLvl) return;
 
             const mine = upgradeInfo.mine;
             const next = upgradeInfo.nextLevel;
 
-            document.getElementById('curLvl').innerText = mine.level;
+            curLvl.innerText = mine.level;
             
             if (upgradeInfo.maxLevel) {
                 document.getElementById('nextLvl').innerText = "MAX";
                 document.getElementById('upgradeBtn').style.display = 'none';
-                document.getElementById('upgradeCostsCard').style.display = 'none';
-                document.getElementById('upgradeBenefitsCard').style.display = 'none';
                 document.getElementById('maxLevelMsg').style.display = 'block';
                 return;
             }
@@ -1122,10 +1256,6 @@
             const txt = document.getElementById('upTimer');
 
             if (mine.isUpgrading) {
-                // Geliştirme başladığında maliyetler ve kazanımları gizle
-                document.getElementById('upgradeCostsCard').style.display = 'none';
-                document.getElementById('upgradeBenefitsCard').style.display = 'none';
-                
                 btn.style.display = 'none';
                 prog.style.display = 'block';
                 startTimer(mine.timeLeft, next.duration);
@@ -1144,122 +1274,242 @@
                     prog.appendChild(speedUpBtn);
                 }
             } else {
-                // Normal durumda maliyetler ve kazanımları göster
-                document.getElementById('upgradeCostsCard').style.display = 'block';
-                document.getElementById('upgradeBenefitsCard').style.display = 'block';
-                
                 btn.style.display = 'flex';
                 prog.style.display = 'none';
-                btn.innerHTML = `<i class="fas fa-arrow-circle-up"></i> YÜKSELT`;
-                
-                // Render costs and benefits
-                renderUpgradeCosts();
-                renderUpgradeBenefits();
+                btn.innerText = `YÜKSELT (Seviye ${next.level})`;
                 
                 // Remove speed up button if exists
                 const speedUpBtn = document.getElementById('speedUpBtn');
                 if (speedUpBtn) speedUpBtn.remove();
             }
-        }
-
-        function renderUpgradeCosts() {
-            if (!upgradeInfo || !upgradeInfo.nextLevel) return;
             
-            const costs = upgradeInfo.nextLevel.costs;
-            const costItems = document.getElementById('upgradeCostItems');
-            costItems.innerHTML = '';
-
-            const addCost = (val, cost, label, icon, isImage = false, isMoney = false) => {
-                if (!cost || cost <= 0) return;
-                const has = (val || 0) >= cost;
-                const statusIcon = has ? '<i class="fas fa-check upgrade-item-status check"></i>' : '<i class="fas fa-times upgrade-item-status cross"></i>';
-                const displayAmount = isMoney ? fmt(cost) + ' ₺' : fmt(cost) + ' adet';
-                
-                const iconHtml = isImage 
-                    ? `<img src="${icon}" class="upgrade-item-icon">`
-                    : `<div class="upgrade-item-icon"><i class="${icon}"></i></div>`;
-                
-                const item = document.createElement('div');
-                item.className = 'upgrade-item';
-                item.innerHTML = `
-                    <div class="upgrade-item-left">
-                        ${iconHtml}
-                        <span class="upgrade-item-label">${label}</span>
-                    </div>
-                    <div class="upgrade-item-right">
-                        <span class="upgrade-item-amount">${displayAmount}</span>
-                        ${statusIcon}
+            // Ayarlar sekmesindeki geliştirme maliyetlerini güncelle
+            updateUpgradeCostsUI();
+        }
+        
+        function updateUpgradeCostsUI() {
+            const container = document.getElementById('upgradeCostsContainer');
+            if (!container) return;
+            
+            if (!upgradeInfo || upgradeInfo.maxLevel) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #666;">
+                        <i class="fas fa-trophy" style="font-size: 2rem; margin-bottom: 10px; color: var(--accent-gold);"></i>
+                        <div style="font-size: 1.1rem; font-weight: 700;">MAKSİMUM SEVİYE</div>
+                        <div style="font-size: 0.85rem; margin-top: 5px;">İşletmeniz maksimum seviyeye ulaştı!</div>
                     </div>
                 `;
-                costItems.appendChild(item);
-            };
-
-            // İlk sırada para, altın, elmas
-            addCost(user.money, costs.money, 'Para', 'icons/inventory-icon/money.png', true, true);
-            addCost(user.gold || 0, costs.gold, 'Altın', 'icons/inventory-icon/gold.png', true);
-            addCost(user.diamond || 0, costs.diamond, 'Elmas', 'icons/inventory-icon/diamond.png', true);
+                return;
+            }
             
-            // Malzeme kontrolleri - inventory'den al
-            fetch(`/api/inventory/${user.id}`).then(res => res.json()).then(inv => {
-                const userInv = inv || {};
-                
-                addCost(userInv['wood'] || 0, costs.wood, 'Tahta', 'icons/factory-icon/wood-plank.png', true);
-                addCost(userInv['brick'] || 0, costs.brick, 'Tuğla', 'icons/factory-icon/brick.png', true);
-                addCost(userInv['cement'] || 0, costs.cement, 'Çimento', 'icons/factory-icon/cement.png', true);
-                addCost(userInv['glass'] || 0, costs.glass, 'Cam', 'icons/factory-icon/window.png', true);
-                addCost(userInv['steel'] || 0, costs.steel, 'Çelik', 'icons/factory-icon/steel.png', true);
-
-                // Lisans kontrolü - en sonda
-                if (factory.type && upgradeInfo.nextLevel) {
-                    const licenseKey = factory.type;
-                    const nextLvl = upgradeInfo.nextLevel.level;
-                    const categoryName = resourceMap[factory.type] ? resourceMap[factory.type].prod.name : 'Maden';
-                    const requiredLicenseText = `${nextLvl}. Seviye ${categoryName} Madeni Lisansı`;
-                    const userLicenseLevel = userLicenses[licenseKey] || 0;
-                    const hasLicense = userLicenseLevel >= nextLvl;
-                    const statusIcon = hasLicense ? '<i class="fas fa-check upgrade-item-status check"></i>' : '<i class="fas fa-times upgrade-item-status cross"></i>';
+            const mine = upgradeInfo.mine;
+            const next = upgradeInfo.nextLevel;
+            const costs = next.costs;
+            
+            // Lisans Kontrolü
+            const licenseKey = factory.type;
+            const userLicenseLevel = userLicenses[licenseKey] || 0;
+            const hasLicense = userLicenseLevel >= next.level;
+            
+            // Resource definitions with icons
+            const resources = [
+                { key: 'money', name: 'Para', icon: 'fas fa-money-bill-wave', color: '#27ae60', userValue: user.money, isImage: false },
+                { key: 'gold', name: 'Altın', icon: 'fas fa-coins', color: '#ffd700', userValue: user.gold, isImage: false },
+                { key: 'diamond', name: 'Elmas', icon: 'fas fa-gem', color: '#00e5ff', userValue: user.diamond, isImage: false },
+                { key: 'wood', name: 'Tahta', icon: 'icons/factory-icon/wood-plank.png', color: '#8B4513', userValue: user.wood, isImage: true },
+                { key: 'brick', name: 'Tuğla', icon: 'icons/factory-icon/brick.png', color: '#b74434', userValue: user.brick, isImage: true },
+                { key: 'cement', name: 'Çimento', icon: 'icons/factory-icon/cement.png', color: '#7f8c8d', userValue: user.cement, isImage: true },
+                { key: 'glass', name: 'Cam', icon: 'icons/factory-icon/window.png', color: '#3498db', userValue: user.glass, isImage: true },
+                { key: 'steel', name: 'Çelik', icon: 'icons/factory-icon/steel.png', color: '#95a5a6', userValue: user.steel, isImage: true }
+            ];
+            
+            // MALİYET BAŞLIĞI
+            let costsHTML = '<div class="info-list-header"><i class="fas fa-coins"></i> MALİYETLER</div>';
+            costsHTML += '<div class="upgrade-costs-list">';
+            let allSufficient = hasLicense;
+            
+            resources.forEach(resource => {
+                const cost = costs[resource.key];
+                if (cost && cost > 0) {
+                    const userVal = resource.userValue || 0;
+                    const isSufficient = userVal >= cost;
+                    if (!isSufficient) allSufficient = false;
                     
-                    const licenseItem = document.createElement('div');
-                    licenseItem.className = 'upgrade-item';
-                    licenseItem.innerHTML = `
-                        <div class="upgrade-item-left">
-                            <div class="upgrade-item-icon"><i class="fas fa-certificate"></i></div>
-                            <span class="upgrade-item-label" style="color:#fff;">${requiredLicenseText}</span>
-                        </div>
-                        <div class="upgrade-item-right">
-                            ${statusIcon}
+                    const iconHTML = resource.isImage 
+                        ? `<img src="${resource.icon}" alt="${resource.name}">`
+                        : `<i class="${resource.icon}" style="color: ${resource.color};"></i>`;
+                    
+                    const statusIcon = isSufficient 
+                        ? '<i class="fas fa-check"></i>'
+                        : '<i class="fas fa-times"></i>';
+                    
+                    const statusClass = isSufficient ? 'ok' : 'fail';
+                    
+                    // Para için ₺, diğerleri için Adet
+                    const unit = resource.key === 'money' ? ' ₺' : ' Adet';
+                    
+                    costsHTML += `
+                        <div class="upgrade-cost-item">
+                            <div class="upgrade-cost-icon">
+                                ${iconHTML}
+                            </div>
+                            <div class="upgrade-cost-name">${resource.name}</div>
+                            <div class="upgrade-cost-value">
+                                <div class="upgrade-cost-amount">${fmt(cost)}${unit}</div>
+                                <div class="upgrade-cost-status ${statusClass}">
+                                    ${statusIcon}
+                                </div>
+                            </div>
                         </div>
                     `;
-                    costItems.appendChild(licenseItem);
                 }
-            }).catch(e => console.error('Inventory fetch error:', e));
-        }
-
-        function renderUpgradeBenefits() {
-            if (!upgradeInfo || !upgradeInfo.nextLevel) return;
+            });
             
-            const benefits = upgradeInfo.nextLevel.benefits;
-            const benefitItems = document.getElementById('upgradeBenefitItems');
-            benefitItems.innerHTML = '';
-
-            const addBenefit = (value, label, icon, unit = '') => {
-                const item = document.createElement('div');
-                item.className = 'upgrade-item benefit';
-                item.innerHTML = `
-                    <div class="upgrade-item-left">
-                        <div class="upgrade-item-icon"><i class="${icon}" style="color:#fff;"></i></div>
-                        <span class="upgrade-item-label">${label}</span>
+            // Lisans durumunu ekle
+            const licenseStatusIcon = hasLicense ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
+            const licenseStatusClass = hasLicense ? 'ok' : 'fail';
+            const categoryName = resourceMap[factory.type] ? resourceMap[factory.type].prod.name : 'Maden';
+            
+            costsHTML += `
+                <div class="upgrade-cost-item">
+                    <div class="upgrade-cost-icon">
+                        <i class="fas fa-certificate" style="color: var(--accent-gold);"></i>
                     </div>
-                    <div class="upgrade-item-right">
-                        <span class="upgrade-item-amount">+${value}${unit ? ' ' + unit : ''}</span>
+                    <div class="upgrade-cost-name">Lisans</div>
+                    <div class="upgrade-cost-value">
+                        <div class="upgrade-cost-amount">${next.level}. Seviye ${categoryName} Lisansı</div>
+                        <div class="upgrade-cost-status ${licenseStatusClass}">
+                            ${licenseStatusIcon}
+                        </div>
                     </div>
-                `;
-                benefitItems.appendChild(item);
+                </div>
+            `;
+            
+            costsHTML += '</div>';
+            
+            // KAZANIMLAR BAŞLIĞI VE LİSTESİ
+            const benefits = next.benefits || {};
+            const workerBonus = benefits.workers || 5;
+            const storageBonus = benefits.storage || 500;
+            const vaultBonus = 100000; // Her seviye 100k kasa kapasitesi
+            
+            costsHTML += `
+                <div class="info-list-header" style="margin-top: 20px;"><i class="fas fa-gift"></i> KAZANIMLAR</div>
+                <div class="upgrade-costs-list">
+                    <div class="upgrade-cost-item">
+                        <div class="upgrade-cost-icon">
+                            <i class="fas fa-users" style="color: var(--accent-green);"></i>
+                        </div>
+                        <div class="upgrade-cost-name">İşçi Kapasitesi</div>
+                        <div class="upgrade-cost-value">
+                            <div class="upgrade-cost-amount">+${workerBonus}</div>
+                        </div>
+                    </div>
+                    <div class="upgrade-cost-item">
+                        <div class="upgrade-cost-icon">
+                            <i class="fas fa-vault" style="color: var(--accent-green);"></i>
+                        </div>
+                        <div class="upgrade-cost-name">Kasa Kapasitesi</div>
+                        <div class="upgrade-cost-value">
+                            <div class="upgrade-cost-amount">+${fmt(vaultBonus)} ₺</div>
+                        </div>
+                    </div>
+                    <div class="upgrade-cost-item">
+                        <div class="upgrade-cost-icon">
+                            <i class="fas fa-warehouse" style="color: var(--accent-green);"></i>
+                        </div>
+                        <div class="upgrade-cost-name">Depo Kapasitesi</div>
+                        <div class="upgrade-cost-value">
+                            <div class="upgrade-cost-amount">+${fmt(storageBonus)}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Geliştirme Süresi
+            const durationMinutes = Math.ceil(next.duration / 60);
+            costsHTML += `
+                <div style="text-align: center; margin: 20px 0 15px 0; padding: 10px; background: rgba(0, 0, 0, 0.3); border-radius: 8px;">
+                    <div style="font-size: 0.75rem; color: #888; margin-bottom: 5px;">Geliştirme Süresi</div>
+                    <div style="font-size: 1.1rem; font-weight: 700; color: var(--accent-gold);">
+                        <i class="fas fa-clock"></i> ${durationMinutes} Dakika
+                    </div>
+                </div>
+            `;
+            
+            // Upgrade button
+            const isUpgrading = mine.isUpgrading;
+            const buttonDisabled = !allSufficient || isUpgrading;
+            const buttonText = isUpgrading 
+                ? '<i class="fas fa-spinner fa-spin"></i> GELİŞTİRİLİYOR...'
+                : `<i class="fas fa-arrow-up"></i> SEVİYE ${next.level}'E YÜKSELT`;
+            
+            costsHTML += `
+                <div class="upgrade-btn-container">
+                    <button class="btn-start-upgrade" onclick="startUpgradeFromSettings()" ${buttonDisabled ? 'disabled' : ''}>
+                        ${buttonText}
+                    </button>
+                </div>
+            `;
+            
+            container.innerHTML = costsHTML;
+        }
+        
+        function startUpgradeFromSettings() {
+            if (!upgradeInfo || upgradeInfo.maxLevel || upgradeInfo.mine.isUpgrading) return;
+            
+            const next = upgradeInfo.nextLevel;
+            const currentLevel = factory.level;
+            const categoryName = resourceMap[factory.type] ? resourceMap[factory.type].prod.name : 'Maden';
+            
+            // Onay modalı göster
+            document.getElementById('confirmModalTitle').innerText = 'GELİŞTİRMEYİ BAŞLAT';
+            document.getElementById('confirmModalMsg').innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 1.3rem; margin-bottom: 20px; color: #fff;">
+                        <strong style="color: var(--accent);">${factory.name}</strong>
+                    </div>
+                    <div style="font-size: 2rem; margin-bottom: 25px; display: flex; align-items: center; justify-content: center; gap: 15px;">
+                        <div style="background: rgba(231, 76, 60, 0.15); padding: 15px 25px; border-radius: 10px; border: 2px solid var(--accent);">
+                            <div style="font-size: 0.75rem; color: #888; margin-bottom: 5px;">Mevcut Seviye</div>
+                            <div style="font-size: 2rem; font-weight: 800; color: var(--accent);">${currentLevel}</div>
+                        </div>
+                        <i class="fas fa-arrow-right" style="color: var(--accent-gold); font-size: 1.5rem;"></i>
+                        <div style="background: rgba(255, 215, 0, 0.15); padding: 15px 25px; border-radius: 10px; border: 2px solid var(--accent-gold);">
+                            <div style="font-size: 0.75rem; color: #888; margin-bottom: 5px;">Yeni Seviye</div>
+                            <div style="font-size: 2rem; font-weight: 800; color: var(--accent-gold);">${next.level}</div>
+                        </div>
+                    </div>
+                    <div style="font-size: 1rem; color: #aaa; margin-bottom: 10px;">
+                        Bu işletmeyi geliştirmek istediğinizden emin misiniz?
+                    </div>
+                    <div style="font-size: 0.9rem; color: #666;">
+                        Geliştirme süresi: <strong style="color: var(--accent-gold);">${Math.ceil(next.duration / 60)} dakika</strong>
+                    </div>
+                </div>
+            `;
+            document.getElementById('confirmModal').style.display = 'flex';
+            
+            // Buton olay dinleyicisini güncelle
+            const confirmBtn = document.getElementById('confirmActionBtn');
+            confirmBtn.onclick = () => {
+                closeModal('confirmModal');
+                
+                fetch(`/api/mines/start-upgrade/${mineId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        toastr.success('Geliştirme başlatıldı!');
+                        loadFactoryData();
+                    } else {
+                        toastr.error(data.message);
+                    }
+                });
             };
-
-            addBenefit(benefits.workers || 5, 'İşçi', 'fas fa-users', 'adet');
-            addBenefit(benefits.storage || 500, 'Depo', 'fas fa-warehouse', 'adet');
-            addBenefit(50000, 'Kasa Limiti', 'fas fa-vault', '₺');
         }
 
         function startTimer(timeLeft, totalDuration) {
@@ -1317,15 +1567,107 @@
         // --- GELİŞTİRME ---
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
+        // --- TAB SİSTEMİ ---
+        function switchTab(tab, event) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.getElementById('tab-bilgiler').style.display = 'none';
+            document.getElementById('tab-ayarlar').style.display = 'none';
+            document.getElementById('tab-depo').style.display = 'none';
+            document.getElementById('tab-kasa').style.display = 'none';
+            
+            document.getElementById('tab-' + tab).style.display = 'block';
+            
+            // Ayarlar sekmesine geçildiğinde geliştirme maliyetlerini güncelle
+            if (tab === 'ayarlar') {
+                updateUpgradeCostsUI();
+            }
+        }
+
         function openUpgradeModal() { 
             if(!upgradeInfo || upgradeInfo.maxLevel) return;
             
-            const nextLvl = upgradeInfo.nextLevel.level;
-            
-            document.getElementById('modalCurrentLevel').innerText = factory.level;
-            document.getElementById('modalNextLevel').innerText = nextLvl;
-            
-            document.getElementById('upgradeModal').style.display = 'flex';
+            fetchUser().then(() => {
+                const costs = upgradeInfo.nextLevel.costs;
+                const nextLvl = upgradeInfo.nextLevel.level;
+                
+                // Lisans Kontrolü
+                const licenseKey = factory.type;
+                const categoryName = resourceMap[factory.type] ? resourceMap[factory.type].prod.name : 'Maden';
+                const requiredLicenseText = `${nextLvl}. Seviye ${categoryName} Madeni Lisansı`;
+                
+                const userLicenseLevel = userLicenses[licenseKey] || 0;
+                const hasLicense = userLicenseLevel >= nextLvl;
+                
+                const lColor = hasLicense ? '#2ecc71' : '#e74c3c';
+                const lBg = hasLicense ? 'rgba(46, 204, 113, 0.15)' : 'rgba(231, 76, 60, 0.15)';
+                const lIcon = hasLicense ? 'fas fa-check-circle' : 'fas fa-times-circle';
+
+                const licenseBadge = `
+                    <div style="background:${lBg}; color:${lColor}; border:1px solid ${lColor}; padding:8px; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:bold; font-size:0.9rem;">
+                        <i class="${lIcon}"></i> ${requiredLicenseText}
+                    </div>
+                `;
+
+                // Helper for resource badges
+                const check = (val, cost, label, icon, isImage = false) => {
+                    if (!cost) return '';
+                    const has = (val || 0) >= cost;
+                    const color = has ? '#2ecc71' : '#e74c3c';
+                    const bg = has ? 'rgba(46, 204, 113, 0.15)' : 'rgba(231, 76, 60, 0.15)';
+                    
+                    const iconHtml = isImage 
+                        ? `<img src="${icon}" style="width:20px; height:20px; object-fit:contain;">`
+                        : `<i class="${icon}"></i>`;
+
+                    return `
+                        <div style="background:${bg}; color:${color}; border:1px solid ${color}; padding:8px; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:bold;">
+                            ${iconHtml} ${fmt(cost)} ${label}
+                        </div>
+                    `;
+                };
+
+                // Helper for benefit badges
+                const benefit = (text, icon) => {
+                    return `
+                        <div style="background:rgba(255, 215, 0, 0.15); color:#ffd700; border:1px solid #ffd700; padding:8px; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:bold;">
+                            <i class="${icon}"></i> ${text}
+                        </div>
+                    `;
+                };
+
+                const html = `
+                    <div style="text-align:left; margin-bottom:15px;">
+                        <h4 style="color:#fff; border-bottom:1px solid #333; padding-bottom:5px; margin-bottom:10px;">GEREKSİNİMLER</h4>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:0.9rem;">
+                            ${check(user.money, costs.money, '₺', 'fas fa-money-bill')}
+                            ${check(user.gold, costs.gold, 'Altın', 'fas fa-coins')}
+                            ${check(user.diamond, costs.diamond, 'Elmas', 'fas fa-gem')}
+                            ${check(user.wood, costs.wood, 'Tahta', 'icons/factory-icon/wood-plank.png', true)}
+                            ${check(user.brick, costs.brick, 'Tuğla', 'icons/factory-icon/brick.png', true)}
+                            ${check(user.cement, costs.cement, 'Çimento', 'icons/factory-icon/cement.png', true)}
+                            ${check(user.glass, costs.glass, 'Cam', 'icons/factory-icon/window.png', true)}
+                            ${check(user.steel, costs.steel, 'Çelik', 'icons/factory-icon/steel.png', true)}
+                        </div>
+                        <div style="margin-top:10px; text-align:center;">
+                            ${licenseBadge}
+                        </div>
+                    </div>
+
+                    <div style="text-align:left; margin-bottom:15px;">
+                        <h4 style="color:#fff; border-bottom:1px solid #333; padding-bottom:5px; margin-bottom:10px;">KAZANIMLAR</h4>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:0.9rem;">
+                            ${benefit('+' + (upgradeInfo.nextLevel.benefits.workers || 5) + ' İşçi', 'fas fa-users')}
+                            ${benefit('+' + (upgradeInfo.nextLevel.benefits.storage || 500) + ' Depo', 'fas fa-warehouse')}
+                            ${benefit(Math.ceil(upgradeInfo.nextLevel.duration / 60) + ' Dakika', 'fas fa-clock')}
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('upgradeCosts').innerHTML = html;
+                document.getElementById('upgradeModal').style.display = 'flex'; 
+            });
         }
 
         function startUpgrade() {
