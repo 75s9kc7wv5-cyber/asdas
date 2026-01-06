@@ -95,14 +95,19 @@
 
         /* FABRİKA KARTI */
         .factory-card {
-            background: linear-gradient(135deg, rgba(231, 76, 60, 0.1), var(--bg-card));
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.15), var(--bg-card));
             border: 1px solid var(--accent); border-radius: 12px; padding: 20px;
-            margin-bottom: 20px; position: relative; text-align: center;
+            position: relative;
             box-shadow: 0 0 15px rgba(231, 76, 60, 0.1);
+            margin-bottom: 20px;
         }
-        .fc-icon { font-size: 3rem; color: var(--accent); margin-bottom: 10px; }
+        .fc-header { display: flex; align-items: center; gap: 15px; }
+        .fc-icon { width: 60px; height: 60px; object-fit: contain; flex-shrink: 0; }
+        .fc-title-section { flex: 1; text-align: left; }
         .fc-name { font-size: 1.3rem; font-weight: 800; text-transform: uppercase; }
-        .fc-level { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px; }
+        .fc-owner { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #aaa; }
+        .fc-owner i { color: var(--accent-gold); font-size: 1rem; }
+        .fc-owner-name { color: #fff; font-weight: 600; }
         
         .fc-stats { display: flex; justify-content: space-around; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid #333; }
         .fs-item { text-align: center; }
@@ -242,6 +247,42 @@
         .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: #777; font-family: 'Rajdhani'; font-weight: bold; cursor: pointer; border-radius: 6px; transition: all 0.3s; font-size: 0.85rem; }
         .tab-btn.active { background: #222; color: var(--accent-cyan); border: 1px solid var(--accent-cyan); box-shadow: 0 0 10px rgba(0, 229, 255, 0.1); }
 
+        /* INFO LIST ITEMS */
+        .info-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            transition: all 0.2s;
+        }
+        .info-list-item:hover {
+            opacity: 0.8;
+        }
+        .info-left {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+        .info-left i,
+        .info-left img {
+            width: 28px;
+            min-width: 28px;
+            text-align: center;
+            margin-right: 10px;
+        }
+        .info-label {
+            color: #aaa;
+            font-size: 0.88rem;
+            font-weight: 500;
+            flex: 1;
+        }
+        .info-value {
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-align: right;
+        }
+
         /* VAULT BOX */
         .vault-box {
             background: linear-gradient(45deg, #1a1a1a, #000);
@@ -280,12 +321,16 @@
             </div>
 
             <!-- FABRİKA KARTI -->
-            <div class="factory-card">
-                <img src="icons/factory-icon/wood-plank.png" id="fIcon" class="fc-icon" style="width:80px; height:80px; object-fit:contain; margin-bottom:10px;">
-                <div class="fc-name" id="fName">DEMİR ÇELİK A.Ş.</div>
-                <div class="fc-level">Seviye <span id="fLevel">3</span></div>
+            <div class="factory-card" style="padding:8px 15px;">
+                <div class="fc-header">
+                    <img src="icons/factory-icon/wood-plank.png" id="fIcon" class="fc-icon">
+                    <div class="fc-title-section">
+                        <div class="fc-name" id="fName">DEMİR ÇELİK A.Ş.</div>
+                        <div class="fc-owner"><i class="fas fa-user-tie"></i> Sahip: <span class="fc-owner-name" id="fOwner">-</span></div>
+                    </div>
+                </div>
                 
-                <div class="fc-stats">
+                <div class="fc-stats" style="margin-top:15px;">
                     <div class="fs-item">
                         <span class="fs-lbl">Çalışan</span>
                         <span class="fs-val" id="fWorker">0/0</span>
@@ -307,13 +352,115 @@
 
             <!-- TABS -->
             <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('settings')">AYARLAR</button>
-                <button class="tab-btn" onclick="switchTab('warehouse')">DEPO YÖNETİMİ</button>
-                <button class="tab-btn" onclick="switchTab('vault')">KASA YÖNETİMİ</button>
+                <button class="tab-btn active" onclick="switchTab('info', event)">BİLGİLER</button>
+                <button class="tab-btn" onclick="switchTab('settings', event)">AYARLAR</button>
+                <button class="tab-btn" onclick="switchTab('warehouse', event)">DEPO</button>
+                <button class="tab-btn" onclick="switchTab('vault', event)">KASA</button>
+            </div>
+
+            <!-- BİLGİLER TAB -->
+            <div id="tab-info">
+            <!-- MADEN DETAYLARI -->
+            <div class="settings-card">
+                <div class="card-header"><i class="fas fa-info-circle"></i> MADEN DETAYLARI</div>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <i class="fas fa-user-tie" style="color:var(--accent-gold);"></i>
+                            <span class="info-label">Sahip</span>
+                        </div>
+                        <span class="info-value" id="fOwnerDetail">-</span>
+                    </div>
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <i class="fas fa-industry" style="color:var(--accent);"></i>
+                            <span class="info-label">Maden Türü</span>
+                        </div>
+                        <span class="info-value" id="fCategoryDetail">-</span>
+                    </div>
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <i class="fas fa-arrow-up" style="color:var(--accent-cyan);"></i>
+                            <span class="info-label">Seviye</span>
+                        </div>
+                        <span class="info-value" id="fLevelDetail">-</span>
+                    </div>
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <i class="fas fa-users" style="color:var(--accent-green);"></i>
+                            <span class="info-label">Çalışan Sayısı</span>
+                        </div>
+                        <span class="info-value" id="fWorkerDetail">-</span>
+                    </div>
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <i class="fas fa-users" style="color:#888;"></i>
+                            <span class="info-label">Maksimum Çalışan</span>
+                        </div>
+                        <span class="info-value" id="fMaxWorkerDetail">-</span>
+                    </div>
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <i class="fas fa-money-bill-wave" style="color:var(--accent-gold);"></i>
+                            <span class="info-label">Birim Maaş</span>
+                        </div>
+                        <span class="info-value" id="fWageDetail">-</span>
+                    </div>
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <i class="fas fa-gem" style="color:var(--accent-green);"></i>
+                            <span class="info-label">Rezerv</span>
+                        </div>
+                        <span class="info-value" id="fReserveDetail">-</span>
+                    </div>
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <i class="fas fa-tachometer-alt" style="color:var(--accent-cyan);"></i>
+                            <span class="info-label">Üretim Hızı</span>
+                        </div>
+                        <span class="info-value" id="fSpeedDetail">-</span>
+                    </div>
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <i class="fas fa-chart-line" style="color:var(--accent-gold);"></i>
+                            <span class="info-label">Verimlilik</span>
+                        </div>
+                        <span class="info-value" id="fEfficiencyDetail">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KAPASİTE BİLGİLERİ -->
+            <div class="settings-card">
+                <div class="card-header"><i class="fas fa-warehouse"></i> KAPASİTE BİLGİLERİ</div>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <img src="" id="fProdIcon" style="width:28px; height:28px; object-fit:contain;">
+                            <span class="info-label" id="fProdName">Üretilen Ürün</span>
+                        </div>
+                        <span class="info-value" id="fProdAmount">-</span>
+                    </div>
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <i class="fas fa-box" style="color:#888;"></i>
+                            <span class="info-label">Maksimum Kapasite</span>
+                        </div>
+                        <span class="info-value" id="fMaxCapacity">-</span>
+                    </div>
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <i class="fas fa-percentage" style="color:var(--accent-green);"></i>
+                            <span class="info-label">Doluluk Oranı</span>
+                        </div>
+                        <span class="info-value" id="fCapacityPercent">-</span>
+                    </div>
+                </div>
+            </div>
             </div>
 
             <!-- AYARLAR TAB -->
-            <div id="tab-settings">
+            <div id="tab-settings" style="display:none;">
             <!-- AYARLAR -->
             <div class="settings-card">
                 <div class="card-header"><i class="fas fa-cogs"></i> GENEL AYARLAR</div>
@@ -490,10 +637,11 @@
         const fmt = (n) => n.toLocaleString('tr-TR');
 
         // --- TAB SİSTEMİ ---
-        function switchTab(tab) {
+        function switchTab(tab, event) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             event.target.classList.add('active');
 
+            document.getElementById('tab-info').style.display = 'none';
             document.getElementById('tab-settings').style.display = 'none';
             document.getElementById('tab-warehouse').style.display = 'none';
             document.getElementById('tab-vault').style.display = 'none';
@@ -631,7 +779,6 @@
             document.getElementById('fName').innerText = factory.name;
             document.getElementById('fNameInput').value = factory.name;
             document.getElementById('fWageInput').value = factory.wage;
-            document.getElementById('fLevel').innerText = factory.level;
             
             document.getElementById('fWorker').innerText = `${factory.workers}/${factory.maxWorkers}`;
             document.getElementById('fReserve').innerText = fmt(factory.reserve);
@@ -640,6 +787,69 @@
             let t = factory.productionTime;
             let tStr = t < 60 ? `${t}sn` : (t % 60 === 0 ? `${t/60}dk` : `${Math.floor(t/60)}dk ${t%60}sn`);
             document.getElementById('fSpeed').innerText = tStr;
+
+            // BİLGİLER TAB - Sahip Bilgisi
+            const fOwner = document.getElementById('fOwner');
+            const fOwnerDetail = document.getElementById('fOwnerDetail');
+            if (fOwner) fOwner.innerText = factory.ownerName || '-';
+            if (fOwnerDetail) fOwnerDetail.innerText = factory.ownerName || '-';
+
+            // BİLGİLER TAB - Kategori
+            const fCategoryDetail = document.getElementById('fCategoryDetail');
+            if (fCategoryDetail && factory.category && resourceMap[factory.category]) {
+                fCategoryDetail.innerText = resourceMap[factory.category].prod.name;
+            }
+
+            // BİLGİLER TAB - Seviye
+            const fLevelDetail = document.getElementById('fLevelDetail');
+            if (fLevelDetail) fLevelDetail.innerText = `Seviye ${factory.level}`;
+
+            // BİLGİLER TAB - Çalışan Bilgileri
+            const fWorkerDetail = document.getElementById('fWorkerDetail');
+            const fMaxWorkerDetail = document.getElementById('fMaxWorkerDetail');
+            if (fWorkerDetail) fWorkerDetail.innerText = fmt(factory.workers);
+            if (fMaxWorkerDetail) fMaxWorkerDetail.innerText = fmt(factory.maxWorkers);
+
+            // BİLGİLER TAB - Maaş
+            const fWageDetail = document.getElementById('fWageDetail');
+            if (fWageDetail) fWageDetail.innerText = `₺${fmt(factory.wage)}`;
+
+            // BİLGİLER TAB - Rezerv
+            const fReserveDetail = document.getElementById('fReserveDetail');
+            if (fReserveDetail) fReserveDetail.innerText = fmt(factory.reserve);
+
+            // BİLGİLER TAB - Hız
+            const fSpeedDetail = document.getElementById('fSpeedDetail');
+            if (fSpeedDetail) fSpeedDetail.innerText = tStr;
+
+            // BİLGİLER TAB - Verimlilik
+            const fEfficiencyDetail = document.getElementById('fEfficiencyDetail');
+            if (fEfficiencyDetail) fEfficiencyDetail.innerText = `%${factory.efficiency}`;
+
+            // KAPASİTE BİLGİLERİ
+            if (factory.category && resourceMap[factory.category]) {
+                const prod = resourceMap[factory.category].prod;
+                const fProdIcon = document.getElementById('fProdIcon');
+                const fProdName = document.getElementById('fProdName');
+                const fProdAmount = document.getElementById('fProdAmount');
+                const fMaxCapacity = document.getElementById('fMaxCapacity');
+                const fCapacityPercent = document.getElementById('fCapacityPercent');
+
+                if (fProdIcon) fProdIcon.src = prod.icon;
+                if (fProdName) fProdName.innerText = prod.name;
+                
+                const amount = factory[prod.key] || 0;
+                const maxCap = factory.capacity || 0;
+                const percent = maxCap > 0 ? Math.round((amount / maxCap) * 100) : 0;
+
+                if (fProdAmount) fProdAmount.innerText = fmt(amount);
+                if (fMaxCapacity) fMaxCapacity.innerText = fmt(maxCap);
+                if (fCapacityPercent) fCapacityPercent.innerText = `%${percent}`;
+                
+                // Ana kart ikonunu güncelle
+                const fIcon = document.getElementById('fIcon');
+                if (fIcon) fIcon.src = prod.icon;
+            }
 
             // KASA TAB için de güncelle
             const fVault2 = document.getElementById('fVault2');
