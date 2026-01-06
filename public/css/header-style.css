@@ -42,7 +42,7 @@ body {
 
 /* Game Container Padding to prevent content overlap */
 .game-container {
-    padding-top: 200px; /* Header yüksekliği + biraz boşluk */
+    padding-top: 120px;
 }
 
 /* 1. SATIR: LOGO ve LEVEL */

@@ -48,18 +48,56 @@
         .bar-item { background: var(--bg-input); padding: 4px; border-radius: 15px; font-size: 0.75rem; flex: 1; text-align: center; font-weight: bold; }
 
         /* MAIN */
-        main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
+        main { flex: 1; padding: 20px; padding-top: 10px; overflow-y: auto; padding-bottom: 80px; }
+
+        .page-header { 
+            text-align: left; 
+            margin-bottom: 20px; 
+            margin-top: 0;
+            padding: 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .back-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #333;
+            border-radius: 8px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+            text-decoration: none;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: var(--accent);
+        }
+        .page-title-section {
+            flex: 1;
+        }
+        .page-title { 
+            font-size: 1.3rem; 
+            letter-spacing: 1px; 
+            color: var(--accent);
+            text-transform: uppercase; 
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .page-desc {
+            font-size: 0.8rem;
+            color: #888;
+            font-weight: 400;
+            line-height: 1.3;
+        }
 
         .header-badge {
-            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(20,20,20,0.95) 100%);
-            padding: 20px;
-            border-radius: 0 0 20px 20px;
-            margin: 0 0 25px 0;
-            border-top: 3px solid var(--accent);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            position: relative;
-            overflow: hidden;
-            text-align: center;
+            display: none;
         }
         .header-badge::after {
             content: '';
@@ -208,10 +246,14 @@
         </header>
 
         <main>
-        <div class="header-badge">
-            <a href="politics-list.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
-            <h1><i class="fas fa-users-cog"></i> Parti Yönetimi</h1>
-            <p>Parti ayarları ve üye yönetimi</p>
+        <div class="page-header">
+            <a href="politics-list.html" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="page-title-section">
+                <h1 class="page-title">PARTİ YÖNETİMİ</h1>
+                <p class="page-desc">Parti ayarlarını düzenleyin ve üyeleri yönetin</p>
+            </div>
         </div>
 
             <!-- KASA -->
