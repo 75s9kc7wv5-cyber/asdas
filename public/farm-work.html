@@ -134,6 +134,49 @@
             transition: width 1s linear; 
         }
 
+        /* INFO LIST ITEMS */
+        .info-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            transition: all 0.2s;
+        }
+        .info-list-item:hover {
+            opacity: 0.8;
+        }
+        .info-left {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+        .info-left i,
+        .info-left img {
+            width: 28px;
+            min-width: 28px;
+            text-align: center;
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        .info-label {
+            color: #aaa;
+            font-size: 0.85rem;
+            font-weight: 500;
+            flex: 1;
+        }
+        .info-value {
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-align: right;
+        }
+        .info-note {
+            font-size: 0.65rem;
+            color: #666;
+            margin-top: 2px;
+            display: block;
+        }
+
         /* LOGLAR */
         .log-container { background: var(--bg-card); border-radius: 10px; padding: 15px; border: 1px solid var(--border-color); }
         .log-list { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
@@ -174,40 +217,72 @@
             </div>
 
             <!-- İSTATİSTİKLER -->
-            <div class="stats-grid">
-                <div class="stat-card" style="grid-column: span 2;">
-                    <div class="stat-label">ÜRETİLEN ÜRÜN</div>
-                    <div class="stat-val text-gold" id="statProduct">Yükleniyor...</div>
+            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                <div style="font-size: 0.9rem; font-weight: 700; color: var(--accent); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #333; padding-bottom: 8px;">
+                    <i class="fas fa-info-circle"></i> TARLA BİLGİLERİ
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label">ÜRETİM MAAŞI</div>
-                    <div class="stat-val text-gold" id="statSalary">2.500 ₺</div>
-                    <div style="font-size: 0.6rem; color: #666; margin-top: 2px;">(Üretilen * Maaş = Kazanç)</div>
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-wheat-awn" style="color: var(--accent-gold); font-size: 1rem;"></i>
+                        <div class="info-label" style="font-size: 0.8rem;">Üretilen Ürün</div>
+                    </div>
+                    <div class="info-value text-gold" style="font-size: 0.85rem;" id="statProduct">Yükleniyor...</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label">ÜRETİM SÜRESİ</div>
-                    <div class="stat-val text-cyan" id="statTime">60 Sn</div>
+                
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-coins" style="color: var(--accent-gold); font-size: 1rem;"></i>
+                        <div class="info-label" style="font-size: 0.8rem;">
+                            Üretim Maaşı
+                            <span class="info-note">(Üretilen * Maaş = Kazanç)</span>
+                        </div>
+                    </div>
+                    <div class="info-value text-gold" style="font-size: 0.85rem;" id="statSalary">0 ₺</div>
+                </div>
+                
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-clock" style="color: var(--accent-cyan); font-size: 1rem;"></i>
+                        <div class="info-label" style="font-size: 0.8rem;">Üretim Süresi</div>
+                    </div>
+                    <div class="info-value text-cyan" style="font-size: 0.85rem;" id="statTime">60 Sn</div>
                 </div>
                 
                 <!-- Dynamic Raw Material Stats -->
-                <div id="rawMaterialStats" style="display: contents;">
-                    <div class="stat-card">
-                        <div class="stat-label">TOHUM DEPOSU</div>
-                        <div class="stat-val" id="statReserve">0 / 0</div>
+                <div id="rawMaterialStats"></div>
+                
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-users" style="color: var(--accent-green); font-size: 1rem;"></i>
+                        <div class="info-label" style="font-size: 0.8rem;">İşçi Kapasitesi</div>
                     </div>
+                    <div class="info-value text-green" style="font-size: 0.85rem;" id="statWorkers">0 / 5</div>
                 </div>
+                
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-gauge-high" style="color: var(--accent-gold); font-size: 1rem;"></i>
+                        <div class="info-label" style="font-size: 0.8rem;">Verimlilik</div>
+                    </div>
+                    <div class="info-value text-gold" style="font-size: 0.85rem;" id="efficiencyVal">%100</div>
+                </div>
+                
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-chart-line" style="color: var(--accent-cyan); font-size: 1rem;"></i>
+                        <div class="info-label" style="font-size: 0.8rem;">Tahmini Üretim</div>
+                    </div>
+                    <div class="info-value text-cyan" style="font-size: 0.85rem;" id="estProduction">20-35 Adet</div>
+                </div>
+            </div>
 
-                <div class="stat-card">
-                    <div class="stat-label">İŞÇİ KAPASİTESİ</div>
-                    <div class="stat-val text-green" id="statWorkers">120 / 500</div>
+            <!-- ÜRETİM HESAPLAMA DETAYLARI -->
+            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                <div style="font-size: 0.9rem; font-weight: 700; color: var(--accent-cyan); margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-calculator"></i> ÜRETİM HESAPLAMA
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label">VERİMLİLİK</div>
-                    <div class="stat-val text-gold" id="efficiencyVal">%100</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">TAHMİNİ ÜRETİM</div>
-                    <div class="stat-val text-cyan" id="estProduction">5-10 Adet</div>
+                <div id="productionCalculation">
+                    <!-- JavaScript ile doldurulacak -->
                 </div>
             </div>
 
@@ -382,11 +457,15 @@
             if (rawContainer) {
                 rawContainer.innerHTML = '';
                 const reserve = factoryData.reserve || 0;
+                const reserveCap = factoryData.reserve_cap || 0;
                 
                 rawContainer.innerHTML = `
-                    <div class="stat-card">
-                        <div class="stat-label">Tohum Deposu</div>
-                        <div class="stat-val" id="statReserve">${reserve.toLocaleString()}</div>
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <i class="fas fa-seedling" style="color: var(--accent); font-size: 1rem;"></i>
+                            <div class="info-label" style="font-size: 0.8rem;">Tohum Deposu</div>
+                        </div>
+                        <div class="info-value" style="font-size: 0.85rem;" id="statReserve">${reserve.toLocaleString()} / ${reserveCap.toLocaleString()}</div>
                     </div>
                 `;
             }
@@ -411,6 +490,64 @@
             const maxEst = Math.ceil(range.max * multiplier);
             
             document.getElementById('estProduction').innerText = `${minEst}-${maxEst} Adet`;
+
+            // Production Calculation Details
+            const calcContainer = document.getElementById('productionCalculation');
+            if (calcContainer) {
+                const baseMin = range.min;
+                const baseMax = range.max;
+                const skillBonus = userSkill;
+                const efficiencyBonus = Math.floor((efficiency - 100) * 0.1); // Her %10 verimlilik için +1
+                const argeBonus = Math.floor((argeLevel - 1) * 10); // Her AR-GE seviyesi için %10
+                
+                // Her bonus için adet hesapla
+                const skillMinAmount = Math.round(baseMin * skillBonus / 100 * 10) / 10;
+                const skillMaxAmount = Math.round(baseMax * skillBonus / 100 * 10) / 10;
+                
+                const effMinAmount = Math.round(baseMin * efficiencyBonus / 100 * 10) / 10;
+                const effMaxAmount = Math.round(baseMax * efficiencyBonus / 100 * 10) / 10;
+                
+                const argeMinAmount = Math.round(baseMin * argeBonus / 100 * 10) / 10;
+                const argeMaxAmount = Math.round(baseMax * argeBonus / 100 * 10) / 10;
+                
+                calcContainer.innerHTML = `
+                    <div class="info-list-item" style="padding: 6px 0;">
+                        <div class="info-left">
+                            <i class="fas fa-cubes" style="color: #666; font-size: 0.9rem;"></i>
+                            <div class="info-label" style="font-size: 0.8rem;">Temel Üretim</div>
+                        </div>
+                        <div style="color: #aaa; font-size: 0.85rem; font-weight: 600;">${baseMin}-${baseMax} Adet</div>
+                    </div>
+                    <div class="info-list-item" style="padding: 6px 0;">
+                        <div class="info-left">
+                            <i class="fas fa-graduation-cap" style="color: var(--accent-cyan); font-size: 0.9rem;"></i>
+                            <div class="info-label" style="font-size: 0.8rem;">Eğitim Seviyesi Bonusu</div>
+                        </div>
+                        <div style="color: var(--accent-cyan); font-size: 0.85rem; font-weight: 600;">+${skillBonus}% <span style="color: #888;">(+${skillMinAmount}-${skillMaxAmount})</span></div>
+                    </div>
+                    <div class="info-list-item" style="padding: 6px 0;">
+                        <div class="info-left">
+                            <i class="fas fa-gauge-high" style="color: var(--accent-gold); font-size: 0.9rem;"></i>
+                            <div class="info-label" style="font-size: 0.8rem;">Verimlilik Bonusu</div>
+                        </div>
+                        <div style="color: var(--accent-gold); font-size: 0.85rem; font-weight: 600;">+${efficiencyBonus}% <span style="color: #888;">(+${effMinAmount}-${effMaxAmount})</span></div>
+                    </div>
+                    <div class="info-list-item" style="padding: 6px 0;">
+                        <div class="info-left">
+                            <i class="fas fa-flask" style="color: var(--accent-green); font-size: 0.9rem;"></i>
+                            <div class="info-label" style="font-size: 0.8rem;">AR-GE Bonusu</div>
+                        </div>
+                        <div style="color: var(--accent-green); font-size: 0.85rem; font-weight: 600;">+${argeBonus}% <span style="color: #888;">(+${argeMinAmount}-${argeMaxAmount})</span></div>
+                    </div>
+                    <div class="info-list-item" style="padding: 8px 0; border-top: 2px solid #333; margin-top: 5px;">
+                        <div class="info-left">
+                            <i class="fas fa-check-circle" style="color: var(--accent); font-size: 0.9rem;"></i>
+                            <div class="info-label" style="font-size: 0.85rem; font-weight: 700;">Toplam Üretim</div>
+                        </div>
+                        <div style="color: var(--accent); font-size: 0.9rem; font-weight: 800;">${minEst}-${maxEst} Adet</div>
+                    </div>
+                `;
+            }
 
             document.getElementById('workerCount').innerText = currentWorkerCount;
             document.getElementById('maxWorkerCount').innerText = maxWorkers;

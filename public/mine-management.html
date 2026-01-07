@@ -269,7 +269,7 @@
         
         .vault-btn {
             width: 100%;
-            background: var(--accent-cyan);
+            background: var(--accent-green);
             color: #000;
             border: none;
             padding: 12px;
@@ -283,12 +283,12 @@
             justify-content: center;
             gap: 8px;
             transition: all 0.3s;
-            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
         }
         
         .vault-btn:hover {
-            background: #00d4e6;
-            box-shadow: 0 0 25px rgba(0, 229, 255, 0.5);
+            background: #27ae60;
+            box-shadow: 0 0 25px rgba(46, 204, 113, 0.5);
             transform: translateY(-2px);
         }
 
@@ -595,7 +595,7 @@
                     </div>
                     <div class="info-item">
                         <i class="fas fa-warehouse" style="color: #3498db;"></i>
-                        <span class="info-label">Depo Kapasitesi</span>
+                        <span class="info-label">Hammadde Kapasitesi</span>
                         <span class="info-value" id="info-warehouse">-</span>
                     </div>
                     <div class="info-item">
@@ -645,8 +645,36 @@
             <!-- GELİŞTİRME -->
             <div class="settings-card">
                 <div class="card-header" style="color: var(--accent-gold);"><i class="fas fa-arrow-up"></i> GELİŞTİRME</div>
+                
+                <!-- Geliştirme Maliyetleri (Sadece geliştirme yapılmıyorsa göster) -->
                 <div id="upgradeCostsContainer">
                     <!-- JS ile doldurulacak -->
+                </div>
+                
+                <!-- Geliştirme Sayacı (Sadece geliştirme yapılıyorsa göster) -->
+                <div id="upgradeCountdownContainer" style="display: none;">
+                    <div style="text-align: center; padding: 20px 0;">
+                        <div style="font-size: 0.85rem; color: #888; margin-bottom: 15px;">
+                            <i class="fas fa-hammer"></i> GELİŞTİRME DEVAM EDİYOR
+                        </div>
+                        
+                        <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #333;">
+                            <div style="font-size: 2.5rem; font-weight: 800; color: var(--accent-gold); letter-spacing: 2px;" id="upgradeCountdownText">
+                                00:00
+                            </div>
+                            <div style="font-size: 0.75rem; color: #666; margin-top: 8px;">
+                                Kalan Süre
+                            </div>
+                        </div>
+                        
+                        <div style="width: 100%; height: 10px; background: #000; border-radius: 5px; overflow: hidden; border: 1px solid #333; margin-bottom: 20px;">
+                            <div id="upgradeCountdownBar" style="width: 0%; height: 100%; background: var(--accent-gold); transition: width 1s linear;"></div>
+                        </div>
+                        
+                        <button class="vault-btn" onclick="openSpeedUpModal()" style="background: var(--accent-cyan);">
+                            <i class="fas fa-bolt"></i> HIZLANDIR
+                        </button>
+                    </div>
                 </div>
             </div>
             </div>
@@ -655,7 +683,7 @@
             <div id="tab-depo" style="display:none;">
             <!-- DEPO YÖNETİMİ -->
             <div class="settings-card">
-                <div class="card-header" style="color:var(--accent-green)"><i class="fas fa-boxes"></i> DEPO YÖNETİMİ</div>
+                <div class="card-header"><i class="fas fa-boxes"></i> DEPO YÖNETİMİ</div>
                 
                 <div class="warehouse-grid" id="warehouseGrid">
                     <!-- JS ile doldurulacak -->
@@ -743,10 +771,9 @@
         <!-- SPEED UP MODAL -->
         <div class="modal-overlay" id="speedUpModal">
             <div class="modal-content" style="border-top-color: var(--accent-cyan);">
-                <i class="fas fa-bolt" style="font-size:3rem; color:var(--accent-cyan); margin-bottom:10px;"></i>
-                <h3 class="m-title">Hızlandır</h3>
-                <p class="m-desc">Geliştirmeyi hemen tamamlamak istiyor musunuz?</p>
-                <span class="m-price" id="speedUpCost" style="color:var(--accent-cyan);">0 Elmas</span>
+                <i class="fas fa-bolt" style="font-size:3rem; color:var(--accent-cyan); margin-bottom:15px;"></i>
+                <h3 class="m-title" style="font-size: 1.3rem; margin-bottom: 20px;">Geliştirmeyi Hızlandır</h3>
+                <p style="color: #aaa; margin: 15px 0; font-size: 0.95rem; line-height: 1.6;">Geliştirmeyi <span id="speedUpCostText" style="color: var(--accent-cyan); font-weight: 700;">0</span> elmas karşılığında hızlandırmak istiyor musun?</p>
                 
                 <div class="m-btns">
                     <button class="m-btn btn-cancel" onclick="closeModal('speedUpModal')">İPTAL</button>
@@ -938,7 +965,10 @@
             // Bilgiler sekmesi - Yeni alanlar
             document.getElementById('info-owner').innerText = `${factory.owner_id} - ${factory.owner_username}`;
             document.getElementById('info-level').innerText = factory.level + '. Seviye';
-            document.getElementById('info-product').innerText = factory.type ? (resourceMap[factory.type]?.prod.name || '-') : '-';
+            
+            // İşletme kategorisi "(Ürün Adı) Madeni" formatında göster
+            const productName = factory.type ? (resourceMap[factory.type]?.prod.name || '-') : '-';
+            document.getElementById('info-product').innerText = productName !== '-' ? `${productName} Madeni` : '-';
             document.getElementById('info-worker').innerText = `${factory.workers}/${factory.maxWorkers}`;
             
             // Depo Kapasitesi (Hammadde + Ürün toplamı)
@@ -1047,9 +1077,9 @@
 
         function createCardHTML(type, item, amount, cap, action, isFullWidth = false) {
             const btnClass = action === 'add' ? 'btn-add' : 'btn-pull';
-            const btnText = action === 'add' ? 'EKLE' : 'ENVANTERE AKTAR';
+            const btnText = action === 'add' ? 'DEPOYA AKTAR' : 'ENVANTERE AKTAR';
             const inputId = `${type}Input`;
-            const label = action === 'add' ? 'Hammadde' : 'Ürün';
+            const label = action === 'add' ? 'hammadde' : 'ürün';
             const widthClass = isFullWidth ? 'wh-card-full' : '';
             
             return `
@@ -1166,13 +1196,35 @@
             
             if(!amount || amount <= 0) return toastr.warning("Miktar giriniz.");
 
+            // Capacity Checks
+            if((type === 'raw' || type === 'raw2') && action === 'add') {
+                const currentAmount = (type === 'raw' ? factory.raw : factory.raw2) || 0;
+                const capacity = factory.rawCap || 0;
+                if(currentAmount + amount > capacity) {
+                    return toastr.warning(`Depo kapasitesi yetersiz! Mevcut: ${fmt(currentAmount)}, Kapasite: ${fmt(capacity)}, Eklenebilir: ${fmt(capacity - currentAmount)}`);
+                }
+            }
+
+            if(type === 'prod' && action === 'pull') {
+                const currentStock = factory.prod || 0;
+                if(amount > currentStock) {
+                    return toastr.warning(`Yetersiz stok! Mevcut: ${fmt(currentStock)}`);
+                }
+            }
+
             // Vault Limit Check
             if(type === 'vault' && action === 'add') {
-                const limit = factory.level * 100000;
-                if(amount > limit) return toastr.warning(`Seviye ${factory.level} için maksimum ${fmt(limit)} ₺ ekleyebilirsiniz.`);
+                const currentVault = factory.vault || 0;
+                const vaultCapacity = factory.level * 100000;
+                if(currentVault + amount > vaultCapacity) {
+                    return toastr.warning(`Kasa kapasitesi yetersiz! Mevcut: ${fmt(currentVault)}, Kapasite: ${fmt(vaultCapacity)}, Eklenebilir: ${fmt(vaultCapacity - currentVault)}`);
+                }
             }
 
             pendingAction = { type, action, amount, itemKey };
+            
+            // Modal başlığını ayarla
+            document.getElementById('confirmModalTitle').innerText = 'ONAYLA';
             
             let desc = "";
             if((type === 'raw' || type === 'raw2') && action === 'add') {
@@ -1183,8 +1235,8 @@
                 desc = `${fmt(amount)} ₺ hesabınızdan çekilip maden kasasına eklenecek.`;
             }
             
-            document.getElementById('confirmDesc').innerText = desc;
-            document.getElementById('btnConfirmAction').onclick = executeAction;
+            document.getElementById('confirmModalMsg').innerHTML = `<p style="text-align:center; font-size:0.95rem; color:#ccc;">${desc}</p>`;
+            document.getElementById('confirmActionBtn').onclick = executeAction;
             document.getElementById('confirmModal').style.display = 'flex';
         }
 
@@ -1289,7 +1341,27 @@
         
         function updateUpgradeCostsUI() {
             const container = document.getElementById('upgradeCostsContainer');
+            const countdownContainer = document.getElementById('upgradeCountdownContainer');
             if (!container) return;
+            
+            const mine = upgradeInfo?.mine;
+            
+            // Geliştirme devam ediyorsa sayacı göster, maliyetleri gizle
+            if (mine && mine.isUpgrading) {
+                if (container) container.style.display = 'none';
+                if (countdownContainer) {
+                    countdownContainer.style.display = 'block';
+                    const next = upgradeInfo.nextLevel;
+                    if (next) {
+                        startUpgradeCountdown(mine.timeLeft, next.duration);
+                    }
+                }
+                return;
+            }
+            
+            // Geliştirme yoksa maliyetleri göster, sayacı gizle
+            if (container) container.style.display = 'block';
+            if (countdownContainer) countdownContainer.style.display = 'none';
             
             if (!upgradeInfo || upgradeInfo.maxLevel) {
                 container.innerHTML = `
@@ -1302,7 +1374,7 @@
                 return;
             }
             
-            const mine = upgradeInfo.mine;
+            // mine değişkeni zaten yukarıda tanımlandı, tekrar tanımlama
             const next = upgradeInfo.nextLevel;
             const costs = next.costs;
             
@@ -1437,8 +1509,8 @@
                 </div>
             `;
             
-            // Upgrade button
-            const isUpgrading = mine.isUpgrading;
+            // Upgrade button - mine değişkenini kullan (zaten tanımlandı)
+            const isUpgrading = mine && mine.isUpgrading;
             const buttonDisabled = !allSufficient || isUpgrading;
             const buttonText = isUpgrading 
                 ? '<i class="fas fa-spinner fa-spin"></i> GELİŞTİRİLİYOR...'
@@ -1470,14 +1542,14 @@
                         <strong style="color: var(--accent);">${factory.name}</strong>
                     </div>
                     <div style="font-size: 2rem; margin-bottom: 25px; display: flex; align-items: center; justify-content: center; gap: 15px;">
-                        <div style="background: rgba(231, 76, 60, 0.15); padding: 15px 25px; border-radius: 10px; border: 2px solid var(--accent);">
-                            <div style="font-size: 0.75rem; color: #888; margin-bottom: 5px;">Mevcut Seviye</div>
-                            <div style="font-size: 2rem; font-weight: 800; color: var(--accent);">${currentLevel}</div>
-                        </div>
-                        <i class="fas fa-arrow-right" style="color: var(--accent-gold); font-size: 1.5rem;"></i>
                         <div style="background: rgba(255, 215, 0, 0.15); padding: 15px 25px; border-radius: 10px; border: 2px solid var(--accent-gold);">
+                            <div style="font-size: 0.75rem; color: #888; margin-bottom: 5px;">Mevcut Seviye</div>
+                            <div style="font-size: 2rem; font-weight: 800; color: var(--accent-gold);">${currentLevel}</div>
+                        </div>
+                        <i class="fas fa-arrow-right" style="color: var(--accent-cyan); font-size: 1.5rem;"></i>
+                        <div style="background: rgba(46, 204, 113, 0.15); padding: 15px 25px; border-radius: 10px; border: 2px solid var(--accent-green);">
                             <div style="font-size: 0.75rem; color: #888; margin-bottom: 5px;">Yeni Seviye</div>
-                            <div style="font-size: 2rem; font-weight: 800; color: var(--accent-gold);">${next.level}</div>
+                            <div style="font-size: 2rem; font-weight: 800; color: var(--accent-green);">${next.level}</div>
                         </div>
                     </div>
                     <div style="font-size: 1rem; color: #aaa; margin-bottom: 10px;">
@@ -1505,6 +1577,10 @@
                     if (data.success) {
                         toastr.success('Geliştirme başlatıldı!');
                         loadFactoryData();
+                        // Ayarlar sekmesindeyse UI'ı güncelle
+                        setTimeout(() => {
+                            updateUpgradeCostsUI();
+                        }, 500);
                     } else {
                         toastr.error(data.message);
                     }
@@ -1543,8 +1619,53 @@
             update();
             upgradeTimerInterval = setInterval(update, 1000);
         }
+        
+        // Ayarlar sekmesindeki geliştirme sayacı
+        let upgradeCountdownInterval = null;
+        
+        function startUpgradeCountdown(timeLeft, totalDuration) {
+            if (upgradeCountdownInterval) clearInterval(upgradeCountdownInterval);
+            
+            const bar = document.getElementById('upgradeCountdownBar');
+            const txt = document.getElementById('upgradeCountdownText');
+
+            if (!bar || !txt) return;
+
+            const update = () => {
+                if (timeLeft <= 0) {
+                    clearInterval(upgradeCountdownInterval);
+                    completeUpgrade();
+                    return;
+                }
+                
+                // Progress bar güncelle
+                let percent = 0;
+                if (totalDuration > 0) {
+                    percent = ((totalDuration - timeLeft) / totalDuration) * 100;
+                }
+                bar.style.width = percent + "%";
+                
+                // Zaman formatı (MM:SS)
+                const min = Math.floor(timeLeft / 60);
+                const sec = timeLeft % 60;
+                const minStr = String(min).padStart(2, '0');
+                const secStr = String(sec).padStart(2, '0');
+                txt.innerText = `${minStr}:${secStr}`;
+                
+                timeLeft--;
+            };
+
+            update();
+            upgradeCountdownInterval = setInterval(update, 1000);
+        }
 
         function completeUpgrade() {
+            // Countdown interval'ını temizle
+            if (upgradeCountdownInterval) {
+                clearInterval(upgradeCountdownInterval);
+                upgradeCountdownInterval = null;
+            }
+            
             fetch(`/api/mines/complete-upgrade/${mineId}`, { method: 'POST' })
                 .then(res => res.json())
                 .then(data => {
@@ -1691,12 +1812,15 @@
         }
 
         function openSpeedUpModal() {
-            if (!upgradeInfo || !upgradeInfo.nextLevel) return;
+            if (!upgradeInfo || !upgradeInfo.nextLevel || !upgradeInfo.mine.isUpgrading) {
+                toastr.warning('Geliştirme devam etmiyor.');
+                return;
+            }
             
             const nextLevel = upgradeInfo.nextLevel.level;
             const cost = nextLevel * 10;
             
-            document.getElementById('speedUpCost').innerText = `${cost} Elmas`;
+            document.getElementById('speedUpCostText').innerText = cost;
             document.getElementById('speedUpModal').style.display = 'flex';
         }
 
@@ -1711,10 +1835,19 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    toastr.success(data.message);
-                    loadFactoryData(); // Reload to see changes
+                    toastr.success(data.message || 'Geliştirme hızlandırıldı!');
+                    
+                    // Timer'ları temizle
+                    if (upgradeTimerInterval) clearInterval(upgradeTimerInterval);
+                    if (upgradeCountdownInterval) clearInterval(upgradeCountdownInterval);
+                    
+                    // Bildirimleri güncelle
+                    if (window.fetchNotifications) window.fetchNotifications();
+                    
+                    // Tüm verileri yenile
+                    loadFactoryData();
                 } else {
-                    toastr.error(data.message);
+                    toastr.error(data.message || 'Hızlandırma başarısız!');
                 }
             })
             .catch(err => {

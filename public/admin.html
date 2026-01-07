@@ -12,96 +12,475 @@
     
     <style>
         :root {
-            --bg-dark: #0d0d0d;
-            --bg-card: #161616;
+            --bg-dark: #0a0a0a;
+            --bg-card: #141414;
+            --bg-input: #1a1a1a;
             --accent-cyan: #00e5ff;
             --accent-green: #2ecc71;
             --accent-gold: #ffd700;
             --accent-red: #e74c3c;
+            --accent-purple: #9b59b6;
+            --accent-orange: #e67e22;
             --text-white: #ffffff;
-            --border-color: #333;
+            --text-muted: #888;
+            --border-color: #222;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            background-color: #000;
+            background: linear-gradient(135deg, #000000 0%, #1a0000 100%);
             font-family: 'Rajdhani', sans-serif;
             color: var(--text-white);
+            min-height: 100vh;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 30px 20px;
         }
 
-        h1 { color: var(--accent-red); margin-bottom: 20px; text-align: center; text-transform: uppercase; letter-spacing: 2px; }
+        /* HEADER */
+        .admin-header {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+            padding-bottom: 20px;
+        }
+
+        .admin-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--accent-red), transparent);
+        }
+
+        h1 { 
+            color: var(--accent-red); 
+            margin-bottom: 10px; 
+            text-align: center; 
+            text-transform: uppercase; 
+            letter-spacing: 3px; 
+            font-size: 2.5rem;
+            font-weight: 900;
+            text-shadow: 0 0 20px rgba(231, 76, 60, 0.5);
+        }
+
+        .admin-subtitle {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+        }
+
+        /* TAB NAVIGATION */
+        .tab-navigation {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: var(--bg-card);
+            border-radius: 15px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .tab-btn {
+            padding: 15px 20px;
+            border: 2px solid transparent;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+            color: var(--text-white);
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            font-family: 'Rajdhani';
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tab-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .tab-btn:hover::before {
+            left: 100%;
+        }
+
+        .tab-btn i {
+            font-size: 1.5rem;
+        }
+
+        .tab-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0, 229, 255, 0.3);
+            border-color: var(--accent-cyan);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(0, 229, 255, 0.1));
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 25px rgba(0, 229, 255, 0.4);
+        }
+
+        /* TAB CONTENT */
+        .tab-content {
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .section-header i {
+            font-size: 1.8rem;
+        }
+
+        .section-header h2 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* TABLE STYLES */
+        .table-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
 
         .user-table {
             width: 100%;
             border-collapse: collapse;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            overflow: hidden;
         }
 
         .user-table th, .user-table td {
-            padding: 15px;
+            padding: 18px 15px;
             text-align: left;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .user-table th {
-            background: #222;
+            background: linear-gradient(135deg, #1a1a1a, #0f0f0f);
             color: var(--accent-cyan);
             text-transform: uppercase;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
 
-        .user-table tr:hover { background: #1a1a1a; }
+        .user-table tbody tr {
+            transition: all 0.3s ease;
+        }
+
+        .user-table tbody tr:hover { 
+            background: rgba(0, 229, 255, 0.05);
+            transform: scale(1.01);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.1);
+        }
+
+        .user-table tbody tr:last-child td {
+            border-bottom: none;
+        }
 
         .btn-edit {
-            background: var(--accent-gold);
+            background: linear-gradient(135deg, var(--accent-gold), #ffed4e);
             color: #000;
             border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
+            padding: 8px 16px;
+            border-radius: 8px;
             cursor: pointer;
-            font-weight: bold;
+            font-weight: 700;
             font-family: 'Rajdhani';
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .btn-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .btn-edit:active {
+            transform: translateY(0);
+        }
+
+        .btn-edit i {
+            font-size: 0.9rem;
         }
 
         /* MODAL */
         .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); z-index: 100;
-            display: none; justify-content: center; align-items: center;
-        }
-        .modal-content {
-            background: #181818; width: 400px; padding: 25px; border-radius: 10px;
-            border: 1px solid #444; border-top: 3px solid var(--accent-gold);
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            display: none; 
+            justify-content: center; 
+            align-items: center;
+            animation: fadeIn 0.3s ease;
         }
         
-        .form-group { margin-bottom: 15px; }
-        .form-label { display: block; font-size: 0.9rem; color: #aaa; margin-bottom: 5px; }
-        .form-input { 
-            width: 100%; background: #111; border: 1px solid #444; color: #fff; 
-            padding: 10px; border-radius: 5px; font-family: 'Rajdhani';
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a1a, #0f0f0f);
+            max-width: 500px;
+            width: 90%;
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid var(--border-color);
+            border-top: 4px solid var(--accent-gold);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+            animation: slideUp 0.4s ease;
         }
 
-        .m-btns { display: flex; gap: 10px; margin-top: 20px; }
-        .m-btn { flex: 1; padding: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-content h3 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 25px;
+            color: var(--text-white);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-group { 
+            margin-bottom: 20px; 
+        }
+        
+        .form-label { 
+            display: block; 
+            font-size: 0.85rem; 
+            color: var(--accent-cyan); 
+            margin-bottom: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .form-input { 
+            width: 100%; 
+            background: var(--bg-input);
+            border: 2px solid var(--border-color);
+            color: var(--text-white);
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-family: 'Rajdhani';
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+        }
+
+        .form-input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .m-btns { 
+            display: flex; 
+            gap: 15px; 
+            margin-top: 30px; 
+        }
+        
+        .m-btn { 
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            font-family: 'Rajdhani';
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .m-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .m-btn i {
+            font-size: 1.1rem;
+        }
+
+        /* CARD STYLE FOR FORMS */
+        .form-card {
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid var(--border-color);
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* STATS BADGES */
+        .stat-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .stat-badge.money {
+            background: rgba(46, 204, 113, 0.15);
+            color: var(--accent-green);
+        }
+
+        .stat-badge.gold {
+            background: rgba(255, 215, 0, 0.15);
+            color: var(--accent-gold);
+        }
+
+        .stat-badge.diamond {
+            background: rgba(0, 229, 255, 0.15);
+            color: var(--accent-cyan);
+        }
 
         /* RESPONSIVE TABLE */
+        @media (max-width: 1024px) {
+            h1 { font-size: 2rem; }
+            
+            .tab-navigation {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                gap: 10px;
+                padding: 15px;
+            }
+
+            .tab-btn {
+                padding: 12px 15px;
+                font-size: 0.85rem;
+            }
+        }
+
         @media (max-width: 768px) {
+            h1 { font-size: 1.6rem; }
+            
+            .container { padding: 20px 15px; }
+
+            .tab-navigation {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
             .user-table thead { display: none; }
-            .user-table, .user-table tbody, .user-table tr, .user-table td { display: block; width: 100%; }
-            .user-table tr { margin-bottom: 15px; border: 1px solid #333; border-radius: 10px; background: #1a1a1a; padding: 10px; }
-            .user-table td { text-align: right; padding: 10px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
-            .user-table td:last-child { border-bottom: none; justify-content: center; }
-            .user-table td::before { content: attr(data-label); font-weight: bold; color: #aaa; text-transform: uppercase; font-size: 0.8rem; }
+            
+            .user-table, .user-table tbody, .user-table tr, .user-table td { 
+                display: block; 
+                width: 100%; 
+            }
+            
+            .user-table tr { 
+                margin-bottom: 20px;
+                border: 1px solid var(--border-color);
+                border-radius: 12px;
+                background: var(--bg-card);
+                padding: 15px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            }
+            
+            .user-table td { 
+                text-align: right;
+                padding: 12px 0;
+                border-bottom: 1px solid var(--border-color);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .user-table td:last-child { 
+                border-bottom: none;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            .user-table td::before { 
+                content: attr(data-label);
+                font-weight: 700;
+                color: var(--accent-cyan);
+                text-transform: uppercase;
+                font-size: 0.75rem;
+                letter-spacing: 0.5px;
+            }
+
+            .btn-edit {
+                padding: 6px 12px;
+                font-size: 0.75rem;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+
+            .form-card {
+                padding: 20px;
+            }
         }
 
         /* CUSTOM SELECT */
@@ -133,27 +512,51 @@
 <body>
 
     <div class="container">
-        <h1>Admin Paneli</h1>
+        <div class="admin-header">
+            <h1><i class="fas fa-shield-alt"></i> ADMIN CONTROL PANEL</h1>
+            <p class="admin-subtitle">Sistem Yönetimi ve Oyuncu Kontrolü</p>
+        </div>
         
-        <div style="margin-bottom: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-            <button onclick="showTab('users')" class="btn-edit" style="background: var(--accent-cyan);">Oyuncular</button>
-            <button onclick="showTab('toxic')" class="btn-edit" style="background: var(--accent-red);">Toksik Logları</button>
-            <button onclick="showTab('reports')" class="btn-edit" style="background: var(--accent-gold);">Raporlar</button>
-            <button onclick="showTab('inventory')" class="btn-edit" style="background: var(--accent-green);">Envanter Ekle</button>
-            <button onclick="showTab('settings')" class="btn-edit" style="background: #9b59b6; color: white;">Üretim Süreleri</button>
-            <button onclick="showTab('properties')" class="btn-edit" style="background: #e67e22; color: white;">Mülk Ayarları</button>
+        <div class="tab-navigation">
+            <button onclick="showTab('users')" class="tab-btn active" id="btn-users">
+                <i class="fas fa-users"></i>
+                <span>Oyuncular</span>
+            </button>
+            <button onclick="showTab('toxic')" class="tab-btn" id="btn-toxic">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Toksik Logları</span>
+            </button>
+            <button onclick="showTab('reports')" class="tab-btn" id="btn-reports">
+                <i class="fas fa-flag"></i>
+                <span>Raporlar</span>
+            </button>
+            <button onclick="showTab('inventory')" class="tab-btn" id="btn-inventory">
+                <i class="fas fa-box"></i>
+                <span>Envanter</span>
+            </button>
+            <button onclick="showTab('settings')" class="tab-btn" id="btn-settings">
+                <i class="fas fa-cog"></i>
+                <span>Üretim</span>
+            </button>
+            <button onclick="showTab('properties')" class="tab-btn" id="btn-properties">
+                <i class="fas fa-building"></i>
+                <span>Mülkler</span>
+            </button>
         </div>
 
         <!-- INVENTORY TAB -->
-        <div id="tab-inventory" style="display: none;">
-            <h2 style="margin-bottom: 15px; color: var(--accent-green);">Oyuncuya Eşya Ekle</h2>
-            <div style="background: var(--bg-card); padding: 20px; border-radius: 10px; border: 1px solid var(--border-color); max-width: 500px; margin: 0 auto;">
+        <div id="tab-inventory" class="tab-content" style="display: none;">
+            <div class="section-header">
+                <i class="fas fa-box" style="color: var(--accent-green);"></i>
+                <h2 style="color: var(--accent-green);">Oyuncuya Eşya Ekle</h2>
+            </div>
+            <div class="form-card">
                 <div class="form-group">
-                    <label class="form-label">Oyuncu ID</label>
+                    <label class="form-label"><i class="fas fa-user"></i> Oyuncu ID</label>
                     <input type="number" id="invUserId" class="form-input" placeholder="Örn: 1">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Eşya (Item Key)</label>
+                    <label class="form-label"><i class="fas fa-cubes"></i> Eşya (Item Key)</label>
                     <!-- Custom Select Structure -->
                     <div class="custom-select-wrapper">
                         <div class="custom-select">
@@ -169,17 +572,23 @@
                     <input type="hidden" id="invItemKey">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Miktar</label>
+                    <label class="form-label"><i class="fas fa-hashtag"></i> Miktar</label>
                     <input type="number" id="invAmount" class="form-input" placeholder="Örn: 100">
                 </div>
-                <button class="m-btn" style="background: var(--accent-green); color: #000; width: 100%;" onclick="addItemToUser()">EKLE</button>
+                <button class="m-btn" style="background: linear-gradient(135deg, var(--accent-green), #27ae60); color: #fff; width: 100%;" onclick="addItemToUser()">
+                    <i class="fas fa-plus-circle"></i> EKLE
+                </button>
             </div>
         </div>
 
         <!-- SETTINGS TAB -->
-        <div id="tab-settings" style="display: none;">
-            <h2 style="margin-bottom: 15px; color: #9b59b6;">Maden ve Fabrika Üretim Süreleri</h2>
-            <table class="user-table">
+        <div id="tab-settings" class="tab-content" style="display:none;">
+            <div class="section-header">
+                <i class="fas fa-industry" style="color: var(--accent-purple);"></i>
+                <h2 style="color: var(--accent-purple);">Maden ve Fabrika Üretim Süreleri</h2>
+            </div>
+            <div class="table-container">
+                <table class="user-table">
                 <thead>
                     <tr>
                         <th>Maden Tipi</th>
@@ -191,9 +600,14 @@
                     <!-- Settings will be loaded here -->
                 </tbody>
             </table>
+            </div>
 
-            <h2 style="margin-bottom: 15px; color: #f1c40f; margin-top: 30px;">Enerji Santrali Üretim Süreleri</h2>
-            <table class="user-table">
+            <div class="section-header" style="margin-top: 40px;">
+                <i class="fas fa-bolt" style="color: #f1c40f;"></i>
+                <h2 style="color: #f1c40f;">Enerji Santrali Üretim Süreleri</h2>
+            </div>
+            <div class="table-container">
+                <table class="user-table">
                 <thead>
                     <tr>
                         <th>Santral Tipi</th>
@@ -205,9 +619,14 @@
                     <!-- Energy Settings will be loaded here -->
                 </tbody>
             </table>
+            </div>
 
-            <h2 style="margin-bottom: 15px; color: #e67e22; margin-top: 30px;">Çiftlik Üretim Süreleri</h2>
-            <table class="user-table">
+            <div class="section-header" style="margin-top: 40px;">
+                <i class="fas fa-horse" style="color: var(--accent-orange);"></i>
+                <h2 style="color: var(--accent-orange);">Çiftlik Üretim Süreleri</h2>
+            </div>
+            <div class="table-container">
+                <table class="user-table">
                 <thead>
                     <tr>
                         <th>Çiftlik Tipi</th>
@@ -219,9 +638,14 @@
                     <!-- Ranch Settings will be loaded here -->
                 </tbody>
             </table>
+            </div>
 
-            <h2 style="margin-bottom: 15px; color: #2ecc71; margin-top: 30px;">Tarla Üretim Süreleri</h2>
-            <table class="user-table">
+            <div class="section-header" style="margin-top: 40px;">
+                <i class="fas fa-leaf" style="color: var(--accent-green);"></i>
+                <h2 style="color: var(--accent-green);">Tarla Üretim Süreleri</h2>
+            </div>
+            <div class="table-container">
+                <table class="user-table">
                 <thead>
                     <tr>
                         <th>Tarla Tipi</th>
@@ -233,12 +657,17 @@
                     <!-- Farm Settings will be loaded here -->
                 </tbody>
             </table>
+            </div>
         </div>
 
         <!-- PROPERTIES TAB -->
-        <div id="tab-properties" style="display: none;">
-            <h2 style="margin-bottom: 15px; color: #e67e22;">Mülk Ayarları</h2>
-            <table class="user-table">
+        <div id="tab-properties" class="tab-content" style="display: none;">
+            <div class="section-header">
+                <i class="fas fa-building" style="color: var(--accent-orange);"></i>
+                <h2 style="color: var(--accent-orange);">Mülk Ayarları</h2>
+            </div>
+            <div class="table-container">
+                <table class="user-table">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -252,12 +681,17 @@
                     <!-- Properties will be loaded here -->
                 </tbody>
             </table>
+            </div>
         </div>
 
         <!-- USERS TAB -->
-        <div id="tab-users">
-            <h2 style="margin-bottom: 15px; color: var(--accent-cyan);">Oyuncu Yönetimi</h2>
-            <table class="user-table">
+        <div id="tab-users" class="tab-content">
+            <div class="section-header">
+                <i class="fas fa-users" style="color: var(--accent-cyan);"></i>
+                <h2 style="color: var(--accent-cyan);">Oyuncu Yönetimi</h2>
+            </div>
+            <div class="table-container">
+                <table class="user-table">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -275,12 +709,17 @@
                     <!-- Users will be loaded here -->
                 </tbody>
             </table>
+            </div>
         </div>
 
         <!-- TOXIC LOGS TAB -->
-        <div id="tab-toxic" style="display: none;">
-            <h2 style="margin-bottom: 15px; color: var(--accent-red);">Toksik Mesaj Logları</h2>
-            <table class="user-table">
+        <div id="tab-toxic" class="tab-content" style="display: none;">
+            <div class="section-header">
+                <i class="fas fa-exclamation-triangle" style="color: var(--accent-red);"></i>
+                <h2 style="color: var(--accent-red);">Toksik Mesaj Logları</h2>
+            </div>
+            <div class="table-container">
+                <table class="user-table">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -294,12 +733,17 @@
                     <!-- Logs will be loaded here -->
                 </tbody>
             </table>
+            </div>
         </div>
 
         <!-- REPORTS TAB -->
-        <div id="tab-reports" style="display: none;">
-            <h2 style="margin-bottom: 15px; color: var(--accent-gold);">Mesaj Raporları</h2>
-            <table class="user-table">
+        <div id="tab-reports" class="tab-content" style="display: none;">
+            <div class="section-header">
+                <i class="fas fa-flag" style="color: var(--accent-gold);"></i>
+                <h2 style="color: var(--accent-gold);">Mesaj Raporları</h2>
+            </div>
+            <div class="table-container">
+                <table class="user-table">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -314,21 +758,26 @@
                     <!-- Reports will be loaded here -->
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 
     <!-- MUTE MODAL -->
     <div class="modal-overlay" id="muteModal">
         <div class="modal-content">
-            <h3 style="color:#fff; margin-bottom:20px;">Kullanıcıyı Sustur</h3>
+            <h3><i class="fas fa-volume-mute"></i> Kullanıcıyı Sustur</h3>
             <input type="hidden" id="muteUserId">
             <div class="form-group">
                 <label class="form-label">Süre (Dakika)</label>
                 <input type="number" id="muteDuration" class="form-input" value="60">
             </div>
             <div class="m-btns">
-                <button class="m-btn" style="background:#444; color:#fff;" onclick="closeMuteModal()">İptal</button>
-                <button class="m-btn" style="background:var(--accent-red); color:#fff;" onclick="confirmMute()">Sustur</button>
+                <button class="m-btn" style="background:#333; color:#fff;" onclick="closeMuteModal()">
+                    <i class="fas fa-times"></i> İptal
+                </button>
+                <button class="m-btn" style="background: linear-gradient(135deg, var(--accent-red), #c0392b); color:#fff;" onclick="confirmMute()">
+                    <i class="fas fa-ban"></i> Sustur
+                </button>
             </div>
         </div>
     </div>
@@ -336,7 +785,7 @@
     <!-- EDIT MODAL -->
     <div class="modal-overlay" id="editModal">
         <div class="modal-content">
-            <h3 style="color:#fff; margin-bottom:20px;">Oyuncu Düzenle</h3>
+            <h3><i class="fas fa-user-edit"></i> Oyuncu Düzenle</h3>
             <input type="hidden" id="editId">
             
             <div class="form-group">
@@ -369,24 +818,30 @@
             </div>
 
             <div class="m-btns">
-                <button class="m-btn" style="background:#333; color:#fff;" onclick="closeModal()">İPTAL</button>
-                <button class="m-btn" style="background:var(--accent-green); color:#000;" onclick="saveUser()">KAYDET</button>
+                <button class="m-btn" style="background:#333; color:#fff;" onclick="closeModal()">
+                    <i class="fas fa-times"></i> İptal
+                </button>
+                <button class="m-btn" style="background: linear-gradient(135deg, var(--accent-green), #27ae60); color:#fff;" onclick="saveUser()">
+                    <i class="fas fa-save"></i> Kaydet
+                </button>
             </div>
         </div>
     </div>
 
     <!-- DETAILS MODAL -->
     <div class="modal-overlay" id="detailsModal">
-        <div class="modal-content" style="width: 800px; max-width: 95%;">
-            <h2 style="color:var(--accent-cyan); margin-bottom:15px; border-bottom:1px solid #333; padding-bottom:10px;">
-                KULLANICI DETAYLARI
-            </h2>
+        <div class="modal-content" style="max-width: 900px;">
+            <h3 style="color:var(--accent-cyan); display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-info-circle"></i> Kullanıcı Detayları
+            </h3>
             <div id="detailsContent" style="max-height: 70vh; overflow-y: auto;">
                 <!-- JS will populate this -->
                 <div style="text-align:center; padding:20px;">Yükleniyor...</div>
             </div>
             <div class="m-btns">
-                <button class="m-btn" style="background:#333; color:#fff;" onclick="closeDetailsModal()">KAPAT</button>
+                <button class="m-btn" style="background:#333; color:#fff;" onclick="closeDetailsModal()">
+                    <i class="fas fa-times"></i> Kapat
+                </button>
             </div>
         </div>
     </div>
@@ -414,20 +869,32 @@
             users.forEach(u => {
                 const row = `
                     <tr>
-                        <td data-label="ID">${u.id}</td>
-                        <td data-label="Kullanıcı Adı">${u.username}</td>
-                        <td data-label="Para" style="color:var(--accent-green)">${fmt(u.money)} ₺</td>
-                        <td data-label="Altın" style="color:var(--accent-gold)">${fmt(u.gold)}</td>
-                        <td data-label="Elmas" style="color:var(--accent-cyan)">${fmt(u.diamond)}</td>
+                        <td data-label="ID">#${u.id}</td>
+                        <td data-label="Kullanıcı Adı"><strong>${u.username}</strong></td>
+                        <td data-label="Para">
+                            <span class="stat-badge money">
+                                <i class="fas fa-coins"></i> ${fmt(u.money)} ₺
+                            </span>
+                        </td>
+                        <td data-label="Altın">
+                            <span class="stat-badge gold">
+                                <i class="fas fa-gem"></i> ${fmt(u.gold)}
+                            </span>
+                        </td>
+                        <td data-label="Elmas">
+                            <span class="stat-badge diamond">
+                                <i class="fas fa-diamond"></i> ${fmt(u.diamond)}
+                            </span>
+                        </td>
                         <td data-label="Enerji">${u.energy}</td>
                         <td data-label="Sağlık">${u.health}</td>
-                        <td data-label="Seviye">${u.level}</td>
+                        <td data-label="Seviye"><strong>Lv. ${u.level}</strong></td>
                         <td data-label="İşlem">
                             <button class="btn-edit" onclick='openEditModal(${JSON.stringify(u)})'>
-                                <i class="fas fa-edit"></i> DÜZENLE
+                                <i class="fas fa-edit"></i> Düzenle
                             </button>
-                            <button class="btn-edit" style="background:var(--accent-cyan); margin-left:5px;" onclick="openDetailsModal(${u.id})">
-                                <i class="fas fa-info-circle"></i> DETAY
+                            <button class="btn-edit" style="background: linear-gradient(135deg, var(--accent-cyan), #00d4e5); margin-left:5px;" onclick="openDetailsModal(${u.id})">
+                                <i class="fas fa-info-circle"></i> Detay
                             </button>
                         </td>
                     </tr>
@@ -633,6 +1100,7 @@
             } catch (e) { console.error(e); }
         }
         function showTab(tabName) {
+            // Hide all tabs
             document.getElementById('tab-users').style.display = 'none';
             document.getElementById('tab-toxic').style.display = 'none';
             document.getElementById('tab-reports').style.display = 'none';
@@ -640,8 +1108,16 @@
             document.getElementById('tab-inventory').style.display = 'none';
             document.getElementById('tab-properties').style.display = 'none';
             
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            // Show selected tab
             document.getElementById('tab-' + tabName).style.display = 'block';
             
+            // Add active class to clicked button
+            document.getElementById('btn-' + tabName).classList.add('active');
+            
+            // Load data for specific tabs
             if (tabName === 'toxic') loadToxicLogs();
             if (tabName === 'reports') loadReports();
             if (tabName === 'properties') loadProperties();
