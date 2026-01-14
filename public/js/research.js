@@ -1,3 +1,24 @@
+// TARLA AR-GE
+const farmsData = [
+    { id: 'wheat', name: 'Buğday Yertiştirme', desc: 'Buğday üretim verimini artırır.', image: 'icons/farm-icon/wheat.png', colorClass: 'c-wood' },
+    { id: 'corn', name: 'Mısır Ekimi', desc: 'Mısır hasatını optimize eder.', image: 'icons/farm-icon/corn.png', colorClass: 'c-wood' },
+    { id: 'fruit', name: 'Meyvecilik', desc: 'Meyve bahçesi üretimini artırır.', image: 'icons/farm-icon/fruit.png', colorClass: 'c-wood' },
+    { id: 'vegetable', name: 'Sebze Yertiştirme', desc: 'Sebze bahçesi verimini artırır.', image: 'icons/farm-icon/vegetables.png', colorClass: 'c-wood' },
+    { id: 'rice', name: 'Pirinç Tarımı', desc: 'Pirinç tarlası üretimini artırır.', image: 'icons/farm-icon/rice.png', colorClass: 'c-wood' },
+    { id: 'potato', name: 'Patates Ekimi', desc: 'Patates hasatını hızlandırır.', image: 'icons/farm-icon/potato.png', colorClass: 'c-wood' },
+    { id: 'olive', name: 'Zeytincilik', desc: 'Zeytin bahçesi üretimini optimize eder.', image: 'icons/farm-icon/olive.png', colorClass: 'c-wood' }
+];
+
+// ÇİFTİK AR-GE
+const ranchesData = [
+    { id: 'chicken', name: 'Tavukçuluk', desc: 'Tavuk çiftliği üretimini artırır.', image: 'icons/ranch-icon/chicken.png', colorClass: 'c-wood' },
+    { id: 'cow', name: 'Sığır Yetiştiriciliği', desc: 'Süt ve et üretimini artırır.', image: 'icons/ranch-icon/cow.png', colorClass: 'c-wood' },
+    { id: 'sheep', name: 'Koyun Yetiştiriciliği', desc: 'Yün ve süt üretimini artırır.', image: 'icons/ranch-icon/sheep.png', colorClass: 'c-wood' },
+    { id: 'goat', name: 'Keçi Yetiştiriciliği', desc: 'Keçi sütü ve peynir üretimini artırır.', icon: 'fa-cow', colorClass: 'c-wood' },
+    { id: 'bee', name: 'Arıcılık', desc: 'Bal üretimini optimize eder.', image: 'icons/ranch-icon/bee.png', colorClass: 'c-wood' }
+];
+
+// MADEN AR-GE
 const minesData = [
     { id: 'wood', name: 'Ormancılık Teknikleri', desc: 'Ağaç kesim ve işleme hızını artırır.', image: 'icons/mine-icon/wood.png', colorClass: 'c-wood' },
     { id: 'stone', name: 'Taş Kırma Teknolojisi', desc: 'Taş ocağı verimliliğini artırır.', image: 'icons/mine-icon/stone.png', colorClass: 'c-stone' },
@@ -31,7 +52,7 @@ const factoriesData = [
     { id: 'nuclear_plant', name: 'Nükleer Santral', desc: 'Nükleer enerji üretimini artırır.', image: 'icons/energy-factory-icon/nuclear-plant.png', colorClass: 'c-uranium' }
 ];
 
-let currentTab = 'mines';
+let currentTab = 'farms';
 let argeData = {};
 let activeTimers = {};
 let selectedResearchId = null;
@@ -83,15 +104,19 @@ async function initArgePage() {
 async function getCurrentArgeData(userId) {
     try {
         const response = await fetch(`/api/arge/status/${userId}`);
-        if (!response.ok) throw new Error('Network response was not ok');
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('AR-GE API Error:', response.status, errorData);
+            throw new Error(`Server error: ${response.status}`);
+        }
         
         const data = await response.json();
         argeData = data || {};
         renderArgeList();
     } catch (error) {
         console.error('AR-GE verisi alınamadı:', error);
-        const container = document.getElementById('researchList');
-        if (container) container.innerHTML = '<div style="text-align:center; color:var(--accent-red);">Veri yüklenemedi. Lütfen sayfayı yenileyin.</div>';
+        argeData = {}; // Use empty data instead of showing error
+        renderArgeList(); // Try to render with empty data
     }
 }
 
@@ -125,7 +150,18 @@ function renderArgeList() {
     
     container.innerHTML = '';
 
-    const dataList = currentTab === 'mines' ? minesData : factoriesData;
+    let dataList;
+    if (currentTab === 'farms') {
+        dataList = farmsData;
+    } else if (currentTab === 'ranches') {
+        dataList = ranchesData;
+    } else if (currentTab === 'mines') {
+        dataList = minesData;
+    } else if (currentTab === 'factories') {
+        dataList = factoriesData;
+    } else {
+        dataList = [];
+    }
 
     if (!dataList || dataList.length === 0) {
         container.innerHTML = '<div style="text-align:center;">Görüntülenecek araştırma yok.</div>';
@@ -170,9 +206,8 @@ function renderArgeList() {
             }
         } else {
             actionHTML = `
-                <button class="btn-research" onclick="openModal('${mine.id}')">
-                    <span>${level === 0 ? 'Başlat' : 'Geliştir'} (Sv. ${nextLevel})</span>
-                    <small>Detaylar <i class="fas fa-chevron-right"></i></small>
+                <button class="btn-research" style="background: var(--accent-green); border-color: var(--accent-green); text-align: center;" onclick="openModal('${mine.id}')">
+                    <span>Geliştirmeyi Başlat</span>
                 </button>
             `;
         }
@@ -192,7 +227,7 @@ function renderArgeList() {
                 <div class="r-info">
                     <div class="r-title">
                         ${mine.name}
-                        <span class="r-level">${level} / 10</span>
+                        <span class="r-level">Seviye ${level} / 10</span>
                     </div>
                     <div class="r-desc">${mine.desc}</div>
                     <div class="r-bonus">Verimlilik: +%${bonus}</div>

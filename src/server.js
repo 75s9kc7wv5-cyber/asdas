@@ -780,7 +780,10 @@ app.get('/api/arge/status/:userId', (req, res) => {
     const checkQuery = 'SELECT * FROM arge_levels WHERE user_id = ? AND (is_researching = 1 OR is_reserve_researching = 1)';
     
     db.query(checkQuery, [userId], (err, researchingItems) => {
-        if (err) return res.status(500).json({ error: err });
+        if (err) {
+            console.error('AR-GE Status Error (checkQuery):', err);
+            return res.status(500).json({ error: err.message });
+        }
         
         const updates = [];
         const now = Date.now();
@@ -830,7 +833,10 @@ app.get('/api/arge/status/:userId', (req, res) => {
             // Now fetch the final status
             const query = 'SELECT mine_type, level, research_end_time, is_researching, reserve, is_reserve_researching, reserve_research_end_time FROM arge_levels WHERE user_id = ?';
             db.query(query, [userId], (err, results) => {
-                if (err) return res.status(500).json({ error: err });
+                if (err) {
+                    console.error('AR-GE Status Error (query):', err);
+                    return res.status(500).json({ error: err.message });
+                }
                 
                 const argeMap = {};
                 results.forEach(row => {
@@ -839,7 +845,8 @@ app.get('/api/arge/status/:userId', (req, res) => {
                 res.json(argeMap);
             });
         }).catch(err => {
-            res.status(500).json({ error: 'Update failed' });
+            console.error('AR-GE Status Error (Promise):', err);
+            res.status(500).json({ error: 'Update failed: ' + err.message });
         });
     });
 });

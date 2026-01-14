@@ -52,6 +52,48 @@
         /* MAIN */
         main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
 
+        /* PAGE HEADER */
+        .page-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .back-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.2rem;
+        }
+        .back-btn:hover {
+            background: var(--bg-card);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .page-title-box {
+            flex: 1;
+        }
+        .page-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .page-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.3;
+        }
+
         /* TARLA KARTI (HERO) */
         .factory-hero {
             background: linear-gradient(135deg, rgba(46, 204, 113, 0.15), var(--bg-card));
@@ -70,11 +112,7 @@
         .fh-info { flex: 1; }
         .fh-name { font-size: 1.2rem; font-weight: 800; color: #fff; margin-bottom: 2px; text-transform: uppercase; }
         .fh-owner { font-size: 0.8rem; color: var(--text-muted); }
-        .fh-level { 
-            position: absolute; top: 15px; right: 15px; 
-            background: var(--accent); color: #000; font-weight: 700; 
-            padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;
-        }
+
 
         /* İSTATİSTİKLER (GRID) */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px; }
@@ -203,6 +241,17 @@
     <div class="game-container">
        
         <main>
+            <!-- PAGE HEADER -->
+            <div class="page-header">
+                <button class="back-btn" onclick="window.history.back()">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="page-title-box">
+                    <div class="page-title">🌾 Tarla Üretim</div>
+                    <div class="page-desc">Bu sayfada tarlada çalışabilir, üretim yapabilir ve kazanç elde edebilirsiniz.</div>
+                </div>
+            </div>
+
             <!-- TARLA KARTI -->
             <div class="factory-hero">
                 <div class="fh-icon-box">
@@ -212,8 +261,6 @@
                     <div class="fh-name">TARLA İŞLETMESİ</div>
                     <div class="fh-owner">Sahibi: ...</div>
                 </div>
-                <div class="fh-level">Lv. 1</div>
-                <button id="btnManage" class="btn-manage" style="display:none; position:absolute; bottom:10px; right:10px; background:var(--accent-cyan); color:#000; border:none; padding:5px 10px; border-radius:4px; font-weight:bold; font-size:0.8rem; cursor:pointer;" onclick="goToManagement()">YÖNETİM</button>
             </div>
 
             <!-- İSTATİSTİKLER -->
@@ -221,35 +268,38 @@
                 <div style="font-size: 0.9rem; font-weight: 700; color: var(--accent); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #333; padding-bottom: 8px;">
                     <i class="fas fa-info-circle"></i> TARLA BİLGİLERİ
                 </div>
+                
                 <div class="info-list-item">
                     <div class="info-left">
-                        <i class="fas fa-wheat-awn" style="color: var(--accent-gold); font-size: 1rem;"></i>
+                        <i class="fas fa-user-tie" style="color: var(--accent-cyan); font-size: 1rem;"></i>
+                        <div class="info-label" style="font-size: 0.8rem;">İşletme Sahibi</div>
+                    </div>
+                    <div class="info-value text-cyan" style="font-size: 0.85rem;" id="statOwner">Yükleniyor...</div>
+                </div>
+                
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-seedling" style="color: var(--accent-green); font-size: 1rem;"></i>
                         <div class="info-label" style="font-size: 0.8rem;">Üretilen Ürün</div>
                     </div>
-                    <div class="info-value text-gold" style="font-size: 0.85rem;" id="statProduct">Yükleniyor...</div>
+                    <div class="info-value text-green" style="font-size: 0.85rem;" id="statProduct">Yükleniyor...</div>
                 </div>
                 
                 <div class="info-list-item">
                     <div class="info-left">
-                        <i class="fas fa-coins" style="color: var(--accent-gold); font-size: 1rem;"></i>
-                        <div class="info-label" style="font-size: 0.8rem;">
-                            Üretim Maaşı
-                            <span class="info-note">(Üretilen * Maaş = Kazanç)</span>
-                        </div>
+                        <i class="fas fa-layer-group" style="color: var(--accent-gold); font-size: 1rem;"></i>
+                        <div class="info-label" style="font-size: 0.8rem;">İşletme Kategorisi</div>
                     </div>
-                    <div class="info-value text-gold" style="font-size: 0.85rem;" id="statSalary">0 ₺</div>
+                    <div class="info-value text-gold" style="font-size: 0.85rem;" id="statCategory">Yükleniyor...</div>
                 </div>
                 
                 <div class="info-list-item">
                     <div class="info-left">
-                        <i class="fas fa-clock" style="color: var(--accent-cyan); font-size: 1rem;"></i>
-                        <div class="info-label" style="font-size: 0.8rem;">Üretim Süresi</div>
+                        <i class="fas fa-arrow-up" style="color: var(--accent-green); font-size: 1rem;"></i>
+                        <div class="info-label" style="font-size: 0.8rem;">İşletme Seviyesi</div>
                     </div>
-                    <div class="info-value text-cyan" style="font-size: 0.85rem;" id="statTime">60 Sn</div>
+                    <div class="info-value text-green" style="font-size: 0.85rem;" id="statLevel">Seviye 1</div>
                 </div>
-                
-                <!-- Dynamic Raw Material Stats -->
-                <div id="rawMaterialStats"></div>
                 
                 <div class="info-list-item">
                     <div class="info-left">
@@ -261,18 +311,42 @@
                 
                 <div class="info-list-item">
                     <div class="info-left">
-                        <i class="fas fa-gauge-high" style="color: var(--accent-gold); font-size: 1rem;"></i>
-                        <div class="info-label" style="font-size: 0.8rem;">Verimlilik</div>
+                        <i class="fas fa-seedling" style="color: var(--accent); font-size: 1rem;"></i>
+                        <div class="info-label" style="font-size: 0.8rem;">Tohum Deposu</div>
                     </div>
-                    <div class="info-value text-gold" style="font-size: 0.85rem;" id="efficiencyVal">%100</div>
+                    <div class="info-value text-green" style="font-size: 0.85rem;" id="statReserve">0 / 0</div>
                 </div>
                 
                 <div class="info-list-item">
                     <div class="info-left">
-                        <i class="fas fa-chart-line" style="color: var(--accent-cyan); font-size: 1rem;"></i>
-                        <div class="info-label" style="font-size: 0.8rem;">Tahmini Üretim</div>
+                        <i class="fas fa-clock" style="color: var(--accent-cyan); font-size: 1rem;"></i>
+                        <div class="info-label" style="font-size: 0.8rem;">Üretim Hızı</div>
                     </div>
-                    <div class="info-value text-cyan" style="font-size: 0.85rem;" id="estProduction">20-35 Adet</div>
+                    <div class="info-value text-cyan" style="font-size: 0.85rem;" id="statTime">60 Sn</div>
+                </div>
+                
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-coins" style="color: var(--accent-gold); font-size: 1rem;"></i>
+                        <div class="info-label" style="font-size: 0.8rem;">Birim Maaş</div>
+                    </div>
+                    <div class="info-value text-gold" style="font-size: 0.85rem;" id="statSalary">0 ₺/Adet</div>
+                </div>
+                
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-flask" style="color: var(--accent-cyan); font-size: 1rem;"></i>
+                        <div class="info-label" style="font-size: 0.8rem;">AR-GE Seviyesi</div>
+                    </div>
+                    <div class="info-value text-cyan" style="font-size: 0.85rem;" id="efficiencyVal">%0</div>
+                </div>
+                
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-calendar-plus" style="color: var(--text-muted); font-size: 1rem;"></i>
+                        <div class="info-label" style="font-size: 0.8rem;">Kuruluş Tarihi</div>
+                    </div>
+                    <div class="info-value" style="font-size: 0.85rem; color: var(--text-muted);" id="statCreated">-</div>
                 </div>
             </div>
 
@@ -337,6 +411,7 @@
         let factoryWorkers = [];
         let factoryLogs = [];
         let userData = null;
+        let userArgeData = {};
         let selectedSlotId = null;
         let productionInterval = null;
         let activeTimers = {};
@@ -353,6 +428,7 @@
             }
 
             await loadUserData();
+            await loadUserArgeData();
             await loadFactoryData();
             
             // Auto-refresh every 10 seconds
@@ -376,6 +452,25 @@
                 }
             } catch (e) {
                 console.error(e);
+            }
+        }
+
+        async function loadUserArgeData() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) return;
+            
+            try {
+                const res = await fetch(`/api/arge/status/${user.id}`);
+                if (!res.ok) {
+                    console.warn('AR-GE verisi alınamadı, varsayılan değerler kullanılacak');
+                    userArgeData = {};
+                    return;
+                }
+                const data = await res.json();
+                userArgeData = data || {};
+            } catch (e) {
+                console.warn('AR-GE verisi yüklenemedi:', e);
+                userArgeData = {};
             }
         }
 
@@ -404,23 +499,12 @@
         }
 
         function updateUserHeader() {
-            if (userData) {
-                document.getElementById('userMoney').innerText = userData.money.toLocaleString();
-            }
+            // Header removed - no longer needed
         }
 
         function renderFactoryHero() {
             document.querySelector('.fh-name').innerText = factoryData.farm_name || factoryData.name || 'Bilinmeyen Tarla';
             document.querySelector('.fh-owner').innerText = `Sahibi: ${factoryData.owner_name}`;
-            document.querySelector('.fh-level').innerText = `Lv. ${factoryData.level}`;
-            
-            // Show Manage Button if Owner
-            const user = JSON.parse(localStorage.getItem('simWorldUser'));
-            if (user && factoryData.user_id === user.id) {
-                document.getElementById('btnManage').style.display = 'block';
-            } else {
-                document.getElementById('btnManage').style.display = 'none';
-            }
 
             // Icon logic based on type
             const iconBox = document.querySelector('.fh-icon-box');
@@ -438,6 +522,17 @@
         }
 
         function renderStats() {
+            // Owner Name
+            document.getElementById('statOwner').innerText = `${factoryData.owner_id || '?'} - ${factoryData.owner_name || 'Bilinmeyen'}`;
+            
+            // Category Name
+            const categoryMap = {
+                'wheat': 'Buğday Tarlası', 'corn': 'Mısır Tarlası', 'fruit': 'Meyve Bahçesi', 
+                'vegetable': 'Sebze Bahçesi', 'rice': 'Pirinç Tarlası', 'potato': 'Patates Tarlası', 
+                'olive': 'Zeytin Bahçesi'
+            };
+            document.getElementById('statCategory').innerText = categoryMap[factoryData.farm_type] || 'Genel Tarla';
+            
             // Product Name
             const typeMap = {
                 'wheat': 'Buğday', 'corn': 'Mısır', 'fruit': 'Meyve', 'vegetable': 'Sebze',
@@ -445,6 +540,9 @@
             };
             const productName = factoryData ? (typeMap[factoryData.farm_type] || 'Ürün') : 'Ürün';
             document.getElementById('statProduct').innerText = productName;
+            
+            // Level
+            document.getElementById('statLevel').innerText = `${factoryData.level || 1}. Seviye`;
 
             document.getElementById('statSalary').innerText = `${factoryData.salary || 0} ₺`; // Maaş
             
@@ -452,53 +550,43 @@
             let tStr = t < 60 ? `${t} Sn` : (t % 60 === 0 ? `${t/60} Dk` : `${Math.floor(t/60)} Dk ${t%60} Sn`);
             document.getElementById('statTime').innerText = tStr; // Süre
 
-            // --- RAW MATERIAL STATS ---
-            const rawContainer = document.getElementById('rawMaterialStats');
-            if (rawContainer) {
-                rawContainer.innerHTML = '';
-                const reserve = factoryData.reserve || 0;
-                const reserveCap = factoryData.reserve_cap || 0;
-                
-                rawContainer.innerHTML = `
-                    <div class="info-list-item">
-                        <div class="info-left">
-                            <i class="fas fa-seedling" style="color: var(--accent); font-size: 1rem;"></i>
-                            <div class="info-label" style="font-size: 0.8rem;">Tohum Deposu</div>
-                        </div>
-                        <div class="info-value" style="font-size: 0.85rem;" id="statReserve">${reserve.toLocaleString()} / ${reserveCap.toLocaleString()}</div>
-                    </div>
-                `;
-            }
+            // --- RAW MATERIAL (Tohum Deposu) - Moved to info section ---
+            const reserve = factoryData.reserve || 0;
+            const reserveCap = factoryData.reserve_cap || 0;
+            document.getElementById('statReserve').innerText = `${reserve.toLocaleString()} / ${reserveCap.toLocaleString()}`;
             
             const currentWorkerCount = factoryWorkers.length;
             const maxWorkers = factoryData.max_workers || 6;
             document.getElementById('statWorkers').innerText = `${currentWorkerCount} / ${maxWorkers}`; // İşçiler
             
-            // Efficiency
-            const efficiency = factoryData.efficiency || 100;
-            document.getElementById('efficiencyVal').innerText = `%${efficiency}`;
+            // Created At
+            if (factoryData.created_at) {
+                const date = new Date(factoryData.created_at);
+                const dateStr = date.toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' });
+                document.getElementById('statCreated').innerText = dateStr;
+            } else {
+                document.getElementById('statCreated').innerText = 'Bilinmiyor';
+            }
             
-            // Estimated Production
-            const userSkill = userData ? (userData.education_skill || 0) : 0;
-            const range = getProductionRange(userSkill);
-            
-            // Apply efficiency multiplier logic
-            const argeLevel = factoryData.arge_level || 1;
-            const multiplier = 1.0 + (argeLevel - 1) * 0.1;
-            
-            const minEst = Math.floor(range.min * multiplier);
-            const maxEst = Math.ceil(range.max * multiplier);
-            
-            document.getElementById('estProduction').innerText = `${minEst}-${maxEst} Adet`;
+            // AR-GE Level - Get from user's arge data
+            const farmType = factoryData.farm_type || 'wheat';
+            const userArge = userArgeData[farmType] || { level: 0 };
+            const argeLevel = userArge.level || 0;
+            const argeBonus = argeLevel * 10; // Her seviye %10
+            document.getElementById('efficiencyVal').innerText = `%${argeBonus}`;
 
             // Production Calculation Details
+            const userSkill = userData ? (userData.education_skill || 0) : 0;
+            const range = getProductionRange(userSkill);
+            const efficiency = factoryData.efficiency || 100;
+            
             const calcContainer = document.getElementById('productionCalculation');
             if (calcContainer) {
                 const baseMin = range.min;
                 const baseMax = range.max;
                 const skillBonus = userSkill;
                 const efficiencyBonus = Math.floor((efficiency - 100) * 0.1); // Her %10 verimlilik için +1
-                const argeBonus = Math.floor((argeLevel - 1) * 10); // Her AR-GE seviyesi için %10
+                const argeBonusCalc = argeLevel * 10; // Her AR-GE seviyesi için %10
                 
                 // Her bonus için adet hesapla
                 const skillMinAmount = Math.round(baseMin * skillBonus / 100 * 10) / 10;
@@ -507,8 +595,12 @@
                 const effMinAmount = Math.round(baseMin * efficiencyBonus / 100 * 10) / 10;
                 const effMaxAmount = Math.round(baseMax * efficiencyBonus / 100 * 10) / 10;
                 
-                const argeMinAmount = Math.round(baseMin * argeBonus / 100 * 10) / 10;
-                const argeMaxAmount = Math.round(baseMax * argeBonus / 100 * 10) / 10;
+                const argeMinAmount = Math.round(baseMin * argeBonusCalc / 100 * 10) / 10;
+                const argeMaxAmount = Math.round(baseMax * argeBonusCalc / 100 * 10) / 10;
+                
+                // Calculate total production
+                const minEst = baseMin + skillMinAmount + effMinAmount + argeMinAmount;
+                const maxEst = baseMax + skillMaxAmount + effMaxAmount + argeMaxAmount;
                 
                 calcContainer.innerHTML = `
                     <div class="info-list-item" style="padding: 6px 0;">
@@ -537,7 +629,7 @@
                             <i class="fas fa-flask" style="color: var(--accent-green); font-size: 0.9rem;"></i>
                             <div class="info-label" style="font-size: 0.8rem;">AR-GE Bonusu</div>
                         </div>
-                        <div style="color: var(--accent-green); font-size: 0.85rem; font-weight: 600;">+${argeBonus}% <span style="color: #888;">(+${argeMinAmount}-${argeMaxAmount})</span></div>
+                        <div style="color: var(--accent-green); font-size: 0.85rem; font-weight: 600;">+${argeBonusCalc}% <span style="color: #888;">(+${argeMinAmount}-${argeMaxAmount})</span></div>
                     </div>
                     <div class="info-list-item" style="padding: 8px 0; border-top: 2px solid #333; margin-top: 5px;">
                         <div class="info-left">
@@ -749,9 +841,7 @@
             }
         }
 
-        function goToManagement() {
-            window.location.href = `farm-management.html?id=${factoryId}`;
-        }
+
 
         // --- MODAL İŞLEMLERİ ---
         function openWorkModal(slotIndex) {

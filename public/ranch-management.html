@@ -834,11 +834,15 @@
                     fetch(`/api/ranches/upgrade-info/${ranchId}?userId=${user.id}`)
                         .then(res => res.json())
                         .then(upData => {
+                            console.log('Upgrade Info Response:', upData);
                             if(upData.success) {
                                 upgradeInfo = upData;
                                 updateUpgradeUI();
+                            } else {
+                                console.error('Upgrade info fetch failed:', upData);
                             }
-                        });
+                        })
+                        .catch(err => console.error('Upgrade info fetch error:', err));
 
                     fetchUser();
 
@@ -1576,7 +1580,18 @@
         }
         
         function startUpgradeFromSettings() {
-            if (!upgradeInfo || upgradeInfo.maxLevel || upgradeInfo.ranch.isUpgrading) return;
+            console.log('startUpgradeFromSettings called');
+            console.log('upgradeInfo:', upgradeInfo);
+            console.log('factory:', factory);
+            
+            if (!upgradeInfo || upgradeInfo.maxLevel || upgradeInfo.ranch.isUpgrading) {
+                console.log('Conditions failed:', {
+                    hasUpgradeInfo: !!upgradeInfo,
+                    isMaxLevel: upgradeInfo?.maxLevel,
+                    isUpgrading: upgradeInfo?.ranch?.isUpgrading
+                });
+                return;
+            }
             
             const next = upgradeInfo.nextLevel;
             const currentLevel = factory.level;

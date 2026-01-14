@@ -140,7 +140,7 @@
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
         }
         .btn-research:hover { background: var(--accent-purple); border-color: var(--accent-purple); }
@@ -217,8 +217,8 @@
                 </divy: 1; transform: translateY(0); } }
 
         /* TABS */
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
-        .tab { flex: 1; text-align: center; padding: 10px; cursor: pointer; border-radius: 6px; font-weight: bold; color: #888; transition: all 0.3s; font-size: 0.9rem; }
+        .tabs { display: flex; gap: 5px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
+        .tab { flex: 1; text-align: center; padding: 8px 4px; cursor: pointer; border-radius: 6px; font-weight: bold; color: #888; transition: all 0.3s; font-size: 0.65rem; }
         .tab.active { background: var(--accent-purple); color: #fff; }
         .tab:hover:not(.active) { background: #222; color: #fff; }
 
@@ -232,13 +232,15 @@
         <main>
             <div class="page-header">
                 <h1 class="page-title"><i class="fas fa-microscope"></i> AR-GE MERKEZİ</h1>
-                <p class="page-desc">Maden teknolojilerini geliştir, verimliliği artır.</p>
+                <p class="page-desc">Tarla, çiftlik, maden ve fabrika teknolojilerini geliştir, verimliliği artır.</p>
             </div>
 
             <!-- TABS -->
             <div class="tabs">
-                <div class="tab active" id="tab-mines" onclick="switchTab('mines')">MADENLER</div>
-                <div class="tab" id="tab-factories" onclick="switchTab('factories')">FABRİKALAR</div>
+                <div class="tab active" id="tab-farms" onclick="switchTab('farms')">TARLA</div>
+                <div class="tab" id="tab-ranches" onclick="switchTab('ranches')">ÇİFTİK</div>
+                <div class="tab" id="tab-mines" onclick="switchTab('mines')">MADEN</div>
+                <div class="tab" id="tab-factories" onclick="switchTab('factories')">FABRİKA</div>
             </div>
 
             <div class="research-list" id="researchList">
