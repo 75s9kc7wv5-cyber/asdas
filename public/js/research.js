@@ -168,9 +168,12 @@ function renderArgeList() {
         return;
     }
 
-    dataList.forEach(mine => {
-        const mineArge = argeData[mine.id] || { level: 0, is_researching: 0, research_end_time: null };
-        const level = mineArge.level;
+    // Check if there's any active research
+    const hasActiveResearch = Object.values(argeData).some(arge => arge.is_researching);
+
+    dataList.forEach(item => {
+        const itemArge = argeData[item.id] || { level: 0, is_researching: 0, research_end_time: null };
+        const level = itemArge.level;
         const isMaxed = level >= 10;
         const nextLevel = level + 1;
         
@@ -193,43 +196,50 @@ function renderArgeList() {
                     <i class="fas fa-check"></i>
                 </button>
             `;
-        } else if (mineArge.is_researching) {
+        } else if (itemArge.is_researching) {
             actionHTML = `
                 <div class="timer-box" style="border-color:var(--accent-purple)">
-                    <div class="timer-bar" id="bar-${mine.id}" style="background:rgba(155, 89, 182, 0.3)"></div>
-                    <div class="timer-text" id="timer-${mine.id}">00:00</div>
+                    <div class="timer-bar" id="bar-${item.id}" style="background:rgba(155, 89, 182, 0.3)"></div>
+                    <div class="timer-text" id="timer-${item.id}">00:00</div>
                 </div>
             `;
             // Start timer if not already running
-            if (!activeTimers[mine.id]) {
-                updateResearchTimer(mine.id, mineArge.research_end_time, duration);
+            if (!activeTimers[item.id]) {
+                updateResearchTimer(item.id, itemArge.research_end_time, duration);
             }
+        } else if (hasActiveResearch) {
+            // If another research is active, disable this button
+            actionHTML = `
+                <button class="btn-research" style="background: var(--accent-red); border-color: var(--accent-red); cursor: not-allowed; opacity: 0.6;" disabled>
+                    <span>Başka Araştırma Devam Ediyor</span>
+                </button>
+            `;
         } else {
             actionHTML = `
-                <button class="btn-research" style="background: var(--accent-green); border-color: var(--accent-green); text-align: center;" onclick="openModal('${mine.id}')">
+                <button class="btn-research" style="background: var(--accent-green); border-color: var(--accent-green); text-align: center;" onclick="openModal('${item.id}')">
                     <span>Geliştirmeyi Başlat</span>
                 </button>
             `;
         }
 
         let iconHtml = '';
-        if (mine.image) {
-            iconHtml = `<img src="${mine.image}" alt="${mine.name}" style="width: 32px; height: 32px;">`;
+        if (item.image) {
+            iconHtml = `<img src="${item.image}" alt="${item.name}" style="width: 32px; height: 32px;">`;
         } else {
-            iconHtml = `<i class="fas ${mine.icon}"></i>`;
+            iconHtml = `<i class="fas ${item.icon}"></i>`;
         }
 
         card.innerHTML = `
             <div class="r-top">
-                <div class="r-icon-box ${mine.colorClass}">
+                <div class="r-icon-box ${item.colorClass}">
                     ${iconHtml}
                 </div>
                 <div class="r-info">
                     <div class="r-title">
-                        ${mine.name}
+                        ${item.name}
                         <span class="r-level">Seviye ${level} / 10</span>
                     </div>
-                    <div class="r-desc">${mine.desc}</div>
+                    <div class="r-desc">${item.desc}</div>
                     <div class="r-bonus">Verimlilik: +%${bonus}</div>
                 </div>
             </div>
@@ -242,16 +252,19 @@ function renderArgeList() {
     });
 }
 
-function openModal(mineId) {
-    selectedResearchId = mineId;
+function openModal(itemId) {
+    selectedResearchId = itemId;
     
-    let mine = minesData.find(m => m.id === mineId);
-    if (!mine) mine = factoriesData.find(m => m.id === mineId);
+    // Search in all data arrays
+    let item = farmsData.find(m => m.id === itemId);
+    if (!item) item = ranchesData.find(m => m.id === itemId);
+    if (!item) item = minesData.find(m => m.id === itemId);
+    if (!item) item = factoriesData.find(m => m.id === itemId);
     
-    if (!mine) return;
+    if (!item) return;
 
-    const mineArge = argeData[mineId] || { level: 0 };
-    const level = mineArge.level;
+    const itemArge = argeData[itemId] || { level: 0 };
+    const level = itemArge.level;
     const nextLevel = level + 1;
     
     const costMoney = Math.floor(5000 * Math.pow(1.8, level));
@@ -262,7 +275,7 @@ function openModal(mineId) {
     const bonus = 10; // +10% per level
     const requiredEdu = nextLevel * 10;
 
-    document.getElementById('mTitle').innerText = mine.name;
+    document.getElementById('mTitle').innerText = item.name;
     document.getElementById('mTime').innerText = formatTime(duration);
     
     let costText = `<div style="display:flex; flex-direction:column; gap:5px;">
@@ -284,7 +297,10 @@ function openModal(mineId) {
 
     let eduHtml = `
         <div class="m-row">
-            <span>Gereken Eğitim:</span>
+            <span style="display:flex;align-items:center;gap:6px;">
+                <i class="fas fa-graduation-cap" style="color:var(--accent-purple);"></i>
+                Gereken Eğitim:
+            </span>
             <span style="color:${eduColor}">${eduIcon} ${stageName}</span>
         </div>
     `;
@@ -294,16 +310,25 @@ function openModal(mineId) {
     
     detailsContainer.innerHTML = `
         <div class="m-row">
-            <span>Süre:</span>
+            <span style="display:flex;align-items:center;gap:6px;">
+                <i class="fas fa-clock" style="color:var(--accent-cyan);"></i>
+                Süre:
+            </span>
             <span id="mTime" style="color:var(--accent-cyan)">${formatTime(duration)}</span>
         </div>
         ${eduHtml}
         <div class="m-row">
-            <span>Maliyet:</span>
+            <span style="display:flex;align-items:center;gap:6px;">
+                <i class="fas fa-coins" style="color:var(--accent-gold);"></i>
+                Maliyet:
+            </span>
             <span id="mCost">${costText}</span>
         </div>
         <div class="m-row">
-            <span>Etki:</span>
+            <span style="display:flex;align-items:center;gap:6px;">
+                <i class="fas fa-chart-line" style="color:var(--accent-green);"></i>
+                Etki:
+            </span>
             <span id="mEffect" style="color:var(--accent-green)">+%${bonus} Verimlilik</span>
         </div>
     `;
