@@ -780,10 +780,7 @@ app.get('/api/arge/status/:userId', (req, res) => {
     const checkQuery = 'SELECT * FROM arge_levels WHERE user_id = ? AND (is_researching = 1 OR is_reserve_researching = 1)';
     
     db.query(checkQuery, [userId], (err, researchingItems) => {
-        if (err) {
-            console.error('AR-GE Status Error (checkQuery):', err);
-            return res.status(500).json({ error: err.message });
-        }
+        if (err) return res.status(500).json({ error: err });
         
         const updates = [];
         const now = Date.now();
@@ -833,10 +830,7 @@ app.get('/api/arge/status/:userId', (req, res) => {
             // Now fetch the final status
             const query = 'SELECT mine_type, level, research_end_time, is_researching, reserve, is_reserve_researching, reserve_research_end_time FROM arge_levels WHERE user_id = ?';
             db.query(query, [userId], (err, results) => {
-                if (err) {
-                    console.error('AR-GE Status Error (query):', err);
-                    return res.status(500).json({ error: err.message });
-                }
+                if (err) return res.status(500).json({ error: err });
                 
                 const argeMap = {};
                 results.forEach(row => {
@@ -845,8 +839,7 @@ app.get('/api/arge/status/:userId', (req, res) => {
                 res.json(argeMap);
             });
         }).catch(err => {
-            console.error('AR-GE Status Error (Promise):', err);
-            res.status(500).json({ error: 'Update failed: ' + err.message });
+            res.status(500).json({ error: 'Update failed' });
         });
     });
 });
@@ -5049,7 +5042,8 @@ app.get('/api/farms/detail/:id', (req, res) => {
         if (err) console.error('Cleanup Error:', err);
 
         const query = `
-            SELECT pf.*, ft.name as farm_name, ft.slug as farm_type, ft.image_path, u.username as owner_name,
+            SELECT pf.*, ft.name as farm_name, ft.slug as farm_type, ft.image_path, 
+            u.username as owner_name, pf.user_id as owner_id,
             COALESCE(ft.production_time, 60) as production_time
             FROM player_farms pf 
             JOIN farm_types ft ON pf.farm_type_id = ft.id
@@ -5113,6 +5107,9 @@ app.get('/api/farms/detail/:id', (req, res) => {
                             return res.status(500).json({ success: false, message: 'Workers Error' });
                         }
                         
+                        // Use capacity from database or calculate as fallback
+                        farm.reserve_cap = farm.capacity || ((farm.level || 1) * 1000);
+                        
                         res.json({ success: true, farm, logs, workers });
                     });
                 });
@@ -5158,69 +5155,77 @@ app.post('/api/farms/start', (req, res) => {
             if (reserve <= 0) return db.rollback(() => res.json({ success: false, message: 'Tarla tohum deposu tükenmiş!' }));
             if (stock >= MAX_STOCK) return db.rollback(() => res.json({ success: false, message: 'Tarla deposu dolu! Üretim yapılamaz.' }));
             
-            // Calculate Production Amount
+            // Calculate Production Amount using the same formula as frontend
             const userSkill = education_skill || 0;
-            const range = getBaseProductionRange(userSkill);
-            const multiplier = 1.0; 
+            const factoryLevel = level || 1;
+            const baseProduction = factoryLevel;
+            const educationBonus = Math.ceil(userSkill / 10);
             
-            const baseAmount = Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
-            let productionAmount = Math.max(1, Math.floor(baseAmount * multiplier));
-            
-            // Determine Seed Cost Ratio
-            let seedCostPerUnit = 1;
+            // Get AR-GE Level (use owner_id, not worker's userId)
             const farmType = data.farm_type;
+            const ownerId = data.owner_id;
+            const argeQuery = 'SELECT level FROM arge_levels WHERE user_id = ? AND mine_type = ?';
+            db.query(argeQuery, [ownerId, farmType], (err, argeResults) => {
+                const argeLevel = (argeResults && argeResults.length > 0) ? argeResults[0].level : 0;
+                const argeBonus = argeLevel * 2;
+                
+                let productionAmount = baseProduction + educationBonus + argeBonus;
             
-            if (farmType === 'wheat' || farmType === 'corn' || farmType === 'potato') {
-                seedCostPerUnit = 1;
-            } else if (farmType === 'vegetable' || farmType === 'fruit') {
-                seedCostPerUnit = 2;
-            } else if (farmType === 'rice' || farmType === 'olive') {
-                seedCostPerUnit = 3;
-            }
+                // Determine Seed Cost Ratio
+                let seedCostPerUnit = 1;
+                
+                if (farmType === 'wheat' || farmType === 'corn') {
+                    seedCostPerUnit = 1;
+                } else if (farmType === 'vegetable' || farmType === 'fruit') {
+                    seedCostPerUnit = 2;
+                } else if (farmType === 'rice' || farmType === 'potato' || farmType === 'olive') {
+                    seedCostPerUnit = 3;
+                }
 
-            // Check Reserve (Seed)
-            const maxProductionBySeed = Math.floor(reserve / seedCostPerUnit);
-            if (productionAmount > maxProductionBySeed) {
-                productionAmount = maxProductionBySeed;
-            }
+                // Check Reserve (Seed)
+                const maxProductionBySeed = Math.floor(reserve / seedCostPerUnit);
+                if (productionAmount > maxProductionBySeed) {
+                    productionAmount = maxProductionBySeed;
+                }
 
-            if (productionAmount <= 0) {
-                return db.rollback(() => res.json({ success: false, message: 'Yetersiz Tohum (Rezerv)!' }));
-            }
-            
-            const totalSeedCost = productionAmount * seedCostPerUnit;
+                if (productionAmount <= 0) {
+                    return db.rollback(() => res.json({ success: false, message: 'Yetersiz Tohum (Rezerv)!' }));
+                }
+                
+                const totalSeedCost = productionAmount * seedCostPerUnit;
 
-            // Vault Check
-            const estimatedCost = Math.ceil(range.max * multiplier) * salary; 
-            if (vault < estimatedCost) {
-                return db.rollback(() => res.json({ success: false, message: `Tarla kasasında maaş için yeterli bakiye yok! (Tahmini: ${estimatedCost} ₺)` }));
-            }
+                // Vault Check
+                const estimatedCost = productionAmount * salary; 
+                if (vault < estimatedCost) {
+                    return db.rollback(() => res.json({ success: false, message: `Tarla kasasında maaş için yeterli bakiye yok! (Gerekli: ${estimatedCost} ₺)` }));
+                }
 
-            if (current_workers >= (max_workers || 5)) {
-                return db.rollback(() => res.json({ success: false, message: 'Tarla kapasitesi dolu!' }));
-            }
+                if (current_workers >= (max_workers || 5)) {
+                    return db.rollback(() => res.json({ success: false, message: 'Tarla kapasitesi dolu!' }));
+                }
 
-            // 3. Deduct Energy/Health AND Reserve (Seed)
-            db.query('UPDATE users SET energy = energy - ?, health = health - ? WHERE id = ?', [ENERGY_COST, HEALTH_COST, userId], (err) => {
-                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User Update Error' }));
+                // 3. Deduct Energy/Health AND Reserve (Seed)
+                db.query('UPDATE users SET energy = energy - ?, health = health - ? WHERE id = ?', [ENERGY_COST, HEALTH_COST, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User Update Error' }));
 
-                db.query('UPDATE player_farms SET reserve = reserve - ? WHERE id = ?', [totalSeedCost, farmId], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Reserve Update Error' }));
+                    db.query('UPDATE player_farms SET reserve = reserve - ? WHERE id = ?', [totalSeedCost, farmId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Reserve Update Error' }));
 
-                    // 4. Add to Active Workers
-                    const durationSeconds = production_time || 60;
-                    const endTime = new Date(Date.now() + durationSeconds * 1000);
-                    
-                    db.query('INSERT INTO farm_active_workers (farm_id, user_id, end_time, amount, seed_cost) VALUES (?, ?, ?, ?, ?)', [farmId, userId, endTime, productionAmount, totalSeedCost], (err) => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Active Worker Error' }));
+                        // 4. Add to Active Workers
+                        const durationSeconds = production_time || 60;
+                        const endTime = new Date(Date.now() + durationSeconds * 1000);
                         
-                        db.commit(err => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                            res.json({ success: true, message: `İş başı yapıldı! (Tahmini Üretim: ${productionAmount})`, endTime: endTime });
+                        db.query('INSERT INTO farm_active_workers (farm_id, user_id, end_time, amount, seed_cost) VALUES (?, ?, ?, ?, ?)', [farmId, userId, endTime, productionAmount, totalSeedCost], (err) => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Active Worker Error' }));
+                            
+                            db.commit(err => {
+                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                                res.json({ success: true, message: `İş başı yapıldı! (Üretim: ${productionAmount})`, endTime: endTime });
+                            });
                         });
                     });
                 });
-            });
+            }); // Close argeQuery callback
         });
     });
 });

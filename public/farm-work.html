@@ -247,7 +247,7 @@
                     <i class="fas fa-arrow-left"></i>
                 </button>
                 <div class="page-title-box">
-                    <div class="page-title">🌾 Tarla Üretim</div>
+                    <div class="page-title">Tarla Üretim</div>
                     <div class="page-desc">Bu sayfada tarlada çalışabilir, üretim yapabilir ve kazanç elde edebilirsiniz.</div>
                 </div>
             </div>
@@ -258,8 +258,7 @@
                     <i class="fas fa-tractor"></i>
                 </div>
                 <div class="fh-info">
-                    <div class="fh-name">TARLA İŞLETMESİ</div>
-                    <div class="fh-owner">Sahibi: ...</div>
+                    <div class="fh-name" id="farmNameDisplay">TARLA İŞLETMESİ</div>
                 </div>
             </div>
 
@@ -503,8 +502,8 @@
         }
 
         function renderFactoryHero() {
-            document.querySelector('.fh-name').innerText = factoryData.farm_name || factoryData.name || 'Bilinmeyen Tarla';
-            document.querySelector('.fh-owner').innerText = `Sahibi: ${factoryData.owner_name}`;
+            const farmName = factoryData.name || factoryData.farm_name || 'Bilinmeyen Tarla';
+            document.getElementById('farmNameDisplay').innerText = farmName;
 
             // Icon logic based on type
             const iconBox = document.querySelector('.fh-icon-box');
@@ -522,8 +521,9 @@
         }
 
         function renderStats() {
-            // Owner Name
-            document.getElementById('statOwner').innerText = `${factoryData.owner_id || '?'} - ${factoryData.owner_name || 'Bilinmeyen'}`;
+            // Owner Name with profile link
+            const ownerHtml = `<a href="profile.html?id=${factoryData.user_id || 0}" style="color:var(--accent-cyan); text-decoration:none; font-weight:bold;">#${factoryData.user_id || '?'} - ${factoryData.owner_name || 'Bilinmeyen'}</a>`;
+            document.getElementById('statOwner').innerHTML = ownerHtml;
             
             // Category Name
             const categoryMap = {
@@ -552,7 +552,7 @@
 
             // --- RAW MATERIAL (Tohum Deposu) - Moved to info section ---
             const reserve = factoryData.reserve || 0;
-            const reserveCap = factoryData.reserve_cap || 0;
+            const reserveCap = factoryData.reserve_cap || ((factoryData.level || 1) * 1000);
             document.getElementById('statReserve').innerText = `${reserve.toLocaleString()} / ${reserveCap.toLocaleString()}`;
             
             const currentWorkerCount = factoryWorkers.length;
@@ -573,7 +573,7 @@
             const userArge = userArgeData[farmType] || { level: 0 };
             const argeLevel = userArge.level || 0;
             const argeBonus = argeLevel * 10; // Her seviye %10
-            document.getElementById('efficiencyVal').innerText = `%${argeBonus}`;
+            document.getElementById('efficiencyVal').innerText = `${argeLevel}. Seviye (+%${argeBonus})`;
 
             // Production Calculation Details
             const userSkill = userData ? (userData.education_skill || 0) : 0;
@@ -582,61 +582,60 @@
             
             const calcContainer = document.getElementById('productionCalculation');
             if (calcContainer) {
-                const baseMin = range.min;
-                const baseMax = range.max;
-                const skillBonus = userSkill;
-                const efficiencyBonus = Math.floor((efficiency - 100) * 0.1); // Her %10 verimlilik için +1
-                const argeBonusCalc = argeLevel * 10; // Her AR-GE seviyesi için %10
+                // 1. Temel Üretim: Fabrika seviyesi (1. seviyede 1 üretim, her seviyede +1)
+                const factoryLevel = factoryData.level || 1;
+                const baseProduction = factoryLevel;
                 
-                // Her bonus için adet hesapla
-                const skillMinAmount = Math.round(baseMin * skillBonus / 100 * 10) / 10;
-                const skillMaxAmount = Math.round(baseMax * skillBonus / 100 * 10) / 10;
+                // 2. Eğitim Seviyesi Bonusu: Her 10 katında +1 üretim (1-10: 1, 11-20: 2, 21-30: 3, vb.)
+                const educationBonus = Math.ceil(userSkill / 10);
                 
-                const effMinAmount = Math.round(baseMin * efficiencyBonus / 100 * 10) / 10;
-                const effMaxAmount = Math.round(baseMax * efficiencyBonus / 100 * 10) / 10;
+                // 3. AR-GE Bonusu: 0. seviyede 0, her seviyede +2 üretim
+                const argeBonus = argeLevel * 2;
                 
-                const argeMinAmount = Math.round(baseMin * argeBonusCalc / 100 * 10) / 10;
-                const argeMaxAmount = Math.round(baseMax * argeBonusCalc / 100 * 10) / 10;
+                // Toplam Üretim
+                const totalProduction = baseProduction + educationBonus + argeBonus;
                 
-                // Calculate total production
-                const minEst = baseMin + skillMinAmount + effMinAmount + argeMinAmount;
-                const maxEst = baseMax + skillMaxAmount + effMaxAmount + argeMaxAmount;
+                // Birim Maaş (factoryData.salary kullan, salary_per_unit değil)
+                const unitSalary = factoryData.salary || 0;
+                
+                // Toplam Kazanç = Birim Maaş × Toplam Üretim
+                const totalEarnings = unitSalary * totalProduction;
                 
                 calcContainer.innerHTML = `
                     <div class="info-list-item" style="padding: 6px 0;">
                         <div class="info-left">
                             <i class="fas fa-cubes" style="color: #666; font-size: 0.9rem;"></i>
-                            <div class="info-label" style="font-size: 0.8rem;">Temel Üretim</div>
+                            <div class="info-label" style="font-size: 0.8rem;">Temel Üretim (Seviye ${factoryLevel})</div>
                         </div>
-                        <div style="color: #aaa; font-size: 0.85rem; font-weight: 600;">${baseMin}-${baseMax} Adet</div>
+                        <div style="color: #aaa; font-size: 0.85rem; font-weight: 600;">+${baseProduction} Adet</div>
                     </div>
                     <div class="info-list-item" style="padding: 6px 0;">
                         <div class="info-left">
                             <i class="fas fa-graduation-cap" style="color: var(--accent-cyan); font-size: 0.9rem;"></i>
                             <div class="info-label" style="font-size: 0.8rem;">Eğitim Seviyesi Bonusu</div>
                         </div>
-                        <div style="color: var(--accent-cyan); font-size: 0.85rem; font-weight: 600;">+${skillBonus}% <span style="color: #888;">(+${skillMinAmount}-${skillMaxAmount})</span></div>
-                    </div>
-                    <div class="info-list-item" style="padding: 6px 0;">
-                        <div class="info-left">
-                            <i class="fas fa-gauge-high" style="color: var(--accent-gold); font-size: 0.9rem;"></i>
-                            <div class="info-label" style="font-size: 0.8rem;">Verimlilik Bonusu</div>
-                        </div>
-                        <div style="color: var(--accent-gold); font-size: 0.85rem; font-weight: 600;">+${efficiencyBonus}% <span style="color: #888;">(+${effMinAmount}-${effMaxAmount})</span></div>
+                        <div style="color: var(--accent-cyan); font-size: 0.85rem; font-weight: 600;">+${educationBonus} Adet</div>
                     </div>
                     <div class="info-list-item" style="padding: 6px 0;">
                         <div class="info-left">
                             <i class="fas fa-flask" style="color: var(--accent-green); font-size: 0.9rem;"></i>
-                            <div class="info-label" style="font-size: 0.8rem;">AR-GE Bonusu</div>
+                            <div class="info-label" style="font-size: 0.8rem;">AR-GE Bonusu (${argeLevel}. Seviye)</div>
                         </div>
-                        <div style="color: var(--accent-green); font-size: 0.85rem; font-weight: 600;">+${argeBonusCalc}% <span style="color: #888;">(+${argeMinAmount}-${argeMaxAmount})</span></div>
+                        <div style="color: var(--accent-green); font-size: 0.85rem; font-weight: 600;">+${argeBonus} Adet</div>
                     </div>
-                    <div class="info-list-item" style="padding: 8px 0; border-top: 2px solid #333; margin-top: 5px;">
+                    <div class="info-list-item" style="padding: 6px 0; border-top: 2px solid #333; margin-top: 5px;">
                         <div class="info-left">
                             <i class="fas fa-check-circle" style="color: var(--accent); font-size: 0.9rem;"></i>
                             <div class="info-label" style="font-size: 0.85rem; font-weight: 700;">Toplam Üretim</div>
                         </div>
-                        <div style="color: var(--accent); font-size: 0.9rem; font-weight: 800;">${minEst}-${maxEst} Adet</div>
+                        <div style="color: var(--accent); font-size: 0.9rem; font-weight: 800;">${totalProduction} Adet</div>
+                    </div>
+                    <div class="info-list-item" style="padding: 6px 0;">
+                        <div class="info-left">
+                            <i class="fas fa-coins" style="color: var(--accent-gold); font-size: 0.9rem;"></i>
+                            <div class="info-label" style="font-size: 0.85rem; font-weight: 700;">Toplam Kazanç</div>
+                        </div>
+                        <div style="color: var(--accent-gold); font-size: 0.9rem; font-weight: 800;">${formatMoney(totalEarnings)} ₺</div>
                     </div>
                 `;
             }
@@ -724,7 +723,7 @@
                     // Avatar & Username for everyone
                     let content = `
                         <img src="${worker.avatar || 'uploads/avatars/default.png'}" class="slot-avatar" style="width:40px; height:40px; border-radius:50%; margin-bottom:5px; border:2px solid ${isMe ? 'var(--accent)' : '#444'}">
-                        <div class="slot-text" style="font-size:0.8rem; font-weight:bold; color:#fff; margin-bottom:2px;">${worker.username}</div>
+                        <div class="slot-text" style="font-size:0.75rem; font-weight:bold; color:#fff; margin-bottom:2px;">#${worker.user_id} - ${worker.username}</div>
                         <div class="slot-timer-text" id="timer-${worker.user_id}" style="color:${isMe ? 'var(--accent-cyan)' : '#888'}; font-size:0.9rem;">${remaining}s</div>
                     `;
 
@@ -738,6 +737,17 @@
                     } else {
                         div.classList.add('slot-occupied');
                     }
+                    
+                    // Show production amount at the bottom in yellow
+                    const productionAmount = worker.amount || 0;
+                    const typeMap = {
+                        'wheat': 'Buğday', 'corn': 'Mısır', 'fruit': 'Meyve', 'vegetable': 'Sebze',
+                        'rice': 'Pirinç', 'potato': 'Patates', 'olive': 'Zeytin'
+                    };
+                    const productName = typeMap[factoryData.farm_type] || 'Ürün';
+                    content += `
+                        <div style="margin-top:8px; font-size:0.85rem; font-weight:bold; color:#FFD700;">${productionAmount} Adet ${productName}</div>
+                    `;
                     
                     div.innerHTML = content;
                     grid.appendChild(div);
@@ -854,7 +864,36 @@
                 return;
             }
 
-            document.querySelector('.m-desc').innerHTML = `Bu tarlada çalışmak için <strong>10 Enerji</strong> harcayacaksınız. Karşılığında <strong>${factoryData.salary || 0} ₺</strong> maaş kazanacaksınız.`;
+            // Hesaplamaları yap
+            const userSkill = userData ? (userData.education_skill || 0) : 0;
+            const factoryLevel = factoryData.level || 1;
+            const baseProduction = factoryLevel;
+            const educationBonus = Math.ceil(userSkill / 10);
+            const farmType = factoryData.farm_type || 'wheat';
+            const userArge = userArgeData[farmType] || { level: 0 };
+            const argeLevel = userArge.level || 0;
+            const argeBonus = argeLevel * 2;
+            const totalProduction = baseProduction + educationBonus + argeBonus;
+            const unitSalary = factoryData.salary || 0;
+            const totalEarnings = unitSalary * totalProduction;
+
+            // Get product name
+            const typeMap = {
+                'wheat': 'Buğday', 'corn': 'Mısır', 'fruit': 'Meyve', 'vegetable': 'Sebze',
+                'rice': 'Pirinç', 'potato': 'Patates', 'olive': 'Zeytin'
+            };
+            const productName = typeMap[factoryData.farm_type] || 'Ürün';
+
+            // Calculate seed cost
+            const seedCostMap = {
+                'wheat': 1, 'corn': 1,
+                'fruit': 2, 'vegetable': 2,
+                'rice': 3, 'potato': 3, 'olive': 3
+            };
+            const seedCostPerUnit = seedCostMap[factoryData.farm_type] || 1;
+            const totalSeedCost = totalProduction * seedCostPerUnit;
+
+            document.querySelector('.m-desc').innerHTML = `Çalışmayı onaylıyor musun? <strong>${totalSeedCost} Tohum</strong> ve <strong>10 Enerji</strong> karşılığında <strong>${totalProduction} ${productName}</strong> üretim yapılacak ve <strong>${formatMoney(totalEarnings)} ₺</strong> maaş kazanacaksın.`;
             document.getElementById('workModal').style.display = 'flex';
         }
 
@@ -887,6 +926,10 @@
                 console.error(e);
                 toastr.error('Bir hata oluştu.');
             }
+        }
+
+        function formatMoney(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
         }
 
     </script>

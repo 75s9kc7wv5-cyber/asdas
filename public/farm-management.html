@@ -496,7 +496,7 @@
         /* BİLGİ LİSTESİ */
         .info-list { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; margin-bottom: 20px; }
         .info-list-header { font-size: 0.85rem; color: var(--accent-cyan); font-weight: 700; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-        .info-item { display: flex; align-items: center; padding: 5px 0; }
+        .info-item { display: flex; align-items: center; padding: 6px 0; }
         .info-item:last-child { border-bottom: none; }
         .info-item i { font-size: 1.1rem; width: 28px; }
         .info-item .info-label { flex: 1; font-size: 0.85rem; color: #aaa; }
@@ -592,7 +592,7 @@
                     </div>
                     <div class="info-item">
                         <i class="fas fa-flask" style="color: #e91e63;"></i>
-                        <span class="info-label">Arge</span>
+                        <span class="info-label">Arge Seviyesi</span>
                         <span class="info-value" id="info-efficiency" style="color:var(--accent-gold)">-</span>
                     </div>
                     <div class="info-item">
@@ -804,6 +804,7 @@
         }
 
         let factory = {};
+        let userArgeData = {};
 
         const fmt = (n) => n.toLocaleString('tr-TR');
 
@@ -856,6 +857,13 @@
 
         function loadFactoryData() {
             fetchUser();
+            
+            // Fetch AR-GE Data
+            fetch(`/api/arge/status/${user.id}`)
+                .then(res => res.json())
+                .then(data => { userArgeData = data || {}; })
+                .catch(e => console.error('AR-GE fetch error:', e));
+            
             // Fetch Licenses
             fetch(`/api/licenses/${user.id}`)
                 .then(res => res.json())
@@ -1236,9 +1244,9 @@
             document.getElementById('info-owner').innerText = `${factory.owner_id} - ${factory.owner_name || 'Bilinmiyor'}`;
             document.getElementById('info-level').innerText = factory.level + '. Seviye';
             
-            // İşletme Kategorisi formatı: "(işletme adı) İşletmesi"
+            // İşletme Kategorisi formatı: "(işletme adı) Tarlası"
             const categoryName = factory.farm_type ? resourceMap[factory.farm_type]?.prod.name : '-';
-            document.getElementById('info-product').innerText = categoryName !== '-' ? `${categoryName} İşletmesi` : '-';
+            document.getElementById('info-product').innerText = categoryName !== '-' ? `${categoryName} Tarlası` : '-';
             
             document.getElementById('info-worker').innerText = `${factory.workers}/${factory.maxWorkers}`;
             
@@ -1256,7 +1264,12 @@
             const vaultCapacity = factory.level * 100000;
             document.getElementById('info-vault-capacity').innerText = `${fmt(factory.vault)}/${fmt(vaultCapacity)}`;
             
-            document.getElementById('info-efficiency').innerText = '%' + factory.efficiency;
+            // AR-GE Seviyesi
+            const farmType = factory.farm_type || 'wheat';
+            const userArge = userArgeData[farmType] || { level: 0 };
+            const argeLevel = userArge.level || 0;
+            const argeBonus = argeLevel * 10;
+            document.getElementById('info-efficiency').innerText = `${argeLevel}. Seviye (+%${argeBonus})`;
             
             let t = factory.productionTime;
             let tStr = t < 60 ? `${t} saniye` : (t % 60 === 0 ? `${t/60} dakika` : `${Math.floor(t/60)}dk ${t%60}sn`);
