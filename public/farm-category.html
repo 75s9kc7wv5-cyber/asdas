@@ -330,12 +330,21 @@
                         <div class="f-name">${type.name}</div>
                         <div class=\"count-badge\" style=\"color: var(--accent-gold);\">${owned ? 'Seviye: ' + owned.level : 'Sahip Değilsin'}</div>
                     </div>
-                    <button class="farm-action-btn" style="padding:7px 18px; border:none; border-radius:5px; font-family:'Rajdhani'; font-weight:bold; font-size:0.95rem; cursor:pointer; background:${owned ? 'var(--accent-cyan)' : 'var(--accent-green)'}; color:#fff;">${owned ? 'Yönet' : 'Satın Al'}</button>
+                    <div style="display:flex; gap:8px;">
+                        ${owned ? '<button class="farm-work-btn" style="padding:7px 18px; border:none; border-radius:5px; font-family:\'Rajdhani\'; font-weight:bold; font-size:0.95rem; cursor:pointer; background:var(--accent-gold); color:#000;">Çalış</button>' : ''}
+                        <button class="farm-action-btn" style="padding:7px 18px; border:none; border-radius:5px; font-family:'Rajdhani'; font-weight:bold; font-size:0.95rem; cursor:pointer; background:${owned ? 'var(--accent-cyan)' : 'var(--accent-green)'}; color:${owned ? '#000' : '#fff'};">${owned ? 'Yönet' : 'Satın Al'}</button>
+                    </div>
                 `;
                 
                 const btn = row.querySelector('.farm-action-btn');
                 if (owned) {
                     btn.onclick = () => location.href = `farm-management.html?id=${owned.farm_id}`;
+                    
+                    // Çalış butonunu ekle
+                    const workBtn = row.querySelector('.farm-work-btn');
+                    if (workBtn) {
+                        workBtn.onclick = () => location.href = `farm-work.html?id=${owned.farm_id}`;
+                    }
                 } else {
                     btn.onclick = () => openBuyModal(type);
                 }

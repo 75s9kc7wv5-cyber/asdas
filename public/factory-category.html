@@ -126,12 +126,12 @@
         .type-construction { border-top: none; }
         .type-energy { border-top: none; }
 
-        .type-farm .f-icon-circle { color: var(--accent-green); box-shadow: 0 0 10px rgba(46, 204, 113, 0.3); }
-        .type-animal .f-icon-circle { color: var(--accent-orange); box-shadow: 0 0 10px rgba(230, 126, 34, 0.3); }
-        .type-food .f-icon-circle { color: var(--accent-cyan); box-shadow: 0 0 10px rgba(0, 229, 255, 0.3); }
-        .type-weapon .f-icon-circle { color: var(--accent-red); box-shadow: 0 0 10px rgba(231, 76, 60, 0.3); }
-        .type-construction .f-icon-circle { color: #f1c40f; box-shadow: 0 0 10px rgba(241, 196, 15, 0.3); }
-        .type-energy .f-icon-circle { color: #9b59b6; box-shadow: 0 0 10px rgba(155, 89, 182, 0.3); }
+        .type-farm .f-icon-circle { color: var(--accent-green); box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); }
+        .type-animal .f-icon-circle { color: var(--accent-orange); box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); }
+        .type-food .f-icon-circle { color: var(--accent-cyan); box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); }
+        .type-weapon .f-icon-circle { color: var(--accent-red); box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); }
+        .type-construction .f-icon-circle { color: #f1c40f; box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); }
+        .type-energy .f-icon-circle { color: #9b59b6; box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); }
 
         /* New Categories CSS */
         .category-header { 
@@ -157,7 +157,7 @@
             background: var(--card-bg);
             border: 1px solid #333;
             border-radius: 8px;
-            padding: 15px;
+            padding: 10px;
             display: flex;
             align-items: center;
             gap: 15px;
@@ -561,8 +561,14 @@
                             }
 
                             let managePage = 'factory-management.html';
-                            if (fac.id === 'agricultural') managePage = 'farm-management.html';
-                            else if (fac.id === 'animal') managePage = 'ranch-management.html';
+                            let workPage = 'factory-work.html';
+                            if (fac.id === 'agricultural') {
+                                managePage = 'farm-management.html';
+                                workPage = 'farm-work.html';
+                            } else if (fac.id === 'animal') {
+                                managePage = 'ranch-management.html';
+                                workPage = 'ranch-work.html';
+                            }
 
                             card.innerHTML = `
                                 <div class="f-icon-circle">${iconHtml}</div>
@@ -570,7 +576,10 @@
                                     <div class="f-name">${fac.name}</div>
                                     <div class="count-badge" style="color:var(--accent-gold)">Seviye: ${mine.level}</div>
                                 </div>
-                                <button class="action-btn" style="width:auto; padding:8px 20px; background:var(--accent-cyan); color:#000; font-weight:bold;" onclick="location.href='${managePage}?id=${mine.id}'">YÖNET</button>
+                                <div style="display:flex; gap:8px;">
+                                    <button class="action-btn" style="width:auto; padding:8px 20px; background:var(--accent-gold); color:#000; font-weight:bold;" onclick="location.href='${workPage}?id=${mine.id}'">Çalış</button>
+                                    <button class="action-btn" style="width:auto; padding:8px 20px; background:var(--accent-cyan); color:#000; font-weight:bold;" onclick="location.href='${managePage}?id=${mine.id}'">Yönet</button>
+                                </div>
                             `;
                             list.appendChild(card);
                         });
@@ -586,9 +595,9 @@
                             iconHtml = `<i class="fas ${fac.icon}"></i>`;
                         }
 
-                        let btnHtml = `<button class="action-btn" style="width:auto; padding:8px 20px; background:var(--accent-green); color:#000; font-weight:bold;" onclick="openBuyModal('${fac.id}')">SATIN AL</button>`;
+                        let btnHtml = `<button class="action-btn" style="width:auto; padding:8px 20px; background:var(--accent-green); color:#000; font-weight:bold;" onclick="openBuyModal('${fac.id}')">Satın Al</button>`;
                         if (fac.disabled) {
-                            btnHtml = `<button class="action-btn" style="background:#333; color:#666; cursor:default;">YAKINDA</button>`;
+                            btnHtml = `<button class="action-btn" style="background:#333; color:#666; cursor:default;">Yakında</button>`;
                         }
 
                         card.innerHTML = `

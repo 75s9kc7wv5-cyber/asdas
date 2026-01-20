@@ -326,12 +326,21 @@
                         <div class=\"f-name\">${type.name}</div>
                         <div class=\"count-badge\" style=\"color: var(--accent-gold);\">${owned ? 'Seviye: ' + owned.level : 'Sahip Değilsin'}</div>
                     </div>
-                    <button class=\"ranch-action-btn\" style=\"padding:7px 18px; border:none; border-radius:5px; font-family:'Rajdhani'; font-weight:bold; font-size:0.95rem; cursor:pointer; background:${owned ? 'var(--accent-cyan)' : 'var(--accent-green)'}; color:#000;\">${owned ? 'YÖNET' : 'SATIN AL'}</button>
+                    <div style="display:flex; gap:8px;">
+                        ${owned ? '<button class="ranch-work-btn" style="padding:7px 18px; border:none; border-radius:5px; font-family:\'Rajdhani\'; font-weight:bold; font-size:0.95rem; cursor:pointer; background:var(--accent-gold); color:#000;">Çalış</button>' : ''}
+                        <button class=\"ranch-action-btn\" style=\"padding:7px 18px; border:none; border-radius:5px; font-family:'Rajdhani'; font-weight:bold; font-size:0.95rem; cursor:pointer; background:${owned ? 'var(--accent-cyan)' : 'var(--accent-green)'}; color:#000;\">${owned ? 'Yönet' : 'Satın Al'}</button>
+                    </div>
                 `;
                 
                 const btn = row.querySelector('.ranch-action-btn');
                 if (owned) {
                     btn.onclick = () => location.href = `ranch-management.html?id=${owned.ranch_id}`; // Use ranch_id from DB
+                    
+                    // Çalış butonunu ekle
+                    const workBtn = row.querySelector('.ranch-work-btn');
+                    if (workBtn) {
+                        workBtn.onclick = () => location.href = `ranch-work.html?id=${owned.ranch_id}`;
+                    }
                 } else {
                     btn.onclick = () => openBuyModal(type);
                 }

@@ -427,11 +427,11 @@
                     }
 
                     btnHTML = `
-                        <button class="btn-action btn-manage" onclick="location.href='${managePage}?id=${owned.id}'">YÖNET</button>
-                        <button class="btn-action btn-work" onclick="location.href='${workPage}?id=${owned.id}'" style="margin-top:5px; background:var(--accent-gold); color:#000;">ÇALIŞ</button>
+                        <button class="btn-action btn-work" onclick="location.href='${workPage}?id=${owned.id}'" style="background:var(--accent-gold); color:#000;">Çalış</button>
+                        <button class="btn-action btn-manage" onclick="location.href='${managePage}?id=${owned.id}'" style="margin-top:5px;">Yönet</button>
                     `;
                 } else {
-                    btnHTML = `<button class="btn-action btn-buy" onclick="openBuyModal('${type.id}')">SATIN AL</button>`;
+                    btnHTML = `<button class="btn-action btn-buy" onclick="openBuyModal('${type.id}')">Satın Al</button>`;
                 }
 
                 let iconHTML = '';

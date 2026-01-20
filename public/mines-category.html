@@ -125,9 +125,9 @@
         .type-industrial { border-top: none; }
         .type-precious { border-top: none; }
 
-        .type-basic .m-icon-circle { color: var(--accent-green); box-shadow: 0 0 10px rgba(46, 204, 113, 0.3); }
-        .type-industrial .m-icon-circle { color: var(--accent-orange); box-shadow: 0 0 10px rgba(230, 126, 34, 0.3); }
-        .type-precious .m-icon-circle { color: var(--accent-purple); box-shadow: 0 0 10px rgba(155, 89, 182, 0.3); }
+        .type-basic .m-icon-circle { color: var(--accent-green); box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); }
+        .type-industrial .m-icon-circle { color: var(--accent-orange); box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); }
+        .type-precious .m-icon-circle { color: var(--accent-purple); box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); }
 
         /* New Categories CSS */
         .category-header { 
@@ -150,7 +150,7 @@
             background: var(--card-bg);
             border: 1px solid #333;
             border-radius: 8px;
-            padding: 15px;
+            padding: 10px;
             display: flex;
             align-items: center;
             gap: 15px;
@@ -427,7 +427,7 @@
                     
                     let iconHtml = '';
                     if (mine.img) {
-                        iconHtml = `<img src="${mine.img}" alt="${mine.name}" style="width: 40px; height: 40px; object-fit: contain;">`;
+                        iconHtml = `<img src="${mine.img}" alt="${mine.name}" style="width: 32px; height: 32px; object-fit: contain;">`;
                     } else {
                         iconHtml = `<i class="fas ${mine.icon}"></i>`;
                     }
@@ -625,14 +625,23 @@
                             <div class="m-name">${mine.name}</div>
                             <div class="count-badge" style="color:var(--accent-gold)">${owned ? 'Seviye: ' + owned.level : 'Sahip Değilsin'}</div>
                         </div>
-                        <button class="action-btn" style="width:auto; padding:8px 20px; background:${owned ? 'var(--accent-cyan)' : 'var(--accent-green)'}; color:#000; font-weight:bold;">
-                            ${owned ? 'YÖNET' : 'SATIN AL'}
-                        </button>
+                        <div style="display:flex; gap:8px;">
+                            ${owned ? '<button class="mine-work-btn" style="padding:8px 20px; border:none; border-radius:5px; font-family:\'Rajdhani\'; font-weight:bold; font-size:0.95rem; cursor:pointer; background:var(--accent-gold); color:#000;">Çalış</button>' : ''}
+                            <button class="action-btn" style="width:auto; padding:8px 20px; background:${owned ? 'var(--accent-cyan)' : 'var(--accent-green)'}; color:#000; font-weight:bold; font-size:0.95rem; border:none; border-radius:5px; font-family:'Rajdhani'; cursor:pointer;">
+                                ${owned ? 'Yönet' : 'Satın Al'}
+                            </button>
+                        </div>
                     `;
 
-                    const btn = card.querySelector('button');
+                    const btn = card.querySelector('.action-btn');
                     if (owned) {
                         btn.onclick = () => location.href = `mine-management.html?id=${owned.id}`;
+                        
+                        // Çalış butonunu ekle
+                        const workBtn = card.querySelector('.mine-work-btn');
+                        if (workBtn) {
+                            workBtn.onclick = () => location.href = `mine-work.html?id=${owned.id}`;
+                        }
                     } else {
                         btn.onclick = () => openBuyModal(mine.id);
                     }

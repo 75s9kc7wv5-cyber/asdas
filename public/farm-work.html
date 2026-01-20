@@ -335,7 +335,7 @@
                 <div class="info-list-item">
                     <div class="info-left">
                         <i class="fas fa-flask" style="color: var(--accent-cyan); font-size: 1rem;"></i>
-                        <div class="info-label" style="font-size: 0.8rem;">AR-GE Seviyesi</div>
+                        <div class="info-label" style="font-size: 0.8rem;">AR-GE Seviyesi (Sahibin)</div>
                     </div>
                     <div class="info-value text-cyan" style="font-size: 0.85rem;" id="efficiencyVal">%0</div>
                 </div>
@@ -371,7 +371,7 @@
 
             <!-- LOGLAR -->
             <div class="log-container">
-                <div class="sh-title" style="font-size:0.8rem; margin-bottom:10px;">ÜRETİM KAYITLARI</div>
+                <div class="sh-title" style="font-size:0.8rem; margin-bottom:10px;">Üretim Geçmişi</div>
                 <div class="log-list" id="logList">
                     <div class="log-item">
                         <span>Ahmet Y. üretim yaptı (+5 Buğday)</span>
@@ -427,7 +427,6 @@
             }
 
             await loadUserData();
-            await loadUserArgeData();
             await loadFactoryData();
             
             // Auto-refresh every 10 seconds
@@ -454,21 +453,20 @@
             }
         }
 
-        async function loadUserArgeData() {
-            const user = JSON.parse(localStorage.getItem('simWorldUser'));
-            if (!user) return;
+        async function loadOwnerArgeData(ownerId) {
+            if (!ownerId) return;
             
             try {
-                const res = await fetch(`/api/arge/status/${user.id}`);
+                const res = await fetch(`/api/arge/status/${ownerId}`);
                 if (!res.ok) {
-                    console.warn('AR-GE verisi alınamadı, varsayılan değerler kullanılacak');
+                    console.warn('Tarla sahibinin AR-GE verisi alınamadı, varsayılan değerler kullanılacak');
                     userArgeData = {};
                     return;
                 }
                 const data = await res.json();
                 userArgeData = data || {};
             } catch (e) {
-                console.warn('AR-GE verisi yüklenemedi:', e);
+                console.warn('Tarla sahibinin AR-GE verisi yüklenemedi:', e);
                 userArgeData = {};
             }
         }
@@ -486,7 +484,10 @@
 
                 factoryData = response.farm;
                 factoryWorkers = response.workers || [];
-                factoryLogs = response.logs || [];
+                factoryLogs = (response.logs || []).slice(0, 10);
+
+                // Tarla sahibinin AR-GE verisini yükle
+                await loadOwnerArgeData(factoryData.user_id);
 
                 renderFactoryHero();
                 renderStats();
@@ -568,11 +569,11 @@
                 document.getElementById('statCreated').innerText = 'Bilinmiyor';
             }
             
-            // AR-GE Level - Get from user's arge data
+            // AR-GE Level - Tarla sahibinin AR-GE verisi
             const farmType = factoryData.farm_type || 'wheat';
-            const userArge = userArgeData[farmType] || { level: 0 };
-            const argeLevel = userArge.level || 0;
-            const argeBonus = argeLevel * 10; // Her seviye %10
+            const ownerArge = userArgeData[farmType] || { level: 0 };
+            const argeLevel = ownerArge.level || 0;
+            const argeBonus = argeLevel * 10; // Her seviye %10 (Frontend gösterimi)
             document.getElementById('efficiencyVal').innerText = `${argeLevel}. Seviye (+%${argeBonus})`;
 
             // Production Calculation Details
@@ -678,17 +679,22 @@
                 
                 // Format time
                 const date = new Date(log.created_at);
-                const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const timeStr = date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
                 
                 const amount = (log.amount !== undefined && log.amount !== null) ? log.amount : '?';
+                const avatarUrl = log.avatar || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
                 
                 div.innerHTML = `
-                    <span>
-                        <a href="profile.html?id=${log.user_id}" style="color:var(--accent-cyan); text-decoration:none; font-weight:bold;">
-                            #${log.user_id} - ${log.username}
-                        </a>
-                        <span style="color:#aaa"> <span style="color:var(--accent-gold); font-weight:bold;">+${amount}</span> ${productName} üretimi yaptı</span>
-                    </span>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <img src="${avatarUrl}" style="width:24px; height:24px; border-radius:50%; object-fit:cover; border:1px solid #333;">
+                        <span>
+                            <a href="profile.html?id=${log.user_id}" style="color:var(--accent-cyan); text-decoration:none; font-weight:bold;">
+                                #${log.user_id} - ${log.username}
+                            </a>
+                            <span style="color:var(--accent-green); font-weight:bold;"> (+${amount} ${productName})</span>
+                            <span style="color:#aaa"> üretti</span>
+                        </span>
+                    </div>
                     <span class="log-time">${timeStr}</span>
                 `;
                 logList.appendChild(div);
@@ -870,9 +876,10 @@
             const baseProduction = factoryLevel;
             const educationBonus = Math.ceil(userSkill / 10);
             const farmType = factoryData.farm_type || 'wheat';
-            const userArge = userArgeData[farmType] || { level: 0 };
-            const argeLevel = userArge.level || 0;
-            const argeBonus = argeLevel * 2;
+            // Tarla sahibinin AR-GE bonusunu kullan
+            const ownerArge = userArgeData[farmType] || { level: 0 };
+            const argeLevel = ownerArge.level || 0;
+            const argeBonus = argeLevel * 2; // Backend ile aynı formül
             const totalProduction = baseProduction + educationBonus + argeBonus;
             const unitSalary = factoryData.salary || 0;
             const totalEarnings = unitSalary * totalProduction;

@@ -373,11 +373,11 @@
                 let btnHTML = '';
                 if (owned) {
                     btnHTML = `
-                        <button class="btn-action btn-manage" onclick="location.href='mine-management.html?id=${owned.id}'">YÖNET</button>
-                        <button class="btn-action btn-work" onclick="location.href='mine-work.html?id=${owned.id}'" style="margin-top:5px; background:var(--accent-gold); color:#000;">ÇALIŞ</button>
+                        <button class="btn-action btn-work" onclick="location.href='mine-work.html?id=${owned.id}'" style="background:var(--accent-gold); color:#000;">Çalış</button>
+                        <button class="btn-action btn-manage" onclick="location.href='mine-management.html?id=${owned.id}'" style="margin-top:5px;">Yönet</button>
                     `;
                 } else {
-                    btnHTML = `<button class="btn-action btn-buy" onclick="openBuyModal('${type.id}')">SATIN AL</button>`;
+                    btnHTML = `<button class="btn-action btn-buy" onclick="openBuyModal('${type.id}')">Satın Al</button>`;
                 }
 
                 card.innerHTML = `
