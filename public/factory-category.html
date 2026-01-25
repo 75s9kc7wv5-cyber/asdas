@@ -80,6 +80,51 @@
         }
         .section-desc { font-size: 0.85rem; color: #999; font-weight: 500; }
 
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
+        }
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-cyan);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        .back-btn:hover {
+            background: #2a2a2a;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+        }
+        .page-header-content {
+            flex: 1;
+        }
+        .page-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #fff;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .page-subtitle {
+            font-size: 0.85rem;
+            color: #999;
+            font-weight: 500;
+        }
+
         /* FACTORY GRID */
         .factory-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; animation: slideUp 0.6s ease; }
 
@@ -265,10 +310,15 @@
         <!-- Header removed, injected by header-manager.js -->
 
         <main>
-            <div class="section-header">
-                <div class="header-badge">
-                    <div class="section-title"><i class="fas fa-industry" style="color:var(--accent-cyan)"></i> FABRİKALAR</div>
-                    <div class="section-desc">Fabrika kategorilerini inceleyebilir veya sahip olduğun fabrikaları görebilirsin.</div>
+            <div class="page-header">
+                <button class="back-btn" onclick="window.history.back()">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="page-header-content">
+                    <div class="page-title">
+                        FABRİKALAR
+                    </div>
+                    <div class="page-subtitle">Fabrika kategorilerini inceleyebilir veya sahip olduğun fabrikaları görebilirsin.</div>
                 </div>
             </div>
             <div class="tabs-container">

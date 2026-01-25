@@ -54,45 +54,74 @@
             padding-bottom: 80px;
         }
 
-        .page-header { text-align: center; margin-bottom: 25px; animation: fadeIn 0.5s; }
-        .header-badge {
-            display: inline-block;
-            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(10,10,10,0.95) 100%);
-            border: 1px solid #333;
-            border-top: 3px solid var(--accent-purple);
-            padding: 15px 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            position: relative;
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
         }
-        .header-badge::after {
-            content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
-            width: 60%; height: 2px; background: radial-gradient(circle, var(--accent-purple) 0%, transparent 100%);
-            opacity: 0.5;
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-cyan);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
         }
-        .page-title { 
-            font-size: 1.4rem; font-weight: 800; letter-spacing: 2px; color: #fff; margin-bottom: 5px; 
-            text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 10px;
-            text-shadow: 0 0 15px rgba(155, 89, 182, 0.4);
+        .back-btn:hover {
+            background: #2a2a2a;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
         }
-        .page-desc { font-size: 0.85rem; color: #999; font-weight: 500; }
+        .page-header-content {
+            flex: 1;
+            text-align: left;
+        }
+        .page-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #fff;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .page-subtitle {
+            font-size: 0.85rem;
+            color: #999;
+            font-weight: 500;
+        }
 
         /* TABS */
-        .tabs { display: flex; border-bottom: 1px solid #333; margin-bottom: 20px; }
-        .tab-btn {
-            flex: 1;
-            background: none;
-            border: none;
-            padding: 15px;
-            color: #888;
-            font-family: 'Rajdhani';
-            font-weight: bold;
-            font-size: 1rem;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: 0.3s;
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
+        .tab-btn { 
+            flex: 1; 
+            padding: 12px; 
+            border: none; 
+            background: transparent; 
+            color: #777; 
+            font-family: 'Rajdhani'; 
+            font-weight: bold; 
+            cursor: pointer; 
+            border-radius: 6px; 
+            transition: all 0.3s;
+            font-size: 0.95rem;
         }
-        .tab-btn.active { color: var(--accent-cyan); border-bottom-color: var(--accent-cyan); }
+        .tab-btn.active { 
+            background: #222; 
+            color: var(--accent-cyan); 
+            border: 1px solid var(--accent-cyan); 
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.15); 
+        }
+        .tab-btn:hover:not(.active) { background: #1a1a1a; color: #999; }
         .tab-content { display: none; animation: fadeIn 0.4s; }
         .tab-content.active { display: block; }
 
@@ -187,6 +216,11 @@
         .btn-cancel { background: #333; color: #fff; }
         .btn-confirm:disabled { background: #444; color: #888; cursor: not-allowed; }
 
+        .count-badge { 
+            background: #222; padding: 3px 8px; border-radius: 4px; border: 1px solid #444;
+            display: inline-block; font-size: 0.8rem; color: #aaa; font-weight: 600;
+        }
+
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         /* Colors for Mines */
@@ -209,9 +243,14 @@
 
         <main>
             <div class="page-header">
-                <div class="header-badge">
-                    <div class="page-title"><i class="fas fa-gem" style="color:var(--accent-purple)"></i> MADENLER</div>
-                    <div class="page-desc">Şehirdeki madenleri görüntüle veya kendi madenlerini yönet.</div>
+                <button class="back-btn" onclick="window.history.back()">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="page-header-content">
+                    <div class="page-title">
+                        MADENLER
+                    </div>
+                    <div class="page-subtitle">Şehirdeki madenleri görüntüle veya kendi madenlerini yönet.</div>
                 </div>
             </div>
 
@@ -380,13 +419,20 @@
                     btnHTML = `<button class="btn-action btn-buy" onclick="openBuyModal('${type.id}')">Satın Al</button>`;
                 }
 
+                let descHTML = '';
+                if (owned) {
+                    descHTML = `<span class="count-badge" style="color: var(--accent-gold);">Seviye: ${owned.level || 1}</span>`;
+                } else {
+                    descHTML = `Gereken Eğitim: Lv. ${type.reqLevel}`;
+                }
+
                 card.innerHTML = `
                     <div class="mine-icon ${type.color}">
                         <i class="fas ${type.icon}"></i>
                     </div>
                     <div class="mine-info">
-                        <div class="mine-name">${type.name}</div>
-                        <div class="mine-desc">Gereken Eğitim: Lv. ${type.reqLevel}</div>
+                        <div class="mine-name">${owned && owned.name ? owned.name : type.name}</div>
+                        <div class="mine-desc">${descHTML}</div>
                     </div>
                     <div>${btnHTML}</div>
                 `;

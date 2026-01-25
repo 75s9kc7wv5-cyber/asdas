@@ -94,22 +94,74 @@
             font-weight: 500;
         }
 
-        /* TABS */
-        .tabs { display: flex; border-bottom: 1px solid #333; margin-bottom: 20px; }
-        .tab-btn {
-            flex: 1;
-            background: none;
-            border: none;
-            padding: 15px;
-            color: #888;
-            font-family: 'Rajdhani';
-            font-weight: bold;
-            font-size: 1rem;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: 0.3s;
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
         }
-        .tab-btn.active { color: var(--accent-cyan); border-bottom-color: var(--accent-cyan); }
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-cyan);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        .back-btn:hover {
+            background: #2a2a2a;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+        }
+        .page-header-content {
+            flex: 1;
+            text-align: left;
+        }
+        .page-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #fff;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .page-subtitle {
+            font-size: 0.85rem;
+            color: #999;
+            font-weight: 500;
+        }
+
+        /* TABS */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
+        .tab-btn { 
+            flex: 1; 
+            padding: 12px; 
+            border: none; 
+            background: transparent; 
+            color: #777; 
+            font-family: 'Rajdhani'; 
+            font-weight: bold; 
+            cursor: pointer; 
+            border-radius: 6px; 
+            transition: all 0.3s;
+            font-size: 0.95rem;
+        }
+        .tab-btn.active { 
+            background: #222; 
+            color: var(--accent-cyan); 
+            border: 1px solid var(--accent-cyan); 
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.15); 
+        }
+        .tab-btn:hover:not(.active) { background: #1a1a1a; color: #999; }
         .tab-content { display: none; animation: fadeIn 0.4s; }
         .tab-content.active { display: block; }
 
@@ -143,7 +195,7 @@
         }
         
         .mine-info { flex: 1; }
-        .mine-name { font-size: 1.1rem; font-weight: bold; color: #fff; }
+        .mine-name { font-size: 0.85rem; font-weight: bold; color: #fff; }
         .mine-desc { font-size: 0.8rem; color: #888; }
         .mine-stats { font-size: 0.75rem; color: var(--accent-green); margin-top: 3px; }
 
@@ -210,6 +262,11 @@
         .btn-cancel { background: #333; color: #fff; }
         .btn-confirm:disabled { background: #444; color: #888; cursor: not-allowed; }
 
+        .count-badge { 
+            background: #222; padding: 3px 8px; border-radius: 4px; border: 1px solid #444;
+            display: inline-block; font-size: 0.7rem; color: #aaa; font-weight: 600;
+        }
+
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         /* Colors */
@@ -239,9 +296,16 @@
         <!-- Header injected by header-manager.js -->
 
         <main>
-        <div class="header-badge">
-            <h1><i class="fas fa-industry"></i> Fabrikalar</h1>
-            <p>Endüstriyel üretim ve yönetim merkezi</p>
+        <div class="page-header">
+            <button class="back-btn" onclick="window.history.back()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="page-header-content">
+                <div class="page-title">
+                    FABRİKALAR
+                </div>
+                <div class="page-subtitle">Endüstriyel üretim ve yönetim merkezi</div>
+            </div>
         </div>
 
             <div class="tabs">
@@ -441,13 +505,20 @@
                     iconHTML = `<i class="fas ${type.icon}"></i>`;
                 }
 
+                let descHTML = '';
+                if (owned) {
+                    descHTML = `<span class="count-badge" style="color: var(--accent-gold);">Seviye: ${owned.level || 1}</span>`;
+                } else {
+                    descHTML = `<span class="count-badge" style="color: var(--accent-gold);">Gereken Eğitim: Lv. ${type.reqLevel}</span>`;
+                }
+
                 card.innerHTML = `
                     <div class="mine-icon ${type.color}">
                         ${iconHTML}
                     </div>
                     <div class="mine-info">
                         <div class="mine-name">${type.name}</div>
-                        <div class="mine-desc">Gereken Eğitim: Lv. ${type.reqLevel}</div>
+                        <div class="mine-desc">${descHTML}</div>
                     </div>
                     <div>${btnHTML}</div>
                 `;

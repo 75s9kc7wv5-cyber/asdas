@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^sudo service mysql start$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

@@ -87,21 +87,74 @@
             color: #aaa;
             font-weight: 500;
         }
-        .tabs { display: flex; border-bottom: 1px solid #333; margin-bottom: 20px; }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
+        }
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-cyan);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        .back-btn:hover {
+            background: #2a2a2a;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+        }
+        .page-header-content {
+            flex: 1;
+            text-align: left;
+        }
+        .page-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #fff;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .page-subtitle {
+            font-size: 0.85rem;
+            color: #999;
+            font-weight: 500;
+        }
+
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
         .tab-btn {
             flex: 1;
-            background: none;
+            padding: 12px;
             border: none;
-            padding: 15px;
-            color: #888;
+            background: transparent;
+            color: #777;
             font-family: 'Rajdhani';
             font-weight: bold;
-            font-size: 1rem;
             cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: 0.3s;
+            border-radius: 6px;
+            transition: all 0.3s;
+            font-size: 0.95rem;
         }
-        .tab-btn.active { color: var(--accent-cyan); border-bottom-color: var(--accent-cyan); }
+        .tab-btn.active { 
+            background: #222; 
+            color: var(--accent-cyan); 
+            border: 1px solid var(--accent-cyan); 
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.15); 
+        }
+        .tab-btn:hover:not(.active) { background: #1a1a1a; color: #999; }
         .tab-content { display: none; animation: fadeIn 0.4s; }
         .tab-content.active { display: block; }
         .mine-card {
@@ -190,6 +243,10 @@
         .btn-confirm { background: var(--accent-green); color: #000; }
         .btn-cancel { background: #333; color: #fff; }
         .btn-confirm:disabled { background: #444; color: #888; cursor: not-allowed; }
+        .count-badge { 
+            background: #222; padding: 3px 8px; border-radius: 4px; border: 1px solid #444;
+            display: inline-block; font-size: 0.8rem; color: #aaa; font-weight: 600;
+        }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
@@ -197,9 +254,16 @@
     <div class="game-container">
         <!-- Header injected by header-manager.js -->
         <main>
-        <div class="header-badge">
-            <h1><i class="fas fa-seedling"></i> Tarlalar</h1>
-            <p>Tarımsal üretim ve yönetim merkezi</p>
+        <div class="page-header">
+            <button class="back-btn" onclick="window.history.back()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="page-header-content">
+                <div class="page-title">
+                    TARLALAR
+                </div>
+                <div class="page-subtitle">Tarımsal üretim ve yönetim merkezi</div>
+            </div>
         </div>
             <div class="tabs">
                 <button class="tab-btn active" onclick="switchTab('city')">Şehirdeki Tarlalar</button>
@@ -326,13 +390,20 @@
                     iconHTML = `<i class="fas fa-tractor"></i>`;
                 }
                 
+                let descHTML = '';
+                if (owned) {
+                    descHTML = `<span class="count-badge" style="color: var(--accent-gold);">Seviye: ${owned.level || 1}</span>`;
+                } else {
+                    descHTML = `<span class="count-badge" style="color: var(--accent-gold);">Gereken Lisans: Lv. ${type.license_req}</span>`;
+                }
+                
                 card.innerHTML = `
                     <div class="mine-icon">
                         ${iconHTML}
                     </div>
                     <div class="mine-info">
                         <div class="mine-name">${owned && owned.name ? owned.name : type.name}</div>
-                        <div class="mine-desc">Gereken Lisans: Lv. ${type.license_req}</div>
+                        <div class="mine-desc">${descHTML}</div>
                     </div>
                     <div>${btnHTML}</div>
                 `;
