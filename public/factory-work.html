@@ -52,6 +52,48 @@
         /* MAIN */
         main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
 
+        /* PAGE HEADER */
+        .page-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .back-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.2rem;
+        }
+        .back-btn:hover {
+            background: var(--bg-card);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .page-title-box {
+            flex: 1;
+        }
+        .page-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .page-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.3;
+        }
+
         /* FABRİKA KARTI (HERO) */
         .factory-hero {
             background: linear-gradient(135deg, rgba(231, 76, 60, 0.15), var(--bg-card));
@@ -69,12 +111,6 @@
         
         .fh-info { flex: 1; }
         .fh-name { font-size: 1.2rem; font-weight: 800; color: #fff; margin-bottom: 2px; text-transform: uppercase; }
-        .fh-owner { font-size: 0.8rem; color: var(--text-muted); }
-        .fh-level { 
-            position: absolute; top: 15px; right: 15px; 
-            background: var(--accent); color: #000; font-weight: 700; 
-            padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;
-        }
 
         /* İSTATİSTİKLER (GRID) */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px; }
@@ -90,6 +126,49 @@
         .text-gold { color: var(--accent-gold); }
         .text-green { color: var(--accent-green); }
         .text-cyan { color: var(--accent-cyan); }
+
+        /* INFO LIST ITEMS */
+        .info-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            transition: all 0.2s;
+        }
+        .info-list-item:hover {
+            opacity: 0.8;
+        }
+        .info-left {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+        .info-left i,
+        .info-left img {
+            width: 28px;
+            min-width: 28px;
+            text-align: center;
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        .info-label {
+            color: #aaa;
+            font-size: 0.85rem;
+            font-weight: 500;
+            flex: 1;
+        }
+        .info-value {
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-align: right;
+        }
+        .info-note {
+            font-size: 0.65rem;
+            color: #666;
+            margin-top: 2px;
+            display: block;
+        }
 
         /* ÜRETİM SLOTLARI */
         .section-header { 
@@ -123,6 +202,7 @@
         .slot-working { border-color: var(--accent); background: rgba(231, 76, 60, 0.05); cursor: default; }
         .slot-working .slot-icon { color: var(--accent); animation: pulse 1.5s infinite; font-size: 1.5rem; margin-bottom: 5px; }
         .slot-timer-text { font-size: 0.9rem; font-weight: 800; color: #fff; margin-bottom: 5px; }
+        .slot-product-text { font-size: 0.85rem; color: var(--accent-gold); font-weight: 600; margin-top: 5px; }
         
         /* Progress Bar */
         .slot-progress-bg { 
@@ -167,57 +247,113 @@
        
 
         <main>
+            <!-- PAGE HEADER -->
+            <div class="page-header">
+                <button class="back-btn" onclick="window.history.back()">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="page-title-box">
+                    <div class="page-title">Fabrika Üretim</div>
+                    <div class="page-desc">Bu sayfada fabrikada çalışabilir, üretim yapabilir ve kazanç elde edebilirsiniz.</div>
+                </div>
+            </div>
+
             <!-- FABRİKA KARTI -->
             <div class="factory-hero">
                 <div class="fh-icon-box">
                     <i class="fas fa-industry"></i>
                 </div>
                 <div class="fh-info">
-                    <div class="fh-name">DEMİR ÇELİK A.Ş.</div>
-                    <div class="fh-owner">Sahibi: Lord Enes</div>
+                    <div class="fh-name" id="factoryNameDisplay">FABRİKA</div>
                 </div>
-                <div class="fh-level">Lv. 3</div>
             </div>
 
             <!-- İSTATİSTİKLER -->
-            <div class="stats-grid">
-                <div class="stat-card" style="grid-column: span 2;">
-                    <div class="stat-label">ÜRETİLEN ÜRÜN</div>
-                    <div class="stat-val text-gold" id="statProduct">Yükleniyor...</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">ÜRETİM MAAŞI</div>
-                    <div class="stat-val text-gold" id="statSalary">2.500 ₺</div>
-                    <div style="font-size: 0.6rem; color: #666; margin-top: 2px;">(Üretilen * Maaş = Kazanç)</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">ÜRETİM SÜRESİ</div>
-                    <div class="stat-val text-cyan" id="statTime">60 Sn</div>
+            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                <div style="font-size: 0.9rem; font-weight: 700; color: var(--accent); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #333; padding-bottom: 8px;">
+                    <i class="fas fa-info-circle"></i> FABRİKA BİLGİLERİ
                 </div>
                 
-                <!-- Dynamic Raw Material Stats -->
-                <div id="rawMaterialStats" style="display: contents;">
-                    <div class="stat-card">
-                        <div class="stat-label">HAMMADDE DEPOSU</div>
-                        <div class="stat-val" id="statReserve">850 / 1000</div>
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-user-tie" style="color: var(--accent-cyan); font-size: 1rem;"></i>
+                        <div class="info-label" style="font-size: 0.8rem;">İşletme Sahibi</div>
                     </div>
+                    <div class="info-value text-cyan" style="font-size: 0.85rem;" id="statOwner">Yükleniyor...</div>
                 </div>
+                
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-box-open" style="color: var(--accent-green); font-size: 1rem;"></i>
+                        <div class="info-label" style="font-size: 0.8rem;">Üretilen Ürün</div>
+                    </div>
+                    <div class="info-value text-green" style="font-size: 0.85rem;" id="statProduct">Yükleniyor...</div>
+                </div>
+                
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-layer-group" style="color: var(--accent-gold); font-size: 1rem;"></i>
+                        <div class="info-label" style="font-size: 0.8rem;">İşletme Kategorisi</div>
+                    </div>
+                    <div class="info-value text-gold" style="font-size: 0.85rem;" id="statCategory">Yükleniyor...</div>
+                </div>
+                
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-arrow-up" style="color: var(--accent-green); font-size: 1rem;"></i>
+                        <div class="info-label" style="font-size: 0.8rem;">İşletme Seviyesi</div>
+                    </div>
+                    <div class="info-value text-green" style="font-size: 0.85rem;" id="statLevel">Seviye 1</div>
+                </div>
+                
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-users" style="color: var(--accent-green); font-size: 1rem;"></i>
+                        <div class="info-label" style="font-size: 0.8rem;">İşçi Kapasitesi</div>
+                    </div>
+                    <div class="info-value text-green" style="font-size: 0.85rem;" id="statWorkers">0 / 5</div>
+                </div>
+                
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-clock" style="color: var(--accent-cyan); font-size: 1rem;"></i>
+                        <div class="info-label" style="font-size: 0.8rem;">Üretim Hızı</div>
+                    </div>
+                    <div class="info-value text-cyan" style="font-size: 0.85rem;" id="statTime">60 Sn</div>
+                </div>
+                
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-coins" style="color: var(--accent-gold); font-size: 1rem;"></i>
+                        <div class="info-label" style="font-size: 0.8rem;">Birim Maaş</div>
+                    </div>
+                    <div class="info-value text-gold" style="font-size: 0.85rem;" id="statSalary">0 ₺/Adet</div>
+                </div>
+                
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-flask" style="color: var(--accent-cyan); font-size: 1rem;"></i>
+                        <div class="info-label" style="font-size: 0.8rem;">AR-GE Seviyesi (Sahibin)</div>
+                    </div>
+                    <div class="info-value text-cyan" style="font-size: 0.85rem;" id="efficiencyVal">%0</div>
+                </div>
+                
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-calendar-plus" style="color: var(--text-muted); font-size: 1rem;"></i>
+                        <div class="info-label" style="font-size: 0.8rem;">Kuruluş Tarihi</div>
+                    </div>
+                    <div class="info-value" style="font-size: 0.85rem; color: var(--text-muted);" id="statCreated">-</div>
+                </div>
+            </div>
 
-                <!-- Dynamic Product Stats -->
-                <div id="productStats" style="display: contents;">
+            <!-- ÜRETİM HESAPLAMA DETAYLARI -->
+            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                <div style="font-size: 0.9rem; font-weight: 700; color: var(--accent-cyan); margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-calculator"></i> ÜRETİM HESAPLAMA
                 </div>
-
-                <div class="stat-card">
-                    <div class="stat-label">İŞÇİ KAPASİTESİ</div>
-                    <div class="stat-val text-green" id="statWorkers">120 / 500</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">VERİMLİLİK</div>
-                    <div class="stat-val text-gold" id="efficiencyVal">%100</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">TAHMİNİ ÜRETİM</div>
-                    <div class="stat-val text-cyan" id="estProduction">5-10 Adet</div>
+                <div id="productionCalculation">
+                    <!-- JavaScript ile doldurulacak -->
                 </div>
             </div>
 
@@ -285,6 +421,7 @@
         let factoryWorkers = [];
         let factoryLogs = [];
         let userData = null;
+        let userArgeData = {};
         let selectedSlotId = null;
         let productionInterval = null;
         let activeTimers = {};
@@ -363,6 +500,23 @@
             }
         }
 
+        async function loadOwnerArgeData(ownerId) {
+            if (!ownerId) return;
+            
+            try {
+                const res = await fetch(`/api/arge/status/${ownerId}`);
+                if (!res.ok) {
+                    console.warn('AR-GE verisi alınamadı');
+                    return;
+                }
+                const data = await res.json();
+                userArgeData = data || {};
+            } catch (e) {
+                console.warn('Fabrika sahibinin AR-GE verisi yüklenemedi:', e);
+                userArgeData = {};
+            }
+        }
+
         async function loadFactoryData() {
             try {
                 const user = JSON.parse(localStorage.getItem('simWorldUser'));
@@ -378,6 +532,9 @@
                 factoryWorkers = response.workers || [];
                 factoryLogs = response.logs || [];
 
+                // Fabrika sahibinin AR-GE verisini yükle
+                await loadOwnerArgeData(factoryData.user_id);
+
                 renderFactoryHero();
                 renderStats();
                 renderSlots();
@@ -389,15 +546,17 @@
 
         function updateUserHeader() {
             if (userData) {
-                document.getElementById('userMoney').innerText = userData.money.toLocaleString();
+                const moneyEl = document.getElementById('userMoney');
+                if (moneyEl) {
+                    moneyEl.innerText = userData.money.toLocaleString();
+                }
             }
         }
 
         function renderFactoryHero() {
-            document.querySelector('.fh-name').innerText = factoryData.name || 'Bilinmeyen Fabrika';
-            document.querySelector('.fh-owner').innerText = `Sahibi: ${factoryData.owner_name}`;
-            document.querySelector('.fh-level').innerText = `Lv. ${factoryData.level}`;
-            
+            const factoryName = factoryData.name || 'Bilinmeyen Fabrika';
+            document.getElementById('factoryNameDisplay').innerText = factoryName;
+
             // Icon logic based on type
             const iconBox = document.querySelector('.fh-icon-box');
             let iconClass = 'fa-industry';
@@ -453,121 +612,126 @@
         }
 
         function renderStats() {
-            // Resource Map for Raw Materials
-            const resourceMap = {
-                'lumber': { raw: [{ name: 'Odun', key: 'wood' }, { name: 'Elektrik', key: 'energy' }] },
-                'brick': { raw: [{ name: 'Taş', key: 'stone' }, { name: 'Elektrik', key: 'energy' }] },
-                'glass': { raw: [{ name: 'Kum', key: 'sand' }, { name: 'Elektrik', key: 'energy' }] },
-                'concrete': { raw: [{ name: 'Kum', key: 'sand' }, { name: 'Taş', key: 'stone' }, { name: 'Elektrik', key: 'energy' }] },
-                'steel': { raw: [{ name: 'Demir', key: 'iron' }, { name: 'Kömür', key: 'coal' }, { name: 'Elektrik', key: 'energy' }] },
-                'bakery': { raw: [{ name: 'Buğday', key: 'wheat' }, { name: 'Yumurta', key: 'egg' }, { name: 'Meyve', key: 'fruit' }, { name: 'Elektrik', key: 'energy' }] },
-                'ready_food': { raw: [{ name: 'Sebze', key: 'vegetable' }, { name: 'Meyve', key: 'fruit' }, { name: 'Et', key: 'meat' }, { name: 'Zeytinyağı', key: 'olive_oil' }, { name: 'Pirinç', key: 'rice' }, { name: 'Patates', key: 'potato' }, { name: 'Elektrik', key: 'energy' }] },
-                'olive_oil': { raw: [{ name: 'Zeytin', key: 'olive' }, { name: 'Elektrik', key: 'energy' }] },
-                'sweets': { raw: [{ name: 'Bal', key: 'honey' }, { name: 'Buğday', key: 'wheat' }, { name: 'Meyve', key: 'fruit' }, { name: 'Yumurta', key: 'egg' }, { name: 'Zeytinyağı', key: 'olive_oil' }, { name: 'Elektrik', key: 'energy' }] },
-                'wind_turbine': { raw: [] },
-                'solar_plant': { raw: [] },
-                'coal_plant': { raw: [{ name: 'Kömür', key: 'coal' }] },
-                'nuclear_plant': { raw: [{ name: 'Uranyum', key: 'uranium' }] }
+            // Owner Name with profile link
+            const ownerName = factoryData.owner_name || factoryData.owner_username || factoryData.username || 'Bilinmeyen';
+            const ownerId = factoryData.user_id || factoryData.owner_id || 0;
+            const ownerHtml = `<a href="profile.html?id=${ownerId}" style="color:var(--accent-cyan); text-decoration:none; font-weight:bold;">#${ownerId} - ${ownerName}</a>`;
+            document.getElementById('statOwner').innerHTML = ownerHtml;
+            
+            // Category Name
+            const categoryMap = {
+                'lumber': 'Tahta Fabrikası', 'brick': 'Tuğla Fabrikası', 'glass': 'Cam Fabrikası',
+                'concrete': 'Çimento Fabrikası', 'steel': 'Çelik Fabrikası', 
+                'bakery': 'Fırın', 'ready_food': 'Konserve Fabrikası', 
+                'olive_oil': 'Zeytinyağı Fabrikası', 'sweets': 'Şekerleme Fabrikası',
+                'wind_turbine': 'Rüzgar Türbini', 'solar_plant': 'Güneş Paneli',
+                'coal_plant': 'Termik Santral', 'nuclear_plant': 'Nükleer Santral'
             };
-
+            document.getElementById('statCategory').innerText = categoryMap[factoryData.mine_type] || 'Genel Fabrika';
+            
             // Product Name
             const typeMap = {
                 'lumber': 'Tahta', 'iron': 'Demir', 'gold': 'Altın', 'diamond': 'Elmas',
                 'oil': 'Petrol', 'coal': 'Kömür', 'stone': 'Taş', 'brick': 'Tuğla',
                 'sand': 'Kum', 'copper': 'Bakır', 'uranium': 'Uranyum', 'glass': 'Cam',
-                'concrete': 'Çimento', 'steel': 'Çelik', 'agricultural': 'Ekin',
-                'animal': 'Hayvan', 'food': 'Yemek', 'weapon': 'Silah', 'solar': 'Enerji',
-                'bakery': 'Ekmek', 'ready_food': 'Konserve', 'olive_oil': 'Zeytinyağı', 'sweets': 'Enerji Barı',
+                'concrete': 'Çimento', 'steel': 'Çelik',
+                'bakery': 'Ekmek/Kek', 'ready_food': 'Hazır Yemek', 'olive_oil': 'Zeytinyağı', 'sweets': 'Enerji Barı',
                 'wind_turbine': 'Elektrik', 'solar_plant': 'Elektrik', 'coal_plant': 'Elektrik', 'nuclear_plant': 'Elektrik'
             };
-            const productName = factoryData ? (typeMap[factoryData.mine_type] || 'Ürün') : 'Ürün';
+            const productName = typeMap[factoryData.mine_type] || 'Ürün';
             document.getElementById('statProduct').innerText = productName;
+            
+            // Level
+            document.getElementById('statLevel').innerText = `${factoryData.level || 1}. Seviye`;
 
-            document.getElementById('statSalary').innerText = `${factoryData.salary} ₺`; // Maaş
+            document.getElementById('statSalary').innerText = `${factoryData.salary || 0} ₺`;
             
             let t = factoryData.production_time || 60;
             let tStr = t < 60 ? `${t} Sn` : (t % 60 === 0 ? `${t/60} Dk` : `${Math.floor(t/60)} Dk ${t%60} Sn`);
-            document.getElementById('statTime').innerText = tStr; // Süre
+            document.getElementById('statTime').innerText = tStr;
 
-            // --- RAW MATERIAL STATS ---
-            const rawContainer = document.getElementById('rawMaterialStats');
-            if (rawContainer) {
-                rawContainer.innerHTML = '';
-                const config = resourceMap[factoryData.mine_type];
-                
-                if (config && config.raw) {
-                    config.raw.forEach(r => {
-                        let val = 0;
-                        // Check inventory first
-                        if (factoryData.inventory && factoryData.inventory[r.key] !== undefined) {
-                            val = factoryData.inventory[r.key];
-                        } else {
-                            // Fallback for legacy columns
-                            if (factoryData.mine_type === 'lumber' && r.key === 'wood') val = factoryData.raw_material || 0;
-                            else if (factoryData.mine_type === 'brick' && r.key === 'stone') val = factoryData.raw_material || 0;
-                            else if (factoryData.mine_type === 'glass' && r.key === 'sand') val = factoryData.raw_material || 0;
-                            else if (factoryData.mine_type === 'concrete') {
-                                if (r.key === 'sand') val = factoryData.raw_material || 0;
-                                if (r.key === 'stone') val = factoryData.raw_material_2 || 0;
-                            }
-                            else if (factoryData.mine_type === 'steel') {
-                                if (r.key === 'iron') val = factoryData.raw_material || 0;
-                                if (r.key === 'coal') val = factoryData.raw_material_2 || 0;
-                            }
-                        }
-                        
-                        const cap = factoryData.raw_capacity || 1000;
-                        
-                        rawContainer.innerHTML += `
-                            <div class="stat-card">
-                                <div class="stat-label">${r.name.toUpperCase()} DEPOSU</div>
-                                <div class="stat-val">${val} / ${cap}</div>
-                            </div>
-                        `;
-                    });
-                } else {
-                    // Fallback for others
-                    const val = factoryData.raw_material || 0;
-                    const cap = factoryData.raw_capacity || 1000;
-                    rawContainer.innerHTML = `
-                        <div class="stat-card">
-                            <div class="stat-label">HAMMADDE DEPOSU</div>
-                            <div class="stat-val">${val} / ${cap}</div>
-                        </div>
-                    `;
-                }
-            }
-
-            // --- PRODUCT STATS ---
-            const productContainer = document.getElementById('productStats');
-            if (productContainer) {
-                productContainer.innerHTML = '';
-                // Ürün stokları gizlendi
-            }
-            
             const currentWorkerCount = factoryWorkers.length;
             const maxWorkers = factoryData.max_workers || 6;
-            document.getElementById('statWorkers').innerText = `${currentWorkerCount} / ${maxWorkers}`; // İşçiler
+            document.getElementById('statWorkers').innerText = `${currentWorkerCount} / ${maxWorkers}`;
             
-            // Efficiency
-            const efficiency = factoryData.efficiency || 100;
-            document.getElementById('efficiencyVal').innerText = `%${efficiency}`;
+            // Created At
+            if (factoryData.created_at) {
+                const date = new Date(factoryData.created_at);
+                const dateStr = date.toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' });
+                document.getElementById('statCreated').innerText = dateStr;
+            } else {
+                document.getElementById('statCreated').innerText = 'Bilinmiyor';
+            }
             
-            // Estimated Production
-            // Need user education skill. userData is loaded.
+            // AR-GE Level - Fabrika sahibinin AR-GE verisi
+            const factoryType = factoryData.mine_type || 'lumber';
+            const ownerArge = userArgeData[factoryType] || { level: 0 };
+            const argeLevel = ownerArge.level || 0;
+            const argeBonus = argeLevel * 10;
+            document.getElementById('efficiencyVal').innerText = `${argeLevel}. Seviye (+%${argeBonus})`;
+
+            // Production Calculation Details
             const userSkill = userData ? (userData.education_skill || 0) : 0;
-            const range = getProductionRange(userSkill);
             
-            // Apply efficiency multiplier logic from backend if needed, or just show base range
-            // Backend: amount = base * (1 + (arge-1)*0.1)
-            // We have factoryData.arge_level
-            const argeLevel = factoryData.arge_level || 1;
-            const multiplier = 1.0 + (argeLevel - 1) * 0.1;
-            
-            const minEst = Math.floor(range.min * multiplier);
-            const maxEst = Math.ceil(range.max * multiplier);
-            
-            document.getElementById('estProduction').innerText = `${minEst}-${maxEst} Adet`;
+            const calcContainer = document.getElementById('productionCalculation');
+            if (calcContainer) {
+                // 1. Temel Üretim: Fabrika seviyesi
+                const factoryLevel = factoryData.level || 1;
+                const baseProduction = factoryLevel;
+                
+                // 2. Eğitim Seviyesi Bonusu
+                const educationBonus = Math.floor(userSkill / 10);
+                
+                // 3. AR-GE Bonusu
+                const argeBonusProduction = argeLevel * 2;
+                
+                // Toplam Üretim
+                const totalProduction = baseProduction + educationBonus + argeBonusProduction;
+                
+                // Birim Maaş
+                const unitSalary = factoryData.salary || 0;
+                
+                // Toplam Kazanç
+                const totalEarnings = unitSalary * totalProduction;
+                
+                calcContainer.innerHTML = `
+                    <div class="info-list-item" style="padding: 6px 0;">
+                        <div class="info-left">
+                            <i class="fas fa-cubes" style="color: #666; font-size: 0.9rem;"></i>
+                            <div class="info-label" style="font-size: 0.8rem;">Temel Üretim (Seviye ${factoryLevel})</div>
+                        </div>
+                        <div style="color: #aaa; font-size: 0.85rem; font-weight: 600;">+${baseProduction} Adet</div>
+                    </div>
+                    <div class="info-list-item" style="padding: 6px 0;">
+                        <div class="info-left">
+                            <i class="fas fa-graduation-cap" style="color: var(--accent-cyan); font-size: 0.9rem;"></i>
+                            <div class="info-label" style="font-size: 0.8rem;">Eğitim Seviyesi Bonusu</div>
+                        </div>
+                        <div style="color: var(--accent-cyan); font-size: 0.85rem; font-weight: 600;">+${educationBonus} Adet</div>
+                    </div>
+                    <div class="info-list-item" style="padding: 6px 0;">
+                        <div class="info-left">
+                            <i class="fas fa-flask" style="color: var(--accent-green); font-size: 0.9rem;"></i>
+                            <div class="info-label" style="font-size: 0.8rem;">AR-GE Bonusu (${argeLevel}. Seviye)</div>
+                        </div>
+                        <div style="color: var(--accent-green); font-size: 0.85rem; font-weight: 600;">+${argeBonusProduction} Adet</div>
+                    </div>
+                    <div class="info-list-item" style="padding: 6px 0; border-top: 2px solid #333; margin-top: 5px;">
+                        <div class="info-left">
+                            <i class="fas fa-check-circle" style="color: var(--accent); font-size: 0.9rem;"></i>
+                            <div class="info-label" style="font-size: 0.85rem; font-weight: 700;">Toplam Üretim</div>
+                        </div>
+                        <div style="color: var(--accent); font-size: 0.9rem; font-weight: 800;">${totalProduction} Adet</div>
+                    </div>
+                    <div class="info-list-item" style="padding: 6px 0;">
+                        <div class="info-left">
+                            <i class="fas fa-coins" style="color: var(--accent-gold); font-size: 0.9rem;"></i>
+                            <div class="info-label" style="font-size: 0.85rem; font-weight: 700;">Toplam Kazanç</div>
+                        </div>
+                        <div style="color: var(--accent-gold); font-size: 0.9rem; font-weight: 800;">${formatMoney(totalEarnings)} ₺</div>
+                    </div>
+                `;
+            }
 
             document.getElementById('workerCount').innerText = currentWorkerCount;
             document.getElementById('maxWorkerCount').innerText = maxWorkers;
@@ -666,6 +830,33 @@
                     let remaining = worker.remaining_seconds;
                     if (remaining === undefined || remaining < 0) remaining = 0;
                     
+                    // Debug log
+                    console.log('Worker:', worker.username, 'Amount:', worker.amount, 'User ID:', worker.user_id);
+                    
+                    // Get product info
+                    const typeMap = {
+                        'lumber': 'Tahta', 'brick': 'Tuğla', 'glass': 'Cam', 'concrete': 'Çimento', 'steel': 'Çelik',
+                        'iron': 'Demir', 'coal': 'Kömür', 'stone': 'Taş', 'sand': 'Kum', 'copper': 'Bakır',
+                        'uranium': 'Uranyum', 'gold': 'Altın', 'diamond': 'Elmas', 'oil': 'Petrol',
+                        'bakery': 'Ekmek', 'ready_food': 'Yemek', 'olive_oil': 'Zeytinyağı', 'sweets': 'Şekerleme'
+                    };
+                    
+                    const productNames = {
+                        'bread': 'Ekmek', 'cake': 'Kek', 'salad': 'Salata', 'canned_fruit': 'Konserve Meyve',
+                        'cooked_meat': 'Pişmiş Et', 'rice_dish': 'Pilav', 'meat_dish': 'Et Yemeği',
+                        'olive_oil': 'Zeytinyağı', 'energy_bar': 'Enerji Barı', 'gold_ingot': 'Altın Külçe',
+                        'energy': 'Enerji'
+                    };
+                    
+                    const productKey = worker.product_key;
+                    let productText = '';
+                    if (productKey && productNames[productKey]) {
+                        productText = `${worker.amount || 1} adet ${productNames[productKey]}`;
+                    } else {
+                        const defaultProduct = typeMap[factoryData.mine_type] || 'Ürün';
+                        productText = `${worker.amount || 1} adet ${defaultProduct}`;
+                    }
+                    
                     // Avatar & Username for everyone
                     let content = `
                         <img src="${worker.avatar || 'uploads/avatars/default.png'}" class="slot-avatar" style="width:40px; height:40px; border-radius:50%; margin-bottom:5px; border:2px solid ${isMe ? 'var(--accent)' : '#444'}">
@@ -679,9 +870,11 @@
                             <div class="slot-progress-bg" style="margin-top:5px; width:80%;">
                                 <div class="slot-progress-fill" id="prog-${worker.user_id}" style="width: 100%"></div>
                             </div>
+                            <div class="slot-product-text">${productText}</div>
                         `;
                     } else {
                         div.classList.add('slot-occupied');
+                        content += `<div class="slot-product-text">${productText}</div>`;
                     }
                     
                     div.innerHTML = content;
@@ -797,11 +990,32 @@
                 return;
             }
 
-            let desc = `Bu fabrikada çalışmak için <strong>10 Enerji</strong> harcayacaksınız. Karşılığında <strong>${factoryData.salary} ₺</strong> maaş kazanacaksınız.`;
+            // Hesaplamaları yap
+            const userSkill = userData ? (userData.education_skill || 0) : 0;
+            const factoryLevel = factoryData.level || 1;
+            const baseProduction = factoryLevel;
+            const educationBonus = Math.floor(userSkill / 10);
+            const factoryType = factoryData.mine_type || 'lumber';
+            const ownerArge = userArgeData[factoryType] || { level: 0 };
+            const argeLevel = ownerArge.level || 0;
+            const argeBonus = argeLevel * 2;
+            const totalProduction = baseProduction + educationBonus + argeBonus;
+            const unitSalary = factoryData.salary || 0;
+            const totalEarnings = unitSalary * totalProduction;
+
+            // Get product name
+            const typeMap = {
+                'lumber': 'Tahta', 'brick': 'Tuğla', 'glass': 'Cam', 'concrete': 'Çimento', 'steel': 'Çelik',
+                'bakery': 'Ekmek/Kek', 'ready_food': 'Hazır Yemek', 'olive_oil': 'Zeytinyağı', 'sweets': 'Enerji Barı',
+                'wind_turbine': 'Elektrik', 'solar_plant': 'Elektrik', 'coal_plant': 'Elektrik', 'nuclear_plant': 'Elektrik'
+            };
+            const productName = typeMap[factoryData.mine_type] || 'Ürün';
+
+            let desc = `Çalışmayı onaylıyor musun? <strong>10 Enerji</strong> karşılığında <strong>${totalProduction} ${productName}</strong> üretim yapılacak ve <strong>${formatMoney(totalEarnings)} ₺</strong> maaş kazanacaksın.`;
             
             const legacyFactories = ['lumber', 'brick', 'glass', 'concrete', 'steel'];
             if (legacyFactories.includes(factoryData.mine_type)) {
-                desc += `<br><br><span style="color:var(--accent-cyan); font-size:0.9rem;">NOT: Üretim için fabrika deposundan Elektrik kullanılır.</span>`;
+                desc += `<br><br><span style="color:var(--accent-cyan); font-size:0.85rem;">NOT: Üretim için fabrika deposundan Elektrik kullanılır.</span>`;
             }
 
             document.querySelector('.m-desc').innerHTML = desc;
@@ -858,6 +1072,10 @@
 
         function closeModal() {
             document.getElementById('workModal').style.display = 'none';
+        }
+
+        function formatMoney(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
         }
 
         // --- ÜRETİM MANTIĞI ---

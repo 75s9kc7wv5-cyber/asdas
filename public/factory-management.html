@@ -576,14 +576,12 @@
                         <span class="info-value" id="info-worker">-</span>
                     </div>
                     <div class="info-item">
-                        <i class="fas fa-warehouse" style="color: #9b59b6;"></i>
-                        <span class="info-label">Hammadde Deposu</span>
-                        <span class="info-value" id="info-raw-warehouse">-</span>
-                    </div>
-                    <div class="info-item">
                         <i class="fas fa-box-open" style="color: #e67e22;"></i>
                         <span class="info-label">Ürün Deposu</span>
                         <span class="info-value" id="info-prod-warehouse">-</span>
+                    </div>
+                    <div id="prod-details" style="padding-left: 40px; margin-bottom: 10px; display: none;">
+                        <!-- Ürün detayları JS ile doldurulacak -->
                     </div>
                     <div class="info-item">
                         <i class="fas fa-vault" style="color: var(--accent-green);"></i>
@@ -1015,12 +1013,53 @@
             
             document.getElementById('info-worker').innerText = `${factory.workers}/${factory.maxWorkers}`;
             
-            // Hammadde Deposu
-            const totalRawUsed = (factory.raw || 0) + (factory.raw2 || 0);
-            document.getElementById('info-raw-warehouse').innerText = `${fmt(totalRawUsed)}/${fmt(factory.rawCap)}`;
-            
-            // Ürün Deposu  
+            // Ürün Deposu
             document.getElementById('info-prod-warehouse').innerText = `${fmt(factory.prod)}/${fmt(factory.prodCap)}`;
+            
+            // Ürün Detayları - inventory objesinden parse et
+            const prodDetailsDiv = document.getElementById('prod-details');
+            if (factory.inventory) {
+                let inventoryData = null;
+                if (typeof factory.inventory === 'string') {
+                    try {
+                        inventoryData = JSON.parse(factory.inventory);
+                    } catch (e) {
+                        console.error('Inventory parse error:', e);
+                    }
+                } else {
+                    inventoryData = factory.inventory;
+                }
+                
+                if (inventoryData) {
+                    let prodDetailsHtml = '';
+                    const resourceInfo = resourceMap[factory.type];
+                    if (resourceInfo && resourceInfo.prod) {
+                        // Ürün bilgisi array mi yoksa tek object mi kontrol et
+                        const products = Array.isArray(resourceInfo.prod) ? resourceInfo.prod : [resourceInfo.prod];
+                        
+                        products.forEach(prodItem => {
+                            if (inventoryData[prodItem.key] > 0) {
+                                prodDetailsHtml += `<div style="font-size: 0.8rem; color: #888; margin: 4px 0;">
+                                    <img src="${prodItem.icon}" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;">
+                                    <span style="color: #aaa;">${prodItem.name}:</span> 
+                                    <span style="color: #fff; font-weight: 600;">${fmt(inventoryData[prodItem.key])}</span>
+                                </div>`;
+                            }
+                        });
+                    }
+                    
+                    if (prodDetailsHtml) {
+                        prodDetailsDiv.innerHTML = prodDetailsHtml;
+                        prodDetailsDiv.style.display = 'block';
+                    } else {
+                        prodDetailsDiv.style.display = 'none';
+                    }
+                } else {
+                    prodDetailsDiv.style.display = 'none';
+                }
+            } else {
+                prodDetailsDiv.style.display = 'none';
+            }
             
             // Kasa Kapasitesi: kasadaki para / kapasite
             const vaultCapacity = factory.level * 100000;
@@ -1204,6 +1243,14 @@
             
             if(!amount || amount <= 0) return toastr.warning("Miktar giriniz.");
 
+            // Kullanıcının envanterinde yeterli miktar var mı kontrol et (add işlemleri için)
+            if(action === 'add' && type !== 'vault') {
+                const userAmount = userInventory[itemKey] || 0;
+                if(amount > userAmount) {
+                    return toastr.warning(`Envanterinizde yeterli ${itemName} yok! Mevcut: ${fmt(userAmount)}`);
+                }
+            }
+
             // Vault Limit Check
             if(type === 'vault' && action === 'add') {
                 const vaultCapacity = factory.level * 100000;
@@ -1217,35 +1264,64 @@
                 if(amount > remainingCapacity) {
                     return toastr.warning(`Kasa kapasitesi yetersiz! Maksimum ${fmt(remainingCapacity)} ₺ ekleyebilirsiniz.`);
                 }
+                
+                // Kullanıcının yeterli parası var mı?
+                const userMoney = user.money || 0;
+                if(amount > userMoney) {
+                    return toastr.warning(`Yeterli paranız yok! Mevcut: ${fmt(userMoney)} ₺`);
+                }
             }
 
-            // Raw Material Warehouse Limit Check
+            // Raw Material Warehouse Limit Check (Hammadde ekleme)
             if(type === 'raw' && action === 'add') {
-                const currentRaw = (factory.raw || 0) + (factory.raw2 || 0);
                 const rawCapacity = factory.rawCap || 0;
-                const remainingRawCapacity = rawCapacity - currentRaw;
                 
-                if(currentRaw >= rawCapacity) {
-                    return toastr.warning("Hammadde deposu kapasitesi dolu!");
+                // Her hammadde slotu için AYRI kapasite kontrolü (server.js ile uyumlu)
+                let currentItemAmount = 0;
+                
+                // Factory'deki mevcut inventory'den bu spesifik item'ın miktarını al
+                if(factory.inventory && factory.inventory[itemKey] !== undefined) {
+                    currentItemAmount = factory.inventory[itemKey];
+                } else {
+                    // Eski sistem için fallback
+                    const config = resourceMap[factory.type] || {};
+                    if(config.raw && Array.isArray(config.raw)) {
+                        const itemIndex = config.raw.findIndex(r => r.key === itemKey);
+                        if(itemIndex === 0) currentItemAmount = factory.raw || 0;
+                        else if(itemIndex === 1) currentItemAmount = factory.raw2 || 0;
+                    }
+                }
+                
+                const remainingRawCapacity = rawCapacity - currentItemAmount;
+                
+                if(currentItemAmount >= rawCapacity) {
+                    return toastr.warning(`${itemName} deposu kapasitesi dolu!`);
                 }
                 
                 if(amount > remainingRawCapacity) {
-                    return toastr.warning(`Hammadde deposu kapasitesi yetersiz! Maksimum ${fmt(remainingRawCapacity)} adet ekleyebilirsiniz.`);
+                    return toastr.warning(`${itemName} deposu kapasitesi yetersiz! Maksimum ${fmt(remainingRawCapacity)} adet ekleyebilirsiniz.`);
                 }
             }
 
-            // Product Warehouse Limit Check
-            if(type === 'prod' && action === 'add') {
-                const currentProd = factory.prod || 0;
-                const prodCapacity = factory.prodCap || 0;
-                const remainingProdCapacity = prodCapacity - currentProd;
+            // Product Warehouse Limit Check (Ürün çekme için değil ekleme için)
+            if(type === 'prod' && action === 'pull') {
+                // Fabrikada yeterli ürün var mı kontrol et
+                let currentProdAmount = 0;
                 
-                if(currentProd >= prodCapacity) {
-                    return toastr.warning("Ürün deposu kapasitesi dolu!");
+                const config = resourceMap[factory.type] || {};
+                if(Array.isArray(config.prod)) {
+                    // Çoklu ürün fabrikaları için
+                    const prodItem = config.prod.find(p => p.key === itemKey);
+                    if(prodItem && factory.inventory) {
+                        currentProdAmount = factory.inventory[itemKey] || 0;
+                    }
+                } else {
+                    // Tek ürün fabrikaları için
+                    currentProdAmount = factory.prod || 0;
                 }
                 
-                if(amount > remainingProdCapacity) {
-                    return toastr.warning(`Ürün deposu kapasitesi yetersiz! Maksimum ${fmt(remainingProdCapacity)} adet ekleyebilirsiniz.`);
+                if(amount > currentProdAmount) {
+                    return toastr.warning(`Fabrika deposunda yeterli ${itemName} yok! Mevcut: ${fmt(currentProdAmount)}`);
                 }
             }
 

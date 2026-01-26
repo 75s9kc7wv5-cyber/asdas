@@ -169,30 +169,84 @@
             box-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
         }
         .req-list { 
-            text-align: center; 
-            margin: 20px 0; 
-            background: #222; 
-            padding: 15px; 
-            border-radius: 8px; 
             display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
+            flex-direction: column;
+            gap: 0;
+            margin: 15px 0;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
         }
-        .req-badge {
-            background: #333;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            font-weight: bold;
-            color: #ccc;
-            border: 1px solid #444;
+        .info-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            transition: all 0.2s;
+        }
+        .info-list-item:hover {
+            opacity: 0.8;
+        }
+        .info-left {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 0;
+            flex: 1;
         }
-        .req-badge.ok { border-color: var(--accent-green); color: var(--accent-green); background: rgba(46, 204, 113, 0.1); }
-        .req-badge.fail { border-color: var(--accent-red); color: var(--accent-red); background: rgba(231, 76, 60, 0.1); }
+        .info-left i {
+            width: 28px;
+            min-width: 28px;
+            text-align: left;
+            margin-right: 10px;
+            font-size: 1rem;
+        }
+        .info-left img {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            margin-right: 10px;
+        }
+        .info-label {
+            color: #aaa;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .info-value {
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: right;
+            margin-left: auto;
+        }
+        .req-badge {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 9px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #ccc;
+            border: 1px solid #444;
+            background: #1a1a1a;
+        }
+        .req-badge-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .req-badge-icon {
+            width: 20px;
+            text-align: center;
+        }
+        .req-badge-value {
+            margin-left: auto;
+            font-weight: bold;
+        }
+        .req-badge.ok { border-color: var(--accent-green); background: rgba(46, 204, 113, 0.05); }
+        .req-badge.ok .req-badge-icon { color: var(--accent-green); }
+        .req-badge.fail { border-color: var(--accent-red); background: rgba(231, 76, 60, 0.05); }
+        .req-badge.fail .req-badge-icon { color: var(--accent-red); }
         .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
         .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; }
         .btn-confirm { background: var(--accent-green); color: #000; }
@@ -236,9 +290,7 @@
             <div class="modal-content">
                 <h3 style="color:#fff; margin-bottom:10px;" id="buyModalTitle">Tarla Satın Al</h3>
                 <p style="color:#888; font-size:0.9rem;">Bu tarlayı işletmek için gereksinimleri karşılamalısınız.</p>
-                <div class="req-list" id="buyModalReqs">
-                    <!-- Requirements here -->
-                </div>
+                <div class="req-list" id="buyModalReqs"></div>
                 <div class="modal-btns">
                     <button class="m-btn btn-cancel" onclick="closeBuyModal()">İPTAL</button>
                     <button class="m-btn btn-confirm" id="buyModalConfirmBtn" onclick="confirmBuyFarm()">SATIN AL</button>
@@ -386,7 +438,7 @@
                     </div>
                     <div style="display:flex; gap:8px;">
                         ${owned ? '<button class="farm-work-btn" style="padding:7px 18px; border:none; border-radius:5px; font-family:\'Rajdhani\'; font-weight:bold; font-size:0.95rem; cursor:pointer; background:var(--accent-gold); color:#000;">Çalış</button>' : ''}
-                        <button class="farm-action-btn" style="padding:7px 18px; border:none; border-radius:5px; font-family:'Rajdhani'; font-weight:bold; font-size:0.95rem; cursor:pointer; background:${owned ? 'var(--accent-cyan)' : 'var(--accent-green)'}; color:${owned ? '#000' : '#fff'};">${owned ? 'Yönet' : 'Satın Al'}</button>
+                        <button class="farm-action-btn" style="padding:7px 18px; border:none; border-radius:5px; font-family:'Rajdhani'; font-weight:bold; font-size:0.95rem; cursor:pointer; background:${owned ? 'var(--accent-cyan)' : 'var(--accent-green)'}; color:#000;">${owned ? 'Yönet' : 'Satın Al'}</button>
                     </div>
                 `;
                 
@@ -417,61 +469,70 @@
             const reqList = document.getElementById('buyModalReqs');
             reqList.innerHTML = '';
 
-            // 1. Price (Money)
+            // 1. Para
             const price = type.price;
             const userMoney = userData.money || 0;
             const priceOk = userMoney >= price;
-            const priceClass = priceOk ? 'ok' : 'fail';
-            const priceIcon = priceOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
             const priceFormatted = new Intl.NumberFormat('tr-TR').format(price);
             
             reqList.innerHTML += `
-                <div class="req-badge ${priceClass}">
-                    ${priceIcon} ${priceFormatted} ₺
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <img src="icons/inventory-icon/money.png" style="width: 24px; height: 24px; margin-right: 10px;">
+                        <div class="info-label">Para</div>
+                    </div>
+                    <div class="info-value">${priceFormatted} ₺</div>
+                    <i class="fas fa-${priceOk ? 'check' : 'times'}" style="color: ${priceOk ? 'var(--accent-green)' : 'var(--accent-red)'}; font-size: 1.2rem; margin-left: 15px;"></i>
                 </div>
             `;
 
-            // 2. Gold
+            // 2. Altın
             if (type.price_gold > 0) {
                 const userGold = userData.gold || 0;
                 const goldOk = userGold >= type.price_gold;
-                const goldClass = goldOk ? 'ok' : 'fail';
-                const goldIcon = goldOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
                 
                 reqList.innerHTML += `
-                    <div class="req-badge ${goldClass}">
-                        ${goldIcon} ${type.price_gold} Altın
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <img src="icons/inventory-icon/gold.png" style="width: 24px; height: 24px; margin-right: 10px;">
+                            <div class="info-label">Altın</div>
+                        </div>
+                        <div class="info-value">${type.price_gold}</div>
+                        <i class="fas fa-${goldOk ? 'check' : 'times'}" style="color: ${goldOk ? 'var(--accent-green)' : 'var(--accent-red)'}; font-size: 1.2rem; margin-left: 15px;"></i>
                     </div>
                 `;
             }
 
-            // 3. Diamond
+            // 3. Elmas
             if (type.price_diamond > 0) {
                 const userDiamond = userData.diamond || 0;
                 const diaOk = userDiamond >= type.price_diamond;
-                const diaClass = diaOk ? 'ok' : 'fail';
-                const diaIcon = diaOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
                 
                 reqList.innerHTML += `
-                    <div class="req-badge ${diaClass}">
-                        ${diaIcon} ${type.price_diamond} Elmas
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <img src="icons/inventory-icon/diamond.png" style="width: 24px; height: 24px; margin-right: 10px;">
+                            <div class="info-label">Elmas</div>
+                        </div>
+                        <div class="info-value">${type.price_diamond}</div>
+                        <i class="fas fa-${diaOk ? 'check' : 'times'}" style="color: ${diaOk ? 'var(--accent-green)' : 'var(--accent-red)'}; font-size: 1.2rem; margin-left: 15px;"></i>
                     </div>
                 `;
             }
 
-            // 4. License (Assuming Level 1)
-            const licenseSlug = type.slug; 
-            // API returns object { "wheat": 1, "corn": 2 }
+            // 4. Lisans
+            const licenseSlug = type.slug;
             const licLevel = userLicenses[licenseSlug] || 0;
-            const reqLevel = 1; // Hardcoded as 1 in server.js logic override
-            
+            const reqLevel = 1;
             const licOk = licLevel >= reqLevel;
-            const licClass = licOk ? 'ok' : 'fail';
-            const licIcon = licOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
             
             reqList.innerHTML += `
-                <div class="req-badge ${licClass}">
-                    ${licIcon} 1. Seviye ${type.name} Lisansı
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-certificate" style="color: var(--accent-cyan); font-size: 1rem; width: 24px; text-align: center; margin-right: 10px;"></i>
+                        <div class="info-label">${reqLevel}. Seviye ${type.name} Lisansı</div>
+                    </div>
+                    <i class="fas fa-${licOk ? 'check' : 'times'}" style="color: ${licOk ? 'var(--accent-green)' : 'var(--accent-red)'}; font-size: 1.2rem; margin-left: auto;"></i>
                 </div>
             `;
 

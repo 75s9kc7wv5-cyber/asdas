@@ -311,14 +311,6 @@
                 
                 <div class="info-list-item">
                     <div class="info-left">
-                        <i class="fas fa-seedling" style="color: var(--accent); font-size: 1rem;"></i>
-                        <div class="info-label" style="font-size: 0.8rem;">Yem Deposu</div>
-                    </div>
-                    <div class="info-value text-green" style="font-size: 0.85rem;" id="statReserve">0 / 0</div>
-                </div>
-                
-                <div class="info-list-item">
-                    <div class="info-left">
                         <i class="fas fa-clock" style="color: var(--accent-cyan); font-size: 1rem;"></i>
                         <div class="info-label" style="font-size: 0.8rem;">Üretim Hızı</div>
                     </div>
@@ -541,11 +533,6 @@
             let t = factoryData.production_time || 60;
             let tStr = t < 60 ? `${t} Sn` : (t % 60 === 0 ? `${t/60} Dk` : `${Math.floor(t/60)} Dk ${t%60} Sn`);
             document.getElementById('statTime').innerText = tStr; // Süre
-
-            // Yem Deposu
-            const reserve = factoryData.reserve || 0;
-            const reserveCap = factoryData.reserve_cap || ((factoryData.level || 1) * 1000);
-            document.getElementById('statReserve').innerText = `${reserve.toLocaleString()} / ${reserveCap.toLocaleString()}`;
             
             const currentWorkerCount = factoryWorkers.length;
             const maxWorkers = factoryData.max_workers || 6;
@@ -577,7 +564,7 @@
                 const baseProduction = factoryLevel;
                 
                 // 2. Eğitim Seviyesi Bonusu
-                const educationBonus = Math.ceil(userSkill / 10);
+                const educationBonus = Math.floor(userSkill / 10);
                 
                 // 3. AR-GE Bonusu
                 const argeBonus = argeLevel * 2;
@@ -700,6 +687,9 @@
                     const isMe = worker.user_id === user.id;
                     let remaining = worker.remaining_seconds;
                     if (remaining === undefined || remaining < 0) remaining = 0;
+                    
+                    // Debug log
+                    console.log('Worker:', worker.username, 'Amount:', worker.amount, 'User ID:', worker.user_id);
                     
                     // Avatar & Username for everyone
                     let content = `
@@ -846,7 +836,7 @@
             const userSkill = userData ? (userData.education_skill || 0) : 0;
             const factoryLevel = factoryData.level || 1;
             const baseProduction = factoryLevel;
-            const educationBonus = Math.ceil(userSkill / 10);
+            const educationBonus = Math.floor(userSkill / 10);
             const ranchType = factoryData.ranch_type || 'chicken';
             const ownerArge = userArgeData[ranchType] || { level: 0 };
             const argeLevel = ownerArge.level || 0;
@@ -863,10 +853,19 @@
 
             // Calculate feed cost
             const feedCostMap = {
-                'chicken': 1, 'sheep': 2, 'cow': 3, 'bee': 1
+                'chicken': 1, 'sheep': 3, 'cow': 3, 'bee': 3
             };
             const feedCostPerUnit = feedCostMap[factoryData.ranch_type] || 1;
             const totalFeedCost = totalProduction * feedCostPerUnit;
+            
+            // Check if there's enough feed in reserve
+            const currentReserve = factoryData.reserve || 0;
+            const maxProductionByFeed = Math.floor(currentReserve / feedCostPerUnit);
+            
+            if (totalProduction > maxProductionByFeed) {
+                toastr.warning(`Yetersiz yem! Maksimum ${maxProductionByFeed} adet üretim yapabilirsiniz.`);
+                return;
+            }
 
             document.querySelector('.m-desc').innerHTML = `Çalışmayı onaylıyor musun? <strong>${totalFeedCost} Yem</strong> ve <strong>10 Enerji</strong> karşılığında <strong>${totalProduction} ${productName}</strong> üretim yapılacak ve <strong>${formatMoney(totalEarnings)} ₺</strong> maaş kazanacaksın.`;
             document.getElementById('workModal').style.display = 'flex';

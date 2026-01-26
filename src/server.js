@@ -4435,53 +4435,177 @@ app.post('/api/mines/start', (req, res) => {
             // We need to fetch raw_material from player_mines.
             // The query above already fetches some fields, let's add raw_material.
             
-            // Re-query with raw_material and raw_material_2
-            db.query('SELECT raw_material, raw_material_2 FROM player_mines WHERE id = ?', [mineId], (err, rawRes) => {
+            // Get factory inventory first for all checks
+            db.query('SELECT item_key, amount FROM factory_inventory WHERE mine_id = ?', [mineId], (err, invRes) => {
                  if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Raw Material Check Error' }));
                  
-                 const raw1 = rawRes[0].raw_material || 0;
-                 const raw2 = rawRes[0].raw_material_2 || 0;
-
-                 // Calculate Production Amount
-                 const userSkill = education_skill || 0;
-                 const range = getBaseProductionRange(userSkill);
-                 const currentArge = arge_level || 1;
-                 const multiplier = 1.0 + (currentArge - 1) * 0.1;
+                 const inventory = {};
+                 invRes.forEach(row => inventory[row.item_key] = row.amount);
                  
-                 // Random amount within range * multiplier
-                 const baseAmount = Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
-                 const productionAmount = Math.max(1, Math.floor(baseAmount * multiplier));
-                 
-                 console.log(`[Mining Start] User: ${userId}, Mine: ${mineId}, Skill: ${userSkill}, Range: ${range.min}-${range.max}, Base: ${baseAmount}, Mult: ${multiplier}, Final: ${productionAmount}`);
+                 // Fallback to legacy columns if factory_inventory is empty
+                 db.query('SELECT raw_material, raw_material_2 FROM player_mines WHERE id = ?', [mineId], (err, rawRes) => {
+                     if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Legacy Raw Check Error' }));
+                     
+                     const legacyRaw1 = rawRes[0].raw_material || 0;
+                     const legacyRaw2 = rawRes[0].raw_material_2 || 0;
 
-                 // Determine Requirements
-                 let req1 = 0;
-                 let req2 = 0;
-                 let raw1Name = 'Hammadde';
-                 let raw2Name = 'Hammadde 2';
-                 let productKey = null;
-                 let recipeInputs = null;
+                     // Calculate Production Amount - Use owner's data for consistent production
+                     // Get owner's education_skill
+                     db.query('SELECT education_skill FROM users WHERE id = ?', [data.owner_id], (err, ownerData) => {
+                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Owner Data Error' }));
+                         
+                         const ownerSkill = ownerData[0]?.education_skill || 0;
+                         const mineLevel = level || 1;
+                         const baseProduction = mineLevel;
+                         const educationBonus = Math.floor(ownerSkill / 10);
+                         const argeBonus = (arge_level || 0) * 2;
+                         const productionAmount = baseProduction + educationBonus + argeBonus;
+                         
+                         console.log(`[Mining Start] User: ${userId}, Mine: ${mineId}, OwnerSkill: ${ownerSkill}, Level: ${mineLevel}, EduBonus: ${educationBonus}, ArgeBonus: ${argeBonus}, Final: ${productionAmount}`);
 
-                 // Check if it's a new factory type
-                 const recipes = FACTORY_RECIPES[data.mine_type];
-                 if (recipes) {
-                     const recipeId = req.body.recipeId;
-                     const recipe = recipes.find(r => r.id === recipeId) || recipes[0]; // Default to first if not specified
-                     
-                     if (!recipe) return db.rollback(() => res.json({ success: false, message: 'Geçersiz reçete.' }));
-                     
-                     productKey = Object.keys(recipe.output)[0]; // e.g. 'bread'
-                     recipeInputs = recipe.inputs; // { wheat: 3, egg: 3 }
-                     
-                     // We need to check factory_inventory for these inputs
-                     // We need to query factory_inventory first
-                     db.query('SELECT item_key, amount FROM factory_inventory WHERE mine_id = ?', [mineId], (err, invRes) => {
-                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Inventory Check Error' }));
+                         // Determine Requirements
+                         let req1 = 0;
+                         let req2 = 0;
+                         let raw1Key = null;
+                         let raw2Key = null;
+                         let raw1Name = 'Hammadde';
+                         let raw2Name = 'Hammadde 2';
+                         let productKey = null;
+                         let recipeInputs = null;
+
+                     // Legacy Factory Logic (lumber, brick, glass, concrete, steel)
+                     if (data.mine_type === 'lumber') { 
+                         req1 = productionAmount * 3; 
+                         raw1Key = 'wood'; 
+                         raw1Name = 'Odun'; 
+                     }
+                     else if (data.mine_type === 'brick') { 
+                         req1 = productionAmount * 3; 
+                         raw1Key = 'stone'; 
+                         raw1Name = 'Taş'; 
+                     }
+                     else if (data.mine_type === 'glass') { 
+                         req1 = productionAmount * 3; 
+                         raw1Key = 'sand'; 
+                         raw1Name = 'Kum'; 
+                     }
+                     else if (data.mine_type === 'concrete') { 
+                         req1 = productionAmount * 3; 
+                         req2 = productionAmount * 3; 
+                         raw1Key = 'sand'; 
+                         raw2Key = 'stone';
+                         raw1Name = 'Kum'; 
+                         raw2Name = 'Taş'; 
+                     }
+                     else if (data.mine_type === 'steel') { 
+                         req1 = productionAmount * 3; 
+                         req2 = productionAmount * 3; 
+                         raw1Key = 'iron'; 
+                         raw2Key = 'coal';
+                         raw1Name = 'Demir'; 
+                         raw2Name = 'Kömür'; 
+                     }
+                     else {
+                         req1 = 0; 
+                     }
+
+                     // Check inventory first, fallback to legacy
+                     const raw1 = raw1Key ? (inventory[raw1Key] || legacyRaw1) : 0;
+                     const raw2 = raw2Key ? (inventory[raw2Key] || legacyRaw2) : 0;
+
+                     if (req1 > 0 && raw1 < req1) {
+                         return db.rollback(() => res.json({ success: false, message: `Fabrikada yeterli ${raw1Name} yok! (${req1} gerekli, ${raw1} mevcut)` }));
+                     }
+                     if (req2 > 0 && raw2 < req2) {
+                         return db.rollback(() => res.json({ success: false, message: `Fabrikada yeterli ${raw2Name} yok! (${req2} gerekli, ${raw2} mevcut)` }));
+                     }
+
+                     // Legacy Factories: Check & Deduct Energy + Raw Materials
+                     const legacyFactories = ['lumber', 'brick', 'glass', 'concrete', 'steel'];
+                     if (legacyFactories.includes(data.mine_type)) {
+                         const energyRequired = productionAmount;
                          
-                         const inventory = {};
-                         invRes.forEach(row => inventory[row.item_key] = row.amount);
+                         // Check Energy
+                         const currentEnergy = inventory['energy'] || 0;
                          
-                         // Check requirements
+                         if (currentEnergy < energyRequired) {
+                             return db.rollback(() => res.json({ success: false, message: `Fabrikada yeterli Elektrik yok! (${energyRequired} gerekli, ${currentEnergy} mevcut)` }));
+                         }
+
+                         // Prepare legacy factory inputs for deduction
+                         const legacyInputs = { energy: 1 };
+                         if (raw1Key) legacyInputs[raw1Key] = 3;
+                         if (raw2Key) legacyInputs[raw2Key] = 3;
+                         
+                         proceedWithProduction(legacyInputs, null, productionAmount, true); // true = use factory_inventory
+                         return;
+                     }
+                     
+                     proceedWithProduction(null, null, productionAmount, false);
+
+                     function proceedWithProduction(inputs, pKey, amount, isNewFactory) {
+                         // Vault Check
+                         const estimatedCost = amount * salary;
+
+                         if (vault < estimatedCost) {
+                             return db.rollback(() => res.json({ success: false, message: `Fabrika kasasında maaş için yeterli bakiye yok! (Gerekli: ${estimatedCost} ₺)` }));
+                         }
+
+                         // Capacity Check
+                         if (current_workers >= (max_workers || 5)) {
+                             return db.rollback(() => res.json({ success: false, message: 'Maden kapasitesi dolu! (' + current_workers + '/' + (max_workers || 5) + ')' }));
+                         }
+
+                         // 3. Deduct Energy/Health AND Raw Material
+                         db.query('UPDATE users SET energy = energy - ?, health = health - ? WHERE id = ?', [ENERGY_COST, HEALTH_COST, userId], (err) => {
+                             if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User Update Error' }));
+
+                             const afterDeduct = () => {
+                                 // 4. Add to Active Workers (Duration: Dynamic)
+                                 const durationSeconds = production_time || 60;
+                                 const endTime = new Date(Date.now() + durationSeconds * 1000);
+                                 
+                                 db.query('INSERT INTO mine_active_workers (mine_id, user_id, end_time, amount, product_key) VALUES (?, ?, ?, ?, ?)', [mineId, userId, endTime, amount, pKey], (err) => {
+                                     if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Active Worker Error' }));
+                                     
+                                     db.commit(err => {
+                                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                                         res.json({ success: true, message: `İş başı yapıldı! (Üretim: ${amount})`, endTime: endTime });
+                                     });
+                                 });
+                             };
+
+                             if (isNewFactory) {
+                                 // Deduct from factory_inventory
+                                 const queries = [];
+                                 for (const [key, val] of Object.entries(inputs)) {
+                                     const required = val * amount;
+                                     queries.push(new Promise((resolve, reject) => {
+                                         db.query('UPDATE factory_inventory SET amount = amount - ? WHERE mine_id = ? AND item_key = ?', [required, mineId, key], (err) => {
+                                             if (err) reject(err);
+                                             else resolve();
+                                         });
+                                     }));
+                                 }
+                                 Promise.all(queries).then(afterDeduct).catch(err => db.rollback(() => res.status(500).json({ success: false, message: 'Inventory Update Error' })));
+                             } else {
+                                 // Legacy mode - no deduction (for pure extraction mines)
+                                 afterDeduct();
+                             }
+                         });
+                     } // End proceedWithProduction function
+
+                     // Check if it's a new factory type
+                     const recipes = FACTORY_RECIPES[data.mine_type];
+                     if (recipes) {
+                         const recipeId = req.body.recipeId;
+                         const recipe = recipes.find(r => r.id === recipeId) || recipes[0];
+                         
+                         if (!recipe) return db.rollback(() => res.json({ success: false, message: 'Geçersiz reçete.' }));
+                         
+                         productKey = Object.keys(recipe.output)[0];
+                         recipeInputs = recipe.inputs;
+                         
                          const trNames = {
                              wheat: 'Buğday', egg: 'Yumurta', fruit: 'Meyve', vegetable: 'Sebze',
                              meat: 'Et', olive_oil: 'Zeytinyağı', rice: 'Pirinç', potato: 'Patates',
@@ -4494,117 +4618,19 @@ app.post('/api/mines/start', (req, res) => {
                              const required = val * productionAmount;
                              if ((inventory[key] || 0) < required) {
                                  const trName = trNames[key] || key;
-                                 return db.rollback(() => res.json({ success: false, message: `Yetersiz hammadde: ${trName} (${required} gerekli)` }));
+                                 return db.rollback(() => res.json({ success: false, message: `Yetersiz hammadde: ${trName} (${required} gerekli, ${inventory[key] || 0} mevcut)` }));
                              }
                          }
                          
-                         // Proceed to deduct
                          proceedWithProduction(recipeInputs, productKey, productionAmount, true);
-                     });
-                     return; // Exit main flow, continue in callback
-                 }
+                         return;
+                     }
 
-                 // Legacy Logic for old factories
-                 if (data.mine_type === 'lumber') { req1 = productionAmount * 3; raw1Name = 'Odun'; }
-                 else if (data.mine_type === 'brick') { req1 = productionAmount * 3; raw1Name = 'Taş'; }
-                 else if (data.mine_type === 'glass') { req1 = productionAmount * 3; raw1Name = 'Kum'; }
-                 else if (data.mine_type === 'concrete') { req1 = productionAmount * 3; req2 = productionAmount * 3; raw1Name = 'Kum'; raw2Name = 'Taş'; }
-                 else if (data.mine_type === 'steel') { req1 = productionAmount * 3; req2 = productionAmount * 3; raw1Name = 'Demir'; raw2Name = 'Kömür'; }
-                 else {
-                     req1 = 0; 
-                 }
-
-                 if (req1 > 0 && raw1 < req1) {
-                     return db.rollback(() => res.json({ success: false, message: `Fabrikada yeterli ${raw1Name} yok! (${req1} gerekli, ${raw1} mevcut)` }));
-                 }
-                 if (req2 > 0 && raw2 < req2) {
-                     return db.rollback(() => res.json({ success: false, message: `Fabrikada yeterli ${raw2Name} yok! (${req2} gerekli, ${raw2} mevcut)` }));
-                 }
-
-                 // Legacy Factories: Check & Deduct Energy + Raw Materials
-                 const legacyFactories = ['lumber', 'brick', 'glass', 'concrete', 'steel'];
-                 if (legacyFactories.includes(data.mine_type)) {
-                     const energyRequired = productionAmount;
-                     
-                     // Check Energy
-                     db.query('SELECT amount FROM factory_inventory WHERE mine_id = ? AND item_key = "energy"', [mineId], (err, enRes) => {
-                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Energy Check Error' }));
-                         const currentEnergy = (enRes[0] && enRes[0].amount) || 0;
-                         
-                         if (currentEnergy < energyRequired) {
-                             return db.rollback(() => res.json({ success: false, message: `Fabrikada yeterli Elektrik yok! (${energyRequired} gerekli, ${currentEnergy} mevcut)` }));
-                         }
-
-                         // Deduct Energy
-                         db.query('UPDATE factory_inventory SET amount = amount - ? WHERE mine_id = ? AND item_key = "energy"', [energyRequired, mineId], (err) => {
-                             if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Energy Deduct Error' }));
-                             
-                             proceedWithProduction(null, null, productionAmount, false);
-                         });
-                     });
-                     return;
-                 }
-                 
-                 proceedWithProduction(null, null, productionAmount, false);
-
-                 function proceedWithProduction(inputs, pKey, amount, isNewFactory) {
-                    // Vault Check (Estimated Max Cost)
-                    const { max } = getBaseProductionRange(userSkill);
-                    const maxProduction = Math.ceil(max * multiplier);
-                    const estimatedCost = maxProduction * salary; 
-
-                    if (vault < estimatedCost) {
-                        return db.rollback(() => res.json({ success: false, message: `Fabrika kasasında maaş için yeterli bakiye yok! (Tahmini: ${estimatedCost} ₺)` }));
-                    }
-
-                    // Capacity Check
-                    if (current_workers >= (max_workers || 5)) {
-                        return db.rollback(() => res.json({ success: false, message: 'Maden kapasitesi dolu! (' + current_workers + '/' + (max_workers || 5) + ')' }));
-                    }
-
-                    // 3. Deduct Energy/Health AND Raw Material
-                    db.query('UPDATE users SET energy = energy - ?, health = health - ? WHERE id = ?', [ENERGY_COST, HEALTH_COST, userId], (err) => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User Update Error' }));
-
-                        const afterDeduct = () => {
-                            // 4. Add to Active Workers (Duration: Dynamic)
-                            const durationSeconds = production_time || 60;
-                            const endTime = new Date(Date.now() + durationSeconds * 1000);
-                            
-                            db.query('INSERT INTO mine_active_workers (mine_id, user_id, end_time, amount, product_key) VALUES (?, ?, ?, ?, ?)', [mineId, userId, endTime, amount, pKey], (err) => {
-                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Active Worker Error' }));
-                                
-                                db.commit(err => {
-                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                                    res.json({ success: true, message: `İş başı yapıldı! (Tahmini Üretim: ${amount})`, endTime: endTime });
-                                });
-                            });
-                        };
-
-                        if (isNewFactory) {
-                            // Deduct from factory_inventory
-                            const queries = [];
-                            for (const [key, val] of Object.entries(inputs)) {
-                                const required = val * amount;
-                                queries.push(new Promise((resolve, reject) => {
-                                    db.query('UPDATE factory_inventory SET amount = amount - ? WHERE mine_id = ? AND item_key = ?', [required, mineId, key], (err) => {
-                                        if (err) reject(err);
-                                        else resolve();
-                                    });
-                                }));
-                            }
-                            Promise.all(queries).then(afterDeduct).catch(err => db.rollback(() => res.status(500).json({ success: false, message: 'Inventory Update Error' })));
-                        } else {
-                            // Deduct Raw Material (Legacy)
-                            db.query('UPDATE player_mines SET raw_material = raw_material - ?, raw_material_2 = raw_material_2 - ? WHERE id = ?', [req1, req2, mineId], (err) => {
-                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Raw Material Update Error' }));
-                                afterDeduct();
-                            });
-                        }
-                    });
-                 }
-            });
-
+                     // Legacy Factories
+                     proceedWithProduction({}, null, productionAmount, false);
+                     }); // Close owner query callback
+                 });
+             });
         });
     });
 });
@@ -4832,6 +4858,7 @@ app.post('/api/ranches/start', (req, res) => {
             SELECT u.energy, u.health, u.education_skill, pr.id as ranch_id, pr.max_workers, pr.reserve, pr.salary, pr.vault, pr.stock, pr.level, pr.user_id as owner_id,
             rt.slug as ranch_type,
             COALESCE(rs.production_time, 60) as production_time,
+            (SELECT level FROM arge_levels WHERE user_id = pr.user_id AND mine_type = rt.slug) as arge_level,
             (SELECT COUNT(*) FROM ranch_active_workers WHERE ranch_id = pr.id AND end_time > NOW()) as current_workers,
             (SELECT COUNT(*) FROM ranch_active_workers WHERE user_id = ? AND end_time > NOW()) as any_active_workers
             FROM users u, player_ranches pr
@@ -4845,7 +4872,7 @@ app.post('/api/ranches/start', (req, res) => {
             if (results.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Kullanıcı veya Çiftlik bulunamadı.' }));
 
             const data = results[0];
-            const { energy, health, education_skill, max_workers, current_workers, any_active_workers, reserve, salary, vault, stock, level, production_time } = data;
+            const { energy, health, education_skill, max_workers, current_workers, any_active_workers, reserve, salary, vault, stock, level, production_time, arge_level } = data;
             
             // 2. Checks
             const ENERGY_COST = 10;
@@ -4858,13 +4885,17 @@ app.post('/api/ranches/start', (req, res) => {
             if (reserve <= 0) return db.rollback(() => res.json({ success: false, message: 'Çiftlik rezervi tükenmiş!' }));
             if (stock >= MAX_STOCK) return db.rollback(() => res.json({ success: false, message: 'Çiftlik deposu dolu! Üretim yapılamaz.' }));
             
-            // Calculate Production Amount
-            const userSkill = education_skill || 0;
-            const range = getBaseProductionRange(userSkill);
-            const multiplier = 1.0; // No AR-GE for ranches yet
-            
-            const baseAmount = Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
-            let productionAmount = Math.max(1, Math.floor(baseAmount * multiplier));
+            // Calculate Production Amount - Use owner's data for consistent production
+            // Get owner's education_skill
+            db.query('SELECT education_skill FROM users WHERE id = ?', [data.owner_id], (err, ownerData) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Owner Data Error' }));
+                
+                const ownerSkill = ownerData[0]?.education_skill || 0;
+                const ranchLevel = level || 1;
+                const baseProduction = ranchLevel;
+                const educationBonus = Math.floor(ownerSkill / 10);
+                const argeBonus = (arge_level || 0) * 2;
+                let productionAmount = baseProduction + educationBonus + argeBonus;
             
             // Determine Feed Cost Ratio
             let feedCostPerUnit = 1;
@@ -4885,17 +4916,17 @@ app.post('/api/ranches/start', (req, res) => {
             const totalFeedCost = productionAmount * feedCostPerUnit;
 
             // Vault Check
-            const estimatedCost = Math.ceil(range.max * multiplier) * salary; 
+            const estimatedCost = productionAmount * salary; 
             if (vault < estimatedCost) {
-                return db.rollback(() => res.json({ success: false, message: `Çiftlik kasasında maaş için yeterli bakiye yok! (Tahmini: ${estimatedCost} ₺)` }));
+                return db.rollback(() => res.json({ success: false, message: `Çiftlik kasasında maaş için yeterli bakiye yok! (Gerekli: ${estimatedCost} ₺)` }));
             }
 
             if (current_workers >= (max_workers || 5)) {
                 return db.rollback(() => res.json({ success: false, message: 'Çiftlik kapasitesi dolu!' }));
             }
 
-            // 3. Deduct Energy/Health AND Reserve (Feed)
-            db.query('UPDATE users SET energy = energy - ?, health = health - ? WHERE id = ?', [ENERGY_COST, HEALTH_COST, userId], (err) => {
+                // 3. Deduct Energy/Health AND Reserve (Feed)
+                db.query('UPDATE users SET energy = energy - ?, health = health - ? WHERE id = ?', [ENERGY_COST, HEALTH_COST, userId], (err) => {
                 if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User Update Error' }));
 
                 db.query('UPDATE player_ranches SET reserve = reserve - ? WHERE id = ?', [totalFeedCost, ranchId], (err) => {
@@ -4910,11 +4941,12 @@ app.post('/api/ranches/start', (req, res) => {
                         
                         db.commit(err => {
                             if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                            res.json({ success: true, message: `İş başı yapıldı! (Tahmini Üretim: ${productionAmount})`, endTime: endTime });
+                            res.json({ success: true, message: `İş başı yapıldı! (Üretim: ${productionAmount})`, endTime: endTime });
                         });
                     });
                 });
             });
+            }); // Close owner query callback
         });
     });
 });
@@ -5155,21 +5187,24 @@ app.post('/api/farms/start', (req, res) => {
             if (reserve <= 0) return db.rollback(() => res.json({ success: false, message: 'Tarla tohum deposu tükenmiş!' }));
             if (stock >= MAX_STOCK) return db.rollback(() => res.json({ success: false, message: 'Tarla deposu dolu! Üretim yapılamaz.' }));
             
-            // Calculate Production Amount using the same formula as frontend
-            const userSkill = education_skill || 0;
-            const factoryLevel = level || 1;
-            const baseProduction = factoryLevel;
-            const educationBonus = Math.ceil(userSkill / 10);
-            
-            // Get AR-GE Level (use owner_id, not worker's userId)
-            const farmType = data.farm_type;
-            const ownerId = data.owner_id;
-            const argeQuery = 'SELECT level FROM arge_levels WHERE user_id = ? AND mine_type = ?';
-            db.query(argeQuery, [ownerId, farmType], (err, argeResults) => {
-                const argeLevel = (argeResults && argeResults.length > 0) ? argeResults[0].level : 0;
-                const argeBonus = argeLevel * 2;
+            // Calculate Production Amount - Use owner's data for consistent production
+            // Get owner's education_skill
+            db.query('SELECT education_skill FROM users WHERE id = ?', [ownerId], (err, ownerData) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Owner Data Error' }));
                 
-                let productionAmount = baseProduction + educationBonus + argeBonus;
+                const ownerSkill = ownerData[0]?.education_skill || 0;
+                const factoryLevel = level || 1;
+                const baseProduction = factoryLevel;
+                const educationBonus = Math.floor(ownerSkill / 10);
+            
+                // Get AR-GE Level (use owner_id, not worker's userId)
+                const farmType = data.farm_type;
+                const argeQuery = 'SELECT level FROM arge_levels WHERE user_id = ? AND mine_type = ?';
+                db.query(argeQuery, [ownerId, farmType], (err, argeResults) => {
+                    const argeLevel = (argeResults && argeResults.length > 0) ? argeResults[0].level : 0;
+                    const argeBonus = argeLevel * 2;
+                    
+                    let productionAmount = baseProduction + educationBonus + argeBonus;
             
                 // Determine Seed Cost Ratio
                 let seedCostPerUnit = 1;
@@ -5204,8 +5239,8 @@ app.post('/api/farms/start', (req, res) => {
                     return db.rollback(() => res.json({ success: false, message: 'Tarla kapasitesi dolu!' }));
                 }
 
-                // 3. Deduct Energy/Health AND Reserve (Seed)
-                db.query('UPDATE users SET energy = energy - ?, health = health - ? WHERE id = ?', [ENERGY_COST, HEALTH_COST, userId], (err) => {
+                    // 3. Deduct Energy/Health AND Reserve (Seed)
+                    db.query('UPDATE users SET energy = energy - ?, health = health - ? WHERE id = ?', [ENERGY_COST, HEALTH_COST, userId], (err) => {
                     if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User Update Error' }));
 
                     db.query('UPDATE player_farms SET reserve = reserve - ? WHERE id = ?', [totalSeedCost, farmId], (err) => {
@@ -5226,6 +5261,7 @@ app.post('/api/farms/start', (req, res) => {
                     });
                 });
             }); // Close argeQuery callback
+            }); // Close owner query callback
         });
     });
 });

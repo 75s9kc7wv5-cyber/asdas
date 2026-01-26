@@ -525,16 +525,6 @@
                         <span class="info-value" id="info-worker">-</span>
                     </div>
                     <div class="info-item">
-                        <i class="fas fa-warehouse" style="color: #9b59b6;"></i>
-                        <span class="info-label">Hammadde Deposu</span>
-                        <span class="info-value" id="info-raw-warehouse">-</span>
-                    </div>
-                    <div class="info-item">
-                        <i class="fas fa-box-open" style="color: #e67e22;"></i>
-                        <span class="info-label">Ürün Deposu</span>
-                        <span class="info-value" id="info-prod-warehouse">-</span>
-                    </div>
-                    <div class="info-item">
                         <i class="fas fa-vault" style="color: var(--accent-green);"></i>
                         <span class="info-label">Kasa Kapasitesi</span>
                         <span class="info-value" id="info-vault-capacity">-</span>
@@ -1038,16 +1028,6 @@
             document.getElementById('info-product').innerText = categoryName !== '-' ? `${categoryName} İşletmesi` : '-';
             
             document.getElementById('info-worker').innerText = `${factory.workers}/${factory.maxWorkers}`;
-            
-            // Hammadde Deposu: depodaki hammadde / kapasite
-            const rawAmount = factory.raw || 0;
-            const rawCapacity = factory.rawCap || 0;
-            document.getElementById('info-raw-warehouse').innerText = `${fmt(rawAmount)}/${fmt(rawCapacity)}`;
-            
-            // Ürün Deposu: depodaki ürün / kapasite
-            const prodAmount = factory.prod || 0;
-            const prodCapacity = factory.prodCap || 0;
-            document.getElementById('info-prod-warehouse').innerText = `${fmt(prodAmount)}/${fmt(prodCapacity)}`;
             
             // Kasa Kapasitesi
             const vaultCapacity = factory.level * 100000;

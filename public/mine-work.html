@@ -316,7 +316,7 @@
                 
                 <div class="info-list-item">
                     <div class="info-left">
-                        <i class="fas fa-box" style="color: var(--accent); font-size: 1rem;"></i>
+                        <i class="fas fa-mountain" style="color: var(--accent); font-size: 1rem;"></i>
                         <div class="info-label" style="font-size: 0.8rem;">Maden Rezervi</div>
                     </div>
                     <div class="info-value text-green" style="font-size: 0.85rem;" id="statReserve">0 / 0</div>
@@ -654,7 +654,7 @@
                 const baseProduction = factoryLevel;
                 
                 // 2. Eğitim Seviyesi Bonusu
-                const educationBonus = Math.ceil(userSkill / 10);
+                const educationBonus = Math.floor(userSkill / 10);
                 
                 // 3. AR-GE Bonusu
                 const argeBonusProduction = argeLevel * 2;
@@ -929,7 +929,7 @@
             const userSkill = userData ? (userData.education_skill || 0) : 0;
             const factoryLevel = factoryData.level || 1;
             const baseProduction = factoryLevel;
-            const educationBonus = Math.ceil(userSkill / 10);
+            const educationBonus = Math.floor(userSkill / 10);
             const mineType = factoryData.mine_type || 'iron';
             const ownerArge = userArgeData[mineType] || { level: 0 };
             const argeLevel = ownerArge.level || 0;

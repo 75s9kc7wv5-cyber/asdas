@@ -588,7 +588,7 @@
                 const baseProduction = factoryLevel;
                 
                 // 2. Eğitim Seviyesi Bonusu: Her 10 katında +1 üretim (1-10: 1, 11-20: 2, 21-30: 3, vb.)
-                const educationBonus = Math.ceil(userSkill / 10);
+                const educationBonus = Math.floor(userSkill / 10);
                 
                 // 3. AR-GE Bonusu: 0. seviyede 0, her seviyede +2 üretim
                 const argeBonus = argeLevel * 2;
@@ -874,7 +874,7 @@
             const userSkill = userData ? (userData.education_skill || 0) : 0;
             const factoryLevel = factoryData.level || 1;
             const baseProduction = factoryLevel;
-            const educationBonus = Math.ceil(userSkill / 10);
+            const educationBonus = Math.floor(userSkill / 10);
             const farmType = factoryData.farm_type || 'wheat';
             // Tarla sahibinin AR-GE bonusunu kullan
             const ownerArge = userArgeData[farmType] || { level: 0 };
@@ -899,6 +899,15 @@
             };
             const seedCostPerUnit = seedCostMap[factoryData.farm_type] || 1;
             const totalSeedCost = totalProduction * seedCostPerUnit;
+            
+            // Check if there's enough seed in reserve
+            const currentReserve = factoryData.reserve || 0;
+            const maxProductionBySeed = Math.floor(currentReserve / seedCostPerUnit);
+            
+            if (totalProduction > maxProductionBySeed) {
+                toastr.warning(`Yetersiz tohum! Maksimum ${maxProductionBySeed} adet üretim yapabilirsiniz.`);
+                return;
+            }
 
             document.querySelector('.m-desc').innerHTML = `Çalışmayı onaylıyor musun? <strong>${totalSeedCost} Tohum</strong> ve <strong>10 Enerji</strong> karşılığında <strong>${totalProduction} ${productName}</strong> üretim yapılacak ve <strong>${formatMoney(totalEarnings)} ₺</strong> maaş kazanacaksın.`;
             document.getElementById('workModal').style.display = 'flex';
