@@ -188,13 +188,14 @@ function renderArgeList() {
         card.className = 'research-card';
         
         let actionHTML = '';
+        let cardFunction = '';
+        let cardCursor = 'default';
         
         if (isMaxed) {
-            actionHTML = `
-                <button class="btn-research" style="background:#333; border-color:#333; cursor:default;">
-                    <span>Maksimum Seviye</span>
-                    <i class="fas fa-check"></i>
-                </button>
+             actionHTML = `
+                <div style="text-align:center; color:#666; padding:5px; font-weight:bold; background:rgba(0,0,0,0.2); border-radius:4px;">
+                    Maksimum Seviye <i class="fas fa-check"></i>
+                </div>
             `;
         } else if (itemArge.is_researching) {
             actionHTML = `
@@ -208,18 +209,18 @@ function renderArgeList() {
                 updateResearchTimer(item.id, itemArge.research_end_time, duration);
             }
         } else if (hasActiveResearch) {
-            // If another research is active, disable this button
+            // If another research is active
             actionHTML = `
-                <button class="btn-research" style="background: var(--accent-red); border-color: var(--accent-red); cursor: not-allowed; opacity: 0.6;" disabled>
-                    <span>Başka Araştırma Devam Ediyor</span>
-                </button>
+                <div style="text-align:center; color:var(--accent-red); padding:5px; font-size:0.9em;">
+                    <i class="fas fa-lock"></i> Başka Araştırma Devam Ediyor
+                </div>
             `;
+            card.style.opacity = '0.7';
         } else {
-            actionHTML = `
-                <button class="btn-research" style="background: var(--accent-green); border-color: var(--accent-green); text-align: center;" onclick="openModal('${item.id}')">
-                    <span>Geliştirmeyi Başlat</span>
-                </button>
-            `;
+             // Available to start
+            cardFunction = `openModal('${item.id}')`;
+            cardCursor = 'pointer';
+            actionHTML = '';
         }
 
         let iconHtml = '';
@@ -228,6 +229,11 @@ function renderArgeList() {
         } else {
             iconHtml = `<i class="fas ${item.icon}"></i>`;
         }
+
+        if(cardFunction) {
+            card.setAttribute('onclick', cardFunction);
+        }
+        card.style.cursor = cardCursor;
 
         card.innerHTML = `
             <div class="r-top">
@@ -275,63 +281,80 @@ function openModal(itemId) {
     const bonus = 10; // +10% per level
     const requiredEdu = nextLevel * 10;
 
+    // Get user data from storage for validation
+    const user = JSON.parse(localStorage.getItem('simWorldUser'));
+    const userMoney = user ? (user.money || 0) : 0;
+    const userGold = user ? (user.gold || 0) : 0;
+    const userDiamond = user ? (user.diamond || 0) : 0;
+
     document.getElementById('mTitle').innerText = item.name;
-    document.getElementById('mTime').innerText = formatTime(duration);
     
-    let costText = `<div style="display:flex; flex-direction:column; gap:5px;">
-        <span style="color:var(--accent-green)">${formatMoney(costMoney)} ₺</span>
-        <span style="color:var(--accent-gold)">${formatMoney(costGold)} Altın</span>`;
+    const reqList = document.getElementById('reqList');
+    if (reqList) reqList.innerHTML = '';
     
-    if (costDiamond > 0) {
-        costText += `<span style="color:var(--accent-cyan)">${costDiamond} Elmas</span>`;
-    }
-    costText += `</div>`;
+    let canStart = true;
 
-    // Education Requirement
-    let eduColor = userEducationSkill >= requiredEdu ? 'var(--accent-green)' : 'var(--accent-red)';
-    let eduIcon = userEducationSkill >= requiredEdu ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
-    
-    // Find stage name
+    // Helper to add item
+    const addItem = (iconSrc, label, requiredText, currentVal, condition) => {
+        if(!condition) canStart = false;
+        
+        let iconHtml = '';
+        if(iconSrc.startsWith('fa-')) {
+            iconHtml = `<i class="fas ${iconSrc} info-icon" style="color:#ccc; display:flex; align-items:center;"></i>`;
+        } else {
+            iconHtml = `<img src="${iconSrc}" class="info-icon" alt="${label}">`;
+        }
+
+        const statusClass = condition ? 'status-ok' : 'status-fail';
+        const statusIcon = condition ? 'fa-check' : 'fa-times';
+
+        if (reqList) {
+            reqList.innerHTML += `
+                <div class="info-list-item">
+                    <div class="info-left">
+                        ${iconHtml}
+                        <span class="info-label">${label}</span>
+                    </div>
+                    <span class="info-labels" style="margin-left:auto; margin-right:10px; color:#aaa; font-size:0.9em;">${requiredText}</span>
+                    <div class="info-status ${statusClass}">
+                        <i class="fas ${statusIcon}"></i>
+                    </div>
+                </div>
+            `;
+        }
+    };
+
+    // 1. Süre
+    addItem('icons/icon-pack/clock.png', 'Süre', formatTime(duration), 0, true);
+
+    // 2. Eğitim
     const stage = eduStages.find(s => s.max === requiredEdu);
-    const stageName = stage ? stage.name + " Mezunu" : requiredEdu + ". Seviye";
+    const stageName = stage ? stage.name : requiredEdu + ". Sv.";
+    addItem('icons/icon-pack/education.png', 'Eğitim', stageName, userEducationSkill, userEducationSkill >= requiredEdu);
 
-    let eduHtml = `
-        <div class="m-row">
-            <span style="display:flex;align-items:center;gap:6px;">
-                <i class="fas fa-graduation-cap" style="color:var(--accent-purple);"></i>
-                Gereken Eğitim:
-            </span>
-            <span style="color:${eduColor}">${eduIcon} ${stageName}</span>
-        </div>
-    `;
-
-    // Insert Edu HTML before Cost
-    const detailsContainer = document.querySelector('.m-details');
+    // 3. Maliyetler
+    addItem('icons/inventory-icon/money.png', 'Para', formatMoney(costMoney), userMoney, userMoney >= costMoney);
     
-    detailsContainer.innerHTML = `
-        <div class="m-row">
-            <span style="display:flex;align-items:center;gap:6px;">
-                <i class="fas fa-clock" style="color:var(--accent-cyan);"></i>
-                Süre:
-            </span>
-            <span id="mTime" style="color:var(--accent-cyan)">${formatTime(duration)}</span>
-        </div>
-        ${eduHtml}
-        <div class="m-row">
-            <span style="display:flex;align-items:center;gap:6px;">
-                <i class="fas fa-coins" style="color:var(--accent-gold);"></i>
-                Maliyet:
-            </span>
-            <span id="mCost">${costText}</span>
-        </div>
-        <div class="m-row">
-            <span style="display:flex;align-items:center;gap:6px;">
-                <i class="fas fa-chart-line" style="color:var(--accent-green);"></i>
-                Etki:
-            </span>
-            <span id="mEffect" style="color:var(--accent-green)">+%${bonus} Verimlilik</span>
-        </div>
-    `;
+    if(costGold > 0) {
+        addItem('icons/inventory-icon/gold.png', 'Altın', formatMoney(costGold), userGold, userGold >= costGold);
+    }
+
+    if(costDiamond > 0) {
+        addItem('icons/inventory-icon/diamond.png', 'Elmas', costDiamond, userDiamond, userDiamond >= costDiamond);
+    }
+
+    const btn = document.getElementById('btnStartResearch');
+    if(btn) {
+        if(canStart) {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+        } else {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+        }
+    }
 
     document.getElementById('confirmModal').style.display = 'flex';
 }

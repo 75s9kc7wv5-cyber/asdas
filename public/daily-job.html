@@ -40,28 +40,25 @@
         /* MAIN */
         main { flex: 1; padding: 15px; overflow-y: auto; padding-bottom: 80px; position: relative; }
 
-        .page-header { text-align: center; margin-bottom: 25px; animation: fadeInDown 0.5s; }
-        .header-badge {
-            display: inline-block;
-            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(10,10,10,0.95) 100%);
-            border: 1px solid #333;
-            border-top: 3px solid var(--accent);
-            padding: 15px 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            position: relative;
+        .page-header { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            margin-top: 20px;
+            margin-bottom: 20px; 
+            padding-bottom: 15px; 
+            border-bottom: 1px solid #333; 
         }
-        .header-badge::after {
-            content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
-            width: 60%; height: 2px; background: radial-gradient(circle, var(--accent) 0%, transparent 100%);
-            opacity: 0.5;
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .back-btn { 
+            width: 40px; height: 40px; background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
+            display: flex; align-items: center; justify-content: center; color: #888; 
+            cursor: pointer; transition: all 0.2s; text-decoration: none; 
         }
-        .page-title { 
-            font-size: 1.4rem; font-weight: 800; letter-spacing: 2px; color: #fff; margin-bottom: 5px; 
-            text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 10px;
-            text-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
-        }
-        .page-desc { font-size: 0.85rem; color: #999; font-weight: 500; }
+        .back-btn:hover { background: #252525; color: #fff; border-color: #555; }
+        .header-title-group h2 { font-size: 1.2rem; color: #fff; margin: 0; display: flex; align-items: center; gap: 10px; }
+        .header-title-group h2 i { color: var(--accent); }
+        .header-title-group p { font-size: 0.8rem; color: #888; margin: 3px 0 0 0; }
 
         /* AKTİF İŞ SAYACI (TOP PANEL) - REMOVED */
         /* .active-job-panel styles removed */
@@ -81,12 +78,24 @@
         .job-list { display: flex; flex-direction: column; gap: 15px; }
 
         .job-card {
-            background: var(--bg-card); border: 1px solid var(--border-color);
-            border-radius: 10px; padding: 15px; position: relative; transition: all 0.2s;
-            display: flex; flex-direction: column; gap: 10px;
+            background: var(--bg-card); 
+            border: 1px solid var(--border-color);
+            border-radius: 12px; 
+            padding: 15px; 
+            position: relative; 
+            overflow: hidden;
+            transition: transform 0.2s; 
+            display: flex; 
+            align-items: center; 
+            gap: 15px;
+            cursor: pointer;
         }
-        .job-card.locked { opacity: 0.6; filter: grayscale(0.8); border-color: #333; pointer-events: none; }
+        .job-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+        .job-card:active { transform: scale(0.98); }
+
+        .job-card.locked { opacity: 0.6; filter: grayscale(0.8); border-color: #333; pointer-events: none; background: #111; }
         .job-card.completed { border-color: var(--accent-green); background: rgba(46, 204, 113, 0.05); }
+        .job-card.completed h3 { color: var(--accent-green) !important; text-decoration: line-through; }
         
         .lock-overlay { position: absolute; top: 10px; right: 10px; color: var(--accent-red); font-size: 1.2rem; display: none; }
         .job-card.locked .lock-overlay { display: block; }
@@ -94,20 +103,35 @@
         .check-overlay { position: absolute; top: 10px; right: 10px; color: var(--accent-green); font-size: 1.5rem; display: none; }
         .job-card.completed .check-overlay { display: block; }
 
-        /* Header (İkon + İsim) */
-        .jc-header { display: flex; align-items: center; gap: 12px; padding-bottom: 5px; border-bottom: 1px solid #222; }
+        /* Icon */
         .jc-icon { 
-            width: 45px; height: 45px; background: var(--bg-input); border-radius: 8px; 
-            display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--accent);
-            border: 1px solid #333;
+            width: 60px; height: 60px; background: rgba(0, 229, 255, 0.1); border-radius: 10px; 
+            display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--accent);
+            border: 1px solid rgba(0, 229, 255, 0.3); flex-shrink: 0;
         }
-        .jc-info { flex: 1; }
-        .jc-info h3 { font-size: 1.1rem; font-weight: 700; margin: 0; color: #fff; }
-
-        /* Detaylar Satırı (Yanyana) */
-        .job-details-row { display: flex; gap: 15px; margin-top: 5px; }
         
-        /* Badge Sistemi */
+        /* Info */
+        .jc-info { flex: 1; }
+        .jc-info h3 { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 2px; }
+        
+        .jc-detail { font-size: 0.75rem; color: #aaa; display: flex; gap: 10px; margin-bottom: 5px; }
+        .jc-detail span { display: flex; align-items: center; gap: 4px; }
+        
+        .jc-reward { font-size: 1rem; color: var(--accent-green); font-weight: bold; }
+
+        .arrow-indicator { font-size: 1.5rem; color: #444; transition: 0.3s; }
+        .job-card:hover .arrow-indicator { color: var(--accent); transform: translateX(5px); }
+        
+        /* Progress & Active Status */
+        .active-job-status { 
+            width: 100%;
+            margin-top: 5px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,0.1); 
+            animation: slideDown 0.3s ease-out;
+        }
+        .aj-timer { font-size: 1.2rem; font-weight: 800; color: #fff; text-align: center; letter-spacing: 2px; font-family: monospace; text-shadow: 0 0 20px var(--accent); margin-bottom: 5px; }
+
+        
+        /* Badge Sistemi - Not used in card body anymore but kept for backup */
         .badge-section { flex: 1; }
         .badge-label { font-size: 0.65rem; color: #666; margin-bottom: 4px; font-weight:bold; letter-spacing:0.5px; }
         .badge-group { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -144,25 +168,94 @@
         .job-card.completed .btn-work { display: none; }
 
         /* MODAL & LOG */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; display: none; justify-content: center; align-items: center; animation: fadeIn 0.3s; }
+        .modal-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
+            z-index: 200; display: none; justify-content: center; align-items: center; 
+            animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
         .modal-content { 
-            background: #181818; width: 85%; padding: 25px; border-radius: 15px; 
-            border: 1px solid #444; text-align: center; border-top: 4px solid var(--accent-green);
-            box-shadow: 0 0 50px rgba(46, 204, 113, 0.2);
-            position: relative; overflow: hidden;
+            background: rgba(20, 20, 20, 0.95); width: 90%; max-width: 400px; padding: 30px; 
+            border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); 
+            text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative; overflow: hidden; transform: scale(0.95);
+            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
+        @keyframes modalPop { to { opacity: 1; transform: scale(1); } }
+
         .modal-content::before {
-            content:''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background: radial-gradient(circle, rgba(46, 204, 113, 0.1) 0%, transparent 70%);
-            animation: spin 10s linear infinite; pointer-events: none;
+            content:''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-green));
         }
-        .m-title { font-size: 1.5rem; color: #fff; margin-bottom: 5px; font-weight: 800; }
-        .m-sub { font-size: 0.9rem; color: #aaa; margin-bottom: 20px; }
-        .reward-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .r-box { background: #111; padding: 10px; border-radius: 8px; border: 1px solid #333; }
-        .r-val { font-size: 1.2rem; font-weight: bold; color: #fff; display: block; }
-        .r-lbl { font-size: 0.7rem; color: #888; text-transform: uppercase; }
-        .m-btn { width: 100%; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; background: var(--accent-green); color: #000; font-size: 1rem; }
+
+        .m-title { font-size: 1.6rem; color: #fff; margin: 15px 0 5px 0; font-weight: 800; letter-spacing: 1px; }
+        .m-sub { font-size: 0.95rem; color: #aaa; margin-bottom: 25px; line-height: 1.4; }
+        
+        /* Modal Lists */
+        .info-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            transition: all 0.2s;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .info-list-item:last-child { border-bottom: none; }
+        .info-list-item:hover { opacity: 0.8; background:rgba(255,255,255,0.02); }
+        
+        .info-left { display: flex; align-items: center; gap: 0; flex: 1; }
+        .info-left i { width: 28px; min-width: 28px; text-align: left; margin-right: 10px; font-size: 1rem; }
+        .info-left img { width: 24px; height: 24px; min-width: 24px; margin-right: 10px; object-fit: contain; }
+        
+        .info-label { color: #aaa; font-size: 0.85rem; font-weight: 500; }
+        .info-value { color: #fff; font-size: 0.85rem; font-weight: 700; text-align: right; margin-left: auto; }
+        
+        .upgrade-cost-status {
+            width: 18px; height: 18px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; margin-left: 15px; flex-shrink: 0;
+        }
+        .upgrade-cost-status.ok {
+            background: rgba(46, 204, 113, 0.2); color: var(--accent);
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.2);
+        }
+        .upgrade-cost-status.fail {
+            background: rgba(231, 76, 60, 0.2); color: var(--accent-red);
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.2);
+        }
+        
+        /* Eski stilleri korumak yerine yenilerini entegre ettik */
+        
+        /* Reward Grid */
+        .reward-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px; }
+        .r-box { 
+            background: linear-gradient(145deg, #1a1a1a, #111); padding: 15px; border-radius: 12px; 
+            border: 1px solid rgba(255,255,255,0.05); transition: 0.3s;
+        }
+        .r-box:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.1); }
+        .r-val { font-size: 1.3rem; font-weight: 800; color: #fff; display: block; margin-bottom: 2px; }
+        .r-lbl { font-size: 0.7rem; color: #666; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+
+        /* Buttons */
+        .action-buttons { display: grid; grid-template-columns: 1fr 1.5fr; gap: 12px; }
+        .m-btn { 
+            width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 700; 
+            cursor: pointer; font-family: 'Rajdhani'; font-size: 1rem; transition: 0.2s;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .m-btn-cancel { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid transparent; }
+        .m-btn-cancel:hover { background: rgba(255,255,255,0.1); border-color: #444; }
+        
+        .m-btn-confirm { background: var(--accent-green); color: #000; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3); }
+        .m-btn-confirm:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4); }
+        .m-btn-confirm:disabled { filter: grayscale(1); opacity: 0.5; cursor: not-allowed; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #444; }
 
         .history-section { margin-top: 25px; border-top: 1px solid #333; padding-top: 15px; }
         .hist-title { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; }
@@ -190,18 +283,42 @@
         <main>
             
             <div class="page-header">
-                <div class="header-badge">
-                    <div class="page-title"><i class="fas fa-briefcase" style="color:var(--accent)"></i> GÜNLÜK İŞLER</div>
-                    <div class="page-desc">Günde 1 kez çalışarak kaynak kazan.</div>
+                <div class="header-left">
+                    <a href="home.html" class="back-btn">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                    <div class="header-title-group">
+                        <h2>GÜNLÜK İŞLER</h2>
+                        <p>Günde 1 kez çalışarak kaynak kazan.</p>
+                    </div>
                 </div>
             </div>
 
             <!-- İŞ LİSTESİ -->
+            <p style="text-align:center; color:#666; font-size:0.85rem; margin-bottom:15px; margin-top:-10px;">Çalışmak için karta tıklayın</p>
             <div class="job-list" id="jobListContainer">
                 <!-- JS ile dolacak -->
             </div>
 
         </main>
+
+        <!-- ONAY MODALI -->
+        <div class="modal-overlay" id="confirmModal">
+            <div class="modal-content">
+                <i class="fas fa-file-signature" style="font-size:3.5rem; color:var(--accent); margin-bottom:10px; opacity:0.8;"></i>
+                <h3 class="m-title" id="confirmTitle">İŞ DETAYLARI</h3>
+                <p class="m-sub" id="confirmDesc">Bu görevi yapmak üzeresin.</p>
+                
+                <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 15px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; text-align: left;" id="confirmReqList">
+                    <!-- JS Dolduracak -->
+                </div>
+
+                <div class="action-buttons">
+                    <button class="m-btn m-btn-cancel" onclick="closeConfirmModal()">İPTAL</button>
+                    <button class="m-btn m-btn-confirm" id="confirmStartBtn" onclick="">BAŞLA</button>
+                </div>
+            </div>
+        </div>
 
         <!-- ÖDÜL MODALI -->
         <div class="modal-overlay" id="rewardModal">
@@ -362,14 +479,15 @@
                 let cardClass = "job-card";
                 let actionArea = "";
 
+                let cardStyle = "";
+                let clickEvent = "";
+
                 if (isLocked) {
                     cardClass += " locked";
-                    btnText = `SEVİYE ${job.minLevel} GEREKLİ`;
-                    btnDisabled = true;
+                    // btnText = `SEVİYE ${job.minLevel} GEREKLİ`; // removed
                 } else if (isCompleted) {
                     cardClass += " completed";
-                    btnText = "BUGÜN YAPILDI ✓";
-                    btnDisabled = true;
+                    // btnText = "BUGÜN YAPILDI ✓"; // removed
                 } else if (isActive) {
                     cardClass += " active-job-card";
                     
@@ -398,15 +516,14 @@
                         </div>
                     `;
                 } else if (isWorkingOther) {
-                    btnText = "BAŞKA İŞTE ÇALIŞIYORSUN";
-                    btnDisabled = true;
+                    // btnText = "BAŞKA İŞTE ÇALIŞIYORSUN"; // removed
                 } else if (!canAfford) {
-                    btnText = "ENERJİ/CAN YETERSİZ";
-                    btnDisabled = true;
+                    // btnText = "ENERJİ/CAN YETERSİZ"; // removed
                 }
 
-                if (!isActive) {
-                    actionArea = `<button class="btn-work" ${btnDisabled ? 'disabled' : ''} onclick="startJob(${job.id})">${btnText}</button>`;
+                if (!isLocked && !isCompleted && !isActive && !isWorkingOther) {
+                    cardStyle = "cursor: pointer;";
+                    clickEvent = `onclick="openJobConfirmation(${job.id})"`;
                 }
 
                 // Süreyi formatla
@@ -414,44 +531,19 @@
                 if(job.time >= 60) timeDisplay = Math.floor(job.time/60) + " dk";
 
                 const html = `
-                    <div class="${cardClass}">
+                    <div class="${cardClass}" style="${cardStyle}" ${clickEvent}>
+                        <div class="jc-icon"><i class="fas ${job.icon}"></i></div>
+                        <div class="jc-info">
+                            <h3>${job.name}</h3>
+                            <div class="jc-detail" style="margin-top:5px;">
+                                <span class="badge badge-time"><i class="fas fa-clock"></i> ${timeDisplay}</span>
+                            </div>
+                            ${actionArea}
+                        </div>
+                        <div class="arrow-indicator"><i class="fas fa-chevron-right"></i></div>
+
                         <i class="fas fa-lock lock-overlay"></i>
                         <i class="fas fa-check-circle check-overlay"></i>
-                        
-                        <div class="jc-header">
-                            <div class="jc-icon"><i class="fas ${job.icon}"></i></div>
-                            <div class="jc-info">
-                                <div style="display:flex; justify-content:space-between; align-items:center;">
-                                    <h3>${job.name}</h3>
-                                    <span class="badge badge-time"><i class="fas fa-clock"></i> ${timeDisplay}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="job-details-row">
-                            <!-- Gereksinimler (BADGE SİSTEMİ) -->
-                            <div class="badge-section">
-                                <div class="badge-label">GEREKSİNİMLER</div>
-                                <div class="badge-group">
-                                    <span class="badge badge-level"><i class="fas fa-star"></i> Lv. ${job.minLevel}</span>
-                                    <span class="badge badge-health"><i class="fas fa-heart"></i> -${job.costH}</span>
-                                    <span class="badge badge-energy"><i class="fas fa-bolt"></i> -${job.costE}</span>
-                                </div>
-                            </div>
-
-                            <!-- Ödüller (BADGE SİSTEMİ) -->
-                            <div class="badge-section">
-                                <div class="badge-label">ÖDÜLLER</div>
-                                <div class="badge-group">
-                                    <span class="badge badge-money">+${job.reward.money}₺</span>
-                                    <span class="badge badge-xp">+${job.reward.xp} XP</span>
-                                    ${job.reward.gold ? `<span class="badge badge-gold">+${job.reward.gold} Altın</span>` : ''}
-                                    ${job.reward.diamond ? `<span class="badge badge-diamond">+${job.reward.diamond} Elmas</span>` : ''}
-                                </div>
-                            </div>
-                        </div>
-
-                        ${actionArea}
                     </div>
                 `;
                 container.appendChild(stringToNode(html));
@@ -463,6 +555,133 @@
             const t = document.createElement('template');
             t.innerHTML = html.trim();
             return t.content.firstChild;
+        }
+
+        // --- YENİ MODAL MANTIĞI ---
+        function openJobConfirmation(jobId) {
+            const job = jobs.find(j => j.id === jobId);
+            if (!job) return;
+
+            document.getElementById('confirmTitle').innerText = job.name.toUpperCase();
+            document.getElementById('confirmDesc').innerText = `${job.time < 60 ? job.time + ' saniye' : Math.floor(job.time/60) + ' dakika'} sürecek bu işi başlatmak istiyor musun?`;
+
+            const reqList = document.getElementById('confirmReqList');
+            const startBtn = document.getElementById('confirmStartBtn');
+
+            reqList.innerHTML = '';
+            let canStart = true;
+            let html = '';
+
+            // Helper
+            const addItem = (icon, label, value, isOk, isReward = false) => {
+                const statusClass = isReward ? 'ok' : (isOk ? 'ok' : 'fail');
+                const statusIcon = isReward ? 'fa-plus' : (isOk ? 'fa-check' : 'fa-times');
+                const valueColor = isReward ? 'var(--accent-green)' : (isOk ? '#fff' : 'var(--accent-red)');
+                
+                html += `
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            ${icon}
+                            <span class="info-label">${label}</span>
+                        </div>
+                        <span class="info-value" style="color:${valueColor}">${value}</span>
+                        <div class="upgrade-cost-status ${statusClass}">
+                            <i class="fas ${statusIcon}"></i>
+                        </div>
+                    </div>
+                `;
+            };
+
+            // --- GEREKSİNİMLER ---
+            html += `<div style="font-size:0.7rem; color:#666; font-weight:800; margin-bottom:5px; letter-spacing:1px;">GEREKSİNİMLER</div>`;
+
+            // Level
+            const levelMet = user.level >= job.minLevel;
+            if(!levelMet) canStart = false; // Level şartı
+            addItem(
+                '<i class="fas fa-star" style="color:var(--accent-purple)"></i>',
+                'Min. Seviye',
+                job.minLevel,
+                levelMet
+            );
+            
+            // Can
+            const healthMet = user.health >= job.costH;
+            if(!healthMet) canStart = false;
+            addItem(
+                '<i class="fas fa-heart" style="color:var(--accent-red)"></i>',
+                'Can',
+                `-${job.costH}`,
+                healthMet
+            );
+
+            // Enerji
+            const energyMet = user.energy >= job.costE;
+            if(!energyMet) canStart = false;
+            addItem(
+                '<i class="fas fa-bolt" style="color:var(--accent-gold)"></i>',
+                'Enerji',
+                `-${job.costE}`,
+                energyMet
+            );
+
+            // --- ÖDÜLLER ---
+            html += `<div style="font-size:0.7rem; color:#666; font-weight:800; margin:15px 0 5px 0; letter-spacing:1px; border-top:1px solid rgba(255,255,255,0.05); padding-top:10px;">ÖDÜLLER</div>`;
+
+            // Para
+            addItem(
+                '<img src="icons/inventory-icon/money.png" alt="Para">',
+                'Para',
+                `+${job.reward.money} ₺`,
+                true, true
+            );
+
+            // XP
+            addItem(
+                '<i class="fas fa-graduation-cap" style="color:var(--accent)"></i>',
+                'Tecrübe',
+                `+${job.reward.xp}`,
+                true, true
+            );
+            
+            if(job.reward.gold) {
+                addItem(
+                    '<img src="icons/inventory-icon/gold.png" alt="Altın">',
+                    'Altın',
+                    `+${job.reward.gold}`,
+                    true, true
+                );
+            }
+             if(job.reward.diamond) {
+                 addItem(
+                    '<img src="icons/inventory-icon/diamond.png" alt="Elmas">',
+                    'Elmas',
+                    `+${job.reward.diamond}`,
+                    true, true
+                );
+            }
+
+            reqList.innerHTML = html;
+
+            if (canStart) {
+                startBtn.disabled = false;
+                startBtn.onclick = () => startJobFromModal(jobId);
+                startBtn.innerText = "BAŞLA";
+            } else {
+                startBtn.disabled = true;
+                startBtn.innerText = "YETERSİZ KAYNAK";
+            }
+
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+        }
+
+        function startJobFromModal(jobId) {
+            closeConfirmModal();
+            startJob(jobId);
         }
 
         // --- İŞ MANTIĞI ---

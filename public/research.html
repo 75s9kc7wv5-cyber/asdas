@@ -130,9 +130,9 @@
 
         .btn-research {
             width: 100%;
-            background: #222;
-            color: #fff;
-            border: 1px solid var(--border-color);
+            background: var(--accent-cyan);
+            color: #000;
+            border: 1px solid var(--accent-cyan);
             padding: 10px;
             border-radius: 6px;
             font-family: 'Rajdhani';
@@ -143,9 +143,40 @@
             justify-content: center;
             align-items: center;
         }
-        .btn-research:hover { background: var(--accent-purple); border-color: var(--accent-purple); }
+        .btn-research:hover { background: var(--accent-purple); border-color: var(--accent-purple); color: #fff; }
         .btn-research span { font-size: 0.9rem; }
-        .btn-research small { font-size: 0.8rem; color: #ddd; }
+        .btn-research small { font-size: 0.8rem; color: #333; }
+
+        .list-instruction {
+            text-align: center;
+            color: #666;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+            font-style: italic;
+            animation: fadeIn 1s;
+        }
+
+        /* Geri Dön Butonu */
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-purple);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        .back-btn:hover {
+            background: #2a2a2a;
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 10px rgba(155, 89, 182, 0.2);
+        }
 
         /* Sayaç Stili */
         .timer-box {
@@ -191,9 +222,55 @@
         }
         .m-icon { font-size: 3rem; color: var(--accent-purple); margin-bottom: 10px; }
         .m-title { font-size: 1.3rem; margin-bottom: 10px; color: #fff; font-weight: bold; }
-        .m-details { background: #222; padding: 10px; border-radius: 6px; margin-bottom: 20px; text-align: left; font-size: 0.9rem; color: #ccc; }
-        .m-row { display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px solid #333; padding-bottom: 5px; }
-        .m-row:last-child { border: none; padding: 0; margin: 0; }
+        .m-desc { color: #888; font-size: 0.9rem; margin-bottom: 15px; }
+
+        .req-list { 
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            margin: 15px 0;
+            background: #222;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: left;
+        }
+        .info-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #333;
+        }
+        .info-list-item:last-child {
+            border-bottom: none;
+        }
+        .info-left {
+            display: flex;
+            align-items: center;
+        }
+        .info-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+        }
+        .info-label {
+            color: #ccc;
+            font-size: 0.9rem;
+        }
+        .info-value {
+            color: #fff;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        .info-status {
+            margin-left: 10px;
+            width: 18px; height: 18px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%;
+            font-size: 0.7rem;
+        }
+        .status-ok { background: rgba(46, 204, 113, 0.2); color: var(--accent-green); }
+        .status-fail { background: rgba(231, 76, 60, 0.2); color: var(--accent-red); }
         
         .modal-btns { display: flex; gap: 10px; }
         .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 1rem; }
@@ -229,17 +306,17 @@
     <div class="game-container">
         <!-- Header injected by header-manager.js -->
 
-        <main>
-            <div class="page-header" style="display: flex; align-items: flex-start; gap: 15px; text-align: left;">
-                <button onclick="window.history.back()" style="background: #222; border: 1px solid #444; color: #fff; padding: 12px 15px; border-radius: 8px; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; min-width: 45px; height: 45px; transition: all 0.3s;">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <div style="flex: 1;">
-                    <h1 class="page-title" style="justify-content: flex-start; margin-bottom: 8px;"><i class="fas fa-microscope"></i> AR-GE MERKEZİ</h1>
-                    <p class="page-desc">Tarla, çiftlik, maden ve fabrika teknolojilerini geliştir, verimliliği artır.</p>
-                </div>
+        <div style="display: flex; align-items: center; gap: 15px; padding: 20px 20px 0 20px; margin-bottom: 20px;">
+            <button class="back-btn" onclick="window.location.href='home.html'">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div>
+                <h1 style="font-size: 1.5rem; font-weight: bold; margin: 0; line-height: 1.2;">AR-GE MERKEZİ</h1>
+                <p style="font-size: 0.9rem; color: #888; margin: 0;">Teknoloji ve verimlilik araştırmaları</p>
             </div>
+        </div>
 
+        <main>
             <!-- TABS -->
             <div class="tabs">
                 <div class="tab active" id="tab-farms" onclick="switchTab('farms')">TARLA</div>
@@ -247,6 +324,8 @@
                 <div class="tab" id="tab-mines" onclick="switchTab('mines')">MADEN</div>
                 <div class="tab" id="tab-factories" onclick="switchTab('factories')">FABRİKA</div>
             </div>
+
+            <div class="list-instruction"><i class="fas fa-info-circle"></i> Geliştirmeyi başlatmak için karta dokunun</div>
 
             <div class="research-list" id="researchList">
                 <!-- JS ile doldurulacak -->
@@ -257,25 +336,15 @@
             <div class="modal-content">
                 <i class="fas fa-flask m-icon"></i>
                 <h3 class="m-title" id="mTitle">Araştırma Başlat</h3>
+                <p class="m-desc">Bu araştırmayı başlatmak için gerekenler:</p>
                 
-                <div class="m-details">
-                    <div class="m-row">
-                        <span>Süre:</span>
-                        <span id="mTime" style="color:var(--accent-cyan)">10 Sn</span>
-                    </div>
-                    <div class="m-row">
-                        <span>Maliyet:</span>
-                        <span id="mCost" style="color:var(--accent-gold)">5.000 ₺</span>
-                    </div>
-                    <div class="m-row">
-                        <span>Etki:</span>
-                        <span id="mEffect" style="color:var(--accent-green)">+%5 Verimlilik</span>
-                    </div>
+                <div class="req-list" id="reqList">
+                    <!-- JS Dolduracak -->
                 </div>
 
                 <div class="modal-btns">
                     <button class="m-btn btn-cancel" onclick="closeModal()">İPTAL</button>
-                    <button class="m-btn btn-confirm" onclick="startResearch()">BAŞLAT</button>
+                    <button class="m-btn btn-confirm" id="btnStartResearch" onclick="startResearch()">BAŞLAT</button>
                 </div>
             </div>
         </div>

@@ -214,30 +214,77 @@
             box-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
         }
         .req-list { 
-            text-align: center; 
-            margin: 20px 0; 
-            background: #222; 
-            padding: 15px; 
-            border-radius: 8px; 
             display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
+            flex-direction: column;
+            gap: 0;
+            margin: 15px 0;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
         }
-        .req-badge {
-            background: #333;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            font-weight: bold;
-            color: #ccc;
-            border: 1px solid #444;
+        .info-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            transition: all 0.2s;
+        }
+        .info-list-item:hover {
+            opacity: 0.8;
+        }
+        .info-left {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 0;
+            flex: 1;
         }
-        .req-badge.ok { border-color: var(--accent-green); color: var(--accent-green); background: rgba(46, 204, 113, 0.1); }
-        .req-badge.fail { border-color: var(--accent-red); color: var(--accent-red); background: rgba(231, 76, 60, 0.1); }
+        .info-left i {
+            width: 28px;
+            min-width: 28px;
+            text-align: left;
+            margin-right: 10px;
+            font-size: 1rem;
+        }
+        .info-left img {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            margin-right: 10px;
+        }
+        .info-label {
+            color: #aaa;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .info-value {
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: right;
+            margin-left: auto;
+        }
+        .upgrade-cost-status {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            margin-left: 15px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .upgrade-cost-status.ok {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(46, 204, 113, 0.1));
+            color: var(--accent-green);
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
+        }
+        .upgrade-cost-status.fail {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(231, 76, 60, 0.1));
+            color: var(--accent-red);
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.3);
+        }
         .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
         .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; }
         .btn-confirm { background: var(--accent-green); color: #000; }
@@ -467,7 +514,7 @@
             selectedFarm = farmTypes.find(f => f.slug === farmSlug);
             if (!selectedFarm) return;
             
-            document.getElementById('mTitle').innerText = selectedFarm.name + " Satın Al";
+            document.getElementById('mTitle').innerText = selectedFarm.name + " Satın Almayı Onaylıyor musun?";
             
             // Requirements
             // Assuming farmTypes has price, gold_price, diamond_price, license_req
@@ -485,16 +532,63 @@
 
             const canBuy = hasMoney && hasGold && hasDiamond && hasLicense;
             
+            const priceFormatted = new Intl.NumberFormat('tr-TR').format(selectedFarm.price);
+            
             let html = '';
-            html += `<div class="req-badge ${hasMoney ? 'ok' : 'fail'}"><img src="icons/inventory-icon/money.png" style="width:20px;height:20px;vertical-align:middle;"> ${selectedFarm.price}</div>`;
+            html += `
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <img src="icons/inventory-icon/money.png">
+                        <div class="info-label">Para</div>
+                    </div>
+                    <div class="info-value">${priceFormatted} ₺</div>
+                    <div class="upgrade-cost-status ${hasMoney ? 'ok' : 'fail'}">
+                        <i class="fas fa-${hasMoney ? 'check' : 'times'}"></i>
+                    </div>
+                </div>
+            `;
+            
             if (selectedFarm.gold_price > 0) {
-                html += `<div class="req-badge ${hasGold ? 'ok' : 'fail'}"><img src="icons/inventory-icon/gold.png" style="width:20px;height:20px;vertical-align:middle;"> ${selectedFarm.gold_price}</div>`;
-            }
-            if (selectedFarm.diamond_price > 0) {
-                html += `<div class="req-badge ${hasDiamond ? 'ok' : 'fail'}"><img src="icons/inventory-icon/diamond.png" style="width:20px;height:20px;vertical-align:middle;"> ${selectedFarm.diamond_price}</div>`;
+                html += `
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <img src="icons/inventory-icon/gold.png">
+                            <div class="info-label">Altın</div>
+                        </div>
+                        <div class="info-value">${selectedFarm.gold_price}</div>
+                        <div class="upgrade-cost-status ${hasGold ? 'ok' : 'fail'}">
+                            <i class="fas fa-${hasGold ? 'check' : 'times'}"></i>
+                        </div>
+                    </div>
+                `;
             }
             
-            html += `<div class="req-badge ${hasLicense ? 'ok' : 'fail'}"><i class="fas fa-id-card"></i> ${licenseName} Lv. ${reqLevel}</div>`;
+            if (selectedFarm.diamond_price > 0) {
+                html += `
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <img src="icons/inventory-icon/diamond.png">
+                            <div class="info-label">Elmas</div>
+                        </div>
+                        <div class="info-value">${selectedFarm.diamond_price}</div>
+                        <div class="upgrade-cost-status ${hasDiamond ? 'ok' : 'fail'}">
+                            <i class="fas fa-${hasDiamond ? 'check' : 'times'}"></i>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += `
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-certificate" style="color: var(--accent-cyan);"></i>
+                        <div class="info-label">${reqLevel}. Seviye ${licenseName}</div>
+                    </div>
+                    <div class="upgrade-cost-status ${hasLicense ? 'ok' : 'fail'}">
+                        <i class="fas fa-${hasLicense ? 'check' : 'times'}"></i>
+                    </div>
+                </div>
+            `;
 
             document.getElementById('reqList').innerHTML = html;
             document.getElementById('btnConfirmBuy').disabled = !canBuy;

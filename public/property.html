@@ -50,28 +50,46 @@
         /* MAIN */
         main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
 
-        .page-header { text-align: center; margin-bottom: 25px; animation: fadeInDown 0.5s; }
-        .header-badge {
-            display: inline-block;
-            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(10,10,10,0.95) 100%);
-            border: 1px solid #333;
-            border-top: 3px solid var(--accent);
-            padding: 15px 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            position: relative;
+        .page-header { 
+            margin-bottom: 25px; 
+            animation: fadeInDown 0.5s; 
+            display: flex; 
+            align-items: center; 
+            gap: 15px;
         }
-        .header-badge::after {
-            content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
-            width: 60%; height: 2px; background: radial-gradient(circle, var(--accent) 0%, transparent 100%);
-            opacity: 0.5;
+        .back-btn {
+            background: var(--bg-card);
+            border: 1px solid #333;
+            color: var(--accent);
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+        .back-btn:hover {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
         }
         .page-title { 
-            font-size: 1.4rem; font-weight: 800; letter-spacing: 2px; color: #fff; margin-bottom: 5px; 
-            text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 10px;
+            font-size: 1.4rem; 
+            font-weight: 800; 
+            letter-spacing: 2px; 
+            color: #fff; 
+            margin-bottom: 5px; 
+            text-transform: uppercase;
             text-shadow: 0 0 15px rgba(46, 204, 113, 0.4);
         }
-        .page-desc { font-size: 0.85rem; color: #999; font-weight: 500; }
+        .page-desc { 
+            font-size: 0.85rem; 
+            color: #999; 
+            font-weight: 500; 
+        }
 
         /* TABS */
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
@@ -85,8 +103,11 @@
             background: var(--bg-card); border: 1px solid var(--border-color);
             border-radius: 12px; padding: 15px; position: relative; overflow: hidden;
             transition: transform 0.2s; display: flex; align-items: center; gap: 15px;
+            cursor: pointer;
         }
         .build-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+        .build-card.disabled { opacity: 0.6; cursor: not-allowed; }
+        .build-card.disabled:hover { transform: none; border-color: var(--border-color); }
         
         .bc-icon { 
             width: 60px; height: 60px; background: rgba(46, 204, 113, 0.1); border-radius: 10px; 
@@ -159,17 +180,77 @@
         .m-desc { color: #888; font-size: 0.9rem; margin-bottom: 15px; }
         
         .req-list { 
-            text-align: center; 
-            margin: 20px 0; 
-            background: #222; 
-            padding: 15px; 
-            border-radius: 8px; 
             display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
+            flex-direction: column;
+            gap: 0;
+            margin: 15px 0;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
         }
-        
+        .info-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            transition: all 0.2s;
+        }
+        .info-list-item:hover {
+            opacity: 0.8;
+        }
+        .info-left {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            flex: 1;
+        }
+        .info-left i {
+            width: 28px;
+            min-width: 28px;
+            text-align: left;
+            margin-right: 10px;
+            font-size: 1rem;
+        }
+        .info-left img {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            margin-right: 10px;
+        }
+        .info-label {
+            color: #aaa;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .info-value {
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: right;
+            margin-left: auto;
+        }
+        .upgrade-cost-status {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            margin-left: 15px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .upgrade-cost-status.ok {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(46, 204, 113, 0.1));
+            color: var(--accent);
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
+        }
+        .upgrade-cost-status.fail {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(231, 76, 60, 0.1));
+            color: var(--accent-red);
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.3);
+        }
         .req-badge {
             background: #333;
             padding: 8px 12px;
@@ -210,8 +291,11 @@
 
         <main>
             <div class="page-header">
-                <div class="header-badge">
-                    <div class="page-title"><i class="fas fa-building" style="color:var(--accent)"></i> MÜLK YÖNETİMİ</div>
+                <button class="back-btn" onclick="window.location.href='home.html'">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div style="flex:1;">
+                    <div class="page-title">MÜLK YÖNETİMİ</div>
                     <div class="page-desc">Mülk inşa et ve düzenli vergi geliri topla.</div>
                 </div>
             </div>
@@ -350,14 +434,13 @@
             propertyTypes.forEach(p => {
                 // Check if already built
                 const isBuilt = myProperties.some(mp => mp.property_type_id === p.id);
-                
-                let btnHtml = `<button class="btn-build" onclick="openBuildModal(${p.id})">İNŞA ET</button>`;
-                if (isBuilt) {
-                    btnHtml = `<button class="btn-build" disabled style="background:#333; color:#777; border-color:#444; cursor:default;">İNŞA EDİLDİ</button>`;
-                }
 
                 const card = document.createElement('div');
-                card.className = 'build-card';
+                card.className = 'build-card' + (isBuilt ? ' disabled' : '');
+                
+                if (!isBuilt) {
+                    card.onclick = () => openBuildModal(p.id);
+                }
                 
                 const iconHtml = p.image 
                     ? `<img src="${p.image}" style="width:100%; height:100%; object-fit:contain;">` 
@@ -375,7 +458,6 @@
                             <span class="badge badge-life"><i class="fas fa-repeat"></i> 100 Kez</span>
                         </div>
                     </div>
-                    ${btnHtml}
                 `;
                 container.appendChild(card);
             });
@@ -413,9 +495,17 @@
                     const next = new Date(prop.nextCollection);
                     const now = new Date();
                     const diff = Math.ceil((next - now) / 1000);
-                    const min = Math.floor(diff / 60);
-                    const sec = diff % 60;
-                    btnHtml = `<button class="btn-collect" disabled style="background:#333; color:#777; cursor:not-allowed; font-size:0.8rem; padding:8px 10px;">${min}dk ${sec}sn</button>`;
+                    const hours = Math.floor(diff / 3600);
+                    const minutes = Math.floor((diff % 3600) / 60);
+                    
+                    let timeText = '';
+                    if(hours > 0) {
+                        timeText = `${hours}s ${minutes}dk`;
+                    } else {
+                        timeText = `${minutes}dk`;
+                    }
+                    
+                    btnHtml = `<span class="badge badge-time" style="width: fit-content;"><i class="fas fa-clock"></i> Kira Toplama Süresi: ${timeText}</span>`;
                 }
 
                 const iconHtml = prop.image 
@@ -426,18 +516,18 @@
                     <div class="bc-icon" style="padding:5px;">
                         ${iconHtml}
                     </div>
-                    <div class="bc-info">
+                    <div class="bc-info" style="flex:1;">
                         <div class="pc-header" style="margin-bottom:5px;">
-                            <div class="pc-name">${prop.name} <span style="font-size:0.8rem; color:#aaa;">#${prop.id}</span></div>
+                            <div class="pc-name">${prop.name}</div>
                         </div>
-                        <div class="pc-badges" style="display:flex; gap:5px; flex-wrap:wrap;">
+                        <div class="pc-badges" style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:5px;">
                             <span class="badge badge-income"><i class="fas fa-coins"></i> ${fmt(prop.tax_income)} ₺</span>
                             <span class="badge badge-time"><i class="fas fa-clock"></i> ${formatTime(prop.tax_interval)}</span>
                             <span class="badge badge-life"><i class="fas fa-repeat"></i> ${prop.remaining_life || 100}</span>
                         </div>
-                    </div>
-                    <div class="pc-action" style="margin-left: auto;">
-                        ${btnHtml}
+                        <div class="pc-action">
+                            ${btnHtml}
+                        </div>
                     </div>
                 `;
                 list.appendChild(div);
@@ -454,61 +544,102 @@
             reqList.innerHTML = '';
 
             let canBuild = true;
+            let html = '';
 
-            // Helper to add badge
-            const addBadge = (label, isOk) => {
-                const badge = document.createElement('div');
-                badge.className = `req-badge ${isOk ? 'ok' : 'fail'}`;
-                badge.innerHTML = `<i class="fas ${isOk ? 'fa-check' : 'fa-times'}"></i> ${label}`;
-                reqList.appendChild(badge);
+            // Helper to add item
+            const addItem = (icon, label, value, isOk) => {
                 if(!isOk) canBuild = false;
+                html += `
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            ${icon}
+                            <span class="info-label">${label}</span>
+                        </div>
+                        <span class="info-value">${value}</span>
+                        <div class="upgrade-cost-status ${isOk ? 'ok' : 'fail'}">
+                            <i class="fas ${isOk ? 'fa-check' : 'fa-times'}"></i>
+                        </div>
+                    </div>
+                `;
             };
 
             // 0. General License Limit
             const currentCount = myProperties.length;
-            const currentLimit = licenseLevel || 1;
-            const isLimitOk = currentCount < currentLimit;
+            const requiredLevel = currentCount + 1; // İnşa sonrası toplam olacak mülk sayısı
+            const currentLevel = licenseLevel || 1;
+            const isLimitOk = currentLevel >= requiredLevel;
             
-            if (isLimitOk) {
-                addBadge(`Mülk Kapasitesi (${currentCount}/${currentLimit})`, true);
-            } else {
-                addBadge(`Mülk Lisansı Lv.${currentCount + 1} Gerekli`, false);
-            }
+            addItem(
+                '<i class="fas fa-certificate" style="color: ' + (isLimitOk ? 'var(--accent)' : 'var(--accent-red)') + ';"></i>',
+                `${requiredLevel}. Seviye Mülk Lisansı`,
+                '',
+                isLimitOk
+            );
 
             // 0.5 Unique Check
             const alreadyHas = myProperties.some(p => p.property_type_id === typeId);
             if(alreadyHas) {
-                addBadge('Bu mülkten zaten var', false);
+                addItem(
+                    '<i class="fas fa-ban" style="color: var(--accent-red);"></i>',
+                    'Tekrar İnşa',
+                    'Zaten Var',
+                    false
+                );
             }
 
             // 1. Money
             if(type.cost_money > 0) {
                 const ok = user.money >= type.cost_money;
-                addBadge(`${fmt(type.cost_money)} ₺`, ok);
+                addItem(
+                    '<img src="icons/inventory-icon/money.png" alt="Para">',
+                    'Para',
+                    `${fmt(type.cost_money)} ₺`,
+                    ok
+                );
             }
             // 2. Gold
             if(type.cost_gold > 0) {
                 const ok = user.gold >= type.cost_gold;
-                addBadge(`${type.cost_gold} Altın`, ok);
+                addItem(
+                    '<img src="icons/inventory-icon/gold.png" alt="Altın">',
+                    'Altın',
+                    `${type.cost_gold} Adet`,
+                    ok
+                );
             }
             // 3. Diamond
             if(type.cost_diamond > 0) {
                 const ok = (user.diamond || 0) >= type.cost_diamond;
-                addBadge(`${type.cost_diamond} Elmas`, ok);
+                addItem(
+                    '<img src="icons/inventory-icon/diamond.png" alt="Elmas">',
+                    'Elmas',
+                    `${type.cost_diamond} Adet`,
+                    ok
+                );
             }
 
             // 4. License
             if(type.req_license_level > 1) {
                 const curLic = licenseLevel || 1;
                 const ok = curLic >= type.req_license_level;
-                addBadge(`Lisans Lv.${type.req_license_level}`, ok);
+                addItem(
+                    '<i class="fas fa-id-card" style="color: ' + (ok ? 'var(--accent)' : 'var(--accent-red)') + ';"></i>',
+                    'Mülk Lisansı',
+                    `Lv.${type.req_license_level}`,
+                    ok
+                );
             }
 
             // 5. Education
             if(type.req_education_level > 0) {
                 const userEdu = user.education_skill || 0;
                 const ok = userEdu >= type.req_education_level;
-                addBadge(`Eğitim Lv.${type.req_education_level}`, ok);
+                addItem(
+                    '<i class="fas fa-graduation-cap" style="color: ' + (ok ? 'var(--accent)' : 'var(--accent-red)') + ';"></i>',
+                    'Eğitim Seviyesi',
+                    `Lv.${type.req_education_level}`,
+                    ok
+                );
             }
 
             // 6. Materials
@@ -527,13 +658,32 @@
                 uranium: 'Uranyum'
             };
 
+            const matIcons = {
+                wood: 'icons/mine-icon/wood.png',
+                stone: 'icons/mine-icon/stone.png',
+                glass: 'icons/factory-icon/window.png',
+                concrete: 'icons/factory-icon/cement.png',
+                brick: 'icons/factory-icon/brick.png',
+                steel: 'icons/factory-icon/steel.png',
+                lumber: 'icons/factory-icon/wood-plank.png',
+                gold: 'icons/inventory-icon/gold.png',
+                uranium: 'icons/mine-icon/uranium.png'
+            };
+
             for(let [key, val] of Object.entries(materials)) {
                 const name = matNames[key] || key.toUpperCase();
                 const userAmount = userInventory[key] || 0;
                 const ok = userAmount >= val;
-                addBadge(`${val} ${name} (${userAmount})`, ok);
+                const iconPath = matIcons[key] || 'icons/mine-icon/stone.png';
+                addItem(
+                    `<img src="${iconPath}" alt="${name}">`,
+                    name,
+                    `${val} Adet`,
+                    ok
+                );
             }
 
+            reqList.innerHTML = html;
             const btn = document.getElementById('btnConfirmBuild');
             btn.disabled = !canBuild;
             btn.style.opacity = canBuild ? '1' : '0.5';

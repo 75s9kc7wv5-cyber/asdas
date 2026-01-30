@@ -72,28 +72,27 @@
         }
         .page-title { 
             font-size: 1.4rem; font-weight: 800; letter-spacing: 2px; color: #fff; margin-bottom: 5px; 
-            text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 10px;
+            text-transform: uppercase; display: flex; align-items: center; gap: 10px;
             text-shadow: 0 0 15px rgba(46, 204, 113, 0.4);
         }
         .page-desc { font-size: 0.85rem; color: #999; font-weight: 500; }
 
         /* ACTIVE EDUCATION CARD */
         .active-edu-card {
-            background: linear-gradient(135deg, rgba(46, 204, 113, 0.1), rgba(0,0,0,0.8));
-            border: 1px solid var(--accent-green);
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.08) 0%, rgba(0, 229, 255, 0.04) 100%);
+            border: 1px solid rgba(46, 204, 113, 0.3);
             border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 25px;
-            text-align: center;
-            display: none; /* Hidden by default */
+            padding: 12px 15px;
+            margin-bottom: 18px;
+            display: none;
             animation: slideUp 0.5s ease;
         }
         .active-edu-card.active { display: block; }
         
-        .ae-title { font-size: 1.2rem; font-weight: bold; color: var(--accent-green); margin-bottom: 10px; }
-        .ae-timer { font-size: 2rem; font-weight: 900; color: #fff; margin: 10px 0; font-family: monospace; }
-        .ae-bar-bg { width: 100%; height: 8px; background: #333; border-radius: 4px; overflow: hidden; }
-        .ae-bar-fill { height: 100%; background: var(--accent-green); width: 0%; transition: width 1s linear; }
+        .ae-title { font-size: 0.9rem; font-weight: 600; color: var(--accent-green); letter-spacing: 0.5px; }
+        .ae-timer { font-size: 1.6rem; font-weight: 900; color: #fff; font-family: monospace; }
+        .ae-bar-bg { width: 100%; height: 5px; background: rgba(255, 255, 255, 0.08); border-radius: 2px; overflow: hidden; }
+        .ae-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan)); width: 0%; transition: width 1s linear; }
 
         /* EDUCATION LIST */
         .edu-list { display: flex; flex-direction: column; gap: 15px; }
@@ -109,6 +108,7 @@
             transition: all 0.3s;
             opacity: 0.5; /* Default locked look */
             filter: grayscale(0.8);
+            position: relative;
         }
         
         .edu-card.current {
@@ -122,6 +122,29 @@
             opacity: 0.7;
             filter: grayscale(0.5);
             border-color: var(--accent-green);
+        }
+        
+        .edu-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 229, 255, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+        
+        .edu-overlay-text {
+            background: var(--accent-cyan);
+            color: #000;
+            padding: 8px 16px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 0.9rem;
         }
 
         .edu-icon {
@@ -171,18 +194,216 @@
         
         .m-icon { font-size: 3rem; color: var(--accent-cyan); margin-bottom: 10px; }
         .m-title { font-size: 1.3rem; margin-bottom: 10px; color: #fff; font-weight: bold; }
-        .m-details { background: #222; padding: 10px; border-radius: 6px; margin-bottom: 20px; text-align: left; font-size: 0.9rem; color: #ccc; }
-        .m-row { display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px solid #333; padding-bottom: 5px; }
-        .m-row:last-child { border: none; padding: 0; margin: 0; }
+        .m-desc { color: #888; font-size: 0.9rem; margin-bottom: 15px; }
+        
+        .req-list { 
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            margin: 15px 0;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .info-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            transition: all 0.2s;
+            border-bottom: 1px solid #333;
+        }
+        .info-list-item:last-child {
+            border-bottom: none;
+        }
+        .info-list-item:hover {
+            opacity: 0.8;
+        }
+        .info-left {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            flex: 1;
+        }
+        .info-left i {
+            width: 28px;
+            min-width: 28px;
+            text-align: left;
+            margin-right: 10px;
+            font-size: 1rem;
+        }
+        .info-left img {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            margin-right: 10px;
+        }
+        .info-label {
+            color: #ccc;
+            font-size: 0.9rem;
+        }
+        .info-value {
+            color: #fff;
+            font-weight: bold;
+            margin-left: auto;
+        }
+        .upgrade-cost-status {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            margin-left: 15px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .upgrade-cost-status.ok {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(46, 204, 113, 0.1));
+            color: var(--accent-green);
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
+        }
+        .upgrade-cost-status.fail {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(231, 76, 60, 0.1));
+            color: var(--accent-red);
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.3);
+        }
         
         .modal-btns { display: flex; gap: 10px; }
         .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 1rem; }
         .btn-confirm { background: var(--accent-green); color: #000; }
-        .btn-cancel { background: #333; color: #fff; }
+        .btn-cancel { background: var(--accent-red); color: #fff; }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
+        }
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-cyan);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        .back-btn:hover {
+            background: #2a2a2a;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+        }
+        .page-header-content {
+            flex: 1;
+            text-align: left;
+        }
+        .page-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #fff;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .page-subtitle {
+            font-size: 0.85rem;
+            color: #999;
+            font-weight: 500;
+            text-align: left;
+        }
+
+        .current-edu-card {
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .current-edu-card:hover {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+        }
+        .current-edu-inline {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .current-edu-icon {
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+        .current-edu-label {
+            font-size: 0.85rem;
+            color: #ccc;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .current-edu-progress-wrapper {
+            flex: 1;
+            min-width: 100px;
+        }
+        .current-edu-progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .current-edu-progress-fill {
+            height: 100%;
+            background: var(--accent-cyan);
+            transition: width 0.3s;
+        }
+        .current-edu-value {
+            font-size: 1rem;
+            font-weight: bold;
+            color: var(--accent-cyan);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .current-edu-card .btn-start {
+            background: var(--accent-cyan);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Rajdhani';
+        }
+        .current-edu-card .btn-start:disabled {
+            background: #444;
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        .current-edu-description {
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 12px;
+            font-style: italic;
+            border-top: 1px solid #333;
+            padding-top: 12px;
+        }
 
     </style>
 </head>
@@ -193,25 +414,38 @@
 
         <main>
             <div class="page-header">
-                <div class="header-badge">
-                    <div class="page-title"><i class="fas fa-graduation-cap" style="color:var(--accent-green)"></i> EĞİTİM MERKEZİ</div>
-                    <div class="page-desc">Akademik kariyerini geliştir, yeni ufuklara yelken aç.</div>
+                <button class="back-btn" onclick="window.location.href='home.html'">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="page-header-content">
+                    <div class="page-title">EĞİTİM MERKEZİ</div>
+                    <div class="page-subtitle">Akademik kariyerini geliştir, yeni ufuklara yelken aç.</div>
                 </div>
+            </div>
+
+            <!-- Current Education Card -->
+            <div id="currentEduCard" class="current-edu-card">
+                <!-- JS ile doldurulacak -->
             </div>
 
             <!-- ACTIVE EDUCATION TIMER -->
             <div class="active-edu-card" id="activeEduCard">
-                <div class="ae-title">EĞİTİM DEVAM EDİYOR</div>
-                <div class="ae-timer" id="eduTimer">00:00</div>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-book-open" style="color: var(--accent-green); font-size: 1rem;"></i>
+                        <span class="ae-title">Eğitim Devam Ediyor</span>
+                    </div>
+                    <span class="ae-timer" id="eduTimer" style="font-size: 1.4rem;">00:00</span>
+                </div>
+                
                 <div class="ae-bar-bg">
                     <div class="ae-bar-fill" id="eduBar"></div>
                 </div>
-                <div style="margin-top:10px; font-size:0.9rem; color:#ccc;">Hedef: <span id="targetLevelDisplay">Seviye X</span></div>
                 
-                <!-- Speed Up Button -->
-                <div style="margin-top:15px;">
-                    <button id="btnSpeedUp" class="btn-edu" style="background:var(--accent-purple); color:#fff; border:1px solid #fff;" onclick="speedUpEducation()">
-                        <i class="fas fa-bolt"></i> Hızlandır (<span id="speedUpCost">0</span> Elmas)
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.75rem;">
+                    <span style="color: #999;">Hedef: <span id="targetLevelDisplay" style="color: var(--accent-green); font-weight: 600;">Seviye X</span></span>
+                    <button id="btnSpeedUp" class="btn-edu" style="background: rgba(155, 89, 182, 0.8); color:#fff; padding: 5px 10px; font-size: 0.7rem; border: 1px solid rgba(155, 89, 182, 0.5);" onclick="speedUpEducation()">
+                        <i class="fas fa-bolt"></i> Hızlandır <span id="speedUpCost">0</span>💎
                     </button>
                 </div>
             </div>
@@ -226,26 +460,16 @@
         <div class="modal-overlay" id="confirmModal">
             <div class="modal-content">
                 <i class="fas fa-book-reader m-icon"></i>
-                <h3 class="m-title">Eğitime Başla</h3>
+                <h3 class="m-title">Eğitime başlamayı onaylıyor musun?</h3>
+                <p class="m-desc">Bu eğitimi almak için aşağıdaki gereksinimleri karşılamalısınız.</p>
                 
-                <div class="m-details">
-                    <div class="m-row">
-                        <span>Hedef Seviye:</span>
-                        <span id="mLevel" style="color:var(--text-white)">1</span>
-                    </div>
-                    <div class="m-row">
-                        <span>Süre:</span>
-                        <span id="mTime" style="color:var(--accent-cyan)">10 Sn</span>
-                    </div>
-                    <div class="m-row">
-                        <span>Maliyet:</span>
-                        <span id="mCost" style="color:var(--accent-gold)">-</span>
-                    </div>
+                <div class="req-list" id="reqList">
+                    <!-- JS Dolduracak -->
                 </div>
 
                 <div class="modal-btns">
                     <button class="m-btn btn-cancel" onclick="closeModal()">İPTAL</button>
-                    <button class="m-btn btn-confirm" id="confirmBtn" onclick="startEducation()">BAŞLAT</button>
+                    <button class="m-btn btn-confirm" onclick="startEducation()">ONAYLA</button>
                 </div>
             </div>
         </div>
@@ -255,18 +479,15 @@
             <div class="modal-content" style="border-top-color: var(--accent-purple);">
                 <i class="fas fa-bolt m-icon" style="color: var(--accent-purple);"></i>
                 <h3 class="m-title">Eğitimi Hızlandır</h3>
+                <p class="m-desc">Eğitimi anında tamamlamak için onaylayın.</p>
                 
-                <div class="m-details">
-                    <p style="color:#ccc; margin-bottom:15px;">Eğitimi anında tamamlamak istiyor musunuz?</p>
-                    <div class="m-row">
-                        <span>Gereken Elmas:</span>
-                        <span id="mSpeedCost" style="color:var(--accent-cyan); font-weight:bold;">0</span>
-                    </div>
+                <div class="req-list" id="speedReqList">
+                    <!-- JS Dolduracak -->
                 </div>
 
                 <div class="modal-btns">
                     <button class="m-btn btn-cancel" onclick="closeSpeedupModal()">İPTAL</button>
-                    <button class="m-btn btn-confirm" style="background: var(--accent-purple); color:white;" onclick="confirmSpeedUp()">HIZLANDIR</button>
+                    <button class="m-btn btn-confirm" id="btnConfirmSpeedup" style="background: var(--accent-purple); color:white;" onclick="confirmSpeedUp()">ONAYLA</button>
                 </div>
             </div>
         </div>
@@ -312,6 +533,7 @@
                 activeEdu = data.activeEdu;
                 
                 renderList();
+                renderCurrentCard();
                 
                 if (activeEdu) {
                     startTimer(activeEdu.end_time, activeEdu.target_level);
@@ -342,20 +564,10 @@
                 card.className = `edu-card ${statusClass}`;
                 
                 let btnHTML = '';
-                if (isCurrent) {
-                    if (activeEdu) {
-                        btnHTML = `<button class="btn-edu" disabled>Eğitimde</button>`;
-                    } else if (userSkill >= 100) {
-                        btnHTML = `<span style="color:var(--accent-gold); font-weight:bold;">Maksimum</span>`;
-                    } else {
-                        btnHTML = `<button class="btn-edu" onclick="openModal()">Eğitimi Başlat</button>`;
-                    }
-                } else if (isCompleted) {
-                    btnHTML = `<i class="fas fa-check" style="color:var(--accent-green)"></i>`;
-                } else {
-                    btnHTML = `<i class="fas fa-lock" style="color:#555"></i>`;
-                }
+                // Removed button from cards
 
+                let overlay = '';
+                
                 card.innerHTML = `
                     <div class="edu-icon">
                         <i class="fas ${stage.icon}"></i>
@@ -363,43 +575,142 @@
                     <div class="edu-info">
                         <div class="edu-name">${stage.name}</div>
                         <div class="edu-range">Seviye ${stage.min} - ${stage.max}</div>
-                        ${isCurrent ? `<div style="font-size:0.8rem; color:var(--accent-cyan)">Mevcut Seviye: ${userSkill}</div>` : ''}
                     </div>
-                    <div class="edu-action">
-                        ${btnHTML}
-                    </div>
+                    ${overlay}
                 `;
+                
+                if (isCurrent && !activeEdu && userSkill < 100) {
+                    card.onclick = () => openModal();
+                    card.style.cursor = 'pointer';
+                }
                 
                 container.appendChild(card);
             });
         }
 
-        function openModal() {
-            const nextLevel = userSkill + 1;
+        function renderCurrentCard() {
+            const card = document.getElementById('currentEduCard');
+            const progressPercent = (userSkill / 100) * 100;
             
-            // Calculate Cost (Same logic as server)
-            let costMoney = Math.floor(1000 * Math.pow(1.1, userSkill));
-            let costGold = 0;
-            let costDiamond = 0;
-            
-            if (userSkill >= 30) costGold = Math.floor((userSkill - 30) * 5) + 10;
-            if (userSkill >= 60) costDiamond = Math.floor((userSkill - 60) * 1) + 1;
-            
-            const duration = userSkill * 10; // Seconds
+            card.innerHTML = `
+                <div class="current-edu-inline">
+                    <img src="icons/icon-pack/education.png" alt="Eğitim" class="current-edu-icon">
+                    <span class="current-edu-label">Mevcut Eğitim Seviyesi</span>
+                    <div class="current-edu-progress-wrapper">
+                        <div class="current-edu-progress-bar">
+                            <div class="current-edu-progress-fill" style="width: ${progressPercent}%"></div>
+                        </div>
+                    </div>
+                    <span class="current-edu-value">${userSkill}/100</span>
+                </div>
+                <div class="current-edu-description">
+                    💡 Eğitimi başlatmak için aşağıdaki karta tıklayın
+                </div>
+            `;
+        }
 
-            document.getElementById('mLevel').innerText = nextLevel;
-            document.getElementById('mTime').innerText = formatTime(duration);
-            
-            let costHtml = `<div style="display:flex; flex-direction:column; gap:5px;">
-                <span style="color:var(--accent-green)">${formatMoney(costMoney)} ₺</span>`;
-            
-            if (costGold > 0) costHtml += `<span style="color:var(--accent-gold)">${costGold} Altın</span>`;
-            if (costDiamond > 0) costHtml += `<span style="color:var(--accent-cyan)">${costDiamond} Elmas</span>`;
-            
-            costHtml += `</div>`;
-            
-            document.getElementById('mCost').innerHTML = costHtml;
-            document.getElementById('confirmModal').classList.add('active');
+        async function openModal() {
+            const localUser = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!localUser) return;
+
+            try {
+                // Fetch fresh user data including stats
+                const response = await fetch(`/api/user-stats/${localUser.id}`);
+                if (!response.ok) throw new Error('API Error');
+                const userData = await response.json();
+                
+                // Use skill from DB if available, otherwise global local one
+                const currentSkill = userData.education_skill !== undefined ? userData.education_skill : userSkill;
+                
+                // Calculate Cost
+                let costMoney = Math.floor(1000 * Math.pow(1.1, currentSkill));
+                let costGold = 0;
+                let costDiamond = 0;
+                
+                if (currentSkill >= 30) costGold = Math.floor((currentSkill - 30) * 5) + 10;
+                if (currentSkill >= 60) costDiamond = Math.floor((currentSkill - 60) * 1) + 1;
+                
+                const reqList = document.getElementById('reqList');
+                reqList.innerHTML = '';
+
+                let canStart = true;
+
+                // Helper to add item
+                const addItem = (icon, label, required, current, isOk) => {
+                    if(!isOk) canStart = false;
+                    reqList.innerHTML += `
+                        <div class="info-list-item">
+                            <div class="info-left">
+                                ${icon}
+                                <span class="info-label">${label}</span>
+                            </div>
+                            <span class="info-value">${required}</span>
+                            <div class="upgrade-cost-status ${isOk ? 'ok' : 'fail'}">
+                                <i class="fas ${isOk ? 'fa-check' : 'fa-times'}"></i>
+                            </div>
+                        </div>
+                    `;
+                };
+
+                // Use data from API (ensure numbers)
+                // Remove dots just in case it's a formatted string, then parse
+                const parseVal = (val) => {
+                    if (typeof val === 'string') {
+                        return parseInt(val.replace(/\./g, '')) || 0;
+                    }
+                    return val || 0;
+                };
+
+                const userMoney = parseVal(userData.money);
+                const userGold = parseVal(userData.gold);
+                const userDiamond = parseVal(userData.diamond);
+
+                addItem(
+                    '<img src="icons/inventory-icon/money.png" alt="Para">',
+                    'Para',
+                    formatMoney(costMoney),
+                    formatMoney(userMoney),
+                    userMoney >= costMoney
+                );
+
+                if (costGold > 0) {
+                    addItem(
+                        '<img src="icons/inventory-icon/gold.png" alt="Altın">',
+                        'Altın',
+                        costGold,
+                        userGold,
+                        userGold >= costGold
+                    );
+                }
+
+                if (costDiamond > 0) {
+                    addItem(
+                        '<img src="icons/inventory-icon/diamond.png" alt="Elmas">',
+                        'Elmas',
+                        costDiamond,
+                        userDiamond,
+                        userDiamond >= costDiamond
+                    );
+                }
+
+                // Update button state
+                const confirmBtn = document.querySelector('#confirmModal .btn-confirm');
+                if (canStart) {
+                    confirmBtn.disabled = false;
+                    confirmBtn.style.opacity = '1';
+                    confirmBtn.style.cursor = 'pointer';
+                } else {
+                    confirmBtn.disabled = true;
+                    confirmBtn.style.opacity = '0.5';
+                    confirmBtn.style.cursor = 'not-allowed';
+                }
+
+                document.getElementById('confirmModal').classList.add('active');
+
+            } catch (error) {
+                console.error('Modal data fetch error:', error);
+                toastr.error('Güncel veriler alınamadı.');
+            }
         }
 
         function closeModal() {
@@ -472,9 +783,59 @@
             }, 1000);
         }
 
-        function speedUpEducation() {
-            const cost = document.getElementById('speedUpCost').innerText;
-            document.getElementById('mSpeedCost').innerText = cost;
+        async function speedUpEducation() {
+            const cost = parseInt(document.getElementById('speedUpCost').innerText) || 0;
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            
+            let userDiamond = 0;
+            
+            try {
+                // Fetch fresh data
+                const response = await fetch(`/api/user-stats/${user.id}`);
+                const userData = await response.json();
+                
+                const parseVal = (val) => {
+                    if (typeof val === 'string') {
+                        return parseInt(val.replace(/\./g, '')) || 0;
+                    }
+                    return val || 0;
+                };
+                userDiamond = parseVal(userData.diamond);
+            } catch (e) {
+                console.error(e);
+                // Fallback
+                userDiamond = parseInt(user.diamond) || 0;
+            }
+
+            const list = document.getElementById('speedReqList');
+            list.innerHTML = '';
+            
+            const isOk = userDiamond >= cost;
+            
+            list.innerHTML = `
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <img src="icons/inventory-icon/diamond.png" alt="Elmas">
+                            <span class="info-label">Gereken Elmas</span>
+                        </div>
+                        <span class="info-value">${cost}</span>
+                        <div class="upgrade-cost-status ${isOk ? 'ok' : 'fail'}">
+                            <i class="fas ${isOk ? 'fa-check' : 'fa-times'}"></i>
+                        </div>
+                    </div>
+            `;
+
+            const btn = document.getElementById('btnConfirmSpeedup');
+            if (isOk) {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            } else {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            }
+            
             document.getElementById('speedupModal').classList.add('active');
         }
 

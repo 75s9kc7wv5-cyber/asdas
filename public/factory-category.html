@@ -156,7 +156,7 @@
             font-size: 1.5rem;
         }
 
-        .f-name { font-size: 0.85rem; font-weight: 700; line-height: 1.2; margin-bottom: 0; }
+        .f-name { font-size: 1rem; font-weight: 700; line-height: 1.2; margin-bottom: 0; }
         .f-count { font-size: 0.7rem; color: #aaa; margin-top: 2px; }
         .count-badge { 
             background: #222; padding: 2px 6px; border-radius: 4px; border: 1px solid #444;
@@ -192,7 +192,7 @@
         .h-heavy { color: var(--accent-red); }
         .h-energy { color: #9b59b6; }
 
-        .f-name { font-size: 0.9rem; font-weight: bold; margin-bottom: 5px; color: #fff; }
+        .f-name { font-size: 1rem; font-weight: bold; margin-bottom: 5px; color: #fff; }
         .f-power { font-size: 0.75rem; color: #aaa; }
         .f-power span { font-weight: bold; color: #fff; }
 
@@ -257,31 +257,77 @@
 
         /* BUY MODAL */
         .req-list { 
-            text-align: center; 
-            margin: 20px 0; 
-            background: #222; 
-            padding: 15px; 
-            border-radius: 8px; 
             display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
+            flex-direction: column;
+            gap: 0;
+            margin: 15px 0;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
         }
-        
-        .req-badge {
-            background: #333;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            font-weight: bold;
-            color: #ccc;
-            border: 1px solid #444;
+        .info-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            transition: all 0.2s;
+        }
+        .info-list-item:hover {
+            opacity: 0.8;
+        }
+        .info-left {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 0;
+            flex: 1;
         }
-        .req-badge.ok { border-color: var(--accent-green); color: var(--accent-green); background: rgba(46, 204, 113, 0.1); }
-        .req-badge.fail { border-color: var(--accent-red); color: var(--accent-red); background: rgba(231, 76, 60, 0.1); }
+        .info-left i {
+            width: 28px;
+            min-width: 28px;
+            text-align: left;
+            margin-right: 10px;
+            font-size: 1rem;
+        }
+        .info-left img {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            margin-right: 10px;
+        }
+        .info-label {
+            color: #aaa;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .info-value {
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: right;
+            margin-left: auto;
+        }
+        .upgrade-cost-status {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            margin-left: 15px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .upgrade-cost-status.ok {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(46, 204, 113, 0.1));
+            color: var(--accent-green);
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
+        }
+        .upgrade-cost-status.fail {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(231, 76, 60, 0.1));
+            color: var(--accent-red);
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.3);
+        }
 
         .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
         .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; }
@@ -673,7 +719,7 @@
             selectedFactory = factoryTypes.find(f => f.id === typeId);
             if (!selectedFactory) return;
 
-            document.getElementById('buyTitle').innerText = selectedFactory.name + " Satın Al";
+            document.getElementById('buyTitle').innerText = selectedFactory.name + " Satın Almayı Onaylıyor musun?";
             
             const user = JSON.parse(localStorage.getItem('simWorldUser'));
             if(user) {
@@ -685,36 +731,81 @@
         }
 
         function renderBuyModalContent() {
-            const hasMoney = userData.money >= selectedFactory.costMoney;
-            const hasGold = userData.gold >= selectedFactory.costGold;
-            const hasDiamond = (userData.diamond || 0) >= selectedFactory.costDiamond;
-            
-            // License Check
-            const licLevel = userLicenses[selectedFactory.id] || 0;
-            const hasLicense = licLevel >= 1;
-            
-            const canBuy = hasMoney && hasGold && hasDiamond && hasLicense;
+            const reqList = document.getElementById('reqList');
+            reqList.innerHTML = '';
 
-            let html = '';
+            // 1. Para
+            const userMoney = userData.money || 0;
+            const moneyOk = userMoney >= selectedFactory.costMoney;
+            const moneyFormatted = new Intl.NumberFormat('tr-TR').format(selectedFactory.costMoney);
             
-            // Money
-            html += `<div class="req-badge ${hasMoney ? 'ok' : 'fail'}"><img src="icons/inventory-icon/money.png" style="width:20px;height:20px;vertical-align:middle;"> ${selectedFactory.costMoney.toLocaleString()}</div>`;
-            
-            // Gold
+            reqList.innerHTML += `
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <img src="icons/inventory-icon/money.png" style="width: 24px; height: 24px; margin-right: 10px;">
+                        <div class="info-label">Para</div>
+                    </div>
+                    <div class="info-value">${moneyFormatted} ₺</div>
+                    <div class="upgrade-cost-status ${moneyOk ? 'ok' : 'fail'}">
+                        <i class="fas fa-${moneyOk ? 'check' : 'times'}"></i>
+                    </div>
+                </div>
+            `;
+
+            // 2. Altın
             if (selectedFactory.costGold > 0) {
-                html += `<div class="req-badge ${hasGold ? 'ok' : 'fail'}"><img src="icons/inventory-icon/gold.png" style="width:20px;height:20px;vertical-align:middle;"> ${selectedFactory.costGold}</div>`;
+                const userGold = userData.gold || 0;
+                const goldOk = userGold >= selectedFactory.costGold;
+                
+                reqList.innerHTML += `
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <img src="icons/inventory-icon/gold.png" style="width: 24px; height: 24px; margin-right: 10px;">
+                            <div class="info-label">Altın</div>
+                        </div>
+                        <div class="info-value">${selectedFactory.costGold}</div>
+                        <div class="upgrade-cost-status ${goldOk ? 'ok' : 'fail'}">
+                            <i class="fas fa-${goldOk ? 'check' : 'times'}"></i>
+                        </div>
+                    </div>
+                `;
             }
-            
-            // Diamond
+
+            // 3. Elmas
             if (selectedFactory.costDiamond > 0) {
-                html += `<div class="req-badge ${hasDiamond ? 'ok' : 'fail'}"><img src="icons/inventory-icon/diamond.png" style="width:20px;height:20px;vertical-align:middle;"> ${selectedFactory.costDiamond}</div>`;
+                const userDiamond = userData.diamond || 0;
+                const diaOk = userDiamond >= selectedFactory.costDiamond;
+                
+                reqList.innerHTML += `
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <img src="icons/inventory-icon/diamond.png" style="width: 24px; height: 24px; margin-right: 10px;">
+                            <div class="info-label">Elmas</div>
+                        </div>
+                        <div class="info-value">${selectedFactory.costDiamond}</div>
+                        <div class="upgrade-cost-status ${diaOk ? 'ok' : 'fail'}">
+                            <i class="fas fa-${diaOk ? 'check' : 'times'}"></i>
+                        </div>
+                    </div>
+                `;
             }
 
-            // License
-            html += `<div class="req-badge ${hasLicense ? 'ok' : 'fail'}"><i class="fas ${hasLicense ? 'fa-check' : 'fa-times'}"></i> 1. Seviye ${selectedFactory.name} Lisansı</div>`;
+            // 4. Lisans
+            const licLevel = userLicenses[selectedFactory.id] || 0;
+            const licOk = licLevel >= 1;
+            
+            reqList.innerHTML += `
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-certificate" style="color: var(--accent-orange); font-size: 1rem; width: 24px; text-align: center; margin-right: 10px;"></i>
+                        <div class="info-label">1. Seviye ${selectedFactory.name} Lisansı</div>
+                    </div>
+                    <div class="upgrade-cost-status ${licOk ? 'ok' : 'fail'}">
+                        <i class="fas fa-${licOk ? 'check' : 'times'}"></i>
+                    </div>
+                </div>
+            `;
 
-            document.getElementById('reqList').innerHTML = html;
-            // document.getElementById('btnConfirmBuy').disabled = !canBuy;
             document.getElementById('btnConfirmBuy').disabled = false;
             document.getElementById('buyModal').classList.add('active');
             document.getElementById('buyModal').style.display = 'flex';

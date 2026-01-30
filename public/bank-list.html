@@ -147,6 +147,28 @@
         .btn-view { background: var(--accent-cyan); color: #000; }
         .btn-view:hover { box-shadow: 0 0 10px rgba(0, 229, 255, 0.4); }
 
+        /* Geri Dön Butonu */
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-gold);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        .back-btn:hover {
+            background: #2a2a2a;
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+        }
+
         /* BUY CARD */
         .buy-card {
             background: rgba(30, 30, 30, 0.95);
@@ -235,13 +257,17 @@
     <div class="game-container">
         <!-- Header injected by header-manager.js -->
 
-        <main>
-            <div class="page-header">
-                <div class="header-badge">
-                    <div class="page-title"><i class="fas fa-university" style="color:var(--accent-gold)"></i> BANKACILIK</div>
-                    <div class="page-desc">Paranı yönet, kredi çek veya kendi bankanı kur.</div>
-                </div>
+        <div style="display: flex; align-items: center; gap: 15px; padding: 20px 20px 0 20px; margin-bottom: 20px;">
+            <button class="back-btn" onclick="window.location.href='home.html'">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div>
+                <h1 style="font-size: 1.5rem; font-weight: bold; margin: 0; line-height: 1.2;">BANKALAR</h1>
+                <p style="font-size: 0.9rem; color: #888; margin: 0;">Finans yönetimi</p>
             </div>
+        </div>
+
+        <main>
 
             <div class="tabs">
                 <button class="tab-btn active" onclick="switchTab('city')">ŞEHİRDEKİ BANKALAR</button>

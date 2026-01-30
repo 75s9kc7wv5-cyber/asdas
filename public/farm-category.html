@@ -148,7 +148,7 @@
             margin-bottom: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.3);
             font-size: 1.5rem;
         }
-        .f-name { font-size: 0.85rem; font-weight: 700; line-height: 1.2; margin-bottom: 0; }
+        .f-name { font-size: 1rem; font-weight: 700; line-height: 1.2; margin-bottom: 0; }
         .f-count { font-size: 0.7rem; color: #aaa; margin-top: 2px; }
         .count-badge { 
             background: #222; padding: 2px 6px; border-radius: 4px; border: 1px solid #444;
@@ -252,6 +252,29 @@
         .btn-confirm { background: var(--accent-green); color: #000; }
         .btn-cancel { background: #333; color: #fff; }
         .btn-confirm:disabled { background: #444; color: #888; cursor: not-allowed; }
+
+        .upgrade-cost-status {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            margin-left: 15px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .upgrade-cost-status.ok {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(46, 204, 113, 0.1));
+            color: var(--accent-green);
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
+        }
+        .upgrade-cost-status.fail {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(231, 76, 60, 0.1));
+            color: var(--accent-red);
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.3);
+        }
 
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -464,7 +487,7 @@
         function openBuyModal(type) {
             selectedFarmType = type;
             
-            document.getElementById('buyModalTitle').innerText = `${type.name} Satın Al`;
+            document.getElementById('buyModalTitle').innerText = `${type.name} Satın Almayı Onaylıyor musun?`;
             
             const reqList = document.getElementById('buyModalReqs');
             reqList.innerHTML = '';
@@ -482,7 +505,9 @@
                         <div class="info-label">Para</div>
                     </div>
                     <div class="info-value">${priceFormatted} ₺</div>
-                    <i class="fas fa-${priceOk ? 'check' : 'times'}" style="color: ${priceOk ? 'var(--accent-green)' : 'var(--accent-red)'}; font-size: 1.2rem; margin-left: 15px;"></i>
+                    <div class="upgrade-cost-status ${priceOk ? 'ok' : 'fail'}">
+                        <i class="fas fa-${priceOk ? 'check' : 'times'}"></i>
+                    </div>
                 </div>
             `;
 
@@ -498,7 +523,9 @@
                             <div class="info-label">Altın</div>
                         </div>
                         <div class="info-value">${type.price_gold}</div>
-                        <i class="fas fa-${goldOk ? 'check' : 'times'}" style="color: ${goldOk ? 'var(--accent-green)' : 'var(--accent-red)'}; font-size: 1.2rem; margin-left: 15px;"></i>
+                        <div class="upgrade-cost-status ${goldOk ? 'ok' : 'fail'}">
+                            <i class="fas fa-${goldOk ? 'check' : 'times'}"></i>
+                        </div>
                     </div>
                 `;
             }
@@ -515,7 +542,9 @@
                             <div class="info-label">Elmas</div>
                         </div>
                         <div class="info-value">${type.price_diamond}</div>
-                        <i class="fas fa-${diaOk ? 'check' : 'times'}" style="color: ${diaOk ? 'var(--accent-green)' : 'var(--accent-red)'}; font-size: 1.2rem; margin-left: 15px;"></i>
+                        <div class="upgrade-cost-status ${diaOk ? 'ok' : 'fail'}">
+                            <i class="fas fa-${diaOk ? 'check' : 'times'}"></i>
+                        </div>
                     </div>
                 `;
             }
@@ -532,7 +561,9 @@
                         <i class="fas fa-certificate" style="color: var(--accent-cyan); font-size: 1rem; width: 24px; text-align: center; margin-right: 10px;"></i>
                         <div class="info-label">${reqLevel}. Seviye ${type.name} Lisansı</div>
                     </div>
-                    <i class="fas fa-${licOk ? 'check' : 'times'}" style="color: ${licOk ? 'var(--accent-green)' : 'var(--accent-red)'}; font-size: 1.2rem; margin-left: auto;"></i>
+                    <div class="upgrade-cost-status ${licOk ? 'ok' : 'fail'}">
+                        <i class="fas fa-${licOk ? 'check' : 'times'}"></i>
+                    </div>
                 </div>
             `;
 

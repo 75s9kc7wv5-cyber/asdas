@@ -57,46 +57,6 @@
             gap: 20px;
         }
 
-        .header-badge {
-            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(20,20,20,0.95) 100%);
-            padding: 20px;
-            border-radius: 0 0 20px 20px;
-            margin: 10px 0 25px 0;
-            border-top: 3px solid var(--accent-cyan);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            position: relative;
-            overflow: hidden;
-            text-align: center;
-        }
-        .header-badge::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: radial-gradient(circle, var(--accent-cyan) 0%, transparent 100%);
-            opacity: 0.7;
-        }
-        .header-badge h1 {
-            font-size: 1.8rem;
-            color: #fff;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 5px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        .header-badge h1 i { color: var(--accent-cyan); }
-        .header-badge p {
-            font-size: 0.9rem;
-            color: #aaa;
-            font-weight: 500;
-        }
-
         .dashboard-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -121,7 +81,7 @@
         .dash-item:hover { transform: translateY(-3px); border-color: var(--accent-cyan); background: rgba(40, 40, 40, 0.95); }
         
         .dash-icon { font-size: 2rem; color: var(--accent-cyan); }
-        .dash-label { font-size: 1.1rem; font-weight: 600; }
+        .dash-label { font-size: 1.1rem; font-weight: 600; text-align: center; }
 
         .news-section {
             background: rgba(20, 20, 20, 0.9);
@@ -143,11 +103,6 @@
         <!-- Header injected by header-manager.js -->
 
         <main>
-        <div class="header-badge">
-            <h1><i class="fas fa-globe"></i> Sim of World</h1>
-            <p id="userNameDisplay">Hoş Geldiniz</p>
-        </div>
-
             <div class="dashboard-grid">
                 <a href="farm-category.html" class="dash-item">
                     <i class="fas fa-seedling dash-icon" style="color: #2ecc71;"></i>
@@ -183,7 +138,7 @@
                 </a>
                 <a href="politics-list.html" class="dash-item">
                     <i class="fas fa-landmark dash-icon" style="color: #9b59b6;"></i>
-                    <span class="dash-label">Siyasi Partiler</span>
+                    <span class="dash-label">Partiler</span>
                 </a>
                 <a href="market-category.html" class="dash-item">
                     <i class="fas fa-shopping-cart dash-icon" style="color: #e74c3c;"></i>
@@ -246,7 +201,6 @@
                 window.location.href = 'login.html';
                 return;
             }
-            document.getElementById('userNameDisplay').textContent = user.username || 'Oyuncu';
         });
     </script>
     <script src="js/header-manager.js"></script>

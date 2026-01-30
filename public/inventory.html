@@ -75,6 +75,28 @@
         .curr-item { flex: 1; background: var(--bg-lighter); padding: 8px; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 0.85rem; font-weight: bold; border: 1px solid var(--border-color); }
         .c-gold { color: var(--accent-gold); }
         .c-cyan { color: var(--accent-cyan); }
+        
+        /* Geri Dön Butonu */
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-cyan);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        .back-btn:hover {
+            background: #2a2a2a;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+        }
 
         /* Override Body Padding for this page to remove gap */
         body { padding-top: 0 !important; }
@@ -243,9 +265,14 @@
     <div class="game-container">
         <!-- Header removed, injected by header-manager.js -->
         
-        <div class="header-badge">
-            <h1><i class="fas fa-boxes"></i> Envanter</h1>
-            <p>Varlık ve kaynak yönetimi</p>
+        <div style="display: flex; align-items: center; gap: 15px; padding: 20px 20px 0 20px; margin-bottom: 20px;">
+            <button class="back-btn" onclick="window.history.back()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div>
+                <h1 style="font-size: 1.5rem; font-weight: bold; margin: 0; line-height: 1.2;">ENVANTER</h1>
+                <p style="font-size: 0.9rem; color: #888; margin: 0;">Varlık ve kaynak yönetimi</p>
+            </div>
         </div>
 
         <div class="tabs-container">

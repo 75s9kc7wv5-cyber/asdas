@@ -149,7 +149,7 @@
         }
         
         .mine-info { flex: 1; }
-        .mine-name { font-size: 1.1rem; font-weight: bold; color: #fff; }
+        .mine-name { font-size: 1rem; font-weight: bold; color: #fff; }
         .mine-desc { font-size: 0.8rem; color: #888; }
         .mine-stats { font-size: 0.75rem; color: var(--accent-green); margin-top: 3px; }
 
@@ -184,31 +184,107 @@
         }
         
         .req-list { 
-            text-align: center; 
-            margin: 20px 0; 
-            background: #222; 
-            padding: 15px; 
-            border-radius: 8px; 
             display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
+            flex-direction: column;
+            gap: 0;
+            margin: 15px 0;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
         }
-        
-        .req-badge {
-            background: #333;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            font-weight: bold;
-            color: #ccc;
-            border: 1px solid #444;
+        .info-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            transition: all 0.2s;
+        }
+        .info-list-item:hover {
+            opacity: 0.8;
+        }
+        .info-left {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 0;
+            flex: 1;
         }
-        .req-badge.ok { border-color: var(--accent-green); color: var(--accent-green); background: rgba(46, 204, 113, 0.1); }
-        .req-badge.fail { border-color: var(--accent-red); color: var(--accent-red); background: rgba(231, 76, 60, 0.1); }
+        .info-left i {
+            width: 28px;
+            min-width: 28px;
+            text-align: left;
+            margin-right: 10px;
+            font-size: 1rem;
+        }
+        .info-left img {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            margin-right: 10px;
+        }
+        .info-label {
+            color: #aaa;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .info-value {
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: right;
+            margin-left: auto;
+        }
+        .req-badge {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 9px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #ccc;
+            border: 1px solid #444;
+            background: #1a1a1a;
+        }
+        .req-badge-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .req-badge-icon {
+            width: 20px;
+            text-align: center;
+        }
+        .req-badge-value {
+            margin-left: auto;
+            font-weight: bold;
+        }
+        .req-badge.ok { border-color: var(--accent-green); background: rgba(46, 204, 113, 0.05); }
+        .req-badge.ok .req-badge-icon { color: var(--accent-green); }
+        .req-badge.fail { border-color: var(--accent-red); background: rgba(231, 76, 60, 0.05); }
+        .req-badge.fail .req-badge-icon { color: var(--accent-red); }
+
+        .upgrade-cost-status {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            margin-left: 15px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .upgrade-cost-status.ok {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(46, 204, 113, 0.1));
+            color: var(--accent-green);
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
+        }
+        .upgrade-cost-status.fail {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(231, 76, 60, 0.1));
+            color: var(--accent-red);
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.3);
+        }
 
         .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
         .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; }
@@ -303,15 +379,15 @@
         toastr.options = { "positionClass": "toast-top-right", "timeOut": "3000" };
 
         const mineTypes = [
-            { id: 'wood', category: 'basic', name: 'Odun Kampı', icon: 'fa-tree', color: 'color-wood', reqLevel: 1, costMoney: 1000, costGold: 0, costDiamond: 0 },
-            { id: 'stone', category: 'basic', name: 'Taş Ocağı', icon: 'fa-cubes', color: 'color-stone', reqLevel: 5, costMoney: 2000, costGold: 0, costDiamond: 0 },
-            { id: 'iron', category: 'industrial', name: 'Demir Madeni', icon: 'fa-hammer', color: 'color-iron', reqLevel: 15, costMoney: 5000, costGold: 10, costDiamond: 0 },
-            { id: 'coal', category: 'industrial', name: 'Kömür Madeni', icon: 'fa-fire', color: 'color-coal', reqLevel: 20, costMoney: 8000, costGold: 20, costDiamond: 0 },
-            { id: 'sand', category: 'basic', name: 'Kum Madeni', icon: 'fa-hourglass-half', color: 'color-sand', reqLevel: 25, costMoney: 9000, costGold: 25, costDiamond: 0 },
-            { id: 'copper', category: 'industrial', name: 'Bakır Madeni', icon: 'fa-bolt', color: 'color-copper', reqLevel: 30, costMoney: 10000, costGold: 30, costDiamond: 0 },
-            { id: 'gold', category: 'precious', name: 'Altın Madeni', icon: 'fa-coins', color: 'color-gold', reqLevel: 40, costMoney: 25000, costGold: 50, costDiamond: 5 },
-            { id: 'oil', category: 'precious', name: 'Petrol Kuyusu', icon: 'fa-oil-can', color: 'color-oil', reqLevel: 50, costMoney: 15000, costGold: 40, costDiamond: 10 },
-            { id: 'uranium', category: 'precious', name: 'Uranyum Madeni', icon: 'fa-radiation', color: 'color-uranium', reqLevel: 80, costMoney: 50000, costGold: 100, costDiamond: 20 }
+            { id: 'wood', category: 'basic', name: 'Odun Kampı', icon: 'icons/mine-icon/wood.png', color: 'color-wood', reqLevel: 1, costMoney: 1000, costGold: 0, costDiamond: 0 },
+            { id: 'stone', category: 'basic', name: 'Taş Ocağı', icon: 'icons/mine-icon/stone.png', color: 'color-stone', reqLevel: 5, costMoney: 2000, costGold: 0, costDiamond: 0 },
+            { id: 'iron', category: 'industrial', name: 'Demir Madeni', icon: 'icons/mine-icon/iron.png', color: 'color-iron', reqLevel: 15, costMoney: 5000, costGold: 10, costDiamond: 0 },
+            { id: 'coal', category: 'industrial', name: 'Kömür Madeni', icon: 'icons/mine-icon/coal.png', color: 'color-coal', reqLevel: 20, costMoney: 8000, costGold: 20, costDiamond: 0 },
+            { id: 'sand', category: 'basic', name: 'Kum Madeni', icon: 'icons/mine-icon/sand.png', color: 'color-sand', reqLevel: 25, costMoney: 9000, costGold: 25, costDiamond: 0 },
+            { id: 'copper', category: 'industrial', name: 'Bakır Madeni', icon: 'icons/mine-icon/copper.png', color: 'color-copper', reqLevel: 30, costMoney: 10000, costGold: 30, costDiamond: 0 },
+            { id: 'gold', category: 'precious', name: 'Altın Madeni', icon: 'icons/mine-icon/gold-nugget.png', color: 'color-gold', reqLevel: 40, costMoney: 25000, costGold: 50, costDiamond: 5 },
+            { id: 'oil', category: 'precious', name: 'Petrol Kuyusu', icon: 'icons/mine-icon/oil-barrel.png', color: 'color-oil', reqLevel: 50, costMoney: 15000, costGold: 40, costDiamond: 10 },
+            { id: 'uranium', category: 'precious', name: 'Uranyum Madeni', icon: 'icons/mine-icon/uranium.png', color: 'color-uranium', reqLevel: 80, costMoney: 50000, costGold: 100, costDiamond: 20 }
         ];
 
         let userMines = [];
@@ -428,7 +504,7 @@
 
                 card.innerHTML = `
                     <div class="mine-icon ${type.color}">
-                        <i class="fas ${type.icon}"></i>
+                        <img src="${type.icon}" alt="${type.name}" style="width: 32px; height: 32px; object-fit: contain;">
                     </div>
                     <div class="mine-info">
                         <div class="mine-name">${owned && owned.name ? owned.name : type.name}</div>
@@ -469,7 +545,7 @@
 
                 card.innerHTML = `
                     <div class="mine-icon ${type.color}">
-                        <i class="fas ${type.icon}"></i>
+                        <img src="${type.icon}" alt="${type.name}" style="width: 32px; height: 32px; object-fit: contain;">
                     </div>
                     <div class="mine-info">
                         <div class="mine-name">${mine.name || type.name} <span style="font-size:0.8rem; color:#666;">(${type.name})</span></div>
@@ -485,7 +561,7 @@
             selectedMine = mineTypes.find(m => m.id === mineId);
             if (!selectedMine) return;
 
-            document.getElementById('mTitle').innerText = selectedMine.name + " Satın Al";
+            document.getElementById('mTitle').innerText = selectedMine.name + " Satın Almayı Onaylıyor musun?";
             
             const hasLicense = userLicenses[mineId] > 0;
             const hasSkill = (userData.education_skill || 1) >= selectedMine.reqLevel;
@@ -497,23 +573,78 @@
 
             let html = '';
             
-            // Education
-            html += `<div class="req-badge ${hasSkill ? 'ok' : 'fail'}"><i class="fas fa-graduation-cap"></i> Lv. ${selectedMine.reqLevel}</div>`;
+            // Education - using info-list-item style
+            html += `
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-graduation-cap" style="color: ${hasSkill ? 'var(--accent-green)' : 'var(--accent-red)'};"></i>
+                        <span class="info-label">Eğitim Seviyesi</span>
+                    </div>
+                    <span class="info-value">Lv. ${selectedMine.reqLevel}</span>
+                    <div class="upgrade-cost-status ${hasSkill ? 'ok' : 'fail'}">
+                        <i class="fas ${hasSkill ? 'fa-check' : 'fa-times'}"></i>
+                    </div>
+                </div>
+            `;
             
             // License
-            html += `<div class="req-badge ${hasLicense ? 'ok' : 'fail'}"><i class="fas fa-id-card"></i> ${selectedMine.name} Lisansı</div>`;
+            html += `
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-id-card" style="color: ${hasLicense ? 'var(--accent-green)' : 'var(--accent-red)'};"></i>
+                        <span class="info-label">1. Seviye ${selectedMine.name} Lisansı</span>
+                    </div>
+                    <span class="info-value">Gerekli</span>
+                    <div class="upgrade-cost-status ${hasLicense ? 'ok' : 'fail'}">
+                        <i class="fas ${hasLicense ? 'fa-check' : 'fa-times'}"></i>
+                    </div>
+                </div>
+            `;
             
             // Money
-            html += `<div class="req-badge ${hasMoney ? 'ok' : 'fail'}"><i class="fas fa-lira-sign"></i> ${selectedMine.costMoney}</div>`;
+            html += `
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <img src="icons/inventory-icon/money.png" alt="Para">
+                        <span class="info-label">Para</span>
+                    </div>
+                    <span class="info-value">${selectedMine.costMoney.toLocaleString('tr-TR')} ₺</span>
+                    <div class="upgrade-cost-status ${hasMoney ? 'ok' : 'fail'}">
+                        <i class="fas ${hasMoney ? 'fa-check' : 'fa-times'}"></i>
+                    </div>
+                </div>
+            `;
             
             // Gold
             if (selectedMine.costGold > 0) {
-                html += `<div class="req-badge ${hasGold ? 'ok' : 'fail'}"><i class="fas fa-coins"></i> ${selectedMine.costGold}</div>`;
+                html += `
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <img src="icons/inventory-icon/gold.png" alt="Altın">
+                            <span class="info-label">Altın</span>
+                        </div>
+                        <span class="info-value">${selectedMine.costGold.toLocaleString('tr-TR')}</span>
+                        <div class="upgrade-cost-status ${hasGold ? 'ok' : 'fail'}">
+                            <i class="fas ${hasGold ? 'fa-check' : 'fa-times'}"></i>
+                        </div>
+                    </div>
+                `;
             }
             
             // Diamond
             if (selectedMine.costDiamond > 0) {
-                html += `<div class="req-badge ${hasDiamond ? 'ok' : 'fail'}"><i class="fas fa-gem"></i> ${selectedMine.costDiamond}</div>`;
+                html += `
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <img src="icons/inventory-icon/diamond.png" alt="Elmas">
+                            <span class="info-label">Elmas</span>
+                        </div>
+                        <span class="info-value">${selectedMine.costDiamond.toLocaleString('tr-TR')}</span>
+                        <div class="upgrade-cost-status ${hasDiamond ? 'ok' : 'fail'}">
+                            <i class="fas ${hasDiamond ? 'fa-check' : 'fa-times'}"></i>
+                        </div>
+                    </div>
+                `;
             }
 
             document.getElementById('reqList').innerHTML = html;

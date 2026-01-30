@@ -10,9 +10,7 @@
         { label: 'Meydan', icon: 'fa-chess-board', href: 'home.html' },
         { label: 'Sohbet', icon: 'fa-comments', href: 'chat.html' },
         { label: 'İşler', icon: 'fa-calendar-check', href: 'daily-job.html' },
-        { label: 'Fabrika', icon: 'fa-industry', href: 'factory-category.html' },
         { label: 'Eğitim', icon: 'fa-graduation-cap', href: 'education.html' },
-        { label: 'AR-GE', icon: 'fa-flask', href: 'research.html' },
         { label: 'Harita', icon: 'fa-map-marked-alt', href: 'mines-category.html' }
     ];
 
@@ -35,10 +33,6 @@
         }
         // Özel Durum: mine-list.html, mine-work.html, mine-management.html ise Harita (mines-category.html) aktif olsun
         if ((page === 'mine-list.html' || page === 'mine-work.html' || page === 'mine-management.html') && item.href === 'mines-category.html') {
-            isActive = true;
-        }
-        // Özel Durum: factory sayfaları için Fabrika aktif olsun
-        if ((page === 'factory-list.html' || page === 'factory-work.html' || page === 'factory-management.html') && item.href === 'factory-category.html') {
             isActive = true;
         }
         

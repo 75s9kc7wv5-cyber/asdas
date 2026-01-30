@@ -187,8 +187,6 @@
         .h-industrial { color: var(--accent-orange); }
         .h-precious { color: var(--accent-purple); }
 
-        .m-name { font-size: 0.9rem; font-weight: bold; margin-bottom: 5px; color: #fff; }
-
         /* LIST VIEW STYLES */
         .mine-list-view { display: flex; flex-direction: column; gap: 10px; }
         .mine-list-card {
@@ -270,30 +268,77 @@
             box-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
         }
         .req-list { 
-            text-align: center; 
-            margin: 20px 0; 
-            background: #222; 
-            padding: 15px; 
-            border-radius: 8px; 
             display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
+            flex-direction: column;
+            gap: 0;
+            margin: 15px 0;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
         }
-        .req-badge {
-            background: #333;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            font-weight: bold;
-            color: #ccc;
-            border: 1px solid #444;
+        .info-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            transition: all 0.2s;
+        }
+        .info-list-item:hover {
+            opacity: 0.8;
+        }
+        .info-left {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 0;
+            flex: 1;
         }
-        .req-badge.ok { border-color: var(--accent-green); color: var(--accent-green); background: rgba(46, 204, 113, 0.1); }
-        .req-badge.fail { border-color: var(--accent-red); color: var(--accent-red); background: rgba(231, 76, 60, 0.1); }
+        .info-left i {
+            width: 28px;
+            min-width: 28px;
+            text-align: left;
+            margin-right: 10px;
+            font-size: 1rem;
+        }
+        .info-left img {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            margin-right: 10px;
+        }
+        .info-label {
+            color: #aaa;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .info-value {
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: right;
+            margin-left: auto;
+        }
+        .upgrade-cost-status {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            margin-left: 15px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .upgrade-cost-status.ok {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(46, 204, 113, 0.1));
+            color: var(--accent-green);
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
+        }
+        .upgrade-cost-status.fail {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(231, 76, 60, 0.1));
+            color: var(--accent-red);
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.3);
+        }
         .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
         .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; }
         .btn-confirm { background: var(--accent-green); color: #000; }
@@ -503,7 +548,7 @@
             if (!mine) return;
             selectedMine = mine;
 
-            document.getElementById('mTitle').innerText = `${mine.name} Satın Al`;
+            document.getElementById('mTitle').innerText = `${mine.name} Satın Almayı Onaylıyor musun?`;
             const reqList = document.getElementById('reqList');
             reqList.innerHTML = '';
 
@@ -511,9 +556,15 @@
             const userMoney = userData.money || 0;
             const moneyOk = userMoney >= mine.costMoney;
             reqList.innerHTML += `
-                <div class="req-badge ${moneyOk ? 'ok' : 'fail'}">
-                    ${moneyOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>'} 
-                    ${mine.costMoney.toLocaleString()} ₺
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <img src="icons/inventory-icon/money.png" style="width: 24px; height: 24px;">
+                        <span class="info-label">Para</span>
+                    </div>
+                    <span class="info-value">${mine.costMoney.toLocaleString()} ₺</span>
+                    <div class="upgrade-cost-status ${moneyOk ? 'ok' : 'fail'}">
+                        <i class="fas ${moneyOk ? 'fa-check' : 'fa-times'}"></i>
+                    </div>
                 </div>
             `;
 
@@ -522,9 +573,15 @@
                 const userGold = userData.gold || 0;
                 const goldOk = userGold >= mine.costGold;
                 reqList.innerHTML += `
-                    <div class="req-badge ${goldOk ? 'ok' : 'fail'}">
-                        ${goldOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>'} 
-                        ${mine.costGold} Altın
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <img src="icons/inventory-icon/gold.png" style="width: 24px; height: 24px;">
+                            <span class="info-label">Altın</span>
+                        </div>
+                        <span class="info-value">${mine.costGold}</span>
+                        <div class="upgrade-cost-status ${goldOk ? 'ok' : 'fail'}">
+                            <i class="fas ${goldOk ? 'fa-check' : 'fa-times'}"></i>
+                        </div>
                     </div>
                 `;
             }
@@ -534,9 +591,15 @@
                 const userDiamond = userData.diamond || 0;
                 const diaOk = userDiamond >= mine.costDiamond;
                 reqList.innerHTML += `
-                    <div class="req-badge ${diaOk ? 'ok' : 'fail'}">
-                        ${diaOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>'} 
-                        ${mine.costDiamond} Elmas
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <img src="icons/inventory-icon/diamond.png" style="width: 24px; height: 24px;">
+                            <span class="info-label">Elmas</span>
+                        </div>
+                        <span class="info-value">${mine.costDiamond}</span>
+                        <div class="upgrade-cost-status ${diaOk ? 'ok' : 'fail'}">
+                            <i class="fas ${diaOk ? 'fa-check' : 'fa-times'}"></i>
+                        </div>
                     </div>
                 `;
             }
@@ -545,9 +608,15 @@
             const userLevel = userData.education_skill || 1;
             const levelOk = userLevel >= mine.reqLevel;
             reqList.innerHTML += `
-                <div class="req-badge ${levelOk ? 'ok' : 'fail'}">
-                    ${levelOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>'} 
-                    Eğitim Seviyesi: ${mine.reqLevel}
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-graduation-cap" style="color: var(--accent-purple);"></i>
+                        <span class="info-label">Eğitim Seviyesi</span>
+                    </div>
+                    <span class="info-value">Seviye ${mine.reqLevel}</span>
+                    <div class="upgrade-cost-status ${levelOk ? 'ok' : 'fail'}">
+                        <i class="fas ${levelOk ? 'fa-check' : 'fa-times'}"></i>
+                    </div>
                 </div>
             `;
 
@@ -555,9 +624,14 @@
             const licLevel = userLicenses[mine.id] || 0;
             const licOk = licLevel >= 1;
             reqList.innerHTML += `
-                <div class="req-badge ${licOk ? 'ok' : 'fail'}">
-                    ${licOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>'} 
-                    1. Seviye ${mine.name} Lisansı
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-certificate" style="color: var(--accent-orange);"></i>
+                        <span class="info-label">1. Seviye ${mine.name} Lisansı</span>
+                    </div>
+                    <div class="upgrade-cost-status ${licOk ? 'ok' : 'fail'}">
+                        <i class="fas ${licOk ? 'fa-check' : 'fa-times'}"></i>
+                    </div>
                 </div>
             `;
 

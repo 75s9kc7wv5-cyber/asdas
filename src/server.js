@@ -92,6 +92,12 @@ db.connect((err) => {
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
+// CSP Middleware
+app.use((req, res, next) => {
+    res.setHeader("Content-Security-Policy", "default-src 'self'; img-src 'self' data: blob: https:; font-src 'self' https:; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; connect-src 'self' https:;");
+    next();
+});
+
 // Favicon Route (Fix 404)
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
@@ -5801,6 +5807,111 @@ app.post('/api/admin/property-types/update', (req, res) => {
             return res.status(500).json({ success: false, message: 'Database error' });
         }
         res.json({ success: true, message: 'Mülk ayarı güncellendi.' });
+    });
+});
+
+// --- BUSINESS MANAGEMENT ADMIN ENDPOINTS ---
+
+// Get Business Statistics
+app.get('/api/admin/business/stats', (req, res) => {
+    const statsQuery = `
+        SELECT 
+            (SELECT COUNT(*) FROM player_farms) as farms,
+            (SELECT COUNT(*) FROM player_ranches) as ranches,
+            (SELECT COUNT(*) FROM player_mines) as mines,
+            (SELECT COUNT(*) FROM player_factories) as factories
+    `;
+    
+    db.query(statsQuery, (err, results) => {
+        if (err) {
+            console.error('Business stats error:', err);
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+        res.json({ success: true, stats: results[0] });
+    });
+});
+
+// Get All Farms
+app.get('/api/admin/business/farms', (req, res) => {
+    const query = `
+        SELECT 
+            pf.*,
+            u.username as owner_username,
+            u.avatar as owner_avatar
+        FROM player_farms pf
+        JOIN users u ON pf.user_id = u.id
+        ORDER BY pf.created_at DESC
+    `;
+    
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error('Farms query error:', err);
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+        res.json({ success: true, data: results });
+    });
+});
+
+// Get All Ranches
+app.get('/api/admin/business/ranches', (req, res) => {
+    const query = `
+        SELECT 
+            pr.*,
+            u.username as owner_username,
+            u.avatar as owner_avatar
+        FROM player_ranches pr
+        JOIN users u ON pr.user_id = u.id
+        ORDER BY pr.created_at DESC
+    `;
+    
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error('Ranches query error:', err);
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+        res.json({ success: true, data: results });
+    });
+});
+
+// Get All Mines
+app.get('/api/admin/business/mines', (req, res) => {
+    const query = `
+        SELECT 
+            pm.*,
+            u.username as owner_username,
+            u.avatar as owner_avatar
+        FROM player_mines pm
+        JOIN users u ON pm.user_id = u.id
+        ORDER BY pm.created_at DESC
+    `;
+    
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error('Mines query error:', err);
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+        res.json({ success: true, data: results });
+    });
+});
+
+// Get All Factories
+app.get('/api/admin/business/factories', (req, res) => {
+    const query = `
+        SELECT 
+            pf.*,
+            u.username as owner_username,
+            u.avatar as owner_avatar
+        FROM player_factories pf
+        JOIN users u ON pf.user_id = u.id
+        ORDER BY pf.created_at DESC
+    `;
+    
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error('Factories query error:', err);
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+        res.json({ success: true, data: results });
     });
 });
 

@@ -3,6 +3,7 @@
         "/^sudo service mysql start$/": {
             "approve": true,
             "matchCommandLine": true
-        }
+        },
+        "npm install": true
     }
 }
