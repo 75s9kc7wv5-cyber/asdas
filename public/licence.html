@@ -110,16 +110,27 @@
 
         .r-info { flex: 1; min-width: 0; }
         .r-title { font-size: 1.1rem; font-weight: bold; color: #fff; display: flex; justify-content: space-between; align-items: flex-start; }
-        .r-level { font-size: 0.8rem; color: var(--accent-gold); border: 1px solid var(--accent-gold); padding: 1px 6px; border-radius: 4px; white-space: nowrap; margin-left: 10px; }
+        .r-level { 
+            font-size: 0.8rem; 
+            color: var(--accent-gold); 
+            border: 1px solid var(--accent-gold); 
+            padding: 1px 6px; 
+            border-radius: 4px; 
+            white-space: nowrap; 
+            margin-left: 10px;
+        }
         .r-desc { font-size: 0.8rem; color: #aaa; margin-top: 4px; line-height: 1.3; }
 
-        .r-action-text {
-            font-size: 0.75rem; 
-            color: var(--accent-green);
-            margin-top: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 700;
+        .r-action-icon {
+            font-size: 1.2rem;
+            color: #444; 
+            transition: 0.3s;
+            margin-left: auto;
+            align-self: center;
+        }
+        .license-card:hover .r-action-icon {
+            color: var(--accent-cyan);
+            transform: translateX(5px);
         }
 
         /* Renk Sınıfları */
@@ -266,6 +277,26 @@
                 </div>
             </div>
         </div>
+
+        <!-- REWARD/SUCCESS MODAL -->
+        <div class="modal-overlay" id="rewardModal">
+            <div class="modal-content">
+                <i class="fas fa-check-circle m-icon" style="color:var(--accent-green);"></i>
+                <h3 class="m-title">İŞLEM BAŞARILI!</h3>
+                <p style="color:#888; font-size:0.9rem; margin-bottom:20px;" id="rewardMsg">Lisans başarıyla satın alındı.</p>
+                <button class="m-btn btn-confirm" onclick="closeRewardModal()" style="width:100%">HARİKA!</button>
+            </div>
+        </div>
+
+        <!-- ERROR MODAL -->
+        <div class="modal-overlay" id="errorModal">
+            <div class="modal-content" style="border-top: 3px solid var(--accent-red); box-shadow: 0 0 30px rgba(231, 76, 60, 0.2);">
+                <i class="fas fa-times-circle m-icon" style="color:var(--accent-red);"></i>
+                <h3 class="m-title">YETERSİZ EĞİTİM!</h3>
+                <p style="color:#888; font-size:0.9rem; margin-bottom:20px;" id="errorMsg">Bu işlem için eğitim seviyeniz yetersiz.</p>
+                <button class="m-btn btn-confirm" onclick="closeErrorModal()" style="width:100%; background: var(--accent-red); color: white;">ANLAŞILDI</button>
+            </div>
+        </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -280,49 +311,49 @@
         };
 
         const minesData = [
-            { id: 'wood', name: 'Odun Kampı', icon: 'icons/mine-icon/wood.png' },
-            { id: 'stone', name: 'Taş Ocağı', icon: 'icons/mine-icon/stone.png' },
-            { id: 'iron', name: 'Demir Madeni', icon: 'icons/mine-icon/iron.png' },
-            { id: 'coal', name: 'Kömür Madeni', icon: 'icons/mine-icon/coal.png' },
-            { id: 'sand', name: 'Kum Madeni', icon: 'icons/mine-icon/sand.png' },
-            { id: 'oil', name: 'Petrol Kuyusu', icon: 'icons/mine-icon/oil-barrel.png' },
-            { id: 'diamond', name: 'Elmas Madeni', icon: 'icons/inventory-icon/diamond.png' },
-            { id: 'uranium', name: 'Uranyum Madeni', icon: 'icons/mine-icon/uranium.png' },
-            { id: 'copper', name: 'Bakır Madeni', icon: 'icons/mine-icon/copper.png' },
-            { id: 'gold', name: 'Altın Madeni', icon: 'icons/mine-icon/gold-nugget.png' }
+            { id: 'wood', name: 'Odun Kampı', icon: 'icons/licence-icon/licence.png' },
+            { id: 'stone', name: 'Taş Ocağı', icon: 'icons/licence-icon/licence.png' },
+            { id: 'iron', name: 'Demir Madeni', icon: 'icons/licence-icon/licence.png' },
+            { id: 'coal', name: 'Kömür Madeni', icon: 'icons/licence-icon/licence.png' },
+            { id: 'sand', name: 'Kum Madeni', icon: 'icons/licence-icon/licence.png' },
+            { id: 'oil', name: 'Petrol Kuyusu', icon: 'icons/licence-icon/licence.png' },
+            { id: 'diamond', name: 'Elmas Madeni', icon: 'icons/licence-icon/licence.png' },
+            { id: 'uranium', name: 'Uranyum Madeni', icon: 'icons/licence-icon/licence.png' },
+            { id: 'copper', name: 'Bakır Madeni', icon: 'icons/licence-icon/licence.png' },
+            { id: 'gold', name: 'Altın Madeni', icon: 'icons/licence-icon/licence.png' }
         ];
 
         const factoryData = [
-            { id: 'lumber', name: 'Kereste Fabrikası', icon: 'icons/factory-icon/wood-plank.png' },
-            { id: 'brick', name: 'Tuğla Fabrikası', icon: 'icons/factory-icon/brick.png' },
-            { id: 'glass', name: 'Cam Fabrikası', icon: 'icons/factory-icon/window.png' },
-            { id: 'concrete', name: 'Çimento Fabrikası', icon: 'icons/factory-icon/cement.png' },
-            { id: 'steel', name: 'Çelik Fabrikası', icon: 'icons/factory-icon/steel.png' },
-            { id: 'agricultural', name: 'Tarım Çiftliği', icon: 'fa-seedling' },
-            { id: 'animal', name: 'Hayvan Çiftliği', icon: 'fa-paw' },
-            { id: 'bakery', name: 'Fırın ve Unlu Mamuller Tesisi', icon: 'icons/factory-icon/food-factory.png' },
-            { id: 'ready_food', name: 'Hazır Yemek Üretim Tesisi', icon: 'icons/factory-icon/food-factory.png' },
-            { id: 'olive_oil', name: 'Zeytinyağı Üretim Tesisi', icon: 'icons/factory-icon/food-factory.png' },
-            { id: 'sweets', name: 'Tatlı & Şekerleme Üretim Tesisi', icon: 'icons/factory-icon/food-factory.png' },
-            { id: 'gold_factory', name: 'Altın Külçe Fabrikası', icon: 'icons/inventory-icon/gold.png' },
-            { id: 'weapon', name: 'Silah Fabrikası', icon: 'fa-crosshairs' },
-            { id: 'wind_turbine', name: 'Rüzgar Türbini', icon: 'icons/energy-factory-icon/wind-turbine.png' },
-            { id: 'solar_plant', name: 'Güneş Enerjisi Santrali', icon: 'icons/energy-factory-icon/solar-panel.png' },
-            { id: 'coal_plant', name: 'Kömür Enerji Santrali', icon: 'icons/energy-factory-icon/fossil-fuel.png' },
-            { id: 'nuclear_plant', name: 'Nükleer Enerji Santrali', icon: 'icons/energy-factory-icon/nuclear-plant.png' }
+            { id: 'lumber', name: 'Kereste Fabrikası', icon: 'icons/licence-icon/licence.png' },
+            { id: 'brick', name: 'Tuğla Fabrikası', icon: 'icons/licence-icon/licence.png' },
+            { id: 'glass', name: 'Cam Fabrikası', icon: 'icons/licence-icon/licence.png' },
+            { id: 'concrete', name: 'Çimento Fabrikası', icon: 'icons/licence-icon/licence.png' },
+            { id: 'steel', name: 'Çelik Fabrikası', icon: 'icons/licence-icon/licence.png' },
+            { id: 'agricultural', name: 'Tarım Çiftliği', icon: 'icons/licence-icon/licence.png' },
+            { id: 'animal', name: 'Hayvan Çiftliği', icon: 'icons/licence-icon/licence.png' },
+            { id: 'bakery', name: 'Fırın ve Unlu Mamuller Tesisi', icon: 'icons/licence-icon/licence.png' },
+            { id: 'ready_food', name: 'Hazır Yemek Üretim Tesisi', icon: 'icons/licence-icon/licence.png' },
+            { id: 'olive_oil', name: 'Zeytinyağı Üretim Tesisi', icon: 'icons/licence-icon/licence.png' },
+            { id: 'sweets', name: 'Tatlı & Şekerleme Üretim Tesisi', icon: 'icons/licence-icon/licence.png' },
+            { id: 'gold_factory', name: 'Altın Külçe Fabrikası', icon: 'icons/licence-icon/licence.png' },
+            { id: 'weapon', name: 'Silah Fabrikası', icon: 'icons/licence-icon/licence.png' },
+            { id: 'wind_turbine', name: 'Rüzgar Türbini', icon: 'icons/licence-icon/licence.png' },
+            { id: 'solar_plant', name: 'Güneş Enerjisi Santrali', icon: 'icons/licence-icon/licence.png' },
+            { id: 'coal_plant', name: 'Kömür Enerji Santrali', icon: 'icons/licence-icon/licence.png' },
+            { id: 'nuclear_plant', name: 'Nükleer Enerji Santrali', icon: 'icons/licence-icon/licence.png' }
         ];
 
         const businessData = [
-            { id: 'hospital', name: 'Hastane Lisansı', icon: 'fa-hospital' },
-            { id: 'bank', name: 'Banka Lisansı', icon: 'fa-university' },
-            { id: 'property_license', name: 'Mülk Lisansı', icon: 'fa-building' },
-            { id: 'political_party', name: 'Siyasi Parti Lisansı', icon: 'fa-flag' }
+            { id: 'hospital', name: 'Hastane', icon: 'icons/licence-icon/licence.png' },
+            { id: 'bank', name: 'Banka', icon: 'icons/licence-icon/licence.png' },
+            { id: 'property_license', name: 'Mülk', icon: 'icons/licence-icon/licence.png' },
+            { id: 'political_party', name: 'Siyasi Parti', icon: 'icons/licence-icon/licence.png' }
         ];
 
         let ranchData = [];
 
         let farmData = [
-            { id: 'farm', name: 'Çiftçilik Lisansı', icon: 'fa-tractor' }
+            { id: 'farm', name: 'Çiftçilik', icon: 'icons/licence-icon/licence.png' }
         ];
 
         const eduStages = [
@@ -362,16 +393,16 @@
                         .filter(f => !ranchSlugs.includes(f.slug))
                         .map(f => ({
                             id: f.slug,
-                            name: f.name + ' Lisansı',
-                            icon: f.image_path || 'fa-tractor'
+                            name: f.name,
+                            icon: 'icons/licence-icon/licence.png'
                         }));
 
                     ranchData = farmTypes
                         .filter(f => ranchSlugs.includes(f.slug))
                         .map(f => ({
                             id: f.slug.replace('_farm', ''),
-                            name: f.name + ' Lisansı',
-                            icon: f.image_path || 'fa-paw'
+                            name: f.name,
+                            icon: 'icons/licence-icon/licence.png'
                         }));
                 }
 
@@ -429,10 +460,18 @@
             const elTitle = document.getElementById('mTitle');
             const elDesc = document.getElementById('mDesc');
             const reqList = document.getElementById('reqList');
+            const elConfirmBtn = document.querySelector('#confirmModal .btn-confirm');
             const elModal = document.getElementById('confirmModal');
 
-            if(elTitle) elTitle.innerText = mineName + (level === 0 ? " Satın Al" : ` (Seviye ${nextLevel})`);
-            if(elDesc) elDesc.innerText = level === 0 ? "Bu işletme lisansını satın al." : "Mevcut lisans seviyesini yükselt.";
+            if(elTitle) elTitle.innerText = mineName.toUpperCase();
+            
+            if (level === 0) {
+                if(elDesc) elDesc.innerText = "Bu işletme lisansını satın almak istiyor musun?";
+                if(elConfirmBtn) elConfirmBtn.innerText = "SATIN AL";
+            } else {
+                if(elDesc) elDesc.innerText = "Bu işletme lisansını geliştirmek istiyor musun?";
+                if(elConfirmBtn) elConfirmBtn.innerText = "GELİŞTİR";
+            }
             
             // Education Vars
             const requiredStageIndex = (nextLevel - 1) < 10 ? (nextLevel - 1) : 9;
@@ -519,11 +558,32 @@
             pendingMineId = null;
         }
 
+        function closeRewardModal() {
+            const elModal = document.getElementById('rewardModal');
+            if(elModal) elModal.classList.remove('active');
+        }
+
+        function closeErrorModal() {
+            const elModal = document.getElementById('errorModal');
+            if(elModal) elModal.classList.remove('active');
+        }
+
         function confirmAction() {
             if (pendingMineId) {
                 if (userEducationSkill < pendingReqEdu) {
-                    toastr.error('Eğitim seviyeniz yetersiz! Gereken seviye: ' + pendingReqEdu);
-                    closeModal();
+                    // Show Error Modal
+                    const errorModal = document.getElementById('errorModal');
+                    const errorMsg = document.getElementById('errorMsg');
+                    
+                    const requiredLevel = pendingReqEdu / 10;
+                    const requiredStageIndex = (requiredLevel - 1) < 10 ? (requiredLevel - 1) : 9;
+                    const requiredStageName = eduStages[requiredStageIndex] ? eduStages[requiredStageIndex].name : "Yüksek Eğitim";
+
+                    if(errorMsg) errorMsg.innerText = `Bu lisans için ${requiredStageName} mezunu olmalısınız (Seviye ${requiredLevel}).`;
+                    
+                    if (errorModal) errorModal.classList.add('active');
+                    
+                    closeModal(); // Close the confirmation modal
                     return;
                 }
                 processBuyLicense(pendingMineId);
@@ -557,19 +617,19 @@
                 const card = document.createElement('div');
                 card.className = 'license-card';
                 
-                let actionText = '';
-                let clickAttr = '';
                 let opacityStyle = '';
 
+                // Click Handlers
                 if (isMaxed) {
-                    actionText = '<span style="color:var(--accent-gold); font-weight:bold; font-size:0.8rem;">MAKSİMUM SEVİYE <i class="fas fa-check"></i></span>';
-                } else if (!hasRequiredEdu && containerId === 'businessList') {
-                     actionText = `<span style="color:var(--accent-red); font-weight:bold; font-size:0.8rem;"><i class="fas fa-lock"></i> GEREKEN: ${requiredStageName}</span>`;
-                     clickAttr = `onclick="toastr.error('Bu lisans için ${requiredStageName} olmalısınız.')"`;
-                     opacityStyle = 'opacity:0.7;';
+                    card.style.cursor = 'default';
                 } else {
-                     actionText = `<span style="color:var(--accent-green); font-weight:bold; font-size:0.85rem;">${currentLevel === 0 ? 'SATIN AL' : 'YÜKSELT'} <i class="fas fa-chevron-right" style="font-size:0.7rem;"></i></span>`;
-                     clickAttr = `onclick="openModal('${item.id}', '${item.name}', ${currentLevel})"`;
+                    // Always enable opening modal to see requirements, even if not met
+                    card.onclick = () => openModal(item.id, item.name, currentLevel);
+                    card.style.cursor = 'pointer';
+                    
+                    if (!hasRequiredEdu && containerId === 'businessList') {
+                         opacityStyle = 'opacity:0.8;';
+                    }
                 }
 
                 let iconHTML = '';
@@ -579,38 +639,57 @@
                     iconHTML = `<i class="fas ${item.icon}"></i>`;
                 }
                 
-                // Color mapping
-                let colorClass = 'c-wood';
-                if(['wood', 'lumber', 'paper', 'farm', 'wheat', 'corn', 'agricultural', 'animal'].some(k => item.id.includes(k))) colorClass = 'c-wood';
-                else if(['stone', 'brick', 'concrete'].some(k => item.id.includes(k))) colorClass = 'c-stone';
-                else if(['iron', 'steel', 'weapon'].some(k => item.id.includes(k))) colorClass = 'c-iron';
-                else if(['coal', 'coal_plant'].some(k => item.id.includes(k))) colorClass = 'c-coal';
-                else if(['gold', 'solar_plant'].some(k => item.id.includes(k))) colorClass = 'c-gold';
-                else if(['diamond'].some(k => item.id.includes(k))) colorClass = 'c-diamond';
-                else if(['oil'].some(k => item.id.includes(k))) colorClass = 'c-oil';
-                else if(['uranium', 'nuclear', 'hospital'].some(k => item.id.includes(k))) colorClass = 'c-uranium';
-                else if(['copper'].some(k => item.id.includes(k))) colorClass = 'c-copper';
-                else if(['sand', 'glass', 'wind'].some(k => item.id.includes(k))) colorClass = 'c-sand';
+                
+                // --- LEVEL BASED COLORING SYSTEM ---
+                let targetLevel = isMaxed ? currentLevel : nextLevel;
+                if(targetLevel > 10) targetLevel = 10;
+                
+                const levelColors = {
+                    1: '#95a5a6',  // Gri (Başlangıç)
+                    2: '#2ecc71',  // Yeşil (Temel)
+                    3: '#3498db',  // Mavi (Orta)
+                    4: '#9b59b6',  // Mor (İleri)
+                    5: '#e67e22',  // Turuncu (Uzman)
+                    6: '#e74c3c',  // Kırmızı (Usta)
+                    7: '#1abc9c',  // Turkuaz (Büyük Usta)
+                    8: '#d35400',  // Koyu Turuncu/Bronz (Elit)
+                    9: '#ecf0f1',  // Beyaz/Platin (Efsanevi)
+                    10: '#ffd700'  // Altın (Tanrısal)
+                };
+
+                const borderColor = levelColors[targetLevel] || '#95a5a6';
+
+                // --- NEW TITLE & DESCRIPTION LOGIC ---
+                let displayName = "";
+                let displayDesc = "";
+                
+                if (currentLevel === 0) {
+                    displayName = `1. Seviye ${item.name} Lisansı`;
+                    displayDesc = `${item.name} işletmesini kurmanızı sağlar.`;
+                } else {
+                    const nextLvl = isMaxed ? currentLevel : nextLevel;
+                    displayName = `${nextLvl}. Seviye ${item.name} Lisansı`;
+                    displayDesc = isMaxed 
+                        ? `${item.name} maksimum seviyeye ulaştı.`
+                        : `${item.name} işletmenizi geliştirmenizi sağlar.`;
+                }
+
+                card.style.borderTop = `3px solid ${borderColor}`;
 
                 card.innerHTML = `
                     <div class="r-top" style="${opacityStyle}">
-                        <div class="r-icon-box ${colorClass}">
+                        <div class="r-icon-box" style="color:${borderColor}; border-color:${borderColor}; box-shadow:0 0 10px ${borderColor}4D;">
                             ${iconHTML}
                         </div>
                         <div class="r-info">
                             <div class="r-title">
-                                ${item.name}
-                                <span class="r-level">Seviye ${currentLevel}</span>
+                                ${displayName}
                             </div>
-                            <div class="r-desc">İşletme kapasitesi ve verimini artırır.</div>
-                            <div class="r-action-text">${actionText}</div>
+                            <div class="r-desc">${displayDesc}</div>
                         </div>
+                        ${!isMaxed ? `<i class="fas fa-chevron-right r-action-icon" style="color:${borderColor}"></i>` : ''}
                     </div>
                 `;
-                
-                if(clickAttr) { // Set onclick manually to avoid CSP issues or messiness, but string is fine for now
-                     card.setAttribute('onclick', clickAttr.replace('onclick="', '').replace('"', ''));
-                }
 
                 container.appendChild(card);
             });
@@ -639,8 +718,17 @@
                     userLicenses[mineId] = result.newLevel;
                     if (window.updateHeaderStats) window.updateHeaderStats();
                     renderLicenses();
-                    if (typeof toastr !== 'undefined') toastr.success('İşlem başarılı!', 'Başarılı');
-                    else alert('İşlem başarılı!');
+                    
+                    // Update Reward Message
+                    const allLicenses = [...minesData, ...factoryData, ...businessData, ...farmData, ...ranchData];
+                    const license = allLicenses.find(l => l.id === mineId);
+                    const licenseName = license ? license.name : 'Unknown';
+                    const rewardMsg = document.getElementById('rewardMsg');
+                    if(rewardMsg) rewardMsg.innerText = `${result.newLevel}. Seviye ${licenseName} lisansı satın aldın`;
+
+                    // Show Success Modal
+                    const rewardModal = document.getElementById('rewardModal');
+                    if (rewardModal) rewardModal.classList.add('active');
                 } else {
                     if (typeof toastr !== 'undefined') toastr.error(result.message || 'Bir hata oluştu.', 'Hata');
                     else alert(result.message || 'Bir hata oluştu.');

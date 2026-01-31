@@ -97,85 +97,58 @@
         /* EDUCATION LIST */
         .edu-list { display: flex; flex-direction: column; gap: 15px; }
 
+        /* --- NEW CARD STYLES (from licence.html) --- */
+        .r-top { display: flex; gap: 15px; }
+        
+        .r-icon-box {
+            width: 55px; height: 55px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.6rem;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            flex-shrink: 0;
+        }
+
+        .r-info { flex: 1; min-width: 0; }
+        .r-title { font-size: 1.1rem; font-weight: bold; color: #fff; display: flex; justify-content: space-between; align-items: flex-start; }
+        .r-desc { font-size: 0.8rem; color: #aaa; margin-top: 4px; line-height: 1.3; }
+
+        .r-action-icon {
+            font-size: 1.2rem;
+            color: #444; 
+            transition: 0.3s;
+            margin-left: auto;
+            align-self: center;
+        }
+        .edu-card:hover .r-action-icon {
+            transform: translateX(5px);
+        }
+
         .edu-card {
             background: rgba(30, 30, 30, 0.95);
             border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: 15px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
             transition: all 0.3s;
-            opacity: 0.5; /* Default locked look */
-            filter: grayscale(0.8);
             position: relative;
-        }
-        
-        .edu-card.current {
-            opacity: 1;
-            filter: grayscale(0);
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 15px rgba(0, 229, 255, 0.1);
-        }
-        
-        .edu-card.completed {
-            opacity: 0.7;
-            filter: grayscale(0.5);
-            border-color: var(--accent-green);
-        }
-        
-        .edu-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 229, 255, 0.1);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            pointer-events: none;
-        }
-        
-        .edu-overlay-text {
-            background: var(--accent-cyan);
-            color: #000;
-            padding: 8px 16px;
-            border-radius: 5px;
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
-
-        .edu-icon {
-            width: 50px; height: 50px;
-            background: #222;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.5rem;
-            color: var(--accent-cyan);
-            border: 1px solid #444;
-        }
-
-        .edu-info { flex: 1; }
-        .edu-name { font-size: 1.1rem; font-weight: bold; color: #fff; }
-        .edu-range { font-size: 0.8rem; color: #888; margin-top: 2px; }
-        
-        .edu-action { }
-        
-        .btn-edu {
-            background: var(--accent-cyan);
-            color: #000;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            font-weight: bold;
             cursor: pointer;
-            font-family: 'Rajdhani';
-            transition: 0.2s;
         }
-        .btn-edu:hover { box-shadow: 0 0 10px rgba(0, 229, 255, 0.4); }
-        .btn-edu:disabled { background: #444; color: #888; cursor: not-allowed; box-shadow: none; }
+        
+        .edu-card.locked {
+            opacity: 0.6;
+            filter: grayscale(0.8);
+            cursor: not-allowed;
+        }
+
+        .edu-card:not(.locked):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Overwriting old classes just in case */
+        .edu-icon, .edu-info, .edu-name, .edu-range, .edu-overlay { display: none; }
 
         /* MODAL */
         .modal-overlay {
@@ -405,6 +378,52 @@
             padding-top: 12px;
         }
 
+        .badge-blue {
+            display: inline-block;
+            background: rgba(0, 229, 255, 0.15);
+            color: var(--accent-cyan);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            margin-top: 4px;
+        }
+        .badge-green {
+            display: inline-block;
+            background: rgba(46, 204, 113, 0.15);
+            color: var(--accent-green);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            margin-top: 4px;
+        }
+
+        /* Reward Grid (from daily-job.html) */
+        .reward-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; text-align: left;}
+        .r-box { 
+            background: #222; padding: 10px; border-radius: 8px; 
+            border: 1px solid #333; transition: 0.3s;
+        }
+        .r-box:hover { transform: none; border-color: #444; }
+        .r-val { font-size: 1.1rem; font-weight: bold; color: #fff; display: block; margin-bottom: 2px; }
+        .r-lbl { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: normal; font-weight: bold; }
+        .m-sub { color: #888; font-size: 0.9rem; margin-bottom: 15px; line-height: normal; }
+
+
+        .arrow-indicator { 
+            font-size: 1.2rem; 
+            color: #444; 
+            transition: 0.3s; 
+            margin-left: auto; 
+        }
+        .edu-card:not(.locked):hover .arrow-indicator { 
+            color: var(--accent-cyan); 
+            transform: translateX(5px); 
+        }
+
     </style>
 </head>
 <body>
@@ -471,6 +490,21 @@
                     <button class="m-btn btn-cancel" onclick="closeModal()">İPTAL</button>
                     <button class="m-btn btn-confirm" onclick="startEducation()">ONAYLA</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- COMPLETED MODAL -->
+        <div class="modal-overlay" id="rewardModal">
+            <div class="modal-content">
+                <i class="fas fa-trophy" style="font-size:3rem; color:var(--accent-gold); margin-bottom:10px;"></i>
+                <h3 class="m-title">EĞİTİM TAMAMLANDI!</h3>
+                <p class="m-sub" id="rewardMsg">Tebrikler, yeni bir seviyeye ulaştın.</p>
+                
+                <div class="reward-grid" id="rewardGrid">
+                    <!-- JS Dolduracak -->
+                </div>
+
+                <button class="m-btn btn-confirm" onclick="closeRewardModal()" style="width: 100%;">HARİKA!</button>
             </div>
         </div>
 
@@ -548,13 +582,31 @@
             const container = document.getElementById('eduList');
             container.innerHTML = '';
 
+            // Map standard levels 1-10 to colors
+            const levelColors = {
+                1: '#95a5a6',  // Gri
+                2: '#2ecc71',  // Yeşil
+                3: '#3498db',  // Mavi
+                4: '#9b59b6',  // Mor
+                5: '#e67e22',  // Turuncu
+                6: '#e74c3c',  // Kırmızı
+                7: '#1abc9c',  // Turkuaz
+                8: '#d35400',  // Bronz
+                9: '#ecf0f1',  // Platin
+                10: '#ffd700'  // Altın
+            };
+
             // Find current stage
             const currentStageIndex = eduStages.findIndex(s => userSkill >= s.min && userSkill <= s.max);
             
             eduStages.forEach((stage, index) => {
                 const isCompleted = userSkill > stage.max;
-                const isCurrent = index === currentStageIndex || (index === 0 && userSkill === 0); // Handle 0 case if any
+                const isCurrent = index === currentStageIndex || (index === 0 && userSkill === 0);
                 const isLocked = !isCompleted && !isCurrent;
+                
+                // Color Logic
+                let borderColor = levelColors[index + 1] || '#95a5a6';
+                if (isCompleted) borderColor = '#2ecc71'; // Completed is aways green
 
                 let statusClass = 'locked';
                 if (isCompleted) statusClass = 'completed';
@@ -563,26 +615,39 @@
                 const card = document.createElement('div');
                 card.className = `edu-card ${statusClass}`;
                 
-                let btnHTML = '';
-                // Removed button from cards
+                // Card Border Top Styling
+                card.style.borderTop = `3px solid ${borderColor}`;
 
-                let overlay = '';
-                
-                card.innerHTML = `
-                    <div class="edu-icon">
-                        <i class="fas ${stage.icon}"></i>
-                    </div>
-                    <div class="edu-info">
-                        <div class="edu-name">${stage.name}</div>
-                        <div class="edu-range">Seviye ${stage.min} - ${stage.max}</div>
-                    </div>
-                    ${overlay}
-                `;
-                
+                let rangeText = '';
+                if (isCompleted) {
+                    rangeText = `<span style="color:${borderColor}"><i class="fas fa-check"></i> Tamamlandı</span>`;
+                } else {
+                    rangeText = `Seviye ${stage.min} - ${stage.max}`;
+                }
+
+                // Click Action
                 if (isCurrent && !activeEdu && userSkill < 100) {
                     card.onclick = () => openModal();
                     card.style.cursor = 'pointer';
+                } else if (!isLocked && !isCompleted) {
+                     // Maybe current but activeEdu exists
+                     // Or completed? No, completed shouldn't be clickable for "Start"
                 }
+
+                card.innerHTML = `
+                    <div class="r-top">
+                        <div class="r-icon-box" style="color:${borderColor}; border-color:${borderColor}; box-shadow:0 0 10px ${borderColor}4D;">
+                            <i class="fas ${stage.icon}"></i>
+                        </div>
+                        <div class="r-info">
+                            <div class="r-title">
+                                ${stage.name} Eğitimi
+                            </div>
+                            <div class="r-desc" style="color: #aaa;">${rangeText}</div>
+                        </div>
+                        <i class="fas fa-chevron-right r-action-icon" style="color:${borderColor}; opacity: ${isLocked ? 0 : 1}"></i>
+                    </div>
+                `;
                 
                 container.appendChild(card);
             });
@@ -885,15 +950,38 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    toastr.success(`Tebrikler! Seviye ${result.newLevel} oldunuz.`, 'Eğitim Tamamlandı');
+                    // toastr.success(`Tebrikler! Seviye ${result.newLevel} oldunuz.`, 'Eğitim Tamamlandı');
                     document.getElementById('activeEduCard').classList.remove('active');
                     activeEdu = null;
                     userSkill = result.newLevel;
                     renderList();
+                    renderCurrentCard();
+                    
+                    showRewardModal(result.newLevel);
                 }
             } catch (error) {
                 console.error(error);
             }
+        }
+
+        function showRewardModal(level) {
+            const grid = document.getElementById('rewardGrid');
+            grid.innerHTML = '';
+            
+            // Show New Level in Grid
+            const div = document.createElement('div');
+            div.className = 'r-box';
+            div.style.gridColumn = "span 2"; // Center if single item
+            div.style.textAlign = "center";
+            div.innerHTML = `<span class="r-val" style="color:var(--accent-cyan); font-size:1.5rem;">Seviye ${level}</span><span class="r-lbl">YENİ EĞİTİM SEVİYESİ</span>`;
+            grid.appendChild(div);
+
+            document.getElementById('rewardMsg').innerText = `Başarıyla tamamladın ve Seviye ${level} oldun!`;
+            document.getElementById('rewardModal').classList.add('active'); // active uses flex
+        }
+
+        function closeRewardModal() {
+            document.getElementById('rewardModal').classList.remove('active');
         }
 
         function formatMoney(num) {

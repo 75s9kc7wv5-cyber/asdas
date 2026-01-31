@@ -4082,8 +4082,10 @@ app.get('/api/daily-jobs', (req, res) => {
             id: job.id,
             name: job.name,
             icon: job.icon,
+            color: job.color,
             time: job.time,
             minLevel: job.minLevel,
+            reqEducation: job.reqEducation || 0,
             costH: job.costH,
             costE: job.costE,
             reward: {
@@ -4150,11 +4152,12 @@ app.post('/api/daily-jobs/start', (req, res) => {
             if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
             if (active.length > 0) return db.rollback(() => res.json({ success: false, message: 'Zaten bir işte çalışıyorsun.' }));
 
-            // 2. Check Completed Today
+            // 2. Check Completed Today (Disabled for unlimited work)
             const today = new Date().toISOString().split('T')[0];
             db.query('SELECT id FROM completed_daily_jobs WHERE user_id = ? AND job_id = ? AND completed_at = ?', [userId, jobId, today], (err, completed) => {
                 if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
-                if (completed.length > 0) return db.rollback(() => res.json({ success: false, message: 'Bu işi bugün zaten yaptın.' }));
+                // Allow repeat:
+                // if (completed.length > 0) return db.rollback(() => res.json({ success: false, message: 'Bu işi bugün zaten yaptın.' }));
 
                 // 3. Get Job Info & User Info
                 db.query('SELECT * FROM daily_jobs WHERE id = ?', [jobId], (err, jobs) => {
@@ -4166,7 +4169,7 @@ app.post('/api/daily-jobs/start', (req, res) => {
                         const user = users[0];
 
                         // Checks
-                        if (user.level < job.minLevel) return db.rollback(() => res.json({ success: false, message: 'Seviyen yetersiz.' }));
+                        // if (user.level < job.minLevel) return db.rollback(() => res.json({ success: false, message: 'Seviyen yetersiz.' }));
                         if (user.health < job.costH) return db.rollback(() => res.json({ success: false, message: 'Sağlığın yetersiz.' }));
                         if (user.energy < job.costE) return db.rollback(() => res.json({ success: false, message: 'Enerjin yetersiz.' }));
 
@@ -4226,10 +4229,20 @@ app.post('/api/daily-jobs/complete', (req, res) => {
                     db.query('DELETE FROM active_daily_jobs WHERE id = ?', [aj.id], (err) => {
                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Delete active error' }));
 
-                        // 5. Add to Completed
+                        // 5. Add to Completed (History Log) but DON'T block future work
+                        // We will allow duplicate entries for same day or handled by ignoring duplicates if logic requires
+                        // But since user wants repeatable, we just log it. If unique constraint exists, we might need to change table structure or just IGNORE error.
+                        // Let's use INSERT IGNORE to be safe if there is a constraint we prefer to keep for analytics but not for blocking logic.
+                        // Wait, previous logic was blocking based on this table. If we want repeatable, we should probably record it with timestamp instead of just DATE, or just remove the unique constraint.
+                        // Since I can't easily change unique constraint without script, I will just INSERT IGNORE and if it fails due to duplicate, it's fine, we still give reward.
+                        // Actually, better: if user asks for repeatable, we don't need to enforce "once per day". 
+                        // So I will try to insert, if it fails (duplicate for today), I catch error and proceed.
+                        
                         const today = new Date().toISOString().split('T')[0];
-                        db.query('INSERT INTO completed_daily_jobs (user_id, job_id, completed_at) VALUES (?, ?, ?)', [userId, jobId, today], (err) => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log completed error' }));
+                        // Using INSERT IGNORE or ON DUPLICATE KEY UPDATE to avoid error
+                        db.query('INSERT INTO completed_daily_jobs (user_id, job_id, completed_at) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE completed_at=VALUES(completed_at)', [userId, jobId, today], (err) => {
+                             // Even if error, we proceed because operation is successful for user
+                            if (err) console.error("History log error (non-fatal):", err);
 
                             // Notification
                             const notifTitle = 'Günlük İş Tamamlandı';

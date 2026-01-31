@@ -41,7 +41,7 @@
             flex-direction: column;
             position: relative;
             box-shadow: 0 0 30px rgba(0,0,0,0.5);
-            background-image: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/World_map_blank_without_borders.svg/2000px-World_map_blank_without_borders.svg.png');
+            background-image: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.95)), url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/World_map_blank_without_borders.svg/2000px-World_map_blank_without_borders.svg.png');
             background-size: cover;
             background-position: center;
         }
@@ -54,44 +54,116 @@
             padding-bottom: 80px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 25px;
         }
+
+        /* Welcome Section */
+        .welcome-section {
+            padding: 15px;
+            margin-bottom: 5px;
+            border-left: 3px solid var(--accent-cyan);
+            background: linear-gradient(90deg, rgba(0, 229, 255, 0.1), transparent);
+        }
+        .welcome-title { font-size: 1.2rem; font-weight: 800; color: #fff; margin-bottom: 3px; letter-spacing: 1px; }
+        .welcome-sub { font-size: 0.8rem; color: #aaa; }
 
         .dashboard-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
+            gap: 12px;
         }
 
         .dash-item {
-            background: rgba(30, 30, 30, 0.9);
-            border: 1px solid #333;
-            border-radius: 10px;
-            padding: 15px;
+            background: rgba(30, 30, 30, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 15px 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 12px;
             text-decoration: none;
             color: white;
-            transition: transform 0.2s, border-color 0.2s;
-            height: 120px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            height: 110px;
+            position: relative;
+            overflow: hidden;
         }
-        .dash-item:hover { transform: translateY(-3px); border-color: var(--accent-cyan); background: rgba(40, 40, 40, 0.95); }
         
-        .dash-icon { font-size: 2rem; color: var(--accent-cyan); }
-        .dash-label { font-size: 1.1rem; font-weight: 600; text-align: center; }
+        .dash-item::before {
+            content: '';
+            position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+            background: var(--item-color, #fff);
+            opacity: 0.3;
+            transition: 0.3s;
+        }
+        
+        .dash-item::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(circle at center, var(--item-color) 0%, transparent 70%);
+            opacity: 0;
+            transition: 0.3s;
+            z-index: 0;
+        }
+
+        .dash-item:hover { 
+            transform: translateY(-5px); 
+            border-color: var(--item-color); 
+            background: rgba(30, 30, 30, 0.8);
+            box-shadow: 0 10px 20px -10px var(--item-color);
+        }
+        
+        .dash-item:hover::before { opacity: 1; height: 3px; }
+        .dash-item:hover::after { opacity: 0.1; }
+        
+        .dash-icon { 
+            font-size: 1.8rem; 
+            color: var(--item-color); 
+            z-index: 1; 
+            filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
+            transition: 0.3s;
+        }
+        .dash-item:hover .dash-icon { transform: scale(1.1); filter: drop-shadow(0 0 8px var(--item-color)); }
+
+        .dash-label { 
+            font-size: 0.85rem; 
+            font-weight: 600; 
+            text-align: center; 
+            z-index: 1;
+            letter-spacing: 0.5px;
+            color: #ddd;
+        }
+        .dash-item:hover .dash-label { color: #fff; }
+
+        /* Kategori Başlıkları (Opsiyonel kullanım için) */
+        .grid-header { grid-column: span 3; color: #666; font-size: 0.75rem; font-weight: 800; letter-spacing: 2px; margin-top: 10px; margin-bottom: 5px; display: none; }
 
         .news-section {
-            background: rgba(20, 20, 20, 0.9);
-            border-radius: 10px;
-            padding: 15px;
-            border: 1px solid #333;
+            background: rgba(20, 20, 20, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            margin-top: 10px;
         }
-        .news-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
-        .news-item { font-size: 0.9rem; color: #aaa; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
-        .news-item i { color: var(--accent-gold); font-size: 0.8rem; }
+        .news-title { 
+            font-size: 1rem; font-weight: 800; margin-bottom: 15px; 
+            border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;
+            display: flex; align-items: center; gap: 10px; color: #fff;
+        }
+        .news-title i { color: var(--accent-gold); }
+        
+        .news-item { 
+            font-size: 0.85rem; color: #aaa; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 10px; line-height: 1.4;
+        }
+        .news-item:last-child { margin-bottom: 0; }
+        .news-dot {
+            width: 6px; height: 6px; background: var(--accent-green); border-radius: 50%; margin-top: 6px; flex-shrink: 0;
+            box-shadow: 0 0 5px var(--accent-green);
+        }
 
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -103,94 +175,113 @@
         <!-- Header injected by header-manager.js -->
 
         <main>
+            
+            <div class="welcome-section">
+                <div class="welcome-title">HOŞ GELDİN BAŞKAN</div>
+                <div class="welcome-sub">İmparatorluğunu yönetmeye hazır mısın?</div>
+            </div>
+
             <div class="dashboard-grid">
-                <a href="farm-category.html" class="dash-item">
-                    <i class="fas fa-seedling dash-icon" style="color: #2ecc71;"></i>
-                    <span class="dash-label">Tarlalar</span>
+                
+                <!-- ÜRETİM -->
+                <a href="farm-category.html" class="dash-item" style="--item-color: #2ecc71;">
+                    <i class="fas fa-seedling dash-icon"></i>
+                    <span class="dash-label">TARLALAR</span>
                 </a>
-                <a href="ranch-category.html" class="dash-item">
-                    <i class="fas fa-horse-head dash-icon" style="color: #e67e22;"></i>
-                    <span class="dash-label">Çiftlikler</span>
+                <a href="ranch-category.html" class="dash-item" style="--item-color: #e67e22;">
+                    <i class="fas fa-horse-head dash-icon"></i>
+                    <span class="dash-label">ÇİFTLİKLER</span>
                 </a>
-                <a href="mines-category.html" class="dash-item">
-                    <i class="fas fa-hammer dash-icon" style="color: #f1c40f;"></i>
-                    <span class="dash-label">Madenler</span>
+                <a href="mines-category.html" class="dash-item" style="--item-color: #f1c40f;">
+                    <i class="fas fa-hammer dash-icon"></i>
+                    <span class="dash-label">MADENLER</span>
                 </a>
-                <a href="factory-category.html" class="dash-item">
-                    <i class="fas fa-industry dash-icon" style="color: #e67e22;"></i>
-                    <span class="dash-label">Fabrika</span>
+                <a href="factory-category.html" class="dash-item" style="--item-color: #e67e22;">
+                    <i class="fas fa-industry dash-icon"></i>
+                    <span class="dash-label">FABRİKA</span>
                 </a>
-                <a href="education.html" class="dash-item">
-                    <i class="fas fa-graduation-cap dash-icon" style="color: #3498db;"></i>
-                    <span class="dash-label">Eğitim</span>
+                
+                <!-- FİNANS & TİCARET -->
+                <a href="market-category.html" class="dash-item" style="--item-color: #e74c3c;">
+                    <i class="fas fa-shopping-cart dash-icon"></i>
+                    <span class="dash-label">MARKET</span>
                 </a>
-                <a href="research.html" class="dash-item">
-                    <i class="fas fa-flask dash-icon" style="color: #9b59b6;"></i>
+                <a href="bank-list.html" class="dash-item" style="--item-color: #27ae60;">
+                    <i class="fas fa-university dash-icon"></i>
+                    <span class="dash-label">BANKA</span>
+                </a>
+                <a href="daily-job.html" class="dash-item" style="--item-color: #d35400;">
+                    <i class="fas fa-calendar-check dash-icon"></i>
+                    <span class="dash-label">GÜNLÜK İŞ</span>
+                </a>
+                <a href="property.html" class="dash-item" style="--item-color: #3498db;">
+                    <i class="fas fa-building dash-icon"></i>
+                    <span class="dash-label">MÜLKLER</span>
+                </a>
+
+                <!-- GELİŞİM -->
+                <a href="education.html" class="dash-item" style="--item-color: #3498db;">
+                    <i class="fas fa-graduation-cap dash-icon"></i>
+                    <span class="dash-label">EĞİTİM</span>
+                </a>
+                <a href="research.html" class="dash-item" style="--item-color: #9b59b6;">
+                    <i class="fas fa-flask dash-icon"></i>
                     <span class="dash-label">AR-GE</span>
                 </a>
-                <a href="hospital-list.html" class="dash-item">
-                    <i class="fas fa-hospital dash-icon" style="color: #e74c3c;"></i>
-                    <span class="dash-label">Hastane</span>
+                <a href="hospital-list.html" class="dash-item" style="--item-color: #ff6b81;">
+                    <i class="fas fa-hospital dash-icon"></i>
+                    <span class="dash-label">HASTANE</span>
                 </a>
-                <a href="bank-list.html" class="dash-item">
-                    <i class="fas fa-university dash-icon" style="color: #2ecc71;"></i>
-                    <span class="dash-label">Banka</span>
+                <a href="licence.html" class="dash-item" style="--item-color: #1abc9c;">
+                    <i class="fas fa-id-card dash-icon"></i>
+                    <span class="dash-label">LİSANSLAR</span>
                 </a>
-                <a href="politics-list.html" class="dash-item">
-                    <i class="fas fa-landmark dash-icon" style="color: #9b59b6;"></i>
-                    <span class="dash-label">Partiler</span>
+
+                <!-- YÖNETİM & SOSYAL -->
+                <a href="politics-list.html" class="dash-item" style="--item-color: #8e44ad;">
+                    <i class="fas fa-landmark dash-icon"></i>
+                    <span class="dash-label">PARTİLER</span>
                 </a>
-                <a href="market-category.html" class="dash-item">
-                    <i class="fas fa-shopping-cart dash-icon" style="color: #e74c3c;"></i>
-                    <span class="dash-label">Market</span>
+                <a href="council.html" class="dash-item" style="--item-color: #95a5a6;">
+                    <i class="fas fa-users dash-icon"></i>
+                    <span class="dash-label">KONSEY</span>
                 </a>
-                <a href="inventory.html" class="dash-item">
-                    <i class="fas fa-box-open dash-icon" style="color: #f39c12;"></i>
-                    <span class="dash-label">Envanter</span>
+                <a href="chat.html" class="dash-item" style="--item-color: #00e5ff;">
+                    <i class="fas fa-comments dash-icon"></i>
+                    <span class="dash-label">SOHBET</span>
                 </a>
-                <a href="licence.html" class="dash-item">
-                    <i class="fas fa-id-card dash-icon" style="color: #1abc9c;"></i>
-                    <span class="dash-label">Lisanslar</span>
+                
+                <!-- KİŞİSEL -->
+                <a href="inventory.html" class="dash-item" style="--item-color: #f39c12;">
+                    <i class="fas fa-box-open dash-icon"></i>
+                    <span class="dash-label">ENVANTER</span>
                 </a>
-                <a href="council.html" class="dash-item">
-                    <i class="fas fa-users dash-icon" style="color: #95a5a6;"></i>
-                    <span class="dash-label">Konsey</span>
+                <a href="profile.html" class="dash-item" style="--item-color: #ecf0f1;">
+                    <i class="fas fa-user-circle dash-icon"></i>
+                    <span class="dash-label">PROFİL</span>
                 </a>
-                <a href="chat.html" class="dash-item">
-                    <i class="fas fa-comments dash-icon" style="color: #00e5ff;"></i>
-                    <span class="dash-label">Sohbet</span>
+                <a href="settings.html" class="dash-item" style="--item-color: #7f8c8d;">
+                    <i class="fas fa-cog dash-icon"></i>
+                    <span class="dash-label">AYARLAR</span>
                 </a>
-                <a href="daily-job.html" class="dash-item">
-                    <i class="fas fa-calendar-check dash-icon" style="color: #d35400;"></i>
-                    <span class="dash-label">Günlük İşler</span>
+
+                 <!-- ADMİN (En sona isteğe bağlı, şimdilik dursun) -->
+                <a href="admin.html" class="dash-item" style="--item-color: #c0392b;">
+                    <i class="fas fa-user-shield dash-icon"></i>
+                    <span class="dash-label">ADMİN</span>
                 </a>
-                <a href="property.html" class="dash-item">
-                    <i class="fas fa-building dash-icon" style="color: #2ecc71;"></i>
-                    <span class="dash-label">Mülkler</span>
-                </a>
-                <a href="admin.html" class="dash-item">
-                    <i class="fas fa-user-shield dash-icon" style="color: #e74c3c;"></i>
-                    <span class="dash-label">Admin</span>
-                </a>
-                <a href="profile.html" class="dash-item">
-                    <i class="fas fa-user dash-icon" style="color: #ecf0f1;"></i>
-                    <span class="dash-label">Profil</span>
-                </a>
-                <a href="settings.html" class="dash-item">
-                    <i class="fas fa-cog dash-icon" style="color: #7f8c8d;"></i>
-                    <span class="dash-label">Ayarlar</span>
-                </a>
+
             </div>
 
             <div class="news-section">
-                <div class="news-title">SON GELİŞMELER</div>
-                <div class="news-item"><i class="fas fa-check-circle" style="color:#2ecc71;"></i> Tarla ve Çiftlik bölgeleri eklendi.</div>
-                <div class="news-item"><i class="fas fa-check-circle" style="color:#2ecc71;"></i> Maden bölgesi arayüzü yenilendi.</div>
-                <div class="news-item"><i class="fas fa-check-circle" style="color:#2ecc71;"></i> Sohbet sistemi güncellendi (Roller & Limitler).</div>
-                <div class="news-item"><i class="fas fa-check-circle" style="color:#2ecc71;"></i> Profil ziyaretçi sayacı aktif edildi.</div>
-                <div class="news-item"><i class="fas fa-check-circle" style="color:#2ecc71;"></i> Yeni ikon setleri yüklendi.</div>
-                <div class="news-item"><i class="fas fa-check-circle" style="color:#2ecc71;"></i> Avatar sistemi düzeltildi.</div>
+                <div class="news-title"><i class="fas fa-bullhorn"></i> SİSTEM DUYURULARI</div>
+                <div class="news-item"><div class="news-dot"></div> Tarla ve Çiftlik bölgeleri aktif edildi. Üretime hemen başla!</div>
+                <div class="news-item"><div class="news-dot"></div> Maden bölgesi arayüzü yenilendi, kapasite sorunları giderildi.</div>
+                <div class="news-item"><div class="news-dot" style="background:var(--accent-cyan); box-shadow:0 0 5px var(--accent-cyan);"></div> Sohbet sistemi güncellendi. Artık kanal seçimi yapabilirsin.</div>
+                <div class="news-item"><div class="news-dot"></div> Günlük işler sistemi yenilendi: Süreli çalışma ve eğitim şartı eklendi.</div>
             </div>
+        </main>
+    </div>
         </main>
     </div>
 

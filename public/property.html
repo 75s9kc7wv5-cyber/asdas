@@ -134,7 +134,7 @@
             border: 1px solid var(--border-color); border-left: 4px solid var(--accent);
             border-radius: 10px; padding: 15px; position: relative;
         }
-        .prop-card.expired { border-left-color: var(--accent-red); opacity: 0.6; }
+        .prop-card.expired { border-left-color: var(--accent-red); }
 
         .pc-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
         .pc-name { font-weight: 700; font-size: 1.1rem; color: #fff; }
@@ -192,8 +192,12 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 6px 0;
+            padding: 10px 0;
             transition: all 0.2s;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .info-list-item:last-child {
+            border-bottom: none;
         }
         .info-list-item:hover {
             opacity: 0.8;
@@ -282,6 +286,9 @@
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+        .arrow-indicator { font-size: 1.5rem; color: #444; transition: 0.3s; margin-left: auto; }
+        .build-card:hover .arrow-indicator, .prop-card:hover .arrow-indicator { color: var(--accent); transform: translateX(5px); }
+
     </style>
 </head>
 <body>
@@ -302,12 +309,12 @@
 
             <!-- SEKMELER (Sıra Değişti) -->
             <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('list')">MÜLKLERİM</button>
-                <button class="tab-btn" onclick="switchTab('build')">İNŞA ET</button>
+                <button class="tab-btn" onclick="switchTab('list')">MÜLKLERİM</button>
+                <button class="tab-btn active" onclick="switchTab('build')">İNŞA ET</button>
             </div>
 
-            <!-- TAB 1: MÜLKLERİM (Varsayılan Açık) -->
-            <div id="tab-list">
+            <!-- TAB 1: MÜLKLERİM (Varsayılan Gizli) -->
+            <div id="tab-list" style="display:none;">
                 <div class="property-list" id="propertyList">
                     <!-- JS Dolduracak -->
                 </div>
@@ -317,8 +324,8 @@
                 </div>
             </div>
 
-            <!-- TAB 2: İNŞAAT ALANI (Varsayılan Gizli) -->
-            <div id="tab-build" style="display:none;">
+            <!-- TAB 2: İNŞAAT ALANI (Varsayılan Açık) -->
+            <div id="tab-build">
                 <div class="build-grid" id="buildList">
                     <!-- JS Dolduracak -->
                 </div>
@@ -341,6 +348,44 @@
                     <button class="m-btn btn-cancel" onclick="closeModal()">İPTAL</button>
                     <button class="m-btn btn-confirm" id="btnConfirmBuild" onclick="confirmBuild()">İNŞA ET</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- COLLECT MODAL -->
+        <div class="modal-overlay" id="collectModal">
+            <div class="modal-content">
+                <i class="fas fa-hand-holding-usd" style="font-size:3rem; color:var(--accent-gold); margin-bottom:10px;"></i>
+                <h3 class="m-title" id="cTitle">Kira Topla</h3>
+                <p class="m-desc">İşletmenizi çalıştırarak kazanç elde edin.</p>
+                
+                <div class="req-list" id="collectList">
+                    <!-- JS Dolduracak -->
+                </div>
+
+                <div class="m-btns">
+                    <button class="m-btn btn-cancel" onclick="closeCollectModal()">İPTAL</button>
+                    <button class="m-btn btn-confirm" id="btnConfirmCollect">KİRA TOPLA</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SUCCESS MODAL -->
+        <div class="modal-overlay" id="successModal">
+            <div class="modal-content" style="border-top: 3px solid var(--accent); box-shadow: 0 0 30px rgba(46, 204, 113, 0.2);">
+                <i class="fas fa-check-circle" style="font-size:3rem; color:var(--accent); margin-bottom:10px;"></i>
+                <h3 class="m-title">İNŞAAT TAMAMLANDI!</h3>
+                <p class="m-desc" id="successMsg">Mülkünüz başarıyla inşa edildi.</p>
+                <button class="m-btn btn-confirm" onclick="closeSuccessModal()" style="width:100%;">HARİKA</button>
+            </div>
+        </div>
+
+        <!-- ERROR MODAL -->
+        <div class="modal-overlay" id="errorModal">
+            <div class="modal-content" style="border-top: 3px solid var(--accent-red); box-shadow: 0 0 30px rgba(231, 76, 60, 0.2);">
+                <i class="fas fa-times-circle" style="font-size:3rem; color:var(--accent-red); margin-bottom:10px;"></i>
+                <h3 class="m-title">YETERSİZ BAKİYE!</h3>
+                <p class="m-desc" id="errorMsg">Gereksinimler karşılanmıyor.</p>
+                <button class="m-btn btn-cancel" onclick="closeErrorModal()" style="width:100%;">TAMAM</button>
             </div>
         </div>
 
@@ -425,46 +470,54 @@
             const container = document.getElementById('buildList');
             container.innerHTML = '';
 
-            const formatTime = (seconds) => {
-                if(seconds < 60) return `${seconds}sn`;
-                if(seconds % 60 === 0) return `${seconds/60}dk`;
-                return `${Math.floor(seconds/60)}dk ${seconds%60}sn`;
-            };
+            const propColors = [
+                '#3498db', '#e67e22', '#9b59b6', '#2ecc71', '#e74c3c', 
+                '#f1c40f', '#1abc9c', '#34495e', '#d35400', '#c0392b'
+            ];
 
-            propertyTypes.forEach(p => {
+            propertyTypes.forEach((p, index) => {
                 // Check if already built
                 const isBuilt = myProperties.some(mp => mp.property_type_id === p.id);
 
+                const color = propColors[index % propColors.length];
                 const card = document.createElement('div');
                 card.className = 'build-card' + (isBuilt ? ' disabled' : '');
                 
+                // Color Line
+                card.style.borderTop = `3px solid ${color}`;
+                if(isBuilt) card.style.borderColor = '#333';
+
                 if (!isBuilt) {
                     card.onclick = () => openBuildModal(p.id);
                 }
                 
                 const iconHtml = p.image 
                     ? `<img src="${p.image}" style="width:100%; height:100%; object-fit:contain;">` 
-                    : `<i class="fas fa-building"></i>`;
+                    : `<i class="fas fa-building" style="color:${color}"></i>`;
 
                 card.innerHTML = `
-                    <div class="bc-icon" style="padding:5px;">
+                    <div class="bc-icon" style="padding:5px; border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.03);">
                         ${iconHtml}
                     </div>
                     <div class="bc-info">
                         <div class="bc-name">${p.name}</div>
-                        <div class="bc-badges" style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:5px;">
-                            <span class="badge badge-income"><i class="fas fa-coins"></i> ${fmt(p.tax_income)} ₺ / Kira</span>
-                            <span class="badge badge-time"><i class="fas fa-clock"></i> ${formatTime(p.tax_interval)}</span>
-                            <span class="badge badge-life"><i class="fas fa-repeat"></i> 100 Kez</span>
-                        </div>
+                        <div class="bc-detail" style="font-size:0.8rem; color:#888;">${p.description || 'Bu mülkü inşa ederek düzenli kira geliri elde edebilirsiniz.'}</div>
                     </div>
+                    <div class="arrow-indicator"><i class="fas fa-chevron-right"></i></div>
                 `;
                 container.appendChild(card);
             });
         }
 
+
+        let activeTimers = [];
+
         // --- RENDER: MÜLKLERİM ---
         function renderMyProperties() {
+            // Clear old timers
+            activeTimers.forEach(t => clearInterval(t));
+            activeTimers = [];
+
             const list = document.getElementById('propertyList');
             const emptyMsg = document.getElementById('emptyMsg');
             list.innerHTML = '';
@@ -475,12 +528,6 @@
             }
             emptyMsg.style.display = 'none';
 
-            const formatTime = (seconds) => {
-                if(seconds < 60) return `${seconds}sn`;
-                if(seconds % 60 === 0) return `${seconds/60}dk`;
-                return `${Math.floor(seconds/60)}dk ${seconds%60}sn`;
-            };
-
             myProperties.forEach(prop => {
                 const div = document.createElement('div');
                 div.className = `prop-card ${prop.isReady ? '' : 'expired'}`; 
@@ -488,24 +535,61 @@
                 div.style.alignItems = 'center';
                 div.style.gap = '15px';
                 
-                let btnHtml = '';
+                // Add click handler for the whole card if ready
                 if(prop.isReady) {
-                    btnHtml = `<button class="btn-collect" onclick="collectTax(${prop.id})">KİRA TOPLA</button>`;
+                    div.style.cursor = 'pointer';
+                    div.onclick = () => openCollectModal(prop);
+                }
+
+                let actionHtml = '';
+                let actionId = `action-${prop.id}`;
+
+                if(prop.isReady) {
+                    actionHtml = `<span id="${actionId}" class="badge" style="width: fit-content; background:var(--accent); color:#000; font-weight:bold; padding:5px 10px;"><i class="fas fa-check-circle"></i> Kira Toplamaya Hazır</span>`;
                 } else {
                     const next = new Date(prop.nextCollection);
                     const now = new Date();
-                    const diff = Math.ceil((next - now) / 1000);
-                    const hours = Math.floor(diff / 3600);
-                    const minutes = Math.floor((diff % 3600) / 60);
+                    let diff = Math.ceil((next - now) / 1000);
                     
-                    let timeText = '';
-                    if(hours > 0) {
-                        timeText = `${hours}s ${minutes}dk`;
-                    } else {
-                        timeText = `${minutes}dk`;
-                    }
-                    
-                    btnHtml = `<span class="badge badge-time" style="width: fit-content;"><i class="fas fa-clock"></i> Kira Toplama Süresi: ${timeText}</span>`;
+                    const formatDiff = (d) => {
+                        if(d <= 0) return "Hazır";
+                        const h = Math.floor(d / 3600);
+                        const m = Math.floor((d % 3600) / 60);
+                        const s = d % 60;
+                        if(h > 0) return `${h}s ${m}dk ${s}sn`;
+                        if(m > 0) return `${m}dk ${s}sn`;
+                        return `${s}sn`;
+                    };
+
+                    actionHtml = `<span id="${actionId}" class="badge badge-time" style="width: fit-content;"><i class="fas fa-clock"></i> Kira toplamaya kalan süre: ${formatDiff(diff)}</span>`;
+
+                    // Start Timer
+                    const timer = setInterval(() => {
+                        const currentNow = new Date();
+                        const currentDiff = Math.ceil((next - currentNow) / 1000);
+                        const span = document.getElementById(actionId);
+
+                        if(currentDiff <= 0) {
+                            clearInterval(timer);
+                            // Enable Property
+                            div.classList.remove('expired');
+                            div.style.cursor = 'pointer';
+                            div.onclick = () => openCollectModal(prop);
+                            if(span) {
+                                span.className = "badge";
+                                span.style.background = "var(--accent)";
+                                span.style.color = "#000";
+                                span.style.fontWeight = "bold";
+                                span.style.padding = "5px 10px";
+                                span.innerHTML = `<i class="fas fa-check-circle"></i> Kira Toplamaya Hazır`;
+                            }
+                            // Also update prop object locally so if re-rendered it stays
+                            prop.isReady = true;
+                        } else {
+                             if(span) span.innerHTML = `<i class="fas fa-clock"></i> Kira toplamaya kalan süre: ${formatDiff(currentDiff)}`;
+                        }
+                    }, 1000);
+                    activeTimers.push(timer);
                 }
 
                 const iconHtml = prop.image 
@@ -518,17 +602,13 @@
                     </div>
                     <div class="bc-info" style="flex:1;">
                         <div class="pc-header" style="margin-bottom:5px;">
-                            <div class="pc-name">${prop.name}</div>
-                        </div>
-                        <div class="pc-badges" style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:5px;">
-                            <span class="badge badge-income"><i class="fas fa-coins"></i> ${fmt(prop.tax_income)} ₺</span>
-                            <span class="badge badge-time"><i class="fas fa-clock"></i> ${formatTime(prop.tax_interval)}</span>
-                            <span class="badge badge-life"><i class="fas fa-repeat"></i> ${prop.remaining_life || 100}</span>
+                            <div class="pc-name">${prop.name} İşletmesi</div>
                         </div>
                         <div class="pc-action">
-                            ${btnHtml}
+                            ${actionHtml}
                         </div>
                     </div>
+                    <div class="arrow-indicator"><i class="fas fa-chevron-right"></i></div>
                 `;
                 list.appendChild(div);
             });
@@ -546,22 +626,71 @@
             let canBuild = true;
             let html = '';
 
+            // Format Time Helper
+            const formatTime = (seconds) => {
+                if(seconds < 60) return `${seconds}sn`;
+                if(seconds % 60 === 0) return `${seconds/60}dk`;
+                return `${Math.floor(seconds/60)}dk ${seconds%60}sn`;
+            };
+
             // Helper to add item
-            const addItem = (icon, label, value, isOk) => {
-                if(!isOk) canBuild = false;
+            const addItem = (icon, label, value, isOk, isGain = false) => {
+                if(!isGain && !isOk) canBuild = false;
+                
+                let valColor = '#fff';
+                let statusIcon = '';
+                
+                if(isGain) {
+                    valColor = 'var(--accent-gold)';
+                    statusIcon = ''; 
+                } else {
+                    valColor = isOk ? 'var(--accent)' : 'var(--accent-red)';
+                    statusIcon = `
+                    <div class="upgrade-cost-status ${isOk ? 'ok' : 'fail'}">
+                        <i class="fas ${isOk ? 'fa-check' : 'fa-times'}"></i>
+                    </div>`;
+                }
+
                 html += `
                     <div class="info-list-item">
                         <div class="info-left">
                             ${icon}
                             <span class="info-label">${label}</span>
                         </div>
-                        <span class="info-value">${value}</span>
-                        <div class="upgrade-cost-status ${isOk ? 'ok' : 'fail'}">
-                            <i class="fas ${isOk ? 'fa-check' : 'fa-times'}"></i>
-                        </div>
+                        <span class="info-value" style="color:${valColor}">${value}</span>
+                        ${statusIcon}
                     </div>
                 `;
             };
+
+            // --- KAZANIMLAR (Gains) ---
+            html += `<div style="text-align:left; font-size:0.75rem; color:var(--accent-gold); font-weight:800; margin-bottom:5px; letter-spacing:1px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:5px;">KAZANIMLAR</div>`;
+
+            // Income
+             addItem(
+                '<i class="fas fa-coins" style="color:var(--accent-gold)"></i>',
+                'Kira Geliri',
+                `${fmt(type.tax_income)} ₺`,
+                true, true
+            );
+            
+            // Interval
+             addItem(
+                '<i class="fas fa-clock" style="color:var(--accent-cyan)"></i>',
+                'Kira Süresi',
+                formatTime(type.tax_interval),
+                true, true
+            );
+
+            // Lifespan (Always show default 100)
+             addItem(
+                '<i class="fas fa-repeat" style="color:var(--accent)"></i>',
+                'Kira Hakkı',
+                `${type.lifespan || type.life || 100} Kez`,
+                true, true
+            );
+            
+            html += `<div style="text-align:left; font-size:0.75rem; color:var(--accent-red); font-weight:800; margin:15px 0 5px 0; letter-spacing:1px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:5px;">GEREKSİNİMLER</div>`;
 
             // 0. General License Limit
             const currentCount = myProperties.length;
@@ -685,7 +814,7 @@
 
             reqList.innerHTML = html;
             const btn = document.getElementById('btnConfirmBuild');
-            btn.disabled = !canBuild;
+            btn.disabled = !canBuild; 
             btn.style.opacity = canBuild ? '1' : '0.5';
             
             document.getElementById('buildModal').style.display = 'flex';
@@ -695,28 +824,64 @@
             document.getElementById('buildModal').style.display = 'none';
         }
 
-        // --- MANTIK: İNŞAAT ---
-        function confirmBuild() {
-            fetch('/api/properties/build', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: user.id, propertyTypeId: selectedTypeId })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(data.success) {
-                    toastr.success(data.message);
-                    closeModal();
-                    fetchData(); 
-                    document.querySelector('[data-tab="list"]').click();
-                } else {
-                    toastr.error(data.message);
-                }
-            });
+        function closeCollectModal() {
+            document.getElementById('collectModal').style.display = 'none';
         }
 
-        // --- MANTIK: VERGİ TOPLAMA ---
-        function collectTax(propId) {
+        function closeSuccessModal() {
+            document.getElementById('successModal').style.display = 'none';
+        }
+
+        function closeErrorModal() {
+            document.getElementById('errorModal').style.display = 'none';
+        }
+
+        function showSuccess(msg) {
+            document.getElementById('successMsg').innerText = msg;
+            document.getElementById('successModal').style.display = 'flex';
+        }
+
+        function showError(msg) {
+            document.getElementById('errorMsg').innerText = msg;
+            document.getElementById('errorModal').style.display = 'flex';
+        }
+
+        // --- COLLECT MODAL FUNCTIONS ---
+        function openCollectModal(prop) {
+            document.getElementById('cTitle').innerText = prop.name + " - Kira";
+            const list = document.getElementById('collectList');
+            list.innerHTML = '';
+
+            const addItem = (icon, label, value) => {
+                 list.innerHTML += `
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            ${icon}
+                            <span class="info-label">${label}</span>
+                        </div>
+                        <span class="info-value" style="color:var(--accent-gold);">${value}</span>
+                    </div>`;
+            };
+
+            // Gains
+            addItem(
+                '<i class="fas fa-coins" style="color:var(--accent-gold)"></i>',
+                'Kira Kazancı',
+                `${fmt(prop.tax_income)} ₺`
+            );
+
+            // Remaining Life
+            addItem(
+                '<i class="fas fa-repeat" style="color:var(--accent)"></i>',
+                'Kalan Hak',
+                `${prop.remaining_life || 100} Kez`
+            );
+
+            document.getElementById('btnConfirmCollect').onclick = () => processCollectTax(prop.id, prop.tax_income);
+            document.getElementById('collectModal').style.display = 'flex';
+        }
+
+        function processCollectTax(propId, income) {
             fetch('/api/properties/collect-tax', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -725,13 +890,51 @@
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    toastr.success(data.message);
+                    closeCollectModal();
+                    // Show success with gain amount
+                    showSuccess(`${fmt(income)} ₺ nakit para kazandın!`);
                     fetchData(); 
                 } else {
-                    toastr.error(data.message);
+                    closeCollectModal();
+                    showError(data.message);
                 }
+            })
+            .catch(err => {
+                 showError('Hata oluştu.');
             });
         }
+
+        // --- MANTIK: İNŞAAT ---
+        function confirmBuild() {
+             const type = propertyTypes.find(t => t.id === selectedTypeId);
+
+            fetch('/api/properties/build', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id, propertyTypeId: selectedTypeId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    closeModal();
+                    const propName = type ? type.name : 'Mülk';
+                    showSuccess(`${propName} başarıyla inşa ettin!`);
+                    fetchData(); 
+                    // document.querySelector('[data-tab="list"]').click(); // Selector hatası fix
+                    switchTab('list');
+                } else {
+                    showError(data.message);
+                }
+            })
+            .catch(err => {
+                 console.error(err);
+                 showError('Hata oluştu.');
+            });
+        }
+
+        // --- MANTIK: VERGİ TOPLAMA ---
+        // function collectTax(propId) { ... } // Replaced by processCollectTax and Modal
+
 
     </script>
 </body>
