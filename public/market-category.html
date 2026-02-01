@@ -6,6 +6,7 @@
     <title>Sim of World - Market</title>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="js/loader-manager.js"></script>
     
     <style>
         :root {
@@ -87,28 +88,52 @@
             text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
         }
         .page-desc { font-size: 0.85rem; color: #999; font-weight: 500; }
-
-        /* TREND CARD */
-        .trend-card {
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), var(--bg-card));
-            border: 1px solid var(--accent); border-radius: 16px; padding: 20px;
-            margin-bottom: 30px; display: flex; align-items: center; justify-content: space-between;
-            cursor: pointer; transition: transform 0.2s; position: relative; overflow: hidden;
-        }
-        .trend-card:hover { transform: translateY(-3px); box-shadow: 0 5px 20px rgba(255, 215, 0, 0.1); }
-        .trend-card::before {
-            content:''; position:absolute; top:-50%; right:-20%; width:100px; height:100px;
-            background: var(--accent); filter: blur(60px); opacity: 0.2; pointer-events: none;
-        }
         
-        .tc-content { display: flex; align-items: center; gap: 15px; position: relative; z-index: 2; }
-        .tc-icon { 
-            font-size: 2rem; color: var(--accent); background: rgba(0,0,0,0.3); 
-            width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
         }
-        .tc-text h3 { font-size: 1.1rem; margin: 0; color: #fff; font-weight: 700; }
-        .tc-text p { font-size: 0.8rem; color: var(--accent); margin: 0; font-weight: 600; }
-        .tc-arrow { color: var(--text-secondary); font-size: 1.2rem; }
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        .back-btn:hover {
+            background: #2a2a2a;
+            border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+        }
+        .page-header-content {
+            flex: 1;
+            text-align: left;
+        }
+        .header-title-text { 
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #fff;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .header-subtitle-text {
+            font-size: 0.85rem;
+            color: #999;
+            font-weight: 500;
+        }
 
         /* CATEGORY GRID */
         .section-title { 
@@ -118,24 +143,72 @@
         }
         .section-line { flex: 1; height: 1px; background: var(--border-subtle); }
 
-        .cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; animation: fadeInUp 0.5s; }
+        .cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; animation: fadeInUp 0.5s; }
 
         .cat-card {
-            background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px;
-            padding: 15px 10px; text-align: center; position: relative; cursor: pointer;
-            transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            min-height: 110px;
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            text-align: center;
+            position: relative;
+            height: auto;
+            min-height: 120px;
+            overflow: hidden;
+            border-top: 2px solid var(--hover-color);
         }
-        .cat-card:hover { border-color: var(--hover-color); background: var(--bg-input); transform: translateY(-2px); }
+        .cat-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            border-color: var(--hover-color);
+        }
 
-        .cat-icon { width: 50px; height: 50px; margin-bottom: 10px; object-fit: contain; transition: 0.3s; }
-        .cat-card:hover .cat-icon { transform: scale(1.1); }
+        .f-icon-circle {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            background: #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            font-size: 1.5rem;
+            transition: 0.3s;
+        }
 
-        .cat-name { font-size: 0.8rem; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; text-transform: uppercase; }
-        
-        .cat-badge { 
-            font-size: 0.65rem; color: var(--text-secondary); background: rgba(255,255,255,0.05);
-            padding: 2px 8px; border-radius: 10px; font-weight: 600;
+        .cat-icon { 
+            width: 32px; 
+            height: 32px; 
+            object-fit: contain; 
+            filter: drop-shadow(0 0 3px rgba(0,0,0,0.5));
+            transition: 0.3s; 
+        }
+        .cat-card:hover .cat-icon { transform: scale(1.1); filter: drop-shadow(0 0 5px var(--hover-color)); }
+
+        .cat-name { 
+            font-size: 0.85rem; 
+            font-weight: 700; 
+            line-height: 1.2; 
+            margin-bottom: 0;
+            color: #fff;
+        }
+        .count-badge { 
+            background: #222;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            display: inline-block;
+            margin-top: 4px;
+            font-size: 0.7rem;
+            color: #fff;
         }
 
         /* BOTTOM NAV */
@@ -163,21 +236,16 @@
         <div id="header-container"></div>
 
         <main>
-            <!-- <div class="page-header">
-                <h1 class="page-title">GLOBAL PAZAR</h1>
-                <p class="page-desc">Dünya çapında ticaret yap, ürün al ve sat.</p>
-            </div> -->
-
-            <!-- TREND -->
-            <div class="trend-card" onclick="goToMarket('all')">
-                <div class="tc-content">
-                    <div class="tc-icon"><i class="fas fa-globe"></i></div>
-                    <div class="tc-text">
-                        <h3>GLOBAL PAZAR</h3>
-                        <p>Dünya çapında ticaret yap</p>
+            <div class="page-header">
+                <button class="back-btn" onclick="window.location.href='home.html'">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="page-header-content">
+                    <div class="header-title-text">
+                        GLOBAL PAZAR
                     </div>
+                    <div class="header-subtitle-text">Dünya çapında ticaret yap, ürün al ve sat.</div>
                 </div>
-                <i class="fas fa-chevron-right tc-arrow"></i>
             </div>
 
             <div class="section-title">
@@ -186,42 +254,30 @@
             </div>
 
             <!-- KATEGORİLER -->
-            <div class="cat-grid">
+            <div class="cat-grid" style="grid-template-columns: repeat(3, 1fr); gap: 10px;">
                 
                 <div class="cat-card" style="--hover-color: #d35400;" onclick="goToMarket('resource')">
-                    <img src="icons/mine-icon/iron.png" class="cat-icon" alt="Hammadde">
-                    <span class="cat-name">HAMMADDE</span>
-                    <span class="cat-badge">9 Ürün</span>
+                    <div class="f-icon-circle">
+                        <img src="icons/mine-icon/iron.png" class="cat-icon" alt="Hammadde">
+                    </div>
+                    <span class="cat-name">Hammadde Ürünleri</span>
+                    <span id="badge-resource" class="count-badge">0 İlan</span>
                 </div>
 
                 <div class="cat-card" style="--hover-color: #f1c40f;" onclick="goToMarket('food')">
-                    <img src="icons/food-factory/steak-food.png" class="cat-icon" alt="Gıda">
-                    <span class="cat-name">GIDA</span>
-                    <span class="cat-badge">7 Ürün</span>
-                </div>
-
-                <div class="cat-card" style="--hover-color: #e74c3c;" onclick="goToMarket('weapon')">
-                    <img src="icons/mine-icon/uranium.png" class="cat-icon" alt="Silah">
-                    <span class="cat-name">SİLAH</span>
-                    <span class="cat-badge">1 Ürün</span>
-                </div>
-
-                <div class="cat-card" style="--hover-color: #3498db;" onclick="goToMarket('energy')">
-                    <img src="icons/energy-factory-icon/battery.png" class="cat-icon" alt="Enerji">
-                    <span class="cat-name">ENERJİ</span>
-                    <span class="cat-badge">4 Ürün</span>
+                    <div class="f-icon-circle">
+                        <img src="icons/food-factory/steak-food.png" class="cat-icon" alt="Gıda">
+                    </div>
+                    <span class="cat-name">Gıda Ürünleri</span>
+                    <span id="badge-food" class="count-badge">0 İlan</span>
                 </div>
 
                 <div class="cat-card" style="--hover-color: #95a5a6;" onclick="goToMarket('industry')">
-                    <img src="icons/factory-icon/cement.png" class="cat-icon" alt="Sanayi">
-                    <span class="cat-name">SANAYİ</span>
-                    <span class="cat-badge">5 Ürün</span>
-                </div>
-
-                <div class="cat-card" style="--hover-color: #9b59b6;" onclick="goToMarket('luxury')">
-                    <img src="icons/mine-icon/gold-nugget.png" class="cat-icon" alt="Lüks">
-                    <span class="cat-name">LÜKS</span>
-                    <span class="cat-badge">2 Ürün</span>
+                    <div class="f-icon-circle">
+                        <img src="icons/factory-icon/cement.png" class="cat-icon" alt="Sanayi">
+                    </div>
+                    <span class="cat-name">Sanayi Ürünleri</span>
+                    <span id="badge-industry" class="count-badge">0 İlan</span>
                 </div>
 
             </div>
@@ -235,10 +291,41 @@
     <script src="js/header-manager.js"></script>
     <script src="js/menu-manager.js"></script>
     <script>
+        // Manually hold loader 
+        document.documentElement.classList.add('loading-state');
+        
+        window.addEventListener('load', () => {
+             // Simulate small delay for better UX
+            setTimeout(() => {
+                if(window.hideLoader) window.hideLoader();
+                // Fallback
+                document.documentElement.classList.remove('loading-state');
+                const l = document.getElementById('game-loader');
+                if(l) l.classList.add('hidden');
+            }, 500);
+        });
+
         function goToMarket(category) {
             // Redirect to market-list.html with category parameter
             window.location.href = `market-list.html?cat=${category}`;
         }
+
+        // Simulate fetching active ad counts
+        function updateMarketCounts() {
+            // In a real implementation, this would fetch from /api/market/stats
+            const categories = ['resource', 'food', 'industry'];
+            categories.forEach(cat => {
+                const el = document.getElementById(`badge-${cat}`);
+                if(el) {
+                    // Random count for demo purposes since backend is not yet ready
+                    const count = Math.floor(Math.random() * 50) + 5; 
+                    el.innerText = `${count} İlan`;
+                }
+            });
+        }
+        
+        // Call update on load
+        window.addEventListener('load', updateMarketCounts);
     </script>
 </body>
 </html>

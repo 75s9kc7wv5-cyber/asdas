@@ -625,6 +625,117 @@ app.post('/api/inventory/add', (req, res) => {
     });
 });
 
+// --- MARKET SYSTEM ---
+
+// Get Market Listings
+app.get('/api/market/:itemId', (req, res) => {
+    const itemId = req.params.itemId;
+    const sort = req.query.sort === 'desc' ? 'DESC' : 'ASC';
+    
+    // Join with users to get seller name
+    const query = `
+        SELECT m.*, u.username as seller_name 
+        FROM market_listings m 
+        LEFT JOIN users u ON m.seller_id = u.id 
+        WHERE m.item_id = ? AND m.quantity > 0 
+        ORDER BY m.price ${sort}
+    `;
+    
+    db.query(query, [itemId], (err, results) => {
+        if (err) {
+            console.error('Market fetch error:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        res.json(results);
+    });
+});
+
+// Create Sell Listing (Deducts from Inventory)
+app.post('/api/market/sell', (req, res) => {
+    const { userId, itemId, amount, price } = req.body;
+    
+    if (!userId || !itemId || !amount || !price) {
+        return res.json({ success: false, message: 'Eksik bilgi.' });
+    }
+
+    // 1. Check User Inventory
+    const checkInv = 'SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?';
+    db.query(checkInv, [userId, itemId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, message: 'DB Error' });
+        
+        if (results.length === 0 || results[0].quantity < amount) {
+            return res.json({ success: false, message: 'Yetersiz stok!' });
+        }
+
+        // 2. Deduct from Inventory
+        const updateInv = 'UPDATE inventory SET quantity = quantity - ? WHERE user_id = ? AND item_key = ?';
+        db.query(updateInv, [amount, userId, itemId], (err) => {
+            if (err) return res.status(500).json({ success: false, message: 'Stok güncelleme hatası' });
+
+            // 3. Create Listing
+            const createListing = 'INSERT INTO market_listings (seller_id, item_id, quantity, price) VALUES (?, ?, ?, ?)';
+            db.query(createListing, [userId, itemId, amount, price], (err) => {
+                if (err) {
+                    // Rollback inventory (Adding back)
+                    db.query('UPDATE inventory SET quantity = quantity + ? WHERE user_id = ? AND item_key = ?', [amount, userId, itemId]);
+                    return res.status(500).json({ success: false, message: 'İlan oluşturulamadı.' });
+                }
+                
+                res.json({ success: true, message: 'İlan başarıyla oluşturuldu.' });
+            });
+        });
+    });
+});
+
+// Buy Item Endpoint
+app.post('/api/market/buy', (req, res) => {
+    const { listingId, amount, buyerId } = req.body;
+    
+    // 1. Get Listing Details
+    db.query('SELECT * FROM market_listings WHERE id = ?', [listingId], (err, listings) => {
+        if (err || listings.length === 0) return res.json({ success: false, message: 'İlan bulunamadı.' });
+        
+        const listing = listings[0];
+        if (listing.quantity < amount) return res.json({ success: false, message: 'Ilanda yeterli stok yok.' });
+        if (listing.seller_id == buyerId) return res.json({ success: false, message: 'Kendi ürününü alamazsın.' });
+
+        const totalCost = amount * listing.price;
+
+        // 2. Check Buyer Balance
+        db.query('SELECT money FROM users WHERE id = ?', [buyerId], (err, users) => {
+            if (err || users.length === 0) return res.json({ success: false, message: 'Kullanıcı hatası.' });
+            
+            if (users[0].money < totalCost) return res.json({ success: false, message: 'Yetersiz para.' });
+
+            // 3. Process Transaction
+            // Deduct Money from Buyer
+            db.query('UPDATE users SET money = money - ? WHERE id = ?', [totalCost, buyerId], (err) => {
+                if (err) return res.json({ success: false, message: 'Para kesilemedi.' });
+
+                // Add Money to Seller
+                db.query('UPDATE users SET money = money + ? WHERE id = ?', [totalCost, listing.seller_id], (err) => {
+                    
+                    // Deduct Quantity from Listing
+                    db.query('UPDATE market_listings SET quantity = quantity - ? WHERE id = ?', [amount, listingId], (err) => {
+                        
+                        // Add Item to Buyer Inventory
+                        const checkInv = 'SELECT * FROM inventory WHERE user_id = ? AND item_key = ?';
+                        db.query(checkInv, [buyerId, listing.item_id], (err, inv) => {
+                            if (inv.length > 0) {
+                                db.query('UPDATE inventory SET quantity = quantity + ? WHERE user_id = ? AND item_key = ?', [amount, buyerId, listing.item_id]);
+                            } else {
+                                db.query('INSERT INTO inventory (user_id, item_key, quantity) VALUES (?, ?, ?)', [buyerId, listing.item_id, amount]);
+                            }
+                            
+                            res.json({ success: true, message: 'Satın alma başarılı!' });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
 // Mine Endpoint
 app.post('/api/mine', (req, res) => {
     const { userId, mineType } = req.body;
@@ -1608,7 +1719,7 @@ app.post('/api/mines/buy', (req, res) => {
                     db.query(updateQuery, [mineConfig.costMoney, mineConfig.costGold, mineConfig.costDiamond, userId], (err) => {
                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Bakiye düşülemedi.' }));
 
-                        const mineName = `${user.username}'s ${mineConfig.name}`;
+                        const mineName = `${user.username}'s ${mineConfig.name} İşletmesi`;
                         const insertQuery = 'INSERT INTO player_mines (user_id, mine_type, name, level, reserve) VALUES (?, ?, ?, 1, 10000)';
                         db.query(insertQuery, [userId, mineType, mineName], (err) => {
                             if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Maden oluşturulamadı.' }));
@@ -2337,7 +2448,7 @@ app.post('/api/banks/create', (req, res) => {
         if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
 
         // Check User Money
-        db.query('SELECT money FROM users WHERE id = ?', [userId], (err, users) => {
+        db.query('SELECT money, username FROM users WHERE id = ?', [userId], (err, users) => {
             if (err || users.length === 0) return db.rollback(() => res.status(500).json({ success: false, message: 'User not found' }));
             
             const user = users[0];
@@ -2357,11 +2468,12 @@ app.post('/api/banks/create', (req, res) => {
                     if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Money update error' }));
 
                     // Create Bank
+                    const bankName = `${user.username}'s Banka İşletmesi`;
                     const insertQuery = `
                         INSERT INTO banks (owner_id, name, balance, interest_rate, loan_rate, transfer_fee, account_opening_fee) 
                         VALUES (?, ?, 0, 5, 15, 2, 100)
                     `;
-                    db.query(insertQuery, [userId, name], (err, result) => {
+                    db.query(insertQuery, [userId, bankName], (err, result) => {
                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Bank creation error' }));
 
                         db.commit(err => {
@@ -3423,7 +3535,7 @@ app.post('/api/hospitals/buy', (req, res) => {
         if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
 
         // 1. Check User (Money, Gold, Diamond)
-        db.query('SELECT money, gold, diamond, license_hospital_level FROM users WHERE id = ?', [userId], (err, users) => {
+        db.query('SELECT money, gold, diamond, license_hospital_level, username FROM users WHERE id = ?', [userId], (err, users) => {
             if (err || users.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' }));
             const user = users[0];
 
@@ -3488,8 +3600,9 @@ app.post('/api/hospitals/buy', (req, res) => {
                             Promise.all(updatePromises)
                                 .then(() => {
                                     // 7. Create Hospital
+                                    const hospitalName = `${user.username}'s Hastane İşletmesi`;
                                     const insertQuery = 'INSERT INTO hospitals (user_id, name, level, capacity, quality, price) VALUES (?, ?, 1, 5, 100, 100)';
-                                    db.query(insertQuery, [userId, name], (err) => {
+                                    db.query(insertQuery, [userId, hospitalName], (err) => {
                                         if (err) {
                                             console.error('Hospital Insert Error:', err);
                                             if (err.code === 'ER_DUP_ENTRY') {
@@ -6058,7 +6171,7 @@ app.post('/api/buy-farm', (req, res) => {
         const farmType = types[0];
 
         // 2. Get User Info (Money & License)
-        db.query('SELECT money, license_farm_level FROM users WHERE id = ?', [user_id], (err, users) => {
+        db.query('SELECT money, license_farm_level, username FROM users WHERE id = ?', [user_id], (err, users) => {
             if (err) return res.status(500).json({ message: 'Veritabanı hatası' });
             if (users.length === 0) return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
 
@@ -6097,7 +6210,8 @@ app.post('/api/buy-farm', (req, res) => {
                         if (err) return db.rollback(() => res.status(500).json({ message: 'Bakiye düşülemedi' }));
 
                         // Add Farm
-                        db.query('INSERT INTO player_farms (user_id, farm_type_id) VALUES (?, ?)', [user_id, farm_type_id], (err) => {
+                        const farmName = `${user.username}'s ${farmType.name} İşletmesi`;
+                        db.query('INSERT INTO player_farms (user_id, farm_type_id, name) VALUES (?, ?, ?)', [user_id, farm_type_id, farmName], (err) => {
                             if (err) return db.rollback(() => res.status(500).json({ message: 'Çiftlik eklenemedi' }));
 
                             db.commit(err => {
@@ -6589,7 +6703,7 @@ app.post('/api/ranches/buy', (req, res) => {
         const rType = types[0];
 
         // 2. Get User Info
-        db.query('SELECT money, gold, diamond FROM users WHERE id = ?', [userId], (err, users) => {
+        db.query('SELECT username, money, gold, diamond FROM users WHERE id = ?', [userId], (err, users) => {
             if (err) return res.status(500).json({ message: 'Veritabanı hatası' });
             if (users.length === 0) return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
 
@@ -6675,8 +6789,10 @@ app.post('/api/ranches/buy', (req, res) => {
                         db.query(updateQuery, [rType.price, rType.gold_price || 0, rType.diamond_price || 0, userId], (err) => {
                             if (err) return db.rollback(() => res.status(500).json({ message: 'Ödeme alınamadı' }));
 
+                            const ranchName = `${user.username}'s ${rType.name} İşletmesi`;
+
                             // Add Ranch
-                            db.query('INSERT INTO player_ranches (user_id, ranch_type_id, reserve) VALUES (?, ?, 0)', [userId, rType.id], (err) => {
+                            db.query('INSERT INTO player_ranches (user_id, ranch_type_id, reserve, name) VALUES (?, ?, 0, ?)', [userId, rType.id, ranchName], (err) => {
                                 if (err) return db.rollback(() => res.status(500).json({ message: 'Çiftlik eklenemedi' }));
 
                                 db.commit(err => {

@@ -1,27 +1,36 @@
 const mysql = require('mysql2');
+// require('dotenv').config();
 
 const db = mysql.createConnection({
     host: 'localhost',
-    user: 'simuser',
-    password: 'password',
+    user: 'simuser',     
+    password: 'password', 
     database: 'simworld'
 });
 
-db.connect((err) => {
+db.connect(err => {
     if (err) {
-        console.error('Connection failed:', err);
-        process.exit(1);
+        console.error('Connection failed: ' + err.stack);
+        return;
     }
-    console.log('Connected!');
-    
-    db.query('DESCRIBE player_ranches', (err, res) => {
-        if(err) console.error('Describe player_ranches failed:', err);
-        else console.log('Player Ranches Table:', res);
-        
-        db.query('DESCRIBE ranch_types', (err, res) => {
-            if(err) console.error('Describe ranch_types failed:', err);
-            else console.log('Ranch Types Table:', res);
+
+    console.log('Connected to database.');
+
+    db.query('DESCRIBE ranch_types', (err, result) => {
+        if (err) console.log('ranch_types error or not found');
+        else {
+             console.log('--- ranch_types ---');
+             console.log(result.map(r => r.Field).join(', '));
+        }
+
+        db.query('DESCRIBE player_ranches', (err, result) => {
+            if (err) console.log('player_ranches error or not found');
+            else {
+                 console.log('--- player_ranches ---');
+                 console.log(result.map(r => r.Field).join(', '));
+            }
             db.end();
+            process.exit();
         });
     });
 });

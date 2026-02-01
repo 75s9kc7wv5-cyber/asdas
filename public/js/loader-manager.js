@@ -77,14 +77,14 @@
         }, 800);
     }
 
-    function hideLoader() {
+    window.hideLoader = function() {
         const loader = document.getElementById('game-loader');
         if (!loader) return;
         
         if(tipInterval) clearInterval(tipInterval);
         loader.classList.add('hidden');
         document.documentElement.classList.remove('loading-state');
-    }
+    };
 
     window.showLoader = function() {
         const loader = document.getElementById('game-loader');
@@ -100,7 +100,20 @@
 
     // Hide on load
     window.addEventListener('load', () => {
-        setTimeout(hideLoader, 300); // Short delay for smooth transition
+        if (!window.holdingLoader) {
+            setTimeout(window.hideLoader || hideLoader, 300);
+        }
+    });
+
+    // Handle back/forward cache (Example: navigating back to this page)
+    window.addEventListener('pageshow', (event) => {
+        if (!window.holdingLoader) {
+            if (event.persisted) {
+                 setTimeout(window.hideLoader || hideLoader, 100);
+            } else {
+                 setTimeout(window.hideLoader || hideLoader, 300);
+            }
+        }
     });
 
     // Intercept links for transition effect

@@ -1234,6 +1234,14 @@
             // İşletme kartı başlığı ve ikonu
             document.getElementById('businessName').innerText = factory.name || 'Tarla';
             
+            // Back Button Update
+            const backBtn = document.querySelector('.back-btn');
+            if (backBtn && factory.farm_type) {
+                backBtn.onclick = function() {
+                    window.location.href = `farm-list.html?type=${factory.farm_type}`;
+                };
+            }
+
             // İşletme kartı ikonu
             const bizIcon = document.getElementById('businessIcon');
             if (bizIcon && factory.farm_type && resourceMap[factory.farm_type]) {

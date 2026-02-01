@@ -522,7 +522,7 @@
         <main>
             <!-- Sayfa Başlığı -->
             <div class="page-header">
-                <div class="back-btn" onclick="window.location.href='factory-list.html'">
+                <div class="back-btn" onclick="goBack()">
                     <i class="fas fa-arrow-left"></i>
                 </div>
                 <div class="header-content">
@@ -779,6 +779,14 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const mineId = urlParams.get('id');
+
+        function goBack() {
+             if (factory && factory.type) {
+                window.location.href = `factory-list.html?type=${factory.type}`;
+            } else {
+                window.location.href = 'factory-list.html';
+            }
+        }
 
         if (!mineId) {
             toastr.error('Geçersiz Fabrika ID');

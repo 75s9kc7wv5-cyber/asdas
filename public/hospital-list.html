@@ -114,7 +114,7 @@
         .hospital-icon {
             width: 50px; height: 50px;
             background: #222;
-            border-radius: 50%;
+            border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
             font-size: 1.5rem;
             border: 1px solid #444;
@@ -609,6 +609,12 @@
 
                 const card = document.createElement('div');
                 card.className = 'hospital-card';
+                card.style.cursor = 'pointer';
+                card.onclick = (e) => {
+                    if (e.target.closest('a')) return;
+                    window.location.href = `hospital-detail.html?id=${h.id}`;
+                };
+
                 card.innerHTML = `
                     <div class="hospital-content">
                         <div class="hospital-icon">
@@ -624,10 +630,10 @@
                                 <span style="color:var(--accent-gold); font-weight:bold;">${fmt(h.price)} ₺</span>
                             </div>
                         </div>
+                        <div style="color:#444; font-size:1.2rem;">
+                             <i class="fas fa-chevron-right"></i>
+                        </div>
                     </div>
-                    <button class="btn-action btn-visit" onclick="window.location.href='hospital-detail.html?id=${h.id}'">
-                        TEDAVİ OL
-                    </button>
                 `;
                 container.appendChild(card);
             });

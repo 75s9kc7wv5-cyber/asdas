@@ -157,26 +157,109 @@
         .tab-btn:hover:not(.active) { background: #1a1a1a; color: #999; }
         .tab-content { display: none; animation: fadeIn 0.4s; }
         .tab-content.active { display: block; }
-        .mine-card {
-            background: rgba(30, 30, 30, 0.95);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
+        
+        /* New Ranch List Card Style (Synced with farm-list.html) */
+        .farm-list-card {
             display: flex;
             align-items: center;
             gap: 15px;
-            transition: transform 0.2s;
+            background: rgba(30,30,30,0.95);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            color: #fff;
         }
-        .mine-card:hover { transform: translateY(-2px); border-color: #555; }
+        .farm-list-card:hover {
+            transform: translateY(-2px);
+            border-color: #555;
+            background: rgba(40,40,40,0.95);
+        }
+        .farm-list-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: var(--accent-red); /* Unowned/Default */
+        }
+        .farm-list-card.owned::before {
+             background: var(--accent-green);
+        }
+        .farm-list-card.city-card::before {
+             background: var(--accent-green);
+        }
+        
+        .farm-list-card.city-card {
+            flex-direction: column;
+            align-items: stretch;
+            padding: 0;
+            gap: 0;
+        }
+
+        .city-card-top {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            cursor: pointer;
+        }
+
+        .city-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 8px 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid #333;
+            font-size: 0.85rem;
+        }
+
+        .owner-info {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: #ccc;
+        }
+        .owner-info i { color: #ccc; font-size: 0.9rem; }
+
+        .level-stars {
+            display: flex;
+            gap: 2px;
+        }
+        .level-stars i { font-size: 0.7rem; color: #444; }
+        .level-stars i.active { color: var(--accent-gold); text-shadow: 0 0 5px rgba(255, 215, 0, 0.3); }
+
+        .stat-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #444;
+            font-size: 0.75rem;
+            color: #ddd;
+            margin-right: 5px;
+        }
+        .stat-badge i { color: #aaa; }
+
         .mine-icon {
             width: 50px; height: 50px;
             background: #222;
-            border-radius: 50%;
+            border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
             font-size: 1.5rem;
             border: 1px solid #444;
             overflow: hidden;
+            flex-shrink: 0;
         }
         .mine-icon img {
             width: 60%;
@@ -184,9 +267,17 @@
             object-fit: contain;
         }
         .mine-info { flex: 1; }
-        .mine-name { font-size: 0.85rem; font-weight: bold; color: #fff; }
-        .mine-desc { font-size: 0.8rem; color: #888; }
-        .mine-stats { font-size: 0.75rem; color: var(--accent-green); margin-top: 3px; }
+        .mine-name { font-size: 1rem; font-weight: bold; color: #fff; line-height: 1.2; }
+        .mine-desc { font-size: 0.8rem; color: #888; margin-top: 2px; }
+        
+        .right-arrow {
+            color: #444;
+            font-size: 1.2rem;
+            margin-left: auto;
+            transition: color 0.2s;
+        }
+        .farm-list-card:hover .right-arrow { color: #fff; }
+
         .btn-action {
             padding: 8px 15px;
             border: none;
@@ -194,13 +285,12 @@
             font-weight: bold;
             cursor: pointer;
             font-family: 'Rajdhani';
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             transition: 0.2s;
         }
         .btn-buy { background: var(--accent-gold); color: #000; }
-        .btn-manage { background: var(--accent-cyan); color: #000; }
         .btn-buy:hover { box-shadow: 0 0 10px rgba(255, 215, 0, 0.4); }
-        .btn-manage:hover { box-shadow: 0 0 10px rgba(0, 229, 255, 0.4); }
+        
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95); z-index: 2000;
@@ -296,14 +386,23 @@
             margin-top: 4px;
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Anti-FOUC (Flash of Unstyled Content) Prevention */
+        html.loading-state body { visibility: hidden !important; background-color: #000 !important; }
+        html.loading-state body #game-loader { visibility: visible !important; }
     </style>
+    <script>
+        // Immediately trigger loading state
+        document.documentElement.classList.add('loading-state');
+    </script>
 </head>
 <body>
+    <script src="js/loader-manager.js"></script>
     <div class="game-container">
         <!-- Header injected by header-manager.js -->
         <main>
         <div class="page-header">
-            <button class="back-btn" onclick="window.history.back()">
+            <button class="back-btn" onclick="window.location.href='ranch-category.html'">
                 <i class="fas fa-arrow-left"></i>
             </button>
             <div class="page-header-content">
@@ -341,6 +440,20 @@
                 <div class="modal-btns">
                     <button class="m-btn btn-cancel" onclick="closeModal()">İPTAL</button>
                     <button class="m-btn btn-confirm" id="btnConfirmBuy" onclick="confirmBuy()">SATIN AL</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Modal -->
+        <div class="modal-overlay" id="successModal">
+            <div class="modal-content" style="border-top: 3px solid var(--accent-green); text-align:center;">
+                <div style="font-size:3rem; color:var(--accent-green); margin-bottom:15px;">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3 style="color:#fff; margin-bottom:10px;">Tebrikler!</h3>
+                <p style="color:#ccc; font-size:1.1rem; margin-bottom:20px;" id="successModalText"></p>
+                <div class="modal-btns">
+                    <button class="m-btn btn-confirm" onclick="closeSuccessModal()">TAMAM</button>
                 </div>
             </div>
         </div>
@@ -419,38 +532,50 @@
             const filterType = new URLSearchParams(window.location.search).get('type');
             ranchTypes.forEach(type => {
                 if (filterType && type.id !== filterType) return;
-                const owned = userRanches.find(r => r.id === type.id);
+                // Match via slug, not ID (ID is the instance unique ID, slug is the type)
+                const owned = userRanches.find(r => r.slug === type.id);
+                
                 const card = document.createElement('div');
-                card.className = 'mine-card';
-                let btnHTML = '';
-                if (owned) {
-                    btnHTML = `<button class="btn-action btn-manage" onclick="location.href='ranch-management.html?id=${owned.ranch_id}'">YÖNET</button>`;
-                } else {
-                    btnHTML = `<button class=\"btn-action btn-buy\" onclick=\"openBuyModal('${type.id}')\">SATIN AL</button>`;
-                }
+                card.className = `farm-list-card ${owned ? 'owned' : ''}`;
+                
+                // If owned, card click goes to management. If not, open buy modal.
+                card.onclick = (e) => {
+                     // Prevent click if button was clicked (event bubbling check not needed if no button inside)
+                     // But wait, if I put button inside, I should handle bubbling.
+                     // The new design uses whole card click or arrow.
+                     if (owned) {
+                        location.href = `ranch-management.html?id=${owned.ranch_id}`;
+                     } else {
+                        openBuyModal(type.id);
+                     }
+                };
+
                 let iconHTML = '';
                 if (type.img) {
-                    iconHTML = `<img src=\"${type.img}\" alt=\"${type.name}\">`;
+                    iconHTML = `<div class="mine-icon"><img src="${type.img}" alt="${type.name}"></div>`;
                 } else {
-                    iconHTML = `<i class=\"fas fa-cow\"></i>`;
+                    iconHTML = `<div class="mine-icon"><i class="fas fa-cow"></i></div>`;
                 }
                 
                 let descHTML = '';
+                let statusHTML = '';
+                
                 if (owned) {
-                    descHTML = `<span class="count-badge" style="color: var(--accent-gold);">Seviye: ${owned.level || 1}</span>`;
+                    descHTML = `<div style="color:#888; font-size:0.8rem;">Yönetim ve Üretim Paneli</div>`;
+                    statusHTML = ``;
                 } else {
-                    descHTML = `<span class="count-badge" style="color: var(--accent-gold);">Gereken Seviye: Lv. ${type.reqLevel}</span>`;
+                    descHTML = `<div style="color:#888; font-size:0.8rem;">Satın almak için tıkla</div>`;
+                    statusHTML = ``;
                 }
                 
                 card.innerHTML = `
-                    <div class="mine-icon">
-                        ${iconHTML}
+                    ${iconHTML}
+                    <div style="flex:1;">
+                        <div class="mine-name">${type.name}</div>
+                        ${descHTML}
+                        ${statusHTML}
                     </div>
-                    <div class="mine-info">
-                        <div class="mine-name">${owned && owned.name ? owned.name : type.name}</div>
-                        <div class="mine-desc">${descHTML}</div>
-                    </div>
-                    <div>${btnHTML}</div>
+                    <i class="fas fa-chevron-right right-arrow"></i>
                 `;
                 container.appendChild(card);
             });
@@ -464,6 +589,10 @@
             }
             // Hata ayıklama için dönen veriyi konsola yaz
             console.log('Şehirdeki çiftlikler API yanıtı:', ranches);
+
+            // Sort by level descending
+            ranches.sort((a, b) => (b.level || 1) - (a.level || 1));
+
             let foundAny = false;
             const filterType = new URLSearchParams(window.location.search).get('type');
             ranches.forEach(ranch => {
@@ -485,24 +614,48 @@
                     return;
                 }
                 foundAny = true;
+                
                 const card = document.createElement('div');
-                card.className = 'mine-card';
-                card.style.cursor = 'pointer';
+                card.className = 'farm-list-card city-card';
                 card.onclick = () => location.href = `ranch-work.html?id=${ranch.ranch_id}`;
+                
                 let iconHTML = '';
                 if (type.img) {
-                    iconHTML = `<img src=\"${type.img}\" alt=\"${type.name}\">`;
+                    iconHTML = `<div class="mine-icon" style="width:50px; height:50px;"><img src="${type.img}" alt="${type.name}"></div>`;
                 } else {
-                    iconHTML = `<i class=\"fas fa-cow\"></i>`;
+                    iconHTML = `<div class="mine-icon" style="width:50px; height:50px;"><i class="fas fa-cow"></i></div>`;
                 }
+                
+                // Stars logic
+                const level = ranch.level || 1;
+                let starsHTML = '';
+                // 10 stars total
+                for(let i=1; i<=10; i++) { 
+                     // If level is large enough, star is yellow (active).
+                     // However, if we want to show 10 stars total, we can do it.
+                     const isActive = i <= level;
+                     starsHTML += `<i class="fas fa-star ${isActive ? 'active' : ''}"></i>`;
+                }
+
                 card.innerHTML = `
-                    <div class=\"mine-icon\">
+                    <div class="city-card-top">
                         ${iconHTML}
+                        <div style="flex:1;">
+                            <div class="mine-name" style="font-size:1rem;">${ranch.name || type.name}</div>
+                            <div style="display:flex; margin-top:3px;">
+                                <span class="stat-badge"><i class="fas fa-users" style="color: var(--accent-cyan);"></i> ${ranch.current_workers || 0}/${ranch.max_workers || 5}</span>
+                                <span class="stat-badge"><i class="fas fa-money-bill-wave" style="color: var(--accent-green);"></i> ${ranch.salary || 0} ₺</span>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right right-arrow"></i>
                     </div>
-                    <div class=\"mine-info\">
-                        <div class=\"mine-name\">${ranch.name || type.name}</div>
-                        <div class=\"mine-desc\"><b>Sahibi:</b> <a href=\"profile.html?id=${ranch.user_id}\" style=\"color:var(--accent-cyan); text-decoration:none;\">${ranch.username || '-'}<\/a></div>
-                        <div class=\"mine-stats\"><span style=\"color:var(--accent-gold)\">Seviye: ${ranch.level || 1}</span> <span style=\"color:#fff\">|</span> <span style=\"color:var(--accent-red)\">Kapasite: ${ranch.current_workers || 0}/${ranch.max_workers || 5}</span> <span style=\"color:#fff\">|</span> Maaş: <span style=\"color:var(--accent-green)\">${ranch.salary || 0} ₺</span></div>
+                    <div class="city-card-footer">
+                        <div class="owner-info">
+                            <i class="fas fa-user-circle"></i> ${ranch.user_id} - ${ranch.username || '-'}
+                        </div>
+                        <div class="level-stars">
+                            ${starsHTML}
+                        </div>
                     </div>
                 `;
                 container.appendChild(card);
@@ -514,7 +667,16 @@
         function openBuyModal(ranchId) {
             selectedRanch = ranchTypes.find(r => r.id === ranchId);
             if (!selectedRanch) return;
-            document.getElementById('mTitle').innerText = selectedRanch.name + " Satın Almayı Onaylıyor musun?";
+            
+            // Icon Logic
+            let iconHtml = '';
+            if (selectedRanch.img) {
+                iconHtml = `<div style="display:flex; justify-content:center; margin-bottom:15px;"><img src="${selectedRanch.img}" style="width:64px; height:64px; object-fit:contain;"></div>`;
+            } else {
+                iconHtml = `<div style="display:flex; justify-content:center; margin-bottom:15px; font-size:2.5rem; color:var(--accent-gold);"><i class="fas fa-warehouse"></i></div>`;
+            }
+
+            document.getElementById('mTitle').innerHTML = `${iconHtml}${selectedRanch.name} Satın Almayı Onaylıyor musun?`;
             
             const hasSkill = (userData.education_skill || 1) >= selectedRanch.reqLevel;
             const hasMoney = userData.money >= selectedRanch.costMoney;
@@ -623,9 +785,9 @@
                 });
                 const result = await response.json();
                 if (result.success) {
-                    toastr.success(result.message);
                     closeModal();
-                    setTimeout(() => location.reload(), 1000);
+                    document.getElementById('successModalText').innerText = result.message || 'Satın alma başarılı!';
+                    document.getElementById('successModal').classList.add('active');
                 } else {
                     toastr.error(result.message);
                 }
@@ -633,6 +795,10 @@
                 console.error(e);
                 toastr.error('İşlem başarısız.');
             }
+        }
+        function closeSuccessModal() {
+            document.getElementById('successModal').classList.remove('active');
+            setTimeout(() => location.reload(), 300);
         }
         window.addEventListener('load', initPage);
     </script>

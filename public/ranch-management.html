@@ -471,7 +471,7 @@
         <main>
             <!-- Sayfa Başlığı -->
             <div class="page-header">
-                <div class="back-btn" onclick="window.location.href='ranch-list.html'">
+                <div class="back-btn" onclick="goBack()">
                     <i class="fas fa-arrow-left"></i>
                 </div>
                 <div class="header-content">
@@ -736,6 +736,14 @@
         }
 
         let factory = {};
+
+        function goBack() {
+            if (factory && factory.ranch_type) {
+                window.location.href = `ranch-list.html?type=${factory.ranch_type}`;
+            } else {
+                window.location.href = 'ranch-list.html';
+            }
+        }
 
         const fmt = (n) => n.toLocaleString('tr-TR');
 

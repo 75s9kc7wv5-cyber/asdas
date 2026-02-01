@@ -169,10 +169,114 @@
             transition: transform 0.2s;
         }
         .mine-card:hover { transform: translateY(-2px); border-color: #555; }
+        
+        /* New Farm List Card Style (Synced with farm-category.html) */
+        .farm-list-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(30,30,30,0.95);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            color: #fff;
+        }
+        .farm-list-card:hover {
+            transform: translateY(-2px);
+            border-color: #555;
+            background: rgba(40,40,40,0.95);
+        }
+        .farm-list-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: var(--accent-red);
+        }
+        .farm-list-card.owned::before {
+             background: var(--accent-green);
+        }
+        .farm-list-card.city-card::before {
+             background: var(--accent-gold);
+        }
+        
+        .farm-list-card.city-card {
+            flex-direction: column;
+            align-items: stretch;
+            padding: 0;
+            gap: 0;
+        }
+
+        .city-card-top {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            cursor: pointer;
+        }
+
+        .city-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 8px 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid #333;
+            font-size: 0.85rem;
+        }
+
+        .owner-info {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: #ccc;
+        }
+        .owner-info i { color: #ccc; font-size: 0.9rem; }
+
+        .level-stars {
+            display: flex;
+            gap: 2px;
+        }
+        .level-stars i { font-size: 0.7rem; color: #444; }
+        .level-stars i.active { color: var(--accent-gold); text-shadow: 0 0 5px rgba(255, 215, 0, 0.3); }
+
+        .stat-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #444;
+            font-size: 0.75rem;
+            color: #ddd;
+            margin-right: 5px;
+        }
+        .stat-badge i { color: #aaa; }
+
+        .right-arrow {
+            color: #444;
+            font-size: 1.2rem;
+            margin-left: auto;
+            transition: color 0.2s;
+        }
+        .farm-list-card:hover .right-arrow {
+            color: #fff;
+        }
+
         .mine-icon {
             width: 50px; height: 50px;
             background: #222;
-            border-radius: 50%;
+            border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
             font-size: 1.5rem;
             border: 1px solid #444;
@@ -184,7 +288,7 @@
             object-fit: contain;
         }
         .mine-info { flex: 1; }
-        .mine-name { font-size: 1.1rem; font-weight: bold; color: #fff; }
+        .mine-name { font-size: 1rem; font-weight: bold; color: #fff; }
         .mine-desc { font-size: 0.8rem; color: #888; }
         .mine-stats { font-size: 0.75rem; color: var(--accent-green); margin-top: 3px; }
         .btn-action {
@@ -295,14 +399,23 @@
             display: inline-block; font-size: 0.8rem; color: #aaa; font-weight: 600;
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Anti-FOUC (Flash of Unstyled Content) Prevention */
+        html.loading-state body { visibility: hidden !important; background-color: #000 !important; }
+        html.loading-state body #game-loader { visibility: visible !important; }
     </style>
+    <script>
+        // Immediately trigger loading state
+        document.documentElement.classList.add('loading-state');
+    </script>
 </head>
 <body>
+    <script src="js/loader-manager.js"></script>
     <div class="game-container">
         <!-- Header injected by header-manager.js -->
         <main>
         <div class="page-header">
-            <button class="back-btn" onclick="window.history.back()">
+            <button class="back-btn" onclick="window.location.href='farm-category.html'">
                 <i class="fas fa-arrow-left"></i>
             </button>
             <div class="page-header-content">
@@ -417,18 +530,19 @@
                 if (filterType && type.slug !== filterType) return;
                 
                 // Check if user owns this type
-                // userFarms usually contains objects with farm_type_id or slug
                 const owned = userFarms.find(f => f.farm_type_id === type.id || f.slug === type.slug);
                 
                 const card = document.createElement('div');
-                card.className = 'mine-card';
+                card.className = `farm-list-card ${owned ? 'owned' : ''}`;
                 
-                let btnHTML = '';
-                if (owned) {
-                    btnHTML = `<button class="btn-action btn-manage" onclick="location.href='farm-management.html?id=${owned.id}'">YÖNET</button>`;
-                } else {
-                    btnHTML = `<button class="btn-action btn-buy" onclick="openBuyModal('${type.slug}')">SATIN AL</button>`;
-                }
+                // Click Action replacement for buttons
+                card.onclick = function() {
+                    if(owned) {
+                        location.href = `farm-management.html?id=${owned.id}`;
+                    } else {
+                        openBuyModal(type.slug);
+                    }
+                };
                 
                 let iconHTML = '';
                 if (type.image_path) {
@@ -437,11 +551,15 @@
                     iconHTML = `<i class="fas fa-tractor"></i>`;
                 }
                 
-                let descHTML = '';
+                let displayDesc = '';
+                let displayStats = '';
+
                 if (owned) {
-                    descHTML = `<span class="count-badge" style="color: var(--accent-gold);">Seviye: ${owned.level || 1}</span>`;
+                    displayDesc = 'Yönetim ve Üretim Paneli';
+                    displayStats = `Seviye: ${owned.level || 1}`;
                 } else {
-                    descHTML = `<span class="count-badge" style="color: var(--accent-gold);">Gereken Lisans: Lv. ${type.license_req}</span>`;
+                    displayDesc = 'Satın almak için tıkla';
+                    displayStats = `Gereken Lisans: Lv. ${type.license_req}`;
                 }
                 
                 card.innerHTML = `
@@ -450,9 +568,9 @@
                     </div>
                     <div class="mine-info">
                         <div class="mine-name">${owned && owned.name ? owned.name : type.name}</div>
-                        <div class="mine-desc">${descHTML}</div>
+                        <div class="mine-desc">${displayDesc}</div>
                     </div>
-                    <div>${btnHTML}</div>
+                    <i class="fas fa-chevron-right right-arrow"></i>
                 `;
                 container.appendChild(card);
             });
@@ -467,6 +585,9 @@
                 return;
             }
 
+            // Sort by level descending
+            farms.sort((a, b) => (b.level || 1) - (a.level || 1));
+
             let foundAny = false;
             const filterType = new URLSearchParams(window.location.search).get('type');
             
@@ -475,9 +596,7 @@
                 
                 foundAny = true;
                 const card = document.createElement('div');
-                card.className = 'mine-card';
-                card.style.cursor = 'pointer';
-                card.onclick = () => location.href = `farm-work.html?id=${farm.id}`;
+                card.className = 'farm-list-card city-card';
                 
                 let iconHTML = '';
                 if (farm.image_path) {
@@ -487,18 +606,26 @@
                 }
                 
                 card.innerHTML = `
-                    <div class="mine-icon">
-                        ${iconHTML}
+                    <div class="city-card-top" onclick="location.href='farm-work.html?id=${farm.id}'">
+                        <div class="mine-icon">
+                            ${iconHTML}
+                        </div>
+                        <div class="mine-info">
+                            <div class="mine-name">${farm.name || farm.type_name}</div>
+                            <div class="mine-stats">
+                                <span class="stat-badge"><i class="fas fa-users" style="color: var(--accent-cyan);"></i> ${farm.current_workers || 0}/${farm.max_workers || 5}</span>
+                                <span class="stat-badge"><i class="fas fa-money-bill-wave" style="color: var(--accent-green);"></i> ${farm.salary || 0} ₺</span>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right right-arrow"></i>
                     </div>
-                    <div class="mine-info">
-                        <div class="mine-name">${farm.name || farm.type_name}</div>
-                        <div class="mine-desc"><b>Sahibi:</b> <a href="profile.html?id=${farm.user_id}" style="color:var(--accent-cyan); text-decoration:none;">${farm.username || '-'}</a></div>
-                        <div class="mine-stats">
-                            <span style="color:var(--accent-gold)">Seviye: ${farm.level || 1}</span> 
-                            <span style="color:#fff">|</span> 
-                            <span style="color:var(--accent-red)">Kapasite: ${farm.current_workers || 0}/${farm.max_workers || 5}</span> 
-                            <span style="color:#fff">|</span> 
-                            Maaş: <span style="color:var(--accent-green)">${farm.salary || 0} ₺</span>
+                    <div class="city-card-footer">
+                        <div class="owner-info">
+                            <i class="fas fa-user-circle"></i>
+                            <span>${farm.user_id} - ${farm.username || 'Bilinmiyor'}</span>
+                        </div>
+                        <div class="level-stars">
+                            ${Array(10).fill(0).map((_, i) => `<i class="fas fa-star ${i < (farm.level || 1) ? 'active' : ''}"></i>`).join('')}
                         </div>
                     </div>
                 `;

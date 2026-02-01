@@ -146,21 +146,38 @@
             position: relative;
             height: auto;
             min-height: 120px;
+            overflow: hidden;
         }
-        .factory-card:hover { transform: translateY(-3px); border-color: var(--accent-cyan); background: rgba(40,40,40,0.95); }
+        .factory-card:hover { transform: translateY(-3px); border-color: var(--accent-orange); background: rgba(40,40,40,0.95); }
+
+        .factory-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--accent-orange);
+        }
 
         .f-icon-circle {
-            width: 48px; height: 48px; border-radius: 50%; background: #222;
-            display: flex; align-items: center; justify-content: center;
-            margin-bottom: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            background: #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
             font-size: 1.5rem;
         }
 
-        .f-name { font-size: 1rem; font-weight: 700; line-height: 1.2; margin-bottom: 0; }
-        .f-count { font-size: 0.7rem; color: #aaa; margin-top: 2px; }
+        .f-name { font-size: 0.85rem; font-weight: 700; line-height: 1.2; margin-bottom: 0; }
+        .f-count { font-size: 0.7rem; color: var(--accent-gold); margin-top: 2px; }
         .count-badge { 
             background: #222; padding: 2px 6px; border-radius: 4px; border: 1px solid #444;
-            display: inline-block; margin-top: 4px; font-size: 0.7rem; color: #aaa;
+            display: inline-block; margin-top: 4px; font-size: 0.7rem; color: #fff;
         }
 
         /* Kart Stilleri (Görseldekine benzer gradientler) */
@@ -192,7 +209,12 @@
         .h-heavy { color: var(--accent-red); }
         .h-energy { color: #9b59b6; }
 
-        .f-name { font-size: 1rem; font-weight: bold; margin-bottom: 5px; color: #fff; }
+        .f-name {
+            font-size: 0.85rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 0;
+        }
         .f-power { font-size: 0.75rem; color: #aaa; }
         .f-power span { font-weight: bold; color: #fff; }
 
@@ -211,6 +233,8 @@
             color: #fff;
         }
         .factory-list-card:hover { transform: translateX(5px); border-color: var(--accent-cyan); background: rgba(40,40,40,0.95); }
+        .factory-list-card.status-owned { border-left: 4px solid var(--accent-green); }
+        .factory-list-card.status-not-owned { border-left: 4px solid var(--accent-red); }
         .factory-list-card .f-icon-circle { width: 50px; height: 50px; margin-bottom: 0; flex-shrink: 0; }
         .factory-list-card .f-info { flex: 1; text-align: left; }
         .factory-list-card .f-name { font-size: 1rem; margin-bottom: 2px; }
@@ -269,11 +293,16 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 6px 0;
+            padding: 12px 10px;
             transition: all 0.2s;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        .info-list-item:last-child {
+            border-bottom: none;
         }
         .info-list-item:hover {
             opacity: 0.8;
+            background: rgba(255,255,255,0.02);
         }
         .info-left {
             display: flex;
@@ -357,7 +386,7 @@
 
         <main>
             <div class="page-header">
-                <button class="back-btn" onclick="window.history.back()">
+                <button class="back-btn" onclick="window.location.href='home.html'">
                     <i class="fas fa-arrow-left"></i>
                 </button>
                 <div class="page-header-content">
@@ -418,6 +447,9 @@
 
         <div class="modal-overlay" id="buyModal">
             <div class="modal-content">
+                <div id="buyIconContainer" style="margin-bottom:15px; display:flex; justify-content:center;">
+                    <!-- Icon injected here -->
+                </div>
                 <h3 style="color:#fff; margin-bottom:10px;" id="buyTitle">Fabrika Satın Al</h3>
                 <p style="color:#888; font-size:0.9rem;">Bu işletmeyi kurmak için gereksinimleri karşılamalısınız.</p>
                 
@@ -429,6 +461,20 @@
                     <button class="m-btn btn-cancel" onclick="closeBuyModal()">İPTAL</button>
                     <button class="m-btn btn-confirm" id="btnConfirmBuy" onclick="confirmBuy()">SATIN AL</button>
                 </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="successModal">
+            <div class="modal-content" style="border-top: 3px solid var(--accent-green); box-shadow: 0 0 30px rgba(46, 204, 113, 0.2);">
+                <div style="font-size: 3rem; color: var(--accent-green); margin-bottom: 20px;">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3 style="color:#fff; margin-bottom:10px;">TEBRİKLER!</h3>
+                <p id="successMsg" style="color:#aaa; font-size:0.9rem; margin-bottom: 20px;">
+                    <!-- JS fills this -->
+                </p>
+                <p style="color: var(--accent-cyan); font-size: 0.9rem; margin-bottom: 20px;">"Fabrikalarım" sekmesinden yönetebilirsin.</p>
+                <button class="m-btn btn-confirm" onclick="closeSuccessModal()" style="width: 100%;">TAMAM</button>
             </div>
         </div>
 
@@ -647,7 +693,7 @@
                     if (isOwned) {
                         ownedFactories.forEach(mine => {
                             const card = document.createElement('div');
-                            card.className = `factory-list-card ${fac.color}`;
+                            card.className = `factory-list-card ${fac.color} status-owned`;
                             
                             let iconHtml = '';
                             if (fac.img) {
@@ -666,23 +712,24 @@
                                 workPage = 'ranch-work.html';
                             }
 
+                            // Make the whole card clickable
+                            card.onclick = function() { location.href = `${managePage}?id=${mine.id}`; };
+                            card.style.cursor = 'pointer';
+
                             card.innerHTML = `
                                 <div class="f-icon-circle">${iconHtml}</div>
                                 <div class="f-info">
                                     <div class="f-name">${fac.name}</div>
-                                    <div class="count-badge" style="color:var(--accent-gold)">Seviye: ${mine.level}</div>
+                                    <div class="f-desc" style="color:#aaa; font-size:0.8rem;">Yönetim ve üretim paneli</div>
                                 </div>
-                                <div style="display:flex; gap:8px;">
-                                    <button class="action-btn" style="width:auto; padding:8px 20px; background:var(--accent-gold); color:#000; font-weight:bold;" onclick="location.href='${workPage}?id=${mine.id}'">Çalış</button>
-                                    <button class="action-btn" style="width:auto; padding:8px 20px; background:var(--accent-cyan); color:#000; font-weight:bold;" onclick="location.href='${managePage}?id=${mine.id}'">Yönet</button>
-                                </div>
+                                <i class="fas fa-chevron-right" style="color: #666;"></i>
                             `;
                             list.appendChild(card);
                         });
                     } else {
                         // If NOT owned, list the TYPE with BUY button
                         const card = document.createElement('div');
-                        card.className = `factory-list-card ${fac.color}`;
+                        card.className = `factory-list-card ${fac.color} status-not-owned`;
                         
                         let iconHtml = '';
                         if (fac.img) {
@@ -691,18 +738,18 @@
                             iconHtml = `<i class="fas ${fac.icon}"></i>`;
                         }
 
-                        let btnHtml = `<button class="action-btn" style="width:auto; padding:8px 20px; background:var(--accent-green); color:#000; font-weight:bold;" onclick="openBuyModal('${fac.id}')">Satın Al</button>`;
-                        if (fac.disabled) {
-                            btnHtml = `<button class="action-btn" style="background:#333; color:#666; cursor:default;">Yakında</button>`;
+                        if (!fac.disabled) {
+                            card.setAttribute('onclick', `openBuyModal('${fac.id}')`);
+                            card.style.cursor = 'pointer';
                         }
 
                         card.innerHTML = `
                             <div class="f-icon-circle">${iconHtml}</div>
                             <div class="f-info">
                                 <div class="f-name">${fac.name}</div>
-                                <div class="count-badge" style="color:var(--accent-gold)">Sahip Değilsin</div>
+                                <div class="f-desc" style="color:#aaa; font-size:0.8rem;">${fac.disabled ? 'Çok Yakında' : 'Satın alıp üretim yapabilirsin.'}</div>
                             </div>
-                            ${btnHtml}
+                            ${!fac.disabled ? `<i class="fas fa-chevron-right right-arrow" style="font-size:1.2rem; color:var(--accent-green); margin-right:5px;"></i>` : ''}
                         `;
                         list.appendChild(card);
                     }
@@ -731,12 +778,22 @@
         }
 
         function renderBuyModalContent() {
+            // Icon
+            const iconContainer = document.getElementById('buyIconContainer');
+            if (selectedFactory.img) {
+                iconContainer.innerHTML = `<img src="${selectedFactory.img}" style="width: 80px; height: 80px; object-fit: contain;">`;
+            } else {
+                iconContainer.innerHTML = `<i class="fas ${selectedFactory.icon}" style="font-size: 3rem; color: #fff;"></i>`;
+            }
+
             const reqList = document.getElementById('reqList');
             reqList.innerHTML = '';
+            let canBuy = true;
 
             // 1. Para
             const userMoney = userData.money || 0;
             const moneyOk = userMoney >= selectedFactory.costMoney;
+            if (!moneyOk) canBuy = false;
             const moneyFormatted = new Intl.NumberFormat('tr-TR').format(selectedFactory.costMoney);
             
             reqList.innerHTML += `
@@ -756,7 +813,8 @@
             if (selectedFactory.costGold > 0) {
                 const userGold = userData.gold || 0;
                 const goldOk = userGold >= selectedFactory.costGold;
-                
+                if (!goldOk) canBuy = false;
+
                 reqList.innerHTML += `
                     <div class="info-list-item">
                         <div class="info-left">
@@ -775,6 +833,7 @@
             if (selectedFactory.costDiamond > 0) {
                 const userDiamond = userData.diamond || 0;
                 const diaOk = userDiamond >= selectedFactory.costDiamond;
+                if (!diaOk) canBuy = false;
                 
                 reqList.innerHTML += `
                     <div class="info-list-item">
@@ -793,6 +852,7 @@
             // 4. Lisans
             const licLevel = userLicenses[selectedFactory.id] || 0;
             const licOk = licLevel >= 1;
+            if (!licOk) canBuy = false;
             
             reqList.innerHTML += `
                 <div class="info-list-item">
@@ -806,7 +866,17 @@
                 </div>
             `;
 
-            document.getElementById('btnConfirmBuy').disabled = false;
+            const btn = document.getElementById('btnConfirmBuy');
+            if (canBuy) {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            } else {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            }
+
             document.getElementById('buyModal').classList.add('active');
             document.getElementById('buyModal').style.display = 'flex';
         }
@@ -836,8 +906,14 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    toastr.success(selectedFactory.name + ' satın alındı.');
                     closeBuyModal();
+                    
+                    // Show Success Modal
+                    document.getElementById('successMsg').innerText = `${selectedFactory.name} işletmesi satın alındı.`;
+                    const sModal = document.getElementById('successModal');
+                    sModal.classList.add('active');
+                    sModal.style.display = 'flex';
+
                     loadFactories(); // Refresh grid
                     loadMyFactories(); // Refresh list
                     if(window.updateHeaderStats) window.updateHeaderStats();
@@ -853,6 +929,12 @@
                     btn.innerText = 'SATIN AL';
                 }
             }
+        }
+
+        function closeSuccessModal() {
+            const sModal = document.getElementById('successModal');
+            sModal.classList.remove('active');
+            sModal.style.display = 'none';
         }
 
         // Modal Açma

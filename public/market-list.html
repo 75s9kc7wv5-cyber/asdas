@@ -39,76 +39,131 @@
 
         main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
 
-        .header-badge {
-            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(20,20,20,0.95) 100%);
-            padding: 20px;
-            border-radius: 0 0 20px 20px;
-            margin: 0 0 25px 0;
-            border-top: 3px solid var(--accent);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            position: relative;
-            overflow: hidden;
-            text-align: center;
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
         }
-        .header-badge::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: radial-gradient(circle, var(--accent) 0%, transparent 100%);
-            opacity: 0.7;
-        }
-        .header-badge h1 {
-            font-size: 1.8rem;
-            color: #fff;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 5px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            color: var(--accent);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
         }
-        .header-badge h1 i { color: var(--accent); }
-        .header-badge p {
-            font-size: 0.9rem;
-            color: #aaa;
+        .back-btn:hover {
+            background: #2a2a2a;
+            border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+        }
+        .page-header-content {
+            flex: 1;
+            text-align: left;
+        }
+        .header-title-text { 
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #fff;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .header-subtitle-text {
+            font-size: 0.85rem;
+            color: #999;
             font-weight: 500;
-        }
-        .btn-back { 
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(255,255,255,0.1); 
-            border: 1px solid rgba(255,255,255,0.2); 
-            color: #fff; 
-            width: 36px; height: 36px; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center; cursor: pointer;
-            z-index: 10;
         }
 
         /* PRODUCT LIST */
-        .product-list { display: flex; flex-direction: column; gap: 10px; }
+        .product-list { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 10px; 
+            animation: fadeInUp 0.5s;
+        }
 
         .product-card {
-            background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px;
-            padding: 15px; display: flex; align-items: center; justify-content: space-between;
-            transition: 0.2s;
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 10px 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            text-align: center;
+            position: relative;
+            height: auto;
+            min-height: 100px;
+            overflow: hidden;
+            border-top: 2px solid var(--accent);
         }
-        .product-card:hover { border-color: var(--accent); transform: translateX(5px); }
-
-        .pc-left { display: flex; align-items: center; gap: 15px; }
-        .pc-icon { width: 45px; height: 45px; object-fit: contain; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 5px; }
-        .pc-info h4 { font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: 2px; }
-        .pc-info p { font-size: 0.8rem; color: var(--text-secondary); }
-
-        .btn-trade {
-            background: var(--accent); color: #000; border: none; padding: 8px 20px;
-            border-radius: 6px; font-weight: 700; font-family: 'Rajdhani'; cursor: pointer;
+        .product-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            border-color: #fff;
         }
+
+        .pc-icon-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            transition: 0.3s;
+        }
+
+        .pc-icon { 
+            width: 24px; 
+            height: 24px; 
+            object-fit: contain; 
+            filter: drop-shadow(0 0 3px rgba(0,0,0,0.5));
+            transition: 0.3s; 
+            background: transparent; 
+            padding: 0; 
+            border-radius: 0; 
+        }
+        .product-card:hover .pc-icon { transform: scale(1.1); filter: drop-shadow(0 0 5px var(--accent)); }
+
+        .pc-name { 
+            font-size: 0.85rem; 
+            font-weight: 700; 
+            line-height: 1.2; 
+            margin-bottom: 0;
+            color: #fff;
+            text-transform: uppercase;
+        }
+
+        .count-badge { 
+            background: #222; 
+            padding: 2px 6px; 
+            border-radius: 4px; 
+            border: 1px solid #444; 
+            display: inline-block; 
+            margin-top: 2px; 
+            font-size: 0.7rem; 
+            color: #fff;
+        }
+        
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
     </style>
 </head>
@@ -118,11 +173,17 @@
         <div id="header-container"></div>
 
         <main>
-        <div class="header-badge">
-            <button class="btn-back" onclick="history.back()"><i class="fas fa-arrow-left"></i></button>
-            <h1><i class="fas fa-shopping-basket"></i> <span id="categoryTitle">ÜRÜNLER</span></h1>
-            <p>Pazar yeri ve ticaret</p>
-        </div>
+            <div class="page-header">
+                <button class="back-btn" onclick="window.location.href='market-category.html'">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="page-header-content">
+                    <div class="header-title-text" id="categoryTitle">
+                        ÜRÜNLER
+                    </div>
+                    <div class="header-subtitle-text">Pazar yeri ve ticaret</div>
+                </div>
+            </div>
 
             <div class="product-list" id="productList">
                 <!-- JS ile doldurulacak -->
@@ -217,15 +278,16 @@
                 const div = document.createElement('div');
                 div.className = 'product-card';
                 div.onclick = () => window.location.href = `market-detail.html?id=${p.id}`;
+                
+                // Simulate listing count for now
+                const count = Math.floor(Math.random() * 20) + 1;
+
                 div.innerHTML = `
-                    <div class="pc-left">
+                    <div class="pc-icon-circle">
                         <img src="${p.icon}" class="pc-icon" alt="${p.name}">
-                        <div class="pc-info">
-                            <h4>${p.name}</h4>
-                            <p>${p.desc}</p>
-                        </div>
                     </div>
-                    <i class="fas fa-chevron-right" style="color:var(--text-secondary)"></i>
+                    <span class="pc-name">${p.name}</span>
+                    <span class="count-badge">${count} İlan</span>
                 `;
                 container.appendChild(div);
             });

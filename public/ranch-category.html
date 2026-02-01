@@ -119,6 +119,7 @@
         .factory-card {
             background: var(--card-bg);
             border: 1px solid #333;
+            border-top: 3px solid var(--accent-green);
             border-radius: 8px;
             padding: 15px 10px;
             display: flex;
@@ -137,16 +138,60 @@
         }
         .factory-card:hover { transform: translateY(-3px); border-color: var(--accent-cyan); background: rgba(40,40,40,0.95); }
         .f-icon-circle {
-            width: 48px; height: 48px; border-radius: 50%; background: #222;
+            width: 48px; height: 48px; border-radius: 8px; background: #222;
             display: flex; align-items: center; justify-content: center;
             margin-bottom: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.3);
             font-size: 1.5rem;
         }
-        .f-name { font-size: 1rem; font-weight: 700; line-height: 1.2; margin-bottom: 0; }
+        .f-name { font-size: 0.85rem; font-weight: 700; line-height: 1.2; margin-bottom: 0; }
         .f-count { font-size: 0.7rem; color: #aaa; margin-top: 2px; }
         .count-badge { 
             background: #222; padding: 2px 6px; border-radius: 4px; border: 1px solid #444;
-            display: inline-block; margin-top: 4px; font-size: 0.7rem; color: #aaa;
+            display: inline-block; margin-top: 4px; font-size: 0.7rem; color: #fff;
+        }
+
+        /* Farm List Card Styles */
+        .farm-list-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(30,30,30,0.95);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            color: #fff;
+        }
+        .farm-list-card:hover {
+            transform: translateY(-2px);
+            border-color: #555;
+            background: rgba(40,40,40,0.95);
+        }
+        .farm-list-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: var(--accent-red); /* Unowned = Red */
+        }
+        .farm-list-card.owned::before {
+             background: var(--accent-green); /* Owned = Green */
+        }
+        .right-arrow {
+            color: #444;
+            font-size: 1.2rem;
+            margin-left: auto;
+            transition: color 0.2s;
+        }
+        .farm-list-card:hover .right-arrow {
+            color: #fff;
         }
 
         /* Modal Styles */
@@ -175,8 +220,12 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 6px 0;
+            padding: 12px 0;
+            border-bottom: 1px solid #333;
             transition: all 0.2s;
+        }
+        .info-list-item:last-child {
+            border-bottom: none;
         }
         .info-list-item:hover {
             opacity: 0.8;
@@ -242,14 +291,23 @@
 
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Anti-FOUC (Flash of Unstyled Content) Prevention */
+        html.loading-state body { visibility: hidden !important; background-color: #000 !important; }
+        html.loading-state body #game-loader { visibility: visible !important; }
     </style>
+    <script>
+        // Immediately trigger loading state
+        document.documentElement.classList.add('loading-state');
+    </script>
 </head>
 <body>
+    <script src="js/loader-manager.js"></script>
     <div class="game-container">
         <!-- Header injected by header-manager.js -->
         <main>
         <div class="page-header">
-            <button class="back-btn" onclick="window.history.back()">
+            <button class="back-btn" onclick="window.location.href='home.html'">
                 <i class="fas fa-arrow-left"></i>
             </button>
             <div class="page-header-content">
@@ -283,6 +341,20 @@
                 <div class="modal-btns">
                     <button class="m-btn btn-cancel" onclick="closeBuyModal()">İPTAL</button>
                     <button class="m-btn btn-confirm" id="buyModalConfirmBtn" onclick="confirmBuyRanch()">SATIN AL</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Modal -->
+        <div class="modal-overlay" id="successModal">
+            <div class="modal-content" style="border-top: 3px solid var(--accent-green); text-align:center;">
+                <div style="font-size:3rem; color:var(--accent-green); margin-bottom:15px;">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3 style="color:#fff; margin-bottom:10px;">Tebrikler!</h3>
+                <p style="color:#ccc; font-size:1.1rem; margin-bottom:20px;" id="successModalText"></p>
+                <div class="modal-btns">
+                    <button class="m-btn btn-confirm" onclick="closeSuccessModal()">TAMAM</button>
                 </div>
             </div>
         </div>
@@ -390,26 +462,18 @@
             list.innerHTML = '';
             ranchTypes.forEach(type => {
                 // Check if user owns this ranch type
-                // myRanches returns objects like { ranch_id, ranch_type_id, ... }
-                // We need to match type.id (slug) with ranch_type_id or slug from API
-                // The API /api/ranches/my/:userId returns join with ranch_types, so it should have 'slug' or 'type'
-                // Let's assume it has 'slug' or we match by ID if we had IDs. 
-                // But ranchTypes here uses slugs as IDs ('chicken').
-                // Let's check fetchMyRanches response structure if possible. 
-                // Based on server.js: SELECT pr.*, rt.name, rt.slug, rt.image_path ...
-                // So it has 'slug'.
-                
                 const owned = ranches.find(r => r.slug === type.id);
                 
-                const row = document.createElement('div');
-                row.style.display = 'flex';
-                row.style.alignItems = 'center';
-                row.style.gap = '15px';
-                row.style.background = 'rgba(30,30,30,0.95)';
-                row.style.border = '1px solid #333';
-                row.style.borderRadius = '8px';
-                row.style.padding = '10px 15px';
-                row.style.marginBottom = '10px';
+                const card = document.createElement('div');
+                card.className = `farm-list-card ${owned ? 'owned' : ''}`;
+                
+                card.onclick = (e) => {
+                    if (owned) {
+                        location.href = `ranch-management.html?id=${owned.ranch_id}`;
+                    } else {
+                        openBuyModal(type);
+                    }
+                };
                 
                 let iconHtml = '';
                 if (type.img) {
@@ -418,31 +482,18 @@
                     iconHtml = `<span class=\"f-icon-circle ${type.color}\"><i class=\"fas ${type.icon}\"></i></span>`;
                 }
                 
-                row.innerHTML = `
+                card.innerHTML = `
                     ${iconHtml}
                     <div style=\"flex:1;\">
                         <div class=\"f-name\">${type.name}</div>
-                        <div class=\"count-badge\" style=\"color: var(--accent-gold);\">${owned ? 'Seviye: ' + owned.level : 'Sahip Değilsin'}</div>
+                        <div style=\"font-size: 0.8rem; color: #888; margin-top: 4px;\">
+                             ${owned ? 'Yönetim ve Üretim Paneli' : 'Satın alıp üretim yapabilirsin'}
+                        </div>
                     </div>
-                    <div style="display:flex; gap:8px;">
-                        ${owned ? '<button class="ranch-work-btn" style="padding:7px 18px; border:none; border-radius:5px; font-family:\'Rajdhani\'; font-weight:bold; font-size:0.95rem; cursor:pointer; background:var(--accent-gold); color:#000;">Çalış</button>' : ''}
-                        <button class=\"ranch-action-btn\" style=\"padding:7px 18px; border:none; border-radius:5px; font-family:'Rajdhani'; font-weight:bold; font-size:0.95rem; cursor:pointer; background:${owned ? 'var(--accent-cyan)' : 'var(--accent-green)'}; color:#000;\">${owned ? 'Yönet' : 'Satın Al'}</button>
-                    </div>
+                    <i class=\"fas fa-chevron-right right-arrow\"></i>
                 `;
                 
-                const btn = row.querySelector('.ranch-action-btn');
-                if (owned) {
-                    btn.onclick = () => location.href = `ranch-management.html?id=${owned.ranch_id}`; // Use ranch_id from DB
-                    
-                    // Çalış butonunu ekle
-                    const workBtn = row.querySelector('.ranch-work-btn');
-                    if (workBtn) {
-                        workBtn.onclick = () => location.href = `ranch-work.html?id=${owned.ranch_id}`;
-                    }
-                } else {
-                    btn.onclick = () => openBuyModal(type);
-                }
-                list.appendChild(row);
+                list.appendChild(card);
             });
         }
 
@@ -451,8 +502,18 @@
         
         function openBuyModal(type) {
             selectedRanchType = type;
+            let canBuy = true;
             
-            document.getElementById('buyModalTitle').innerText = `${type.name} Satın Almayı Onaylıyor musun?`;
+            // Icon logic for modal
+            const modalTitle = document.getElementById('buyModalTitle');
+            let iconHtml = '';
+            if (type.img) {
+                iconHtml = `<div style="display:flex; justify-content:center; margin-bottom:10px;"><img src="${type.img}" style="width:64px; height:64px; object-fit:contain;"></div>`;
+            } else {
+                iconHtml = `<div style="display:flex; justify-content:center; margin-bottom:10px; font-size:2rem; color:var(--accent-gold);"><i class="fas ${type.icon || 'fa-warehouse'}"></i></div>`;
+            }
+            
+            modalTitle.innerHTML = `${iconHtml}${type.name} Satın Almayı Onaylıyor musun?`;
             
             const reqList = document.getElementById('buyModalReqs');
             reqList.innerHTML = '';
@@ -461,6 +522,8 @@
             const price = type.price;
             const userMoney = userData.money || 0;
             const priceOk = userMoney >= price;
+            if (!priceOk) canBuy = false;
+            
             const priceFormatted = new Intl.NumberFormat('tr-TR').format(price);
             
             reqList.innerHTML += `
@@ -480,6 +543,7 @@
             if (type.gold_price > 0) {
                 const userGold = userData.gold || 0;
                 const goldOk = userGold >= type.gold_price;
+                if (!goldOk) canBuy = false;
                 
                 reqList.innerHTML += `
                     <div class="info-list-item">
@@ -499,6 +563,7 @@
             if (type.diamond_price > 0) {
                 const userDiamond = userData.diamond || 0;
                 const diaOk = userDiamond >= type.diamond_price;
+                if (!diaOk) canBuy = false;
                 
                 reqList.innerHTML += `
                     <div class="info-list-item">
@@ -519,6 +584,7 @@
             const licLevel = userLicenses[licenseSlug] || 0;
             const reqLevel = 1;
             const licOk = licLevel >= reqLevel;
+            if (!licOk) canBuy = false;
             
             reqList.innerHTML += `
                 <div class="info-list-item">
@@ -532,6 +598,7 @@
                 </div>
             `;
 
+            document.getElementById('buyModalConfirmBtn').disabled = !canBuy;
             document.getElementById('buyRanchModal').classList.add('active');
             document.getElementById('buyRanchModal').style.display = 'flex';
         }
@@ -540,6 +607,11 @@
             document.getElementById('buyRanchModal').classList.remove('active');
             document.getElementById('buyRanchModal').style.display = 'none';
             selectedRanchType = null;
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('successModal').classList.remove('active');
+            setTimeout(() => location.reload(), 300);
         }
 
         async function confirmBuyRanch() {
@@ -575,9 +647,12 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    toastr.success(data.message || 'Satın alma başarılı!');
+                    // toastr.success(data.message || 'Satın alma başarılı!');
                     closeBuyModal();
                     
+                    document.getElementById('successModalText').innerText = data.message || 'Satın alma işlemi başarıyla tamamlandı.';
+                    document.getElementById('successModal').classList.add('active');
+
                     // Refresh data safely
                     try {
                         await fetchUserData(user.id);

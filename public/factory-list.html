@@ -165,24 +165,89 @@
         .tab-content { display: none; animation: fadeIn 0.4s; }
         .tab-content.active { display: block; }
 
-        /* FACTORY CARD */
+        /* FACTORY CARD - Updated Style */
         .mine-card {
-            background: rgba(30, 30, 30, 0.95);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
             display: flex;
             align-items: center;
             gap: 15px;
-            transition: transform 0.2s;
+            background: rgba(30,30,30,0.95);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            color: #fff;
         }
-        .mine-card:hover { transform: translateY(-2px); border-color: #555; }
+        .mine-card:hover {
+            transform: translateY(-2px);
+            border-color: #555;
+            background: rgba(40,40,40,0.95);
+        }
+        .mine-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: var(--accent-red);
+        }
+        .mine-card.owned::before {
+             background: var(--accent-green);
+        }
+        .mine-card.city-card::before {
+             background: var(--accent-gold);
+        }
+        
+        .mine-card.city-card {
+            flex-direction: column;
+            align-items: stretch;
+            padding: 0;
+            gap: 0;
+        }
+
+        .city-card-top {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            cursor: pointer;
+        }
+
+        .city-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 8px 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid #333;
+            font-size: 0.85rem;
+        }
+
+        .owner-info {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: #ccc;
+        }
+        .owner-info i { color: #ccc; font-size: 0.9rem; }
+
+        .level-stars {
+            display: flex;
+            gap: 2px;
+        }
+        .level-stars i { font-size: 0.7rem; color: #444; }
+        .level-stars i.active { color: var(--accent-gold); text-shadow: 0 0 5px rgba(255, 215, 0, 0.3); }
 
         .mine-icon {
             width: 50px; height: 50px;
             background: #222;
-            border-radius: 50%;
+            border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
             font-size: 1.5rem;
             border: 1px solid #444;
@@ -195,9 +260,22 @@
         }
         
         .mine-info { flex: 1; }
-        .mine-name { font-size: 0.85rem; font-weight: bold; color: #fff; }
+        .mine-name { font-size: 1rem; font-weight: bold; color: #fff; }
         .mine-desc { font-size: 0.8rem; color: #888; }
         .mine-stats { font-size: 0.75rem; color: var(--accent-green); margin-top: 3px; }
+
+        .stat-badge {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #444;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 600;
+            color: #ddd;
+        }
 
         .btn-action {
             padding: 8px 15px;
@@ -373,7 +451,7 @@
 
         <main>
         <div class="page-header">
-            <button class="back-btn" onclick="window.history.back()">
+            <button class="back-btn" onclick="window.location.href='factory-category.html'">
                 <i class="fas fa-arrow-left"></i>
             </button>
             <div class="page-header-content">
@@ -429,6 +507,9 @@
     <script src="js/header-manager.js"></script>
 
     <script>
+        // Prevent loader from hiding automatically
+        window.holdingLoader = true;
+
         toastr.options = { "positionClass": "toast-top-right", "timeOut": "3000" };
 
         const factoryTypes = [
@@ -524,6 +605,9 @@
             } catch (e) {
                 console.error(e);
                 toastr.error('Veri yüklenemedi.');
+            } finally {
+                window.holdingLoader = false;
+                if (window.hideLoader) window.hideLoader();
             }
         }
 
@@ -551,42 +635,33 @@
                 const owned = userMines.find(m => m.mine_type === type.id);
                 
                 const card = document.createElement('div');
-                card.className = 'mine-card';
+                card.className = `mine-card ${owned ? 'owned' : ''}`;
                 
-                let btnHTML = '';
-                if (owned) {
-                    let managePage = 'factory-management.html';
-                    let workPage = 'factory-work.html';
-
-                    if (type.id === 'agricultural') {
-                        managePage = 'farm-management.html';
-                        workPage = 'farm-work.html';
-                    } else if (type.id === 'animal') {
-                        managePage = 'ranch-management.html';
-                        workPage = 'ranch-work.html';
+                // Click Action replacement for buttons
+                card.onclick = function() {
+                    if(owned) {
+                        let managePage = 'factory-management.html';
+                        if (type.id === 'agricultural') managePage = 'farm-management.html';
+                        else if (type.id === 'animal') managePage = 'ranch-management.html';
+                        location.href = `${managePage}?id=${owned.id}`;
+                    } else {
+                        openBuyModal(type.id);
                     }
-
-                    btnHTML = `
-                        <button class="btn-action btn-work" onclick="location.href='${workPage}?id=${owned.id}'" style="background:var(--accent-gold); color:#000;">Çalış</button>
-                        <button class="btn-action btn-manage" onclick="location.href='${managePage}?id=${owned.id}'" style="margin-top:5px;">Yönet</button>
-                    `;
-                } else {
-                    btnHTML = `<button class="btn-action btn-buy" onclick="openBuyModal('${type.id}')">Satın Al</button>`;
-                }
+                };
 
                 let iconHTML = '';
                 if (type.img) {
                     iconHTML = `<img src="${type.img}" alt="${type.name}">`;
                 } else {
-                    iconHTML = `<i class="fas ${type.icon}"></i>`;
+                    iconHTML = `<i class="fas ${type.icon || 'fa-industry'}"></i>`;
                 }
 
                 let descHTML = '';
-                if (owned) {
-                    descHTML = `<span class="count-badge" style="color: var(--accent-gold);">Seviye: ${owned.level || 1}</span>`;
-                } else {
-                    descHTML = `<span class="count-badge" style="color: var(--accent-gold);">Gereken Eğitim: Lv. ${type.reqLevel}</span>`;
-                }
+                // if (owned) {
+                //    descHTML = '';
+                // } else {
+                //    descHTML = '';
+                // }
 
                 card.innerHTML = `
                     <div class="mine-icon ${type.color}">
@@ -594,9 +669,10 @@
                     </div>
                     <div class="mine-info">
                         <div class="mine-name">${type.name}</div>
-                        <div class="mine-desc">${descHTML}</div>
+                        <div class="mine-desc">${owned ? 'Yönetim ve Üretim Paneli' : 'Satın almak için tıkla'}</div>
+                        <div class="mine-stats">${descHTML}</div>
                     </div>
-                    <div>${btnHTML}</div>
+                    <i class="fas fa-chevron-right" style="color: #666; margin-left: auto;"></i>
                 `;
                 container.appendChild(card);
             });
@@ -629,10 +705,8 @@
                 if (!type) return;
 
                 const card = document.createElement('div');
-                card.className = 'mine-card';
-                card.style.cursor = 'pointer';
-                card.onclick = () => location.href = `factory-work.html?id=${mine.id}`;
-
+                card.className = 'mine-card city-card';
+                
                 let iconHTML = '';
                 if (type.img) {
                     iconHTML = `<img src="${type.img}" alt="${type.name}">`;
@@ -641,13 +715,27 @@
                 }
 
                 card.innerHTML = `
-                    <div class="mine-icon ${type.color}">
-                        ${iconHTML}
+                    <div class="city-card-top" onclick="location.href='factory-work.html?id=${mine.id}'">
+                        <div class="mine-icon ${type.color}">
+                            ${iconHTML}
+                        </div>
+                        <div class="mine-info">
+                            <div class="mine-name">${mine.name || type.name}</div>
+                            <div class="mine-stats" style="display: flex; gap: 5px;">
+                                <span class="stat-badge"><i class="fas fa-users" style="color: var(--accent-cyan);"></i> ${mine.current_workers || 0}/${mine.max_workers || 5}</span>
+                                <span class="stat-badge"><i class="fas fa-money-bill-wave" style="color: var(--accent-green);"></i> ${mine.salary || 0} ₺</span>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right" style="color: #666; margin-left: auto;"></i>
                     </div>
-                    <div class="mine-info">
-                        <div class="mine-name">${mine.name || type.name} <span style="font-size:0.8rem; color:#666;">(${type.name})</span></div>
-                        <div class="mine-desc"><b>Sahibi:</b> <a href="profile.html?id=${mine.user_id}" style="color:var(--accent-cyan); text-decoration:none;">${mine.username}</a></div>
-                        <div class="mine-stats"><span style="color:var(--accent-gold)">Seviye: ${mine.level}</span> <span style="color:#fff">|</span> <span style="color:var(--accent-red)">Kapasite: ${mine.current_workers}/${mine.max_workers || 5}</span> <span style="color:#fff">|</span> Maaş: <span style="color:var(--accent-green)">${mine.salary} ₺</span></div>
+                    <div class="city-card-footer">
+                        <div class="owner-info">
+                            <i class="fas fa-user-circle"></i>
+                            <a href="profile.html?id=${mine.user_id}" style="color: #ccc; text-decoration: none;">${mine.user_id} - ${mine.username || 'Bilinmiyor'}</a>
+                        </div>
+                        <div class="level-stars">
+                            ${Array(10).fill(0).map((_, i) => `<i class="fas fa-star ${i < (mine.level || 1) ? 'active' : ''}"></i>`).join('')}
+                        </div>
                     </div>
                 `;
                 container.appendChild(card);
