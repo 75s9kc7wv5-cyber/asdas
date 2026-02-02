@@ -249,16 +249,24 @@
             'all': 'TÜM ÜRÜNLER'
         };
 
-        window.onload = () => {
+        window.onload = async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const category = urlParams.get('cat') || 'all';
             
             document.getElementById('categoryTitle').innerText = categoryNames[category] || 'PAZAR';
 
-            renderProducts(category);
+            let stats = {};
+            try {
+                const res = await fetch('/api/market-stats');
+                if (res.ok) stats = await res.json();
+            } catch (e) {
+                console.error("Pazar istatistikleri alınamadı:", e);
+            }
+
+            renderProducts(category, stats);
         };
 
-        function renderProducts(category) {
+        function renderProducts(category, stats = {}) {
             const container = document.getElementById('productList');
             container.innerHTML = '';
 
@@ -279,8 +287,8 @@
                 div.className = 'product-card';
                 div.onclick = () => window.location.href = `market-detail.html?id=${p.id}`;
                 
-                // Simulate listing count for now
-                const count = Math.floor(Math.random() * 20) + 1;
+                // Get real listing count
+                const count = stats[p.id] || 0;
 
                 div.innerHTML = `
                     <div class="pc-icon-circle">

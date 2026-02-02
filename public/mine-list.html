@@ -639,7 +639,8 @@
                     </div>
                     <div class="city-card-footer">
                         <div class="owner-info">
-                            <i class="fas fa-user-circle"></i> ${mine.user_id} - ${mine.username}
+                            <img src="${mine.avatar || 'uploads/avatars/default.png'}" style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover; border: 1px solid #444;">
+                            <span>${mine.user_id} - ${mine.username}</span>
                         </div>
                         <div class="level-stars">${stars}</div>
                     </div>

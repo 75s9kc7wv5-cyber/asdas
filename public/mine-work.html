@@ -98,7 +98,7 @@
         .factory-hero {
             background: linear-gradient(135deg, rgba(231, 76, 60, 0.15), var(--bg-card));
             border: 1px solid var(--accent); border-radius: 16px;
-            padding: 20px; margin-bottom: 20px; position: relative;
+            padding: 15px; margin-bottom: 20px; position: relative;
             display: flex; align-items: center; gap: 15px;
             box-shadow: 0 0 20px rgba(231, 76, 60, 0.1);
         }
@@ -110,7 +110,7 @@
         }
         
         .fh-info { flex: 1; }
-        .fh-name { font-size: 1.2rem; font-weight: 800; color: #fff; margin-bottom: 2px; text-transform: uppercase; }
+        .fh-name { font-size: 1rem; font-weight: 800; color: #fff; margin-bottom: 2px; text-transform: uppercase; }
         .fh-owner { font-size: 0.8rem; color: var(--text-muted); }
 
         /* İSTATİSTİKLER (GRID) */
@@ -183,7 +183,7 @@
         .slots-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 25px; }
 
         .slot-card {
-            background: rgba(20,20,20,0.8); border: 1px solid #333; border-radius: 8px;
+            background: rgba(20,20,20,0.8); border: 1px solid #333; border-top: 3px solid #888; border-radius: 8px;
             padding: 10px 5px; text-align: center; position: relative; overflow: hidden;
             transition: all 0.2s; cursor: pointer; min-height: 120px;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -191,18 +191,43 @@
         
         /* Boş Slot */
         .slot-empty:hover { border-color: var(--accent-green); background: rgba(46, 204, 113, 0.05); }
-        .slot-empty .slot-icon { font-size: 1.5rem; color: #333; margin-bottom: 5px; }
-        .slot-empty .slot-text { color: var(--accent-green); font-weight: 700; font-size: 0.8rem; line-height: 1.2; }
+        .slot-empty .slot-icon { font-size: 1.5rem; color: #333; margin-bottom: 15px; }
+        .slot-empty .slot-text { color: var(--accent-green); font-weight: 700; font-size: 0.7rem; line-height: 1.2; }
 
         /* Dolu (Başka Oyuncu) */
         .slot-occupied { border-color: #444; opacity: 0.7; cursor: not-allowed; }
         .slot-occupied .slot-avatar { width: 35px; height: 35px; border-radius: 50%; border: 2px solid #555; margin-bottom: 5px; }
         .slot-occupied .slot-text { color: #666; font-size: 0.7rem; }
 
-        /* Çalışıyor (Ben) */
-        .slot-working { border-color: var(--accent); background: rgba(231, 76, 60, 0.05); cursor: default; }
-        .slot-working .slot-icon { color: var(--accent); animation: pulse 1.5s infinite; font-size: 1.5rem; margin-bottom: 5px; }
-        .slot-timer-text { font-size: 0.9rem; font-weight: 800; color: #fff; margin-bottom: 5px; }
+        /* Çalışıyor (Ben) - Modern */
+        .slot-working { 
+            border: 1px solid var(--accent); 
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.15) 0%, rgba(20, 20, 20, 0.8) 100%);
+            cursor: default; 
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.15), inset 0 0 20px rgba(231, 76, 60, 0.05);
+        }
+        .slot-working .slot-icon { 
+            color: var(--accent); 
+            animation: workPulse 2s infinite ease-in-out; 
+            font-size: 1.8rem; 
+            margin-bottom: 8px; 
+            filter: drop-shadow(0 0 5px var(--accent));
+        }
+        .slot-timer-text { 
+            font-size: 0.9rem; 
+            font-weight: 800; 
+            color: #fff; 
+            margin-bottom: 2px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        .slot-product-text { 
+            font-size: 0.75rem; 
+            color: #fff; 
+            font-weight: 600; 
+            margin-top: 8px; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
         
         /* Progress Bar */
         .slot-progress-bg { 
@@ -215,10 +240,90 @@
         }
 
         /* LOGLAR */
-        .log-container { background: var(--bg-card); border-radius: 10px; padding: 15px; border: 1px solid var(--border-color); }
-        .log-list { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-        .log-item { display: flex; justify-content: space-between; font-size: 0.8rem; color: #aaa; border-bottom: 1px solid #222; padding-bottom: 4px; }
-        .log-time { color: #555; font-size: 0.75rem; }
+        .log-container { background: var(--bg-card); border-radius: 10px; padding: 10px; border: 1px solid var(--border-color); }
+        .log-list { max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+        .log-item {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.2s;
+            min-height: 36px;
+        }
+        .log-item:hover { background: rgba(255,255,255,0.05); }
+        .log-avatar {
+            width: 24px; height: 24px; border-radius: 50%; margin-right: 8px; object-fit: cover; border: 1px solid #444;
+        }
+        .log-text { font-size: 0.75rem; color: #ccc; flex: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 3px; }
+        .log-user-link { color: #fff; text-decoration: none; font-weight: 700; }
+        .log-time { font-size: 0.65rem; color: #555; margin-left: auto; white-space: nowrap; }
+        .log-highlight { color: var(--accent); font-weight: 600; }
+
+        /* ACCORDION */
+        .accordion-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .accordion-header {
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .accordion-header:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .accordion-header.active {
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .accordion-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .accordion-header.calc-header .accordion-title {
+            color: var(--accent);
+        }
+
+        .accordion-icon {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            transition: transform 0.3s ease;
+        }
+
+        .accordion-header.active .accordion-icon {
+            transform: rotate(180deg);
+            color: var(--accent);
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0, 1, 0, 1);
+        }
+
+        .accordion-body {
+            padding: 15px;
+        }
 
         /* MODAL */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; display: none; justify-content: center; align-items: center; animation: fadeIn 0.3s; }
@@ -238,6 +343,11 @@
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes workPulse { 
+            0% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 2px var(--accent)); }
+            50% { transform: scale(1.1); opacity: 0.9; filter: drop-shadow(0 0 8px var(--accent)); }
+            100% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 2px var(--accent)); }
+        }
 
     </style>
 </head>
@@ -269,10 +379,15 @@
             </div>
 
             <!-- MADEN BİLGİLERİ -->
-            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
-                <div style="font-size: 0.9rem; font-weight: 700; color: var(--accent); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #333; padding-bottom: 8px;">
-                    <i class="fas fa-info-circle"></i> MADEN BİLGİLERİ
+            <div class="accordion-card">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <div class="accordion-title">
+                        <i class="fas fa-info-circle"></i> MADEN BİLGİLERİ
+                    </div>
+                    <i class="fas fa-chevron-down accordion-icon"></i>
                 </div>
+                <div class="accordion-content">
+                    <div class="accordion-body">
                 
                 <div class="info-list-item">
                     <div class="info-left">
@@ -353,15 +468,24 @@
                     </div>
                     <div class="info-value" style="font-size: 0.85rem; color: var(--text-muted);" id="statCreated">-</div>
                 </div>
+                    </div>
+                </div>
             </div>
 
             <!-- ÜRETİM HESAPLAMA DETAYLARI -->
-            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
-                <div style="font-size: 0.9rem; font-weight: 700; color: var(--accent-cyan); margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-                    <i class="fas fa-calculator"></i> ÜRETİM HESAPLAMA
+            <div class="accordion-card">
+                <div class="accordion-header active" onclick="toggleAccordion(this)">
+                    <div class="accordion-title">
+                        <i class="fas fa-calculator"></i> ÜRETİM HESAPLAMA
+                    </div>
+                    <i class="fas fa-chevron-down accordion-icon"></i>
                 </div>
-                <div id="productionCalculation">
-                    <!-- JavaScript ile doldurulacak -->
+                <div class="accordion-content" style="max-height: 1000px;">
+                    <div class="accordion-body">
+                        <div id="productionCalculation">
+                            <!-- JavaScript ile doldurulacak -->
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -404,26 +528,38 @@
             </div>
 
             <!-- ÜRETİM HATTI -->
-            <div class="section-header">
-                <div class="sh-title"><i class="fas fa-cogs"></i> ÜRETİM HATTI</div>
-                <div class="sh-capacity">Kapasite: <span id="workerCount">0</span>/<span id="maxWorkerCount">6</span></div>
-            </div>
-
-            <div class="slots-container" id="slotsGrid">
-                <!-- JS ile Doldurulacak -->
+            <div class="accordion-card">
+                <div class="accordion-header active" onclick="toggleAccordion(this)">
+                    <div class="accordion-title">
+                        <i class="fas fa-cogs"></i> ÜRETİM HATTI
+                        <span style="font-size: 0.8rem; color: #888; margin-left: 10px; font-weight: normal;">
+                            (Kapasite: <span id="workerCount">0</span>/<span id="maxWorkerCount">6</span>)
+                        </span>
+                    </div>
+                    <i class="fas fa-chevron-down accordion-icon"></i>
+                </div>
+                <div class="accordion-content" style="max-height: 1000px;">
+                    <div class="accordion-body">
+                        <div class="slots-container" id="slotsGrid">
+                            <!-- JS ile Doldurulacak -->
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- LOGLAR -->
-            <div class="log-container">
-                <div class="sh-title" style="font-size:0.8rem; margin-bottom:10px;">Üretim Geçmişi</div>
-                <div class="log-list" id="logList">
-                    <div class="log-item">
-                        <span>Ahmet Y. üretim yaptı (+5 Demir)</span>
-                        <span class="log-time">10:42</span>
+            <div class="accordion-card">
+                <div class="accordion-header active" onclick="toggleAccordion(this)">
+                    <div class="accordion-title">
+                        <i class="fas fa-history"></i> <span id="logTitle">Üretim Geçmişi</span>
                     </div>
-                    <div class="log-item">
-                        <span>Mehmet K. üretim yaptı (+5 Demir)</span>
-                        <span class="log-time">10:40</span>
+                    <i class="fas fa-chevron-down accordion-icon"></i>
+                </div>
+                <div class="accordion-content" style="max-height: 500px;">
+                    <div class="accordion-body">
+                        <div class="log-list" id="logList">
+                            <div style="text-align:center; color:#666; font-size:0.8rem; padding:10px;">Yükleniyor...</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -462,6 +598,19 @@
         let selectedSlotId = null;
         let productionInterval = null;
         let activeTimers = {};
+
+        function toggleAccordion(element) {
+            const header = element;
+            const content = header.nextElementSibling;
+            
+            header.classList.toggle('active');
+            
+            if (header.classList.contains('active')) {
+                content.style.maxHeight = content.scrollHeight + "px";
+            } else {
+                content.style.maxHeight = null;
+            }
+        }
 
         // BAŞLANGIÇ
         window.onload = async () => {
@@ -522,6 +671,9 @@
             try {
                 const user = JSON.parse(localStorage.getItem('simWorldUser'));
                 const res = await fetch(`/api/mines/detail/${factoryId}?userId=${user.id}`);
+                
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                
                 const response = await res.json();
                 
                 if (!response.success) {
@@ -712,6 +864,13 @@
         }
 
         function renderLogs() {
+            // Calculate total production from logs
+            const totalProduction = factoryLogs.reduce((acc, log) => acc + (parseInt(log.amount) || 0), 0);
+            const titleEl = document.getElementById('logTitle');
+            if (titleEl) {
+                titleEl.innerHTML = `Üretim Geçmişi <span style="color:#888; font-weight:normal; font-size:0.8rem; margin-left:5px;">(Toplam: ${totalProduction})</span>`;
+            }
+
             const logList = document.getElementById('logList');
             logList.innerHTML = '';
             
@@ -740,15 +899,12 @@
                 const avatarUrl = log.avatar || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
                 
                 div.innerHTML = `
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <img src="${avatarUrl}" style="width:24px; height:24px; border-radius:50%; object-fit:cover; border:1px solid #333;">
-                        <span>
-                            <a href="profile.html?id=${log.user_id}" style="color:var(--accent-cyan); text-decoration:none; font-weight:bold;">
-                                #${log.user_id} - ${log.username}
-                            </a>
-                            <span style="color:var(--accent-green); font-weight:bold;"> (+${amount} ${productName})</span>
-                            <span style="color:#aaa"> üretti</span>
-                        </span>
+                    <img src="${avatarUrl}" class="log-avatar" onerror="this.src='uploads/avatars/default.png'">
+                    <div class="log-text">
+                        <span class="log-user-link" onclick="window.location.href='profile.html?id=${log.user_id}'" style="cursor:pointer;">${log.user_id} - ${log.username}</span>
+                        <i class="fas fa-long-arrow-alt-right" style="color:#555; margin: 0 5px;"></i>
+                        <span class="log-highlight">${amount}x ${productName}</span>
+                        <span style="color:#666; margin-left: 3px;">üretti</span>
                     </div>
                     <span class="log-time">${timeStr}</span>
                 `;
@@ -773,7 +929,7 @@
                     div.onclick = () => openWorkModal(i);
                     div.innerHTML = `
                         <i class="fas fa-plus-circle slot-icon"></i>
-                        <div class="slot-text">TIKLA<br>ÇALIŞ</div>
+                        <div class="slot-text">TIKLA ÇALIŞ</div>
                     `;
                     grid.appendChild(div);
                 } else {
@@ -784,22 +940,20 @@
                     // Avatar & Username for everyone
                     let content = `
                         <img src="${worker.avatar || 'uploads/avatars/default.png'}" class="slot-avatar" style="width:40px; height:40px; border-radius:50%; margin-bottom:5px; border:2px solid ${isMe ? 'var(--accent)' : '#444'}">
-                        <div class="slot-text" style="font-size:0.8rem; font-weight:bold; color:#fff; margin-bottom:2px;">${worker.username}</div>
-                        <div class="slot-timer-text" id="timer-${worker.user_id}" style="color:${isMe ? 'var(--accent-cyan)' : '#888'}; font-size:0.9rem;">${remaining}s</div>
+                        <div class="slot-text" style="font-size:0.7rem; font-weight:bold; color:#fff; margin-bottom:2px;">#${worker.user_id} - ${worker.username}</div>
+                        <div class="slot-timer-text" id="timer-${worker.user_id}" style="color:${isMe ? 'var(--accent-cyan)' : '#888'};">${formatTime(remaining)}</div>
                     `;
 
                     if (isMe) {
                         div.classList.add('slot-working');
                         content += `
-                            <div class="slot-progress-bg" style="margin-top:5px; width:80%;">
-                                <div class="slot-progress-fill" id="prog-${worker.user_id}" style="width: 100%"></div>
-                            </div>
+                            <div style="width: 80%; height: 1px; background: rgba(255,255,255,0.1); margin: 5px 0;"></div>
                         `;
                     } else {
                         div.classList.add('slot-occupied');
                     }
                     
-                    // Show production amount at the bottom in yellow
+                    // Show production amount at the bottom
                     const productionAmount = worker.amount || 0;
                     const typeMap = {
                         'lumber': 'Odun', 'iron': 'Demir', 'gold': 'Altın', 'diamond': 'Elmas',
@@ -809,7 +963,7 @@
                     };
                     const productName = typeMap[factoryData.mine_type] || 'Ürün';
                     content += `
-                        <div style="margin-top:8px; font-size:0.85rem; font-weight:bold; color:#FFD700;">${productionAmount} Adet ${productName}</div>
+                        <div class="slot-product-text">${productionAmount}x ${productName}</div>
                     `;
                     
                     div.innerHTML = content;
@@ -825,23 +979,17 @@
             if (activeTimers[userId]) clearInterval(activeTimers[userId]);
 
             const timerEl = document.getElementById(`timer-${userId}`);
-            const progEl = document.getElementById(`prog-${userId}`);
             
             if (!timerEl) return;
             
             let current = remaining;
             
             // Initial UI Update
-            timerEl.innerText = `${current}s`;
-            if (progEl && isMe) {
-                const pct = (current / total) * 100;
-                progEl.style.width = `${pct}%`;
-            }
+            timerEl.innerText = formatTime(current);
 
             // If time is already up
             if (current <= 0 && isMe) {
                 timerEl.innerText = "Toplanıyor...";
-                if (progEl) progEl.style.width = "0%";
                 setTimeout(attemptCollection, 500);
                 return;
             }
@@ -854,7 +1002,6 @@
                     delete activeTimers[userId];
                     if (isMe) {
                         timerEl.innerText = "Toplanıyor...";
-                        if (progEl) progEl.style.width = "0%";
                         setTimeout(attemptCollection, 500); 
                     } else {
                         loadFactoryData();
@@ -862,11 +1009,7 @@
                     return;
                 }
                 
-                if (timerEl) timerEl.innerText = `${current}s`;
-                if (progEl && isMe) {
-                    const pct = (current / total) * 100;
-                    progEl.style.width = `${pct}%`;
-                }
+                if (timerEl) timerEl.innerText = formatTime(current);
             }, 1000);
             
             activeTimers[userId] = interval;
@@ -967,6 +1110,18 @@
                     body: JSON.stringify({ userId: user.id, mineId: factoryId })
                 });
                 
+                if (!res.ok) {
+                    const text = await res.text();
+                    console.error('API Error Response:', text);
+                    try {
+                        const json = JSON.parse(text);
+                        toastr.error(json.message || 'Bir hata oluştu.');
+                    } catch(e) {
+                         toastr.error(`Sunucu hatası! (${res.status})`);
+                    }
+                    return;
+                }
+
                 const result = await res.json();
                 
                 if (result.success) {
@@ -980,6 +1135,12 @@
                 console.error(e);
                 toastr.error('Bir hata oluştu.');
             }
+        }
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
         }
 
         function formatMoney(num) {

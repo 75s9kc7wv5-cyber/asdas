@@ -651,7 +651,7 @@
                     </div>
                     <div class="city-card-footer">
                         <div class="owner-info">
-                            <i class="fas fa-user-circle"></i> ${ranch.user_id} - ${ranch.username || '-'}
+                            <img src="${ranch.avatar || 'uploads/avatars/default.png'}" style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover; border: 1px solid #444;">&nbsp;${ranch.user_id} - ${ranch.username || '-'}
                         </div>
                         <div class="level-stars">
                             ${starsHTML}

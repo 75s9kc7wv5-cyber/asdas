@@ -310,18 +310,32 @@
             window.location.href = `market-list.html?cat=${category}`;
         }
 
-        // Simulate fetching active ad counts
-        function updateMarketCounts() {
-            // In a real implementation, this would fetch from /api/market/stats
-            const categories = ['resource', 'food', 'industry'];
-            categories.forEach(cat => {
-                const el = document.getElementById(`badge-${cat}`);
-                if(el) {
-                    // Random count for demo purposes since backend is not yet ready
-                    const count = Math.floor(Math.random() * 50) + 5; 
-                    el.innerText = `${count} İlan`;
-                }
-            });
+        const categoryItems = {
+            'resource': ['iron', 'copper', 'stone', 'wood', 'sand', 'coal', 'oil', 'uranium', 'gold_nugget'],
+            'food': ['steak', 'salad', 'rice', 'canned_fruit', 'beef', 'honey', 'egg'],
+            'industry': ['cement', 'brick', 'steel', 'glass', 'plank']
+        };
+
+        // Fetch real ad counts
+        async function updateMarketCounts() {
+            try {
+                const res = await fetch('/api/market-stats');
+                if (!res.ok) return;
+                const stats = await res.json();
+                
+                Object.keys(categoryItems).forEach(cat => {
+                    const el = document.getElementById(`badge-${cat}`);
+                    if (el) {
+                        let total = 0;
+                        categoryItems[cat].forEach(itemId => {
+                            total += (stats[itemId] || 0);
+                        });
+                        el.innerText = `${total} İlan`;
+                    }
+                });
+            } catch (e) {
+                console.error("Market stats error:", e);
+            }
         }
         
         // Call update on load
