@@ -216,11 +216,19 @@
 <body>
 
     <div class="game-container">
-        <main>
-            <div class="page-header">
-                <h1 class="page-title">BANKA YÖNETİMİ</h1>
-            </div>
+        <!-- Header injected by header-manager.js -->
 
+        <div style="display: flex; align-items: center; gap: 15px; padding: 20px 20px 0 20px; margin-bottom: 20px;">
+            <button class="back-btn" onclick="window.location.href='bank-list.html'" style="width: 40px; height: 40px; background: #222; border: 1px solid #444; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--accent-gold); font-size: 1.2rem; cursor: pointer; transition: all 0.3s; flex-shrink: 0;">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div>
+                <h1 style="font-size: 1.5rem; font-weight: bold; margin: 0; line-height: 1.2; text-transform: uppercase;">BANKA YÖNETİMİ</h1>
+                <p style="font-size: 0.9rem; color: #888; margin: 0;">Bankanı yönet, ayarları değiştir, kasa durumunu kontrol et</p>
+            </div>
+        </div>
+
+        <main>
             <!-- BANKA BİLGİ KARTI -->
             <div class="manage-card" style="border-color: var(--accent-gold); background: linear-gradient(135deg, rgba(255, 215, 0, 0.05), rgba(17, 17, 17, 0.95));">
                 <div class="bank-header" style="text-align: center;">
@@ -955,10 +963,10 @@
                     const allUserLogs = result.logs
                         .filter(log => 
                             log.user_id === userId && 
-                            log.operation !== 'vault_deposit' && 
-                            log.operation !== 'vault_withdraw' &&
-                            log.operation !== 'score_update' &&
-                            log.operation !== 'credit_score_change' &&
+                            log.transaction_type !== 'vault_deposit' && 
+                            log.transaction_type !== 'vault_withdraw' &&
+                            log.transaction_type !== 'score_update' &&
+                            log.transaction_type !== 'credit_score_change' &&
                             !log.description?.toLowerCase().includes('kredi puanı') &&
                             !log.description?.toLowerCase().includes('puan')
                         );
@@ -976,13 +984,13 @@
                             
                             let icon = '📝';
                             let amountColor = '#fff';
-                            if (log.operation === 'deposit') { icon = '💰'; amountColor = 'var(--accent-green)'; }
-                            else if (log.operation === 'withdraw') { icon = '💸'; amountColor = 'var(--accent-red)'; }
-                            else if (log.operation === 'transfer_in') { icon = '📥'; amountColor = 'var(--accent-green)'; }
-                            else if (log.operation === 'transfer_out') { icon = '📤'; amountColor = 'var(--accent-red)'; }
-                            else if (log.operation === 'loan') { icon = '💳'; amountColor = 'var(--accent-gold)'; }
-                            else if (log.operation === 'loan_payment') { icon = '✅'; amountColor = 'var(--accent-cyan)'; }
-                            else if (log.operation === 'interest') { icon = '📈'; amountColor = 'var(--accent-green)'; }
+                            if (log.transaction_type === 'deposit') { icon = '💰'; amountColor = 'var(--accent-green)'; }
+                            else if (log.transaction_type === 'withdraw') { icon = '💸'; amountColor = 'var(--accent-red)'; }
+                            else if (log.transaction_type === 'transfer_in') { icon = '📥'; amountColor = 'var(--accent-green)'; }
+                            else if (log.transaction_type === 'transfer_out') { icon = '📤'; amountColor = 'var(--accent-red)'; }
+                            else if (log.transaction_type === 'loan') { icon = '💳'; amountColor = 'var(--accent-gold)'; }
+                            else if (log.transaction_type === 'loan_payment') { icon = '✅'; amountColor = 'var(--accent-cyan)'; }
+                            else if (log.transaction_type === 'interest') { icon = '📈'; amountColor = 'var(--accent-green)'; }
                             
                             return `
                                 <div style="background: #1a1a1a; padding: 10px; border-radius: 6px; border: 1px solid #333; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
@@ -1168,9 +1176,9 @@
                         ${check(userStats?.diamond, costDiamond, 'Elmas', 'fas fa-gem')}
                         ${check(getAmount('lumber'), upgradeInfo.req_lumber, 'Tahta', 'icons/factory-icon/wood-plank.png', true)}
                         ${check(getAmount('brick'), upgradeInfo.req_brick, 'Tuğla', 'icons/factory-icon/brick.png', true)}
-                        ${check(getAmount('glass'), 100, 'Cam', 'icons/factory-icon/window.png', true)}
-                        ${check(getAmount('concrete'), 100, 'Çimento', 'icons/factory-icon/cement.png', true)}
-                        ${check(getAmount('steel'), 100, 'Çelik', 'icons/factory-icon/steel.png', true)}
+                        ${check(getAmount('glass'), upgradeInfo.req_glass, 'Cam', 'icons/factory-icon/window.png', true)}
+                        ${check(getAmount('concrete'), upgradeInfo.req_concrete, 'Çimento', 'icons/factory-icon/cement.png', true)}
+                        ${check(getAmount('steel'), upgradeInfo.req_steel, 'Çelik', 'icons/factory-icon/steel.png', true)}
                         ${licenseBadge}
                     </div>
                 </div>

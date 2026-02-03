@@ -87,6 +87,25 @@
             color: #aaa;
             font-weight: 500;
         }
+        
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 5;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); }
 
         /* MAIN */
         main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
@@ -223,6 +242,7 @@
         <!-- HEADER removed, using header-manager.js -->
         
         <div class="header-badge">
+            <div class="back-btn" onclick="history.back()"><i class="fas fa-arrow-left"></i></div>
             <h1><i class="fas fa-user-circle"></i> Profil</h1>
             <p>Oyuncu istatistikleri ve başarılar</p>
         </div>

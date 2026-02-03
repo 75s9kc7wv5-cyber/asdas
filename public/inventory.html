@@ -181,18 +181,21 @@
             padding: 15px;
             padding-bottom: 100px; /* Extra space for bottom menu */
             display: grid;
-            grid-template-columns: 1fr 1fr; /* 2 Sütun */
-            gap: 12px;
+            grid-template-columns: repeat(3, 1fr); /* 3 Sütun */
+            gap: 10px;
         }
 
         .inv-card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
+            border-top: 3px solid var(--accent-gold);
             border-radius: 8px;
             padding: 12px;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 12px;
+            text-align: center;
+            gap: 8px;
             cursor: pointer;
             transition: all 0.2s;
             position: relative;

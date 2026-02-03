@@ -26,22 +26,18 @@ const upload = multer({
     }
 });
 
-const db = mysql.createPool({
+const db = mysql.createConnection({
     host: 'localhost',
     user: 'simuser',
     password: 'password',
-    database: 'simworld',
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
+    database: 'simworld'
 });
 
-db.getConnection((err, connection) => {
+db.connect((err) => {
     if (err) {
         console.error('Database connection failed:', err);
     } else {
         console.log('Connected to database: simworld');
-        connection.release();
         
         // Create Notifications Table
         const createNotifTable = `CREATE TABLE IF NOT EXISTS notifications (
@@ -94,13 +90,31 @@ db.getConnection((err, connection) => {
 
 // Middleware
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, '../public')));
 
-// CSP Middleware
+// Security Headers Middleware - Dış enjeksiyonları engelle
 app.use((req, res, next) => {
-    res.setHeader("Content-Security-Policy", "default-src 'self'; img-src 'self' data: blob: https:; font-src 'self' https:; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; connect-src 'self' https:;");
+    // Content Security Policy - Relaxed for development resources (CDN, images, etc.)
+    res.setHeader('Content-Security-Policy', "default-src 'self' *; script-src 'self' 'unsafe-inline' 'unsafe-eval' *; style-src 'self' 'unsafe-inline' *; font-src 'self' *; img-src 'self' data: blob: *; connect-src 'self' *; frame-ancestors 'self' *; base-uri 'self'; form-action 'self' *;");
+    
+    // X-Content-Type-Options - MIME sniffing engelle
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    
+    // X-Frame-Options - Clickjacking engelle
+    res.setHeader('X-Frame-Options', 'DENY');
+    
+    // X-XSS-Protection - XSS koruması
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    
+    // Referrer-Policy - Referrer bilgisini kısıtla
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    
+    // Permissions-Policy - İzinleri kısıtla
+    res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+    
     next();
 });
+
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Favicon Route (Fix 404)
 app.get('/favicon.ico', (req, res) => res.status(204).end());
@@ -626,131 +640,6 @@ app.post('/api/inventory/add', (req, res) => {
     db.query(query, [userId, itemKey, amount], (err, result) => {
         if (err) return res.status(500).json({ error: err });
         res.json({ success: true, message: 'Item added' });
-    });
-});
-
-// --- MARKET SYSTEM ---
-
-// Get Market Stats (Counts per item)
-app.get('/api/market-stats', (req, res) => {
-    const query = 'SELECT item_id, COUNT(*) as count FROM market_listings WHERE quantity > 0 GROUP BY item_id';
-    db.query(query, (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        
-        const stats = {};
-        results.forEach(row => {
-            stats[row.item_id] = row.count;
-        });
-        res.json(stats);
-    });
-});
-
-// Get Market Listings
-app.get('/api/market/:itemId', (req, res) => {
-    const itemId = req.params.itemId;
-    const sort = req.query.sort === 'desc' ? 'DESC' : 'ASC';
-    
-    // Join with users to get seller name and avatar
-    const query = `
-        SELECT m.*, u.username as seller_name, u.avatar as seller_avatar 
-        FROM market_listings m 
-        LEFT JOIN users u ON m.seller_id = u.id 
-        WHERE m.item_id = ? AND m.quantity > 0 
-        ORDER BY m.price ${sort}
-    `;
-    
-    db.query(query, [itemId], (err, results) => {
-        if (err) {
-            console.error('Market fetch error:', err);
-            return res.status(500).json({ error: 'Database error' });
-        }
-        res.json(results);
-    });
-});
-
-// Create Sell Listing (Deducts from Inventory)
-app.post('/api/market/sell', (req, res) => {
-    const { userId, itemId, amount, price } = req.body;
-    
-    if (!userId || !itemId || !amount || !price) {
-        return res.json({ success: false, message: 'Eksik bilgi.' });
-    }
-
-    // 1. Check User Inventory
-    const checkInv = 'SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?';
-    db.query(checkInv, [userId, itemId], (err, results) => {
-        if (err) return res.status(500).json({ success: false, message: 'DB Error' });
-        
-        if (results.length === 0 || results[0].quantity < amount) {
-            return res.json({ success: false, message: 'Yetersiz stok!' });
-        }
-
-        // 2. Deduct from Inventory
-        const updateInv = 'UPDATE inventory SET quantity = quantity - ? WHERE user_id = ? AND item_key = ?';
-        db.query(updateInv, [amount, userId, itemId], (err) => {
-            if (err) return res.status(500).json({ success: false, message: 'Stok güncelleme hatası' });
-
-            // 3. Create Listing
-            const createListing = 'INSERT INTO market_listings (seller_id, item_id, quantity, price) VALUES (?, ?, ?, ?)';
-            db.query(createListing, [userId, itemId, amount, price], (err) => {
-                if (err) {
-                    // Rollback inventory (Adding back)
-                    db.query('UPDATE inventory SET quantity = quantity + ? WHERE user_id = ? AND item_key = ?', [amount, userId, itemId]);
-                    return res.status(500).json({ success: false, message: 'İlan oluşturulamadı.' });
-                }
-                
-                res.json({ success: true, message: 'İlan başarıyla oluşturuldu.' });
-            });
-        });
-    });
-});
-
-// Buy Item Endpoint
-app.post('/api/market/buy', (req, res) => {
-    const { listingId, amount, buyerId } = req.body;
-    
-    // 1. Get Listing Details
-    db.query('SELECT * FROM market_listings WHERE id = ?', [listingId], (err, listings) => {
-        if (err || listings.length === 0) return res.json({ success: false, message: 'İlan bulunamadı.' });
-        
-        const listing = listings[0];
-        if (listing.quantity < amount) return res.json({ success: false, message: 'Ilanda yeterli stok yok.' });
-        if (listing.seller_id == buyerId) return res.json({ success: false, message: 'Kendi ürününü alamazsın.' });
-
-        const totalCost = amount * listing.price;
-
-        // 2. Check Buyer Balance
-        db.query('SELECT money FROM users WHERE id = ?', [buyerId], (err, users) => {
-            if (err || users.length === 0) return res.json({ success: false, message: 'Kullanıcı hatası.' });
-            
-            if (users[0].money < totalCost) return res.json({ success: false, message: 'Yetersiz para.' });
-
-            // 3. Process Transaction
-            // Deduct Money from Buyer
-            db.query('UPDATE users SET money = money - ? WHERE id = ?', [totalCost, buyerId], (err) => {
-                if (err) return res.json({ success: false, message: 'Para kesilemedi.' });
-
-                // Add Money to Seller
-                db.query('UPDATE users SET money = money + ? WHERE id = ?', [totalCost, listing.seller_id], (err) => {
-                    
-                    // Deduct Quantity from Listing
-                    db.query('UPDATE market_listings SET quantity = quantity - ? WHERE id = ?', [amount, listingId], (err) => {
-                        
-                        // Add Item to Buyer Inventory
-                        const checkInv = 'SELECT * FROM inventory WHERE user_id = ? AND item_key = ?';
-                        db.query(checkInv, [buyerId, listing.item_id], (err, inv) => {
-                            if (inv.length > 0) {
-                                db.query('UPDATE inventory SET quantity = quantity + ? WHERE user_id = ? AND item_key = ?', [amount, buyerId, listing.item_id]);
-                            } else {
-                                db.query('INSERT INTO inventory (user_id, item_key, quantity) VALUES (?, ?, ?)', [buyerId, listing.item_id, amount]);
-                            }
-                            
-                            res.json({ success: true, message: 'Satın alma başarılı!' });
-                        });
-                    });
-                });
-            });
-        });
     });
 });
 
@@ -1681,7 +1570,7 @@ app.get('/api/mines/my/:userId', (req, res) => {
 // Get City Mines
 app.get('/api/mines/city', (req, res) => {
     const query = `
-        SELECT pm.*, u.username, u.avatar,
+        SELECT pm.*, u.username,
         (SELECT COUNT(*) FROM mine_active_workers WHERE mine_id = pm.id AND end_time > NOW()) as current_workers
         FROM player_mines pm 
         JOIN users u ON pm.user_id = u.id 
@@ -1737,7 +1626,7 @@ app.post('/api/mines/buy', (req, res) => {
                     db.query(updateQuery, [mineConfig.costMoney, mineConfig.costGold, mineConfig.costDiamond, userId], (err) => {
                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Bakiye düşülemedi.' }));
 
-                        const mineName = `${user.username}'s ${mineConfig.name} İşletmesi`;
+                        const mineName = `${user.username}'s ${mineConfig.name}`;
                         const insertQuery = 'INSERT INTO player_mines (user_id, mine_type, name, level, reserve) VALUES (?, ?, ?, 1, 10000)';
                         db.query(insertQuery, [userId, mineType, mineName], (err) => {
                             if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Maden oluşturulamadı.' }));
@@ -1802,7 +1691,7 @@ app.get('/api/mines/detail/:id', (req, res) => {
 
                     // Get Logs
                     const logQuery = `
-                        SELECT ml.*, u.username, u.avatar 
+                        SELECT ml.*, u.username 
                         FROM mine_logs ml 
                         JOIN users u ON ml.user_id = u.id 
                         WHERE ml.mine_id = ? 
@@ -2466,7 +2355,7 @@ app.post('/api/banks/create', (req, res) => {
         if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
 
         // Check User Money
-        db.query('SELECT money, username FROM users WHERE id = ?', [userId], (err, users) => {
+        db.query('SELECT money FROM users WHERE id = ?', [userId], (err, users) => {
             if (err || users.length === 0) return db.rollback(() => res.status(500).json({ success: false, message: 'User not found' }));
             
             const user = users[0];
@@ -2486,12 +2375,11 @@ app.post('/api/banks/create', (req, res) => {
                     if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Money update error' }));
 
                     // Create Bank
-                    const bankName = `${user.username}'s Banka İşletmesi`;
                     const insertQuery = `
                         INSERT INTO banks (owner_id, name, balance, interest_rate, loan_rate, transfer_fee, account_opening_fee) 
                         VALUES (?, ?, 0, 5, 15, 2, 100)
                     `;
-                    db.query(insertQuery, [userId, bankName], (err, result) => {
+                    db.query(insertQuery, [userId, name], (err, result) => {
                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Bank creation error' }));
 
                         db.commit(err => {
@@ -2580,7 +2468,7 @@ app.get('/api/bank-accounts/:userId/:bankId', (req, res) => {
     const { userId, bankId } = req.params;
     const query = `
         SELECT ba.*, b.name as bank_name, b.interest_rate, b.loan_rate, b.transfer_fee, b.level,
-        u.username as owner_name
+        u.username as owner_name, b.owner_id as bank_owner_id, u.avatar as owner_avatar
         FROM bank_accounts ba
         JOIN banks b ON ba.bank_id = b.id
         LEFT JOIN users u ON b.owner_id = u.id
@@ -2956,9 +2844,9 @@ app.post('/api/bank-accounts/loan', (req, res) => {
                 const interest = Math.floor(amount * (rate / 100));
                 const totalDebt = amount + interest;
 
-                // Update Account (Add Balance, Set Debt, Set Loan Taken Time)
-                db.query('UPDATE bank_accounts SET balance = balance + ?, loan_debt = ?, loan_taken_at = NOW() WHERE id = ?', 
-                    [amount, totalDebt, accountId], (err) => {
+                // Update Account (Add Balance, Set Debt, Set Initial Debt, Set Loan Taken Time)
+                db.query('UPDATE bank_accounts SET balance = balance + ?, loan_debt = ?, initial_loan_debt = ?, loan_taken_at = NOW() WHERE id = ?', 
+                    [amount, totalDebt, totalDebt, accountId], (err) => {
                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Account update error' }));
 
                         // Log (No Score Increase on Take)
@@ -3553,7 +3441,7 @@ app.post('/api/hospitals/buy', (req, res) => {
         if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
 
         // 1. Check User (Money, Gold, Diamond)
-        db.query('SELECT money, gold, diamond, license_hospital_level, username FROM users WHERE id = ?', [userId], (err, users) => {
+        db.query('SELECT money, gold, diamond, license_hospital_level FROM users WHERE id = ?', [userId], (err, users) => {
             if (err || users.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' }));
             const user = users[0];
 
@@ -3618,9 +3506,8 @@ app.post('/api/hospitals/buy', (req, res) => {
                             Promise.all(updatePromises)
                                 .then(() => {
                                     // 7. Create Hospital
-                                    const hospitalName = `${user.username}'s Hastane İşletmesi`;
                                     const insertQuery = 'INSERT INTO hospitals (user_id, name, level, capacity, quality, price) VALUES (?, ?, 1, 5, 100, 100)';
-                                    db.query(insertQuery, [userId, hospitalName], (err) => {
+                                    db.query(insertQuery, [userId, name], (err) => {
                                         if (err) {
                                             console.error('Hospital Insert Error:', err);
                                             if (err.code === 'ER_DUP_ENTRY') {
@@ -4213,10 +4100,8 @@ app.get('/api/daily-jobs', (req, res) => {
             id: job.id,
             name: job.name,
             icon: job.icon,
-            color: job.color,
             time: job.time,
             minLevel: job.minLevel,
-            reqEducation: job.reqEducation || 0,
             costH: job.costH,
             costE: job.costE,
             reward: {
@@ -4283,12 +4168,11 @@ app.post('/api/daily-jobs/start', (req, res) => {
             if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
             if (active.length > 0) return db.rollback(() => res.json({ success: false, message: 'Zaten bir işte çalışıyorsun.' }));
 
-            // 2. Check Completed Today (Disabled for unlimited work)
+            // 2. Check Completed Today
             const today = new Date().toISOString().split('T')[0];
             db.query('SELECT id FROM completed_daily_jobs WHERE user_id = ? AND job_id = ? AND completed_at = ?', [userId, jobId, today], (err, completed) => {
                 if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
-                // Allow repeat:
-                // if (completed.length > 0) return db.rollback(() => res.json({ success: false, message: 'Bu işi bugün zaten yaptın.' }));
+                if (completed.length > 0) return db.rollback(() => res.json({ success: false, message: 'Bu işi bugün zaten yaptın.' }));
 
                 // 3. Get Job Info & User Info
                 db.query('SELECT * FROM daily_jobs WHERE id = ?', [jobId], (err, jobs) => {
@@ -4300,7 +4184,7 @@ app.post('/api/daily-jobs/start', (req, res) => {
                         const user = users[0];
 
                         // Checks
-                        // if (user.level < job.minLevel) return db.rollback(() => res.json({ success: false, message: 'Seviyen yetersiz.' }));
+                        if (user.level < job.minLevel) return db.rollback(() => res.json({ success: false, message: 'Seviyen yetersiz.' }));
                         if (user.health < job.costH) return db.rollback(() => res.json({ success: false, message: 'Sağlığın yetersiz.' }));
                         if (user.energy < job.costE) return db.rollback(() => res.json({ success: false, message: 'Enerjin yetersiz.' }));
 
@@ -4360,20 +4244,10 @@ app.post('/api/daily-jobs/complete', (req, res) => {
                     db.query('DELETE FROM active_daily_jobs WHERE id = ?', [aj.id], (err) => {
                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Delete active error' }));
 
-                        // 5. Add to Completed (History Log) but DON'T block future work
-                        // We will allow duplicate entries for same day or handled by ignoring duplicates if logic requires
-                        // But since user wants repeatable, we just log it. If unique constraint exists, we might need to change table structure or just IGNORE error.
-                        // Let's use INSERT IGNORE to be safe if there is a constraint we prefer to keep for analytics but not for blocking logic.
-                        // Wait, previous logic was blocking based on this table. If we want repeatable, we should probably record it with timestamp instead of just DATE, or just remove the unique constraint.
-                        // Since I can't easily change unique constraint without script, I will just INSERT IGNORE and if it fails due to duplicate, it's fine, we still give reward.
-                        // Actually, better: if user asks for repeatable, we don't need to enforce "once per day". 
-                        // So I will try to insert, if it fails (duplicate for today), I catch error and proceed.
-                        
+                        // 5. Add to Completed
                         const today = new Date().toISOString().split('T')[0];
-                        // Using INSERT IGNORE or ON DUPLICATE KEY UPDATE to avoid error
-                        db.query('INSERT INTO completed_daily_jobs (user_id, job_id, completed_at) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE completed_at=VALUES(completed_at)', [userId, jobId, today], (err) => {
-                             // Even if error, we proceed because operation is successful for user
-                            if (err) console.error("History log error (non-fatal):", err);
+                        db.query('INSERT INTO completed_daily_jobs (user_id, job_id, completed_at) VALUES (?, ?, ?)', [userId, jobId, today], (err) => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log completed error' }));
 
                             // Notification
                             const notifTitle = 'Günlük İş Tamamlandı';
@@ -4430,63 +4304,32 @@ app.post('/api/admin/add-item', (req, res) => {
         return res.json({ success: false, message: 'Geçersiz veri.' });
     }
 
-    db.getConnection((err, connection) => {
-        if (err) {
-            console.error('Connection Error:', err);
-            return res.status(500).json({ success: false, message: 'Database Connection Error' });
-        }
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
 
-        connection.beginTransaction(err => {
-            if (err) {
-                connection.release();
-                return res.status(500).json({ success: false, message: 'Transaction Error' });
-            }
+        // Check if user exists
+        db.query('SELECT username FROM users WHERE id = ?', [userId], (err, users) => {
+            if (err || users.length === 0) return db.rollback(() => res.json({ success: false, message: 'Kullanıcı bulunamadı.' }));
+            const username = users[0].username;
 
-            // Check if user exists
-            connection.query('SELECT username FROM users WHERE id = ?', [userId], (err, users) => {
-                if (err || users.length === 0) {
-                    return connection.rollback(() => {
-                        connection.release();
-                        res.json({ success: false, message: 'Kullanıcı bulunamadı.' });
-                    });
-                }
-                const username = users[0].username;
+            // Add to Inventory
+            const query = `
+                INSERT INTO inventory (user_id, item_key, quantity) 
+                VALUES (?, ?, ?) 
+                ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)
+            `;
+            
+            db.query(query, [userId, itemKey, qty], (err) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Envanter güncellenemedi.' }));
 
-                // Add to Inventory
-                const query = `
-                    INSERT INTO inventory (user_id, item_key, quantity) 
-                    VALUES (?, ?, ?) 
-                    ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)
-                `;
-                
-                connection.query(query, [userId, itemKey, qty], (err) => {
-                    if (err) {
-                        return connection.rollback(() => {
-                            connection.release();
-                            res.status(500).json({ success: false, message: 'Envanter güncellenemedi.' });
-                        });
-                    }
+                // Log Action
+                const logMsg = `Admin tarafından ${qty} adet ${itemKey} eklendi.`;
+                db.query('INSERT INTO user_logs (user_id, log_type, message) VALUES (?, ?, ?)', [userId, 'admin_add_item', logMsg], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log hatası.' }));
 
-                    // Log Action
-                    const logMsg = `Admin tarafından ${qty} adet ${itemKey} eklendi.`;
-                    connection.query('INSERT INTO user_logs (user_id, log_type, message) VALUES (?, ?, ?)', [userId, 'admin_add_item', logMsg], (err) => {
-                        if (err) {
-                            return connection.rollback(() => {
-                                connection.release();
-                                res.status(500).json({ success: false, message: 'Log hatası.' });
-                            });
-                        }
-
-                        connection.commit(err => {
-                            if (err) {
-                                return connection.rollback(() => {
-                                    connection.release();
-                                    res.status(500).json({ success: false, message: 'Commit Error' });
-                                });
-                            }
-                            connection.release();
-                            res.json({ success: true, message: `${username} adlı kullanıcıya ${qty} adet ${itemKey} eklendi.` });
-                        });
+                    db.commit(err => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                        res.json({ success: true, message: `${username} adlı kullanıcıya ${qty} adet ${itemKey} eklendi.` });
                     });
                 });
             });
@@ -4570,189 +4413,248 @@ function getBaseProductionRange(skillLevel) {
 app.post('/api/mines/start', (req, res) => {
     const { userId, mineId } = req.body;
 
-    db.getConnection((err, connection) => {
-        if (err) return res.status(500).json({ success: false, message: 'DB Connection Error' });
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
 
-        connection.beginTransaction(err => {
-            if (err) {
-                connection.release();
-                return res.status(500).json({ success: false, message: 'Transaction error' });
-            }
+        // 1. Get User & Mine Data
+        // Only count workers whose end_time is in the future
+        const query = `
+            SELECT u.energy, u.health, u.education_skill, m.id as mine_id, m.max_workers, m.reserve, m.salary, m.vault, m.mine_type, m.stock, m.level, m.user_id as owner_id,
+            (SELECT level FROM arge_levels WHERE user_id = m.user_id AND mine_type = m.mine_type) as arge_level,
+            (SELECT production_time FROM mine_settings WHERE mine_type = m.mine_type) as production_time,
+            (SELECT COUNT(*) FROM mine_active_workers WHERE mine_id = m.id AND end_time > NOW()) as current_workers,
+            (SELECT COUNT(*) FROM mine_active_workers WHERE user_id = ? AND end_time > NOW()) as any_active_workers
+            FROM users u, player_mines m
+            WHERE u.id = ? AND m.id = ?
+        `;
 
-            // 1. Get User & Mine Data
-            const query = `
-                SELECT u.energy, u.health, u.education_skill, m.id as mine_id, m.max_workers, m.reserve, m.salary, m.vault, m.mine_type, m.stock, m.level, m.user_id as owner_id,
-                (SELECT level FROM arge_levels WHERE user_id = m.user_id AND mine_type = m.mine_type) as arge_level,
-                (SELECT production_time FROM mine_settings WHERE mine_type = m.mine_type) as production_time,
-                (SELECT COUNT(*) FROM mine_active_workers WHERE mine_id = m.id AND end_time > NOW()) as current_workers,
-                (SELECT COUNT(*) FROM mine_active_workers WHERE user_id = ? AND end_time > NOW()) as any_active_workers
-                FROM users u, player_mines m
-                WHERE u.id = ? AND m.id = ?
-            `;
+        db.query(query, [userId, userId, mineId], (err, results) => {
+            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
+            if (results.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Kullanıcı veya Maden bulunamadı.' }));
 
-            connection.query(query, [userId, userId, mineId], (err, results) => {
-                if (err) return connection.rollback(() => { connection.release(); res.status(500).json({ success: false, message: 'DB Error' }) });
-                if (results.length === 0) return connection.rollback(() => { connection.release(); res.status(404).json({ success: false, message: 'Kullanıcı veya Maden bulunamadı.' }) });
+            const data = results[0];
+            const { energy, health, education_skill, max_workers, current_workers, any_active_workers, reserve, salary, vault, arge_level, stock, level, production_time } = data;
+            
+            console.log(`[Mining Start] User: ${userId}, Mine: ${mineId}, Type: ${data.mine_type}, ProdTime: ${production_time}`);
 
-                const data = results[0];
-                const { energy, health, education_skill, max_workers, current_workers, any_active_workers, reserve, salary, vault, arge_level, stock, level, production_time } = data;
-                
-                console.log(`[Mining Start] User: ${userId}, Mine: ${mineId}, Type: ${data.mine_type}, ProdTime: ${production_time}`);
+            // 2. Checks
+            const ENERGY_COST = 10;
+            const HEALTH_COST = 5;
+            const MAX_STOCK = level * 1000; // Depo Kapasitesi: Level * 1000
 
-                // 2. Checks
-                const ENERGY_COST = 10;
-                const HEALTH_COST = 5;
-                const MAX_STOCK = level * 1000;
-
-                if (any_active_workers > 0) return connection.rollback(() => { connection.release(); res.json({ success: false, message: 'Zaten bir işte çalışıyorsun! Önce onu tamamla.' }) });
-                if (energy < ENERGY_COST) return connection.rollback(() => { connection.release(); res.json({ success: false, message: 'Yetersiz Enerji!' }) });
-                if (health < HEALTH_COST) return connection.rollback(() => { connection.release(); res.json({ success: false, message: 'Sağlığın çok düşük!' }) });
-                if (reserve <= 0) return connection.rollback(() => { connection.release(); res.json({ success: false, message: 'Maden rezervi tükenmiş!' }) });
-                if (stock >= MAX_STOCK) return connection.rollback(() => { connection.release(); res.json({ success: false, message: 'Maden deposu dolu! Üretim yapılamaz.' }) });
-                
-                connection.query('SELECT item_key, amount FROM factory_inventory WHERE mine_id = ?', [mineId], (err, invRes) => {
-                     if (err) return connection.rollback(() => { connection.release(); res.status(500).json({ success: false, message: 'Raw Material Check Error' }) });
+            if (any_active_workers > 0) return db.rollback(() => res.json({ success: false, message: 'Zaten bir işte çalışıyorsun! Önce onu tamamla.' }));
+            if (energy < ENERGY_COST) return db.rollback(() => res.json({ success: false, message: 'Yetersiz Enerji!' }));
+            if (health < HEALTH_COST) return db.rollback(() => res.json({ success: false, message: 'Sağlığın çok düşük!' }));
+            if (reserve <= 0) return db.rollback(() => res.json({ success: false, message: 'Maden rezervi tükenmiş!' }));
+            if (stock >= MAX_STOCK) return db.rollback(() => res.json({ success: false, message: 'Maden deposu dolu! Üretim yapılamaz.' }));
+            
+            // Raw Material Check (Only for Factories)
+            // Factories consume raw materials to produce goods.
+            // Assuming 'mine_type' distinguishes factories.
+            // If it's a factory (e.g. lumber mill), check for raw material (wood).
+            // For now, let's assume all player_mines are factories that need raw materials EXCEPT mines (gold, coal etc which extract from reserve).
+            // But the prompt says "3 odun harcanıp 1 tahta elde edilecek". This implies a conversion.
+            // Let's check if raw_material column exists and is sufficient.
+            
+            // We need to fetch raw_material from player_mines.
+            // The query above already fetches some fields, let's add raw_material.
+            
+            // Get factory inventory first for all checks
+            db.query('SELECT item_key, amount FROM factory_inventory WHERE mine_id = ?', [mineId], (err, invRes) => {
+                 if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Raw Material Check Error' }));
+                 
+                 const inventory = {};
+                 invRes.forEach(row => inventory[row.item_key] = row.amount);
+                 
+                 // Fallback to legacy columns if factory_inventory is empty
+                 db.query('SELECT raw_material, raw_material_2 FROM player_mines WHERE id = ?', [mineId], (err, rawRes) => {
+                     if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Legacy Raw Check Error' }));
                      
-                     const inventory = {};
-                     if(invRes) invRes.forEach(row => inventory[row.item_key] = row.amount);
-                     
-                     connection.query('SELECT raw_material, raw_material_2 FROM player_mines WHERE id = ?', [mineId], (err, rawRes) => {
-                         if (err) return connection.rollback(() => { connection.release(); res.status(500).json({ success: false, message: 'Legacy Raw Check Error' }) });
+                     const legacyRaw1 = rawRes[0].raw_material || 0;
+                     const legacyRaw2 = rawRes[0].raw_material_2 || 0;
+
+                     // Calculate Production Amount - Use owner's data for consistent production
+                     // Get owner's education_skill
+                     db.query('SELECT education_skill FROM users WHERE id = ?', [data.owner_id], (err, ownerData) => {
+                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Owner Data Error' }));
                          
-                         const legacyRaw1 = rawRes[0].raw_material || 0;
-                         const legacyRaw2 = rawRes[0].raw_material_2 || 0;
+                         const ownerSkill = ownerData[0]?.education_skill || 0;
+                         const mineLevel = level || 1;
+                         const baseProduction = mineLevel;
+                         const educationBonus = Math.floor(ownerSkill / 10);
+                         const argeBonus = (arge_level || 0) * 2;
+                         const productionAmount = baseProduction + educationBonus + argeBonus;
+                         
+                         console.log(`[Mining Start] User: ${userId}, Mine: ${mineId}, OwnerSkill: ${ownerSkill}, Level: ${mineLevel}, EduBonus: ${educationBonus}, ArgeBonus: ${argeBonus}, Final: ${productionAmount}`);
 
-                         connection.query('SELECT education_skill FROM users WHERE id = ?', [data.owner_id], (err, ownerData) => {
-                             if (err) return connection.rollback(() => { connection.release(); res.status(500).json({ success: false, message: 'Owner Data Error' }) });
-                             
-                             const ownerSkill = ownerData[0]?.education_skill || 0;
-                             const mineLevel = level || 1;
-                             const baseProduction = mineLevel;
-                             const educationBonus = Math.floor(ownerSkill / 10);
-                             const argeBonus = (arge_level || 0) * 2;
-                             const productionAmount = baseProduction + educationBonus + argeBonus;
-                             
-                             console.log(`[Mining Start] User: ${userId}, Mine: ${mineId}, OwnerSkill: ${ownerSkill}, Level: ${mineLevel}, EduBonus: ${educationBonus}, ArgeBonus: ${argeBonus}, Final: ${productionAmount}`);
+                         // Determine Requirements
+                         let req1 = 0;
+                         let req2 = 0;
+                         let raw1Key = null;
+                         let raw2Key = null;
+                         let raw1Name = 'Hammadde';
+                         let raw2Name = 'Hammadde 2';
+                         let productKey = null;
+                         let recipeInputs = null;
 
-                             let req1 = 0;
-                             let req2 = 0;
-                             let raw1Key = null;
-                             let raw2Key = null;
-                             let raw1Name = 'Hammadde';
-                             let raw2Name = 'Hammadde 2';
-                             let productKey = null;
-                             let recipeInputs = null;
+                     // Legacy Factory Logic (lumber, brick, glass, concrete, steel)
+                     if (data.mine_type === 'lumber') { 
+                         req1 = productionAmount * 3; 
+                         raw1Key = 'wood'; 
+                         raw1Name = 'Odun'; 
+                     }
+                     else if (data.mine_type === 'brick') { 
+                         req1 = productionAmount * 3; 
+                         raw1Key = 'stone'; 
+                         raw1Name = 'Taş'; 
+                     }
+                     else if (data.mine_type === 'glass') { 
+                         req1 = productionAmount * 3; 
+                         raw1Key = 'sand'; 
+                         raw1Name = 'Kum'; 
+                     }
+                     else if (data.mine_type === 'concrete') { 
+                         req1 = productionAmount * 3; 
+                         req2 = productionAmount * 3; 
+                         raw1Key = 'sand'; 
+                         raw2Key = 'stone';
+                         raw1Name = 'Kum'; 
+                         raw2Name = 'Taş'; 
+                     }
+                     else if (data.mine_type === 'steel') { 
+                         req1 = productionAmount * 3; 
+                         req2 = productionAmount * 3; 
+                         raw1Key = 'iron'; 
+                         raw2Key = 'coal';
+                         raw1Name = 'Demir'; 
+                         raw2Name = 'Kömür'; 
+                     }
+                     else {
+                         req1 = 0; 
+                     }
 
-                         if (data.mine_type === 'lumber') { req1 = productionAmount * 3; raw1Key = 'wood'; raw1Name = 'Odun'; }
-                         else if (data.mine_type === 'brick') { req1 = productionAmount * 3; raw1Key = 'stone'; raw1Name = 'Taş'; }
-                         else if (data.mine_type === 'glass') { req1 = productionAmount * 3; raw1Key = 'sand'; raw1Name = 'Kum'; }
-                         else if (data.mine_type === 'concrete') { req1 = productionAmount * 3; req2 = productionAmount * 3; raw1Key = 'sand'; raw2Key = 'stone'; raw1Name = 'Kum'; raw2Name = 'Taş'; }
-                         else if (data.mine_type === 'steel') { req1 = productionAmount * 3; req2 = productionAmount * 3; raw1Key = 'iron'; raw2Key = 'coal'; raw1Name = 'Demir'; raw2Name = 'Kömür'; }
-                         else { req1 = 0; }
+                     // Check inventory first, fallback to legacy
+                     const raw1 = raw1Key ? (inventory[raw1Key] || legacyRaw1) : 0;
+                     const raw2 = raw2Key ? (inventory[raw2Key] || legacyRaw2) : 0;
 
-                         const raw1 = raw1Key ? (inventory[raw1Key] || legacyRaw1) : 0;
-                         const raw2 = raw2Key ? (inventory[raw2Key] || legacyRaw2) : 0;
+                     if (req1 > 0 && raw1 < req1) {
+                         return db.rollback(() => res.json({ success: false, message: `Fabrikada yeterli ${raw1Name} yok! (${req1} gerekli, ${raw1} mevcut)` }));
+                     }
+                     if (req2 > 0 && raw2 < req2) {
+                         return db.rollback(() => res.json({ success: false, message: `Fabrikada yeterli ${raw2Name} yok! (${req2} gerekli, ${raw2} mevcut)` }));
+                     }
 
-                         if (req1 > 0 && raw1 < req1) return connection.rollback(() => { connection.release(); res.json({ success: false, message: `Fabrikada yeterli ${raw1Name} yok! (${req1} gerekli, ${raw1} mevcut)` }) });
-                         if (req2 > 0 && raw2 < req2) return connection.rollback(() => { connection.release(); res.json({ success: false, message: `Fabrikada yeterli ${raw2Name} yok! (${req2} gerekli, ${raw2} mevcut)` }) });
-
-                         const legacyFactories = ['lumber', 'brick', 'glass', 'concrete', 'steel'];
-                         if (legacyFactories.includes(data.mine_type)) {
-                             const energyRequired = productionAmount;
-                             const currentEnergy = inventory['energy'] || 0;
-                             
-                             if (currentEnergy < energyRequired) {
-                                 return connection.rollback(() => { connection.release(); res.json({ success: false, message: `Fabrikada yeterli Elektrik yok! (${energyRequired} gerekli, ${currentEnergy} mevcut)` }) });
-                             }
-
-                             const legacyInputs = { energy: 1 };
-                             if (raw1Key) legacyInputs[raw1Key] = 3;
-                             if (raw2Key) legacyInputs[raw2Key] = 3;
-                             
-                             proceedWithProduction(legacyInputs, null, productionAmount, true); // true = use factory_inventory
-                             return;
+                     // Legacy Factories: Check & Deduct Energy + Raw Materials
+                     const legacyFactories = ['lumber', 'brick', 'glass', 'concrete', 'steel'];
+                     if (legacyFactories.includes(data.mine_type)) {
+                         const energyRequired = productionAmount;
+                         
+                         // Check Energy
+                         const currentEnergy = inventory['energy'] || 0;
+                         
+                         if (currentEnergy < energyRequired) {
+                             return db.rollback(() => res.json({ success: false, message: `Fabrikada yeterli Elektrik yok! (${energyRequired} gerekli, ${currentEnergy} mevcut)` }));
                          }
+
+                         // Prepare legacy factory inputs for deduction
+                         const legacyInputs = { energy: 1 };
+                         if (raw1Key) legacyInputs[raw1Key] = 3;
+                         if (raw2Key) legacyInputs[raw2Key] = 3;
                          
-                         // proceedWithProduction(null, null, productionAmount, false); // REMOVED: This was causing double execution
+                         proceedWithProduction(legacyInputs, null, productionAmount, true); // true = use factory_inventory
+                         return;
+                     }
+                     
+                     proceedWithProduction(null, null, productionAmount, false);
 
-                         function proceedWithProduction(inputs, pKey, amount, isNewFactory) {
-                             const estimatedCost = amount * salary;
+                     function proceedWithProduction(inputs, pKey, amount, isNewFactory) {
+                         // Vault Check
+                         const estimatedCost = amount * salary;
 
-                             if (vault < estimatedCost) return connection.rollback(() => { connection.release(); res.json({ success: false, message: `Fabrika kasasında maaş için yeterli bakiye yok! (Gerekli: ${estimatedCost} ₺)` }) });
+                         if (vault < estimatedCost) {
+                             return db.rollback(() => res.json({ success: false, message: `Fabrika kasasında maaş için yeterli bakiye yok! (Gerekli: ${estimatedCost} ₺)` }));
+                         }
 
-                             if (current_workers >= (max_workers || 5)) return connection.rollback(() => { connection.release(); res.json({ success: false, message: 'Maden kapasitesi dolu! (' + current_workers + '/' + (max_workers || 5) + ')' }) });
+                         // Capacity Check
+                         if (current_workers >= (max_workers || 5)) {
+                             return db.rollback(() => res.json({ success: false, message: 'Maden kapasitesi dolu! (' + current_workers + '/' + (max_workers || 5) + ')' }));
+                         }
 
-                             connection.query('UPDATE users SET energy = energy - ?, health = health - ? WHERE id = ?', [ENERGY_COST, HEALTH_COST, userId], (err) => {
-                                 if (err) return connection.rollback(() => { connection.release(); res.status(500).json({ success: false, message: 'User Update Error' }) });
+                         // 3. Deduct Energy/Health AND Raw Material
+                         db.query('UPDATE users SET energy = energy - ?, health = health - ? WHERE id = ?', [ENERGY_COST, HEALTH_COST, userId], (err) => {
+                             if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User Update Error' }));
 
-                                 const afterDeduct = () => {
-                                     const durationSeconds = production_time || 60;
-                                     const endTime = new Date(Date.now() + durationSeconds * 1000);
+                             const afterDeduct = () => {
+                                 // 4. Add to Active Workers (Duration: Dynamic)
+                                 const durationSeconds = production_time || 60;
+                                 const endTime = new Date(Date.now() + durationSeconds * 1000);
+                                 
+                                 db.query('INSERT INTO mine_active_workers (mine_id, user_id, end_time, amount, product_key) VALUES (?, ?, ?, ?, ?)', [mineId, userId, endTime, amount, pKey], (err) => {
+                                     if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Active Worker Error' }));
                                      
-                                     connection.query('INSERT INTO mine_active_workers (mine_id, user_id, end_time, amount, product_key) VALUES (?, ?, ?, ?, ?)', [mineId, userId, endTime, amount, pKey], (err) => {
-                                         if (err) return connection.rollback(() => { connection.release(); res.status(500).json({ success: false, message: 'Active Worker Error' }) });
-                                         
-                                         connection.commit(err => {
-                                             if (err) return connection.rollback(() => { connection.release(); res.status(500).json({ success: false, message: 'Commit Error' }) });
-                                             connection.release();
-                                             res.json({ success: true, message: `İş başı yapıldı! (Üretim: ${amount})`, endTime: endTime });
-                                         });
+                                     db.commit(err => {
+                                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                                         res.json({ success: true, message: `İş başı yapıldı! (Üretim: ${amount})`, endTime: endTime });
                                      });
-                                 };
-
-                                 if (isNewFactory) {
-                                     const queries = [];
-                                     for (const [key, val] of Object.entries(inputs)) {
-                                         const required = val * amount;
-                                         queries.push(new Promise((resolve, reject) => {
-                                             connection.query('UPDATE factory_inventory SET amount = amount - ? WHERE mine_id = ? AND item_key = ?', [required, mineId, key], (err) => {
-                                                 if (err) reject(err);
-                                                 else resolve();
-                                             });
-                                         }));
-                                     }
-                                     Promise.all(queries).then(afterDeduct).catch(err => connection.rollback(() => { connection.release(); res.status(500).json({ success: false, message: 'Inventory Update Error' }) }));
-                                 } else {
-                                     afterDeduct();
-                                 }
-                             });
-                         } 
-
-                         const recipes = FACTORY_RECIPES[data.mine_type];
-                         if (recipes) {
-                             const recipeId = req.body.recipeId;
-                             const recipe = recipes.find(r => r.id === recipeId) || recipes[0];
-                             
-                             if (!recipe) return connection.rollback(() => { connection.release(); res.json({ success: false, message: 'Geçersiz reçete.' }) });
-                             
-                             productKey = Object.keys(recipe.output)[0];
-                             recipeInputs = recipe.inputs;
-                             
-                             const trNames = {
-                                 wheat: 'Buğday', egg: 'Yumurta', fruit: 'Meyve', vegetable: 'Sebze',
-                                 meat: 'Et', olive_oil: 'Zeytinyağı', rice: 'Pirinç', potato: 'Patates',
-                                 olive: 'Zeytin', honey: 'Bal', energy: 'Elektrik',
-                                 wood: 'Odun', stone: 'Taş', iron: 'Demir', coal: 'Kömür',
-                                 sand: 'Kum', copper: 'Bakır', uranium: 'Uranyum', gold_nugget: 'Altın Parçası'
+                                 });
                              };
 
-                             for (const [key, val] of Object.entries(recipeInputs)) {
-                                 const required = val * productionAmount;
-                                 if ((inventory[key] || 0) < required) {
-                                     const trName = trNames[key] || key;
-                                     return connection.rollback(() => { connection.release(); res.json({ success: false, message: `Yetersiz hammadde: ${trName} (${required} gerekli, ${inventory[key] || 0} mevcut)` }) });
+                             if (isNewFactory) {
+                                 // Deduct from factory_inventory
+                                 const queries = [];
+                                 for (const [key, val] of Object.entries(inputs)) {
+                                     const required = val * amount;
+                                     queries.push(new Promise((resolve, reject) => {
+                                         db.query('UPDATE factory_inventory SET amount = amount - ? WHERE mine_id = ? AND item_key = ?', [required, mineId, key], (err) => {
+                                             if (err) reject(err);
+                                             else resolve();
+                                         });
+                                     }));
                                  }
+                                 Promise.all(queries).then(afterDeduct).catch(err => db.rollback(() => res.status(500).json({ success: false, message: 'Inventory Update Error' })));
+                             } else {
+                                 // Legacy mode - no deduction (for pure extraction mines)
+                                 afterDeduct();
                              }
-                             
-                             proceedWithProduction(recipeInputs, productKey, productionAmount, true);
-                             return;
-                         }
+                         });
+                     } // End proceedWithProduction function
 
-                         proceedWithProduction({}, null, productionAmount, false);
-                         }); 
-                     });
+                     // Check if it's a new factory type
+                     const recipes = FACTORY_RECIPES[data.mine_type];
+                     if (recipes) {
+                         const recipeId = req.body.recipeId;
+                         const recipe = recipes.find(r => r.id === recipeId) || recipes[0];
+                         
+                         if (!recipe) return db.rollback(() => res.json({ success: false, message: 'Geçersiz reçete.' }));
+                         
+                         productKey = Object.keys(recipe.output)[0];
+                         recipeInputs = recipe.inputs;
+                         
+                         const trNames = {
+                             wheat: 'Buğday', egg: 'Yumurta', fruit: 'Meyve', vegetable: 'Sebze',
+                             meat: 'Et', olive_oil: 'Zeytinyağı', rice: 'Pirinç', potato: 'Patates',
+                             olive: 'Zeytin', honey: 'Bal', energy: 'Elektrik',
+                             wood: 'Odun', stone: 'Taş', iron: 'Demir', coal: 'Kömür',
+                             sand: 'Kum', copper: 'Bakır', uranium: 'Uranyum', gold_nugget: 'Altın Parçası'
+                         };
+
+                         for (const [key, val] of Object.entries(recipeInputs)) {
+                             const required = val * productionAmount;
+                             if ((inventory[key] || 0) < required) {
+                                 const trName = trNames[key] || key;
+                                 return db.rollback(() => res.json({ success: false, message: `Yetersiz hammadde: ${trName} (${required} gerekli, ${inventory[key] || 0} mevcut)` }));
+                             }
+                         }
+                         
+                         proceedWithProduction(recipeInputs, productKey, productionAmount, true);
+                         return;
+                     }
+
+                     // Legacy Factories
+                     proceedWithProduction({}, null, productionAmount, false);
+                     }); // Close owner query callback
                  });
-            });
+             });
         });
     });
 });
@@ -4972,187 +4874,103 @@ app.get('/api/ranches/detail/:id', (req, res) => {
 app.post('/api/ranches/start', (req, res) => {
     const { userId, ranchId } = req.body;
 
-    db.getConnection((err, connection) => {
-        if (err) return res.status(500).json({ success: false, message: 'Database Connection Error' });
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
 
-        connection.beginTransaction(err => {
-            if (err) {
-                connection.release();
-                return res.status(500).json({ success: false, message: 'Transaction error' });
+        // 1. Get User & Ranch Data
+        const query = `
+            SELECT u.energy, u.health, u.education_skill, pr.id as ranch_id, pr.max_workers, pr.reserve, pr.salary, pr.vault, pr.stock, pr.level, pr.user_id as owner_id,
+            rt.slug as ranch_type,
+            COALESCE(rs.production_time, 60) as production_time,
+            (SELECT level FROM arge_levels WHERE user_id = pr.user_id AND mine_type = rt.slug) as arge_level,
+            (SELECT COUNT(*) FROM ranch_active_workers WHERE ranch_id = pr.id AND end_time > NOW()) as current_workers,
+            (SELECT COUNT(*) FROM ranch_active_workers WHERE user_id = ? AND end_time > NOW()) as any_active_workers
+            FROM users u, player_ranches pr
+            JOIN ranch_types rt ON pr.ranch_type_id = rt.id
+            LEFT JOIN ranch_settings rs ON rt.slug = rs.ranch_type
+            WHERE u.id = ? AND pr.id = ?
+        `;
+
+        db.query(query, [userId, userId, ranchId], (err, results) => {
+            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
+            if (results.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Kullanıcı veya Çiftlik bulunamadı.' }));
+
+            const data = results[0];
+            const { energy, health, education_skill, max_workers, current_workers, any_active_workers, reserve, salary, vault, stock, level, production_time, arge_level } = data;
+            
+            // 2. Checks
+            const ENERGY_COST = 10;
+            const HEALTH_COST = 5;
+            const MAX_STOCK = level * 1000;
+
+            if (any_active_workers > 0) return db.rollback(() => res.json({ success: false, message: 'Zaten bir işte çalışıyorsun! Önce onu tamamla.' }));
+            if (energy < ENERGY_COST) return db.rollback(() => res.json({ success: false, message: 'Yetersiz Enerji!' }));
+            if (health < HEALTH_COST) return db.rollback(() => res.json({ success: false, message: 'Sağlığın çok düşük!' }));
+            if (reserve <= 0) return db.rollback(() => res.json({ success: false, message: 'Çiftlik rezervi tükenmiş!' }));
+            if (stock >= MAX_STOCK) return db.rollback(() => res.json({ success: false, message: 'Çiftlik deposu dolu! Üretim yapılamaz.' }));
+            
+            // Calculate Production Amount - Use owner's data for consistent production
+            // Get owner's education_skill
+            db.query('SELECT education_skill FROM users WHERE id = ?', [data.owner_id], (err, ownerData) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Owner Data Error' }));
+                
+                const ownerSkill = ownerData[0]?.education_skill || 0;
+                const ranchLevel = level || 1;
+                const baseProduction = ranchLevel;
+                const educationBonus = Math.floor(ownerSkill / 10);
+                const argeBonus = (arge_level || 0) * 2;
+                let productionAmount = baseProduction + educationBonus + argeBonus;
+            
+            // Determine Feed Cost Ratio
+            let feedCostPerUnit = 1;
+            if (data.ranch_type === 'sheep' || data.ranch_type === 'cow' || data.ranch_type === 'bee') {
+                feedCostPerUnit = 3;
             }
 
-            // 1. Get User & Ranch Data
-            const query = `
-                SELECT u.energy, u.health, u.education_skill, pr.id as ranch_id, pr.max_workers, pr.reserve, pr.salary, pr.vault, pr.stock, pr.level, pr.user_id as owner_id,
-                rt.slug as ranch_type,
-                COALESCE(rs.production_time, 60) as production_time,
-                (SELECT level FROM arge_levels WHERE user_id = pr.user_id AND mine_type = rt.slug) as arge_level,
-                (SELECT COUNT(*) FROM ranch_active_workers WHERE ranch_id = pr.id AND end_time > NOW()) as current_workers,
-                (SELECT COUNT(*) FROM ranch_active_workers WHERE user_id = ? AND end_time > NOW()) as any_active_workers
-                FROM users u, player_ranches pr
-                JOIN ranch_types rt ON pr.ranch_type_id = rt.id
-                LEFT JOIN ranch_settings rs ON rt.slug = rs.ranch_type
-                WHERE u.id = ? AND pr.id = ?
-            `;
+            // Check Reserve (Feed)
+            const maxProductionByFeed = Math.floor(reserve / feedCostPerUnit);
+            if (productionAmount > maxProductionByFeed) {
+                productionAmount = maxProductionByFeed;
+            }
 
-            connection.query(query, [userId, userId, ranchId], (err, results) => {
-                if (err) {
-                    return connection.rollback(() => {
-                        connection.release();
-                        res.status(500).json({ success: false, message: 'DB Error' });
-                    });
-                }
-                if (results.length === 0) {
-                    return connection.rollback(() => {
-                        connection.release();
-                        res.status(404).json({ success: false, message: 'Kullanıcı veya Çiftlik bulunamadı.' });
-                    });
-                }
+            if (productionAmount <= 0) {
+                return db.rollback(() => res.json({ success: false, message: 'Yetersiz Yem (Rezerv)!' }));
+            }
+            
+            const totalFeedCost = productionAmount * feedCostPerUnit;
 
-                const data = results[0];
-                const { energy, health, education_skill, max_workers, current_workers, any_active_workers, reserve, salary, vault, stock, level, production_time, arge_level } = data;
-                
-                // 2. Checks
-                const ENERGY_COST = 10;
-                const HEALTH_COST = 5;
-                const MAX_STOCK = level * 1000;
+            // Vault Check
+            const estimatedCost = productionAmount * salary; 
+            if (vault < estimatedCost) {
+                return db.rollback(() => res.json({ success: false, message: `Çiftlik kasasında maaş için yeterli bakiye yok! (Gerekli: ${estimatedCost} ₺)` }));
+            }
 
-                if (any_active_workers > 0) {
-                    return connection.rollback(() => {
-                        connection.release();
-                        res.json({ success: false, message: 'Zaten bir işte çalışıyorsun! Önce onu tamamla.' });
-                    });
-                }
-                if (energy < ENERGY_COST) {
-                    return connection.rollback(() => {
-                        connection.release();
-                        res.json({ success: false, message: 'Yetersiz Enerji!' });
-                    });
-                }
-                // if (health < HEALTH_COST) { // Health check disabled or maybe reduced? Keeping as user requested logic previously or default
-                //     return connection.rollback(() => {
-                //         connection.release();
-                //         res.json({ success: false, message: 'Sağlığın çok düşük!' });
-                //     });
-                // } 
-                if (health < HEALTH_COST) {
-                     return connection.rollback(() => {
-                        connection.release();
-                        res.json({ success: false, message: 'Sağlığın çok düşük!' });
-                    });
-                }
+            if (current_workers >= (max_workers || 5)) {
+                return db.rollback(() => res.json({ success: false, message: 'Çiftlik kapasitesi dolu!' }));
+            }
 
-                if (reserve <= 0) {
-                    return connection.rollback(() => {
-                        connection.release();
-                        res.json({ success: false, message: 'Çiftlik rezervi tükenmiş!' });
-                    });
-                }
-                if (stock >= MAX_STOCK) {
-                    return connection.rollback(() => {
-                        connection.release();
-                        res.json({ success: false, message: 'Çiftlik deposu dolu! Üretim yapılamaz.' });
-                    });
-                }
-                
-                // Calculate Production Amount - Use owner's data for consistent production
-                // Get owner's education_skill
-                connection.query('SELECT education_skill FROM users WHERE id = ?', [data.owner_id], (err, ownerData) => {
-                    if (err) {
-                        return connection.rollback(() => {
-                            connection.release();
-                            res.status(500).json({ success: false, message: 'Owner Data Error' });
-                        });
-                    }
+                // 3. Deduct Energy/Health AND Reserve (Feed)
+                db.query('UPDATE users SET energy = energy - ?, health = health - ? WHERE id = ?', [ENERGY_COST, HEALTH_COST, userId], (err) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User Update Error' }));
+
+                db.query('UPDATE player_ranches SET reserve = reserve - ? WHERE id = ?', [totalFeedCost, ranchId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Reserve Update Error' }));
+
+                    // 4. Add to Active Workers (Duration: Dynamic)
+                    const durationSeconds = production_time || 60;
+                    const endTime = new Date(Date.now() + durationSeconds * 1000);
                     
-                    const ownerSkill = ownerData[0]?.education_skill || 0;
-                    const ranchLevel = level || 1;
-                    const baseProduction = ranchLevel;
-                    const educationBonus = Math.floor(ownerSkill / 10);
-                    const argeBonus = (arge_level || 0) * 2;
-                    let productionAmount = baseProduction + educationBonus + argeBonus;
-                
-                    // Determine Feed Cost Ratio
-                    let feedCostPerUnit = 1;
-                    if (data.ranch_type === 'sheep' || data.ranch_type === 'cow' || data.ranch_type === 'bee') {
-                        feedCostPerUnit = 3;
-                    }
-
-                    // Check Reserve (Feed)
-                    const maxProductionByFeed = Math.floor(reserve / feedCostPerUnit);
-                    if (productionAmount > maxProductionByFeed) {
-                        productionAmount = maxProductionByFeed;
-                    }
-
-                    if (productionAmount <= 0) {
-                        return connection.rollback(() => {
-                            connection.release();
-                            res.json({ success: false, message: 'Yetersiz Yem (Rezerv)!' });
-                        });
-                    }
-                    
-                    const totalFeedCost = productionAmount * feedCostPerUnit;
-
-                    // Vault Check
-                    const estimatedCost = productionAmount * salary; 
-                    if (vault < estimatedCost) {
-                        return connection.rollback(() => {
-                            connection.release();
-                            res.json({ success: false, message: `Çiftlik kasasında maaş için yeterli bakiye yok! (Gerekli: ${estimatedCost} ₺)` });
-                        });
-                    }
-
-                    if (current_workers >= (max_workers || 5)) {
-                        return connection.rollback(() => {
-                            connection.release();
-                            res.json({ success: false, message: 'Çiftlik kapasitesi dolu!' });
-                        });
-                    }
-
-                    // 3. Deduct Energy/Health AND Reserve (Feed)
-                    connection.query('UPDATE users SET energy = energy - ?, health = health - ? WHERE id = ?', [ENERGY_COST, HEALTH_COST, userId], (err) => {
-                        if (err) {
-                            return connection.rollback(() => {
-                                connection.release();
-                                res.status(500).json({ success: false, message: 'User Update Error' });
-                            });
-                        }
-
-                        connection.query('UPDATE player_ranches SET reserve = reserve - ? WHERE id = ?', [totalFeedCost, ranchId], (err) => {
-                            if (err) {
-                                return connection.rollback(() => {
-                                    connection.release();
-                                    res.status(500).json({ success: false, message: 'Reserve Update Error' });
-                                });
-                            }
-
-                            // 4. Add to Active Workers (Duration: Dynamic)
-                            const durationSeconds = production_time || 60;
-                            const endTime = new Date(Date.now() + durationSeconds * 1000);
-                            
-                            connection.query('INSERT INTO ranch_active_workers (ranch_id, user_id, end_time, amount) VALUES (?, ?, ?, ?)', [ranchId, userId, endTime, productionAmount], (err) => {
-                                if (err) {
-                                    return connection.rollback(() => {
-                                        connection.release();
-                                        res.status(500).json({ success: false, message: 'Active Worker Error' });
-                                    });
-                                }
-                                
-                                connection.commit(err => {
-                                    if (err) {
-                                        return connection.rollback(() => {
-                                            connection.release();
-                                            res.status(500).json({ success: false, message: 'Commit Error' });
-                                        });
-                                    }
-                                    connection.release();
-                                    res.json({ success: true, message: `İş başı yapıldı! (Üretim: ${productionAmount})`, endTime: endTime });
-                                });
-                            });
+                    db.query('INSERT INTO ranch_active_workers (ranch_id, user_id, end_time, amount) VALUES (?, ?, ?, ?)', [ranchId, userId, endTime, productionAmount], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Active Worker Error' }));
+                        
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                            res.json({ success: true, message: `İş başı yapıldı! (Üretim: ${productionAmount})`, endTime: endTime });
                         });
                     });
-                }); // Close owner query callback
+                });
             });
+            }); // Close owner query callback
         });
     });
 });
@@ -5161,109 +4979,58 @@ app.post('/api/ranches/start', (req, res) => {
 app.post('/api/ranches/collect', (req, res) => {
     const { userId, ranchId } = req.body;
 
-    db.getConnection((err, connection) => {
-        if (err) return res.status(500).json({ success: false, message: 'Database Connection Error' });
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
 
-        connection.beginTransaction(err => {
-            if (err) {
-                connection.release();
-                return res.status(500).json({ success: false, message: 'Transaction error' });
+        // 1. Check Active Worker
+        db.query('SELECT * FROM ranch_active_workers WHERE user_id = ? AND ranch_id = ?', [userId, ranchId], (err, workers) => {
+            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
+            if (workers.length === 0) return db.rollback(() => res.json({ success: false, message: 'Aktif çalışma bulunamadı.' }));
+
+            const worker = workers[0];
+            
+            // Check Time
+            if (new Date() < new Date(worker.end_time)) {
+                return db.rollback(() => res.json({ success: false, message: 'İş henüz bitmedi.' }));
             }
 
-            // 1. Check Active Worker
-            connection.query('SELECT * FROM ranch_active_workers WHERE user_id = ? AND ranch_id = ?', [userId, ranchId], (err, workers) => {
-                if (err) {
-                    return connection.rollback(() => {
-                        connection.release();
-                        res.status(500).json({ success: false, message: 'DB Error' });
-                    });
-                }
-                if (workers.length === 0) {
-                    return connection.rollback(() => {
-                        connection.release();
-                        res.json({ success: false, message: 'Aktif çalışma bulunamadı.' });
-                    });
-                }
+            const amount = worker.amount;
 
-                const worker = workers[0];
+            // 2. Get Ranch Info
+            db.query('SELECT * FROM player_ranches WHERE id = ?', [ranchId], (err, ranches) => {
+                if (err || ranches.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Çiftlik bulunamadı.' }));
+                const ranch = ranches[0];
                 
-                // Check Time
-                if (new Date() < new Date(worker.end_time)) {
-                    return connection.rollback(() => {
-                        connection.release();
-                        res.json({ success: false, message: 'İş henüz bitmedi.' });
-                    });
-                }
+                const salaryPerUnit = ranch.salary || 0;
+                const totalEarnings = amount * salaryPerUnit;
 
-                const amount = worker.amount;
+                // 3. Update User Money (Salary)
+                db.query('UPDATE users SET money = money + ? WHERE id = ?', [totalEarnings, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User Money Error' }));
 
-                // 2. Get Ranch Info
-                connection.query('SELECT * FROM player_ranches WHERE id = ?', [ranchId], (err, ranches) => {
-                    if (err || ranches.length === 0) {
-                        return connection.rollback(() => {
-                            connection.release();
-                            res.status(404).json({ success: false, message: 'Çiftlik bulunamadı.' });
-                        });
-                    }
-                    const ranch = ranches[0];
-                    
-                    const salaryPerUnit = ranch.salary || 0;
-                    const totalEarnings = amount * salaryPerUnit;
+                    // 4. Update Ranch (Stock +, Vault -)
+                    db.query('UPDATE player_ranches SET stock = stock + ?, vault = vault - ? WHERE id = ?', 
+                        [amount, totalEarnings, ranchId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Ranch Update Error' }));
 
-                    // 3. Update User Money (Salary)
-                    connection.query('UPDATE users SET money = money + ? WHERE id = ?', [totalEarnings, userId], (err) => {
-                        if (err) {
-                            return connection.rollback(() => {
-                                connection.release();
-                                res.status(500).json({ success: false, message: 'User Money Error' });
-                            });
-                        }
+                        // Log Transaction
+                        const logQuery = 'INSERT INTO ranch_logs (ranch_id, user_id, message, amount) VALUES (?, ?, ?, ?)';
+                        const message = `Üretim: +${amount}, Kazanç: ${totalEarnings} ₺`;
+                        db.query(logQuery, [ranchId, userId, message, amount], (err) => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log Error' }));
 
-                        // 4. Update Ranch (Stock +, Vault -)
-                        connection.query('UPDATE player_ranches SET stock = stock + ?, vault = vault - ? WHERE id = ?', 
-                            [amount, totalEarnings, ranchId], (err) => {
-                            if (err) {
-                                return connection.rollback(() => {
-                                    connection.release();
-                                    res.status(500).json({ success: false, message: 'Ranch Update Error' });
-                                });
-                            }
+                            // Remove Active Worker
+                            db.query('DELETE FROM ranch_active_workers WHERE id = ?', [worker.id], (err) => {
+                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Delete Worker Error' }));
 
-                            // Log Transaction
-                            const logQuery = 'INSERT INTO ranch_logs (ranch_id, user_id, message, amount) VALUES (?, ?, ?, ?)';
-                            const message = `Üretim: +${amount}, Kazanç: ${totalEarnings} ₺`;
-                            connection.query(logQuery, [ranchId, userId, message, amount], (err) => {
-                                if (err) {
-                                    return connection.rollback(() => {
-                                        connection.release();
-                                        res.status(500).json({ success: false, message: 'Log Error' });
-                                    });
-                                }
-
-                                // Remove Active Worker
-                                connection.query('DELETE FROM ranch_active_workers WHERE id = ?', [worker.id], (err) => {
-                                    if (err) {
-                                        return connection.rollback(() => {
-                                            connection.release();
-                                            res.status(500).json({ success: false, message: 'Delete Worker Error' });
-                                        });
-                                    }
-
-                                    connection.commit(err => {
-                                        if (err) {
-                                            return connection.rollback(() => {
-                                                connection.release();
-                                                res.status(500).json({ success: false, message: 'Commit Error' });
-                                            });
-                                        }
-                                        connection.release();
-                                        
-                                        res.json({ 
-                                            success: true, 
-                                            message: `Üretim Tamamlandı! +${amount} Üretim, +${totalEarnings} ₺ Kazanç.`,
-                                            amount: amount,
-                                            salary: totalEarnings
-                                        });
+                                db.commit(err => {
+                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                                    
+                                    res.json({ 
+                                        success: true, 
+                                        message: `Üretim Tamamlandı! +${amount} Üretim, +${totalEarnings} ₺ Kazanç.`,
+                                        amount: amount,
+                                        salary: totalEarnings
                                     });
                                 });
                             });
@@ -5411,168 +5178,114 @@ app.get('/api/farms/detail/:id', (req, res) => {
 app.post('/api/farms/start', (req, res) => {
     const { userId, farmId } = req.body;
 
-    db.getConnection((err, connection) => {
-        if (err) return res.status(500).json({ success: false, message: 'Database Connection Error' });
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
 
-        connection.beginTransaction(err => {
-            if (err) {
-                connection.release();
-                return res.status(500).json({ success: false, message: 'Transaction error' });
-            }
+        // 1. Get User & Farm Data
+        const query = `
+            SELECT u.energy, u.health, u.education_skill, pf.id as farm_id, pf.max_workers, pf.reserve, pf.salary, pf.vault, pf.stock, pf.level, pf.capacity, pf.user_id as owner_id,
+            ft.slug as farm_type,
+            COALESCE(ft.production_time, 60) as production_time,
+            (SELECT COUNT(*) FROM farm_active_workers WHERE farm_id = pf.id AND end_time > NOW()) as current_workers,
+            (SELECT COUNT(*) FROM farm_active_workers WHERE user_id = ? AND end_time > NOW()) as any_active_workers
+            FROM users u, player_farms pf
+            JOIN farm_types ft ON pf.farm_type_id = ft.id
+            WHERE u.id = ? AND pf.id = ?
+        `;
 
-            // 1. Get User & Farm Data
-            const query = `
-                SELECT u.energy, u.health, u.education_skill, pf.id as farm_id, pf.max_workers, pf.reserve, pf.salary, pf.vault, pf.stock, pf.level, pf.capacity, pf.user_id as owner_id,
-                ft.slug as farm_type,
-                COALESCE(ft.production_time, 60) as production_time,
-                (SELECT COUNT(*) FROM farm_active_workers WHERE farm_id = pf.id AND end_time > NOW()) as current_workers,
-                (SELECT COUNT(*) FROM farm_active_workers WHERE user_id = ? AND end_time > NOW()) as any_active_workers
-                FROM users u, player_farms pf
-                JOIN farm_types ft ON pf.farm_type_id = ft.id
-                WHERE u.id = ? AND pf.id = ?
-            `;
+        db.query(query, [userId, userId, farmId], (err, results) => {
+            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
+            if (results.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Kullanıcı veya Tarla bulunamadı.' }));
 
-            connection.query(query, [userId, userId, farmId], (err, results) => {
-                if (err) {
-                    return connection.rollback(() => {
-                        connection.release();
-                        res.status(500).json({ success: false, message: 'DB Error' });
-                    });
-                }
-                if (results.length === 0) {
-                    return connection.rollback(() => {
-                        connection.release();
-                        res.status(404).json({ success: false, message: 'Kullanıcı veya Tarla bulunamadı.' });
-                    });
-                }
+            const data = results[0];
+            const { energy, health, education_skill, max_workers, current_workers, any_active_workers, reserve, salary, vault, stock, level, production_time } = data;
+            
+            // 2. Checks
+            const ENERGY_COST = 10;
+            const HEALTH_COST = 5;
+            const MAX_STOCK = data.capacity || (level * 1000);
 
-                const data = results[0];
-                const { energy, health, max_workers, current_workers, any_active_workers, reserve, salary, vault, stock, level, production_time } = data;
-                const ownerId = data.owner_id;
+            if (any_active_workers > 0) return db.rollback(() => res.json({ success: false, message: 'Zaten bir işte çalışıyorsun! Önce onu tamamla.' }));
+            if (energy < ENERGY_COST) return db.rollback(() => res.json({ success: false, message: 'Yetersiz Enerji!' }));
+            if (health < HEALTH_COST) return db.rollback(() => res.json({ success: false, message: 'Sağlığın çok düşük!' }));
+            if (reserve <= 0) return db.rollback(() => res.json({ success: false, message: 'Tarla tohum deposu tükenmiş!' }));
+            if (stock >= MAX_STOCK) return db.rollback(() => res.json({ success: false, message: 'Tarla deposu dolu! Üretim yapılamaz.' }));
+            
+            // Calculate Production Amount - Use owner's data for consistent production
+            // Get owner's education_skill
+            db.query('SELECT education_skill FROM users WHERE id = ?', [ownerId], (err, ownerData) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Owner Data Error' }));
                 
-                // 2. Checks
-                const ENERGY_COST = 10;
-                const HEALTH_COST = 5;
-                const MAX_STOCK = data.capacity || (level * 1000);
-
-                if (any_active_workers > 0) return connection.rollback(() => { connection.release(); res.json({ success: false, message: 'Zaten bir işte çalışıyorsun! Önce onu tamamla.' }); });
-                if (energy < ENERGY_COST) return connection.rollback(() => { connection.release(); res.json({ success: false, message: 'Yetersiz Enerji!' }); });
-                if (health < HEALTH_COST) return connection.rollback(() => { connection.release(); res.json({ success: false, message: 'Sağlığın çok düşük!' }); });
-                if (reserve <= 0) return connection.rollback(() => { connection.release(); res.json({ success: false, message: 'Tarla tohum deposu tükenmiş!' }); });
-                if (stock >= MAX_STOCK) return connection.rollback(() => { connection.release(); res.json({ success: false, message: 'Tarla deposu dolu! Üretim yapılamaz.' }); });
-                
-                // Calculate Production Amount - Use owner's data for consistent production
-                connection.query('SELECT education_skill FROM users WHERE id = ?', [ownerId], (err, ownerData) => {
-                    if (err) {
-                        return connection.rollback(() => {
-                            connection.release();
-                            res.status(500).json({ success: false, message: 'Owner Data Error' });
-                        });
-                    }
+                const ownerSkill = ownerData[0]?.education_skill || 0;
+                const factoryLevel = level || 1;
+                const baseProduction = factoryLevel;
+                const educationBonus = Math.floor(ownerSkill / 10);
+            
+                // Get AR-GE Level (use owner_id, not worker's userId)
+                const farmType = data.farm_type;
+                const argeQuery = 'SELECT level FROM arge_levels WHERE user_id = ? AND mine_type = ?';
+                db.query(argeQuery, [ownerId, farmType], (err, argeResults) => {
+                    const argeLevel = (argeResults && argeResults.length > 0) ? argeResults[0].level : 0;
+                    const argeBonus = argeLevel * 2;
                     
-                    const ownerSkill = ownerData[0]?.education_skill || 0;
-                    const factoryLevel = level || 1;
-                    const baseProduction = factoryLevel;
-                    const educationBonus = Math.floor(ownerSkill / 10);
+                    let productionAmount = baseProduction + educationBonus + argeBonus;
+            
+                // Determine Seed Cost Ratio
+                let seedCostPerUnit = 1;
                 
-                    // Get AR-GE Level (use owner_id, not worker's userId)
-                    const farmType = data.farm_type;
-                    const argeQuery = 'SELECT level FROM arge_levels WHERE user_id = ? AND mine_type = ?';
-                    connection.query(argeQuery, [ownerId, farmType], (err, argeResults) => {
-                        if (err) {
-                            return connection.rollback(() => {
-                                connection.release();
-                                res.status(500).json({ success: false, message: 'AR-GE Data Error' });
-                            });
-                        }
+                if (farmType === 'wheat' || farmType === 'corn') {
+                    seedCostPerUnit = 1;
+                } else if (farmType === 'vegetable' || farmType === 'fruit') {
+                    seedCostPerUnit = 2;
+                } else if (farmType === 'rice' || farmType === 'potato' || farmType === 'olive') {
+                    seedCostPerUnit = 3;
+                }
 
-                        const argeLevel = (argeResults && argeResults.length > 0) ? argeResults[0].level : 0;
-                        const argeBonus = argeLevel * 2;
-                        
-                        let productionAmount = baseProduction + educationBonus + argeBonus;
+                // Check Reserve (Seed)
+                const maxProductionBySeed = Math.floor(reserve / seedCostPerUnit);
+                if (productionAmount > maxProductionBySeed) {
+                    productionAmount = maxProductionBySeed;
+                }
+
+                if (productionAmount <= 0) {
+                    return db.rollback(() => res.json({ success: false, message: 'Yetersiz Tohum (Rezerv)!' }));
+                }
                 
-                        // Determine Seed Cost Ratio
-                        let seedCostPerUnit = 1;
-                        if (farmType === 'wheat' || farmType === 'corn') seedCostPerUnit = 1;
-                        else if (farmType === 'vegetable' || farmType === 'fruit') seedCostPerUnit = 2;
-                        else if (farmType === 'rice' || farmType === 'potato' || farmType === 'olive') seedCostPerUnit = 3;
+                const totalSeedCost = productionAmount * seedCostPerUnit;
 
-                        // Check Reserve (Seed)
-                        const maxProductionBySeed = Math.floor(reserve / seedCostPerUnit);
-                        if (productionAmount > maxProductionBySeed) {
-                            productionAmount = maxProductionBySeed;
-                        }
+                // Vault Check
+                const estimatedCost = productionAmount * salary; 
+                if (vault < estimatedCost) {
+                    return db.rollback(() => res.json({ success: false, message: `Tarla kasasında maaş için yeterli bakiye yok! (Gerekli: ${estimatedCost} ₺)` }));
+                }
 
-                        if (productionAmount <= 0) {
-                            return connection.rollback(() => {
-                                connection.release();
-                                res.json({ success: false, message: 'Yetersiz Tohum (Rezerv)!' });
-                            });
-                        }
+                if (current_workers >= (max_workers || 5)) {
+                    return db.rollback(() => res.json({ success: false, message: 'Tarla kapasitesi dolu!' }));
+                }
+
+                    // 3. Deduct Energy/Health AND Reserve (Seed)
+                    db.query('UPDATE users SET energy = energy - ?, health = health - ? WHERE id = ?', [ENERGY_COST, HEALTH_COST, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User Update Error' }));
+
+                    db.query('UPDATE player_farms SET reserve = reserve - ? WHERE id = ?', [totalSeedCost, farmId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Reserve Update Error' }));
+
+                        // 4. Add to Active Workers
+                        const durationSeconds = production_time || 60;
+                        const endTime = new Date(Date.now() + durationSeconds * 1000);
                         
-                        const totalSeedCost = productionAmount * seedCostPerUnit;
-
-                        // Vault Check
-                        const estimatedCost = productionAmount * salary; 
-                        if (vault < estimatedCost) {
-                            return connection.rollback(() => {
-                                connection.release();
-                                res.json({ success: false, message: `Tarla kasasında maaş için yeterli bakiye yok! (Gerekli: ${estimatedCost} ₺)` });
-                            });
-                        }
-
-                        if (current_workers >= (max_workers || 5)) {
-                            return connection.rollback(() => {
-                                connection.release();
-                                res.json({ success: false, message: 'Tarla kapasitesi dolu!' });
-                            });
-                        }
-
-                        // 3. Deduct Energy/Health AND Reserve (Seed)
-                        connection.query('UPDATE users SET energy = energy - ?, health = health - ? WHERE id = ?', [ENERGY_COST, HEALTH_COST, userId], (err) => {
-                            if (err) {
-                                return connection.rollback(() => {
-                                    connection.release();
-                                    res.status(500).json({ success: false, message: 'User Update Error' });
-                                });
-                            }
-
-                            connection.query('UPDATE player_farms SET reserve = reserve - ? WHERE id = ?', [totalSeedCost, farmId], (err) => {
-                                if (err) {
-                                    return connection.rollback(() => {
-                                        connection.release();
-                                        res.status(500).json({ success: false, message: 'Reserve Update Error' });
-                                    });
-                                }
-
-                                // 4. Add to Active Workers
-                                const durationSeconds = production_time || 60;
-                                const endTime = new Date(Date.now() + durationSeconds * 1000);
-                                
-                                connection.query('INSERT INTO farm_active_workers (farm_id, user_id, end_time, amount, seed_cost) VALUES (?, ?, ?, ?, ?)', [farmId, userId, endTime, productionAmount, totalSeedCost], (err) => {
-                                    if (err) {
-                                        return connection.rollback(() => {
-                                            connection.release();
-                                            res.status(500).json({ success: false, message: 'Active Worker Error' });
-                                        });
-                                    }
-                                    
-                                    connection.commit(err => {
-                                        if (err) {
-                                            return connection.rollback(() => {
-                                                connection.release();
-                                                res.status(500).json({ success: false, message: 'Commit Error' });
-                                            });
-                                        }
-                                        connection.release();
-                                        res.json({ success: true, message: `İş başı yapıldı! (Üretim: ${productionAmount})`, endTime: endTime });
-                                    });
-                                });
+                        db.query('INSERT INTO farm_active_workers (farm_id, user_id, end_time, amount, seed_cost) VALUES (?, ?, ?, ?, ?)', [farmId, userId, endTime, productionAmount, totalSeedCost], (err) => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Active Worker Error' }));
+                            
+                            db.commit(err => {
+                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                                res.json({ success: true, message: `İş başı yapıldı! (Üretim: ${productionAmount})`, endTime: endTime });
                             });
                         });
                     });
                 });
-            });
+            }); // Close argeQuery callback
+            }); // Close owner query callback
         });
     });
 });
@@ -5581,113 +5294,60 @@ app.post('/api/farms/start', (req, res) => {
 app.post('/api/farms/collect', (req, res) => {
     const { userId, farmId } = req.body;
 
-    db.getConnection((err, connection) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).json({ success: false, message: 'Database Connection Error' });
-        }
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
 
-        connection.beginTransaction(err => {
-            if (err) {
-                connection.release();
-                return res.status(500).json({ success: false, message: 'Transaction error' });
+        // 1. Check Active Worker
+        db.query('SELECT * FROM farm_active_workers WHERE user_id = ? AND farm_id = ?', [userId, farmId], (err, workers) => {
+            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
+            if (workers.length === 0) return db.rollback(() => res.json({ success: false, message: 'Aktif çalışma bulunamadı.' }));
+
+            const worker = workers[0];
+            
+            // Check Time
+            if (new Date() < new Date(worker.end_time)) {
+                return db.rollback(() => res.json({ success: false, message: 'İş henüz bitmedi.' }));
             }
 
-            // 1. Check Active Worker
-            connection.query('SELECT * FROM farm_active_workers WHERE user_id = ? AND farm_id = ?', [userId, farmId], (err, workers) => {
-                if (err) {
-                    return connection.rollback(() => {
-                        connection.release();
-                        res.status(500).json({ success: false, message: 'DB Error' });
-                    });
-                }
-                if (workers.length === 0) {
-                    return connection.rollback(() => {
-                        connection.release();
-                        res.json({ success: false, message: 'Aktif çalışma bulunamadı.' });
-                    });
-                }
+            const amount = worker.amount;
+            const seedCost = worker.seed_cost || 0; // Get seed cost from worker record
 
-                const worker = workers[0];
+            // 2. Get Farm Info
+            db.query('SELECT pf.*, ft.slug as farm_type_slug FROM player_farms pf JOIN farm_types ft ON pf.farm_type_id = ft.id WHERE pf.id = ?', [farmId], (err, farms) => {
+                if (err || farms.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Tarla bulunamadı.' }));
+                const farm = farms[0];
                 
-                // Check Time
-                if (new Date() < new Date(worker.end_time)) {
-                    return connection.rollback(() => {
-                        connection.release();
-                        res.json({ success: false, message: 'İş henüz bitmedi.' });
-                    });
-                }
+                const salaryPerUnit = farm.salary || 0;
+                const totalEarnings = amount * salaryPerUnit;
 
-                const amount = worker.amount;
-                const seedCost = worker.seed_cost || 0; // Get seed cost from worker record
+                // 3. Update User Money (Salary)
+                db.query('UPDATE users SET money = money + ? WHERE id = ?', [totalEarnings, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'User Money Error' }));
 
-                // 2. Get Farm Info
-                connection.query('SELECT pf.*, ft.slug as farm_type_slug FROM player_farms pf JOIN farm_types ft ON pf.farm_type_id = ft.id WHERE pf.id = ?', [farmId], (err, farms) => {
-                    if (err || farms.length === 0) {
-                        return connection.rollback(() => {
-                            connection.release();
-                            res.status(404).json({ success: false, message: 'Tarla bulunamadı.' });
-                        });
-                    }
-                    const farm = farms[0];
-                    
-                    const salaryPerUnit = farm.salary || 0;
-                    const totalEarnings = amount * salaryPerUnit;
+                    // 4. Update Farm (Stock +, Vault -)
+                    // Note: Reserve was already deducted at start.
+                    db.query('UPDATE player_farms SET stock = stock + ?, vault = vault - ? WHERE id = ?', 
+                        [amount, totalEarnings, farmId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Farm Update Error' }));
 
-                    // 3. Update User Money (Salary)
-                    connection.query('UPDATE users SET money = money + ? WHERE id = ?', [totalEarnings, userId], (err) => {
-                        if (err) {
-                            return connection.rollback(() => {
-                                connection.release();
-                                res.status(500).json({ success: false, message: 'User Money Error' });
-                            });
-                        }
+                        // Log Transaction
+                        const logQuery = 'INSERT INTO farm_logs (farm_id, user_id, message, amount) VALUES (?, ?, ?, ?)';
+                        const message = `Üretim: +${amount}, Tüketilen Tohum: ${seedCost}, Kazanç: ${totalEarnings} ₺`;
+                        db.query(logQuery, [farmId, userId, message, amount], (err) => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log Error' }));
 
-                        // 4. Update Farm (Stock +, Vault -)
-                        // Note: Reserve was already deducted at start.
-                        connection.query('UPDATE player_farms SET stock = stock + ?, vault = vault - ? WHERE id = ?', 
-                            [amount, totalEarnings, farmId], (err) => {
-                            if (err) {
-                                return connection.rollback(() => {
-                                    connection.release();
-                                    res.status(500).json({ success: false, message: 'Farm Update Error' });
-                                });
-                            }
+                            // Remove Active Worker
+                            db.query('DELETE FROM farm_active_workers WHERE id = ?', [worker.id], (err) => {
+                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Delete Worker Error' }));
 
-                            // Log Transaction
-                            const logQuery = 'INSERT INTO farm_logs (farm_id, user_id, message, amount) VALUES (?, ?, ?, ?)';
-                            const message = `Üretim: +${amount}, Tüketilen Tohum: ${seedCost}, Kazanç: ${totalEarnings} ₺`;
-                            connection.query(logQuery, [farmId, userId, message, amount], (err) => {
-                                if (err) {
-                                    return connection.rollback(() => {
-                                        connection.release();
-                                        res.status(500).json({ success: false, message: 'Log Error' });
-                                    });
-                                }
-
-                                // Remove Active Worker
-                                connection.query('DELETE FROM farm_active_workers WHERE id = ?', [worker.id], (err) => {
-                                    if (err) {
-                                        return connection.rollback(() => {
-                                            connection.release();
-                                            res.status(500).json({ success: false, message: 'Delete Worker Error' });
-                                        });
-                                    }
-
-                                    connection.commit(err => {
-                                        if (err) {
-                                            return connection.rollback(() => {
-                                                connection.release();
-                                                res.status(500).json({ success: false, message: 'Commit Error' });
-                                            });
-                                        }
-                                        connection.release();
-                                        res.json({ 
-                                            success: true, 
-                                            message: `Üretim Tamamlandı! +${amount} Üretim, +${totalEarnings} ₺ Kazanç.`,
-                                            amount: amount,
-                                            salary: totalEarnings
-                                        });
+                                db.commit(err => {
+                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                                    
+                                    res.json({ 
+                                        success: true, 
+                                        message: `Üretim Tamamlandı! +${amount} Üretim, +${totalEarnings} ₺ Kazanç.`,
+                                        amount: amount,
+                                        salary: totalEarnings
                                     });
                                 });
                             });
@@ -5804,84 +5464,42 @@ app.post('/api/farms/deposit-seed/:id', (req, res) => {
 
     if (!amount || amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
 
-    db.getConnection((err, connection) => {
-        if (err) {
-            console.log("Connection Error:", err);
-            return res.status(500).json({ success: false, message: 'Database Connection Error' });
-        }
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
 
-        connection.beginTransaction(err => {
-            if (err) {
-                connection.release();
-                return res.status(500).json({ success: false, message: 'Transaction Error' });
+        db.query('SELECT * FROM player_farms WHERE id = ?', [farmId], (err, farms) => {
+            if (err || farms.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Tarla bulunamadı.' }));
+            const farm = farms[0];
+
+            // Check Capacity (Reserve Capacity)
+            const maxCapacity = (farm.level || 1) * 10000;
+            const currentAmount = farm.reserve || 0;
+
+            if (currentAmount + amount > maxCapacity) {
+                return db.rollback(() => res.json({ success: false, message: `Depo kapasitesi yetersiz. (Mevcut: ${currentAmount}, Kapasite: ${maxCapacity})` }));
             }
 
-            connection.query('SELECT * FROM player_farms WHERE id = ?', [farmId], (err, farms) => {
-                if (err || farms.length === 0) {
-                    return connection.rollback(() => {
-                        connection.release();
-                        res.status(404).json({ success: false, message: 'Tarla bulunamadı.' });
-                    });
-                }
-                const farm = farms[0];
-
-                // Check Capacity (Reserve Capacity)
-                const maxCapacity = (farm.level || 1) * 10000;
-                const currentAmount = farm.reserve || 0;
-
-                if (currentAmount + amount > maxCapacity) {
-                    return connection.rollback(() => {
-                        connection.release();
-                        res.json({ success: false, message: `Depo kapasitesi yetersiz. (Mevcut: ${currentAmount}, Kapasite: ${maxCapacity})` });
-                    });
+            // Check User Inventory for Seed
+            const seedKey = itemKey || 'seed';
+            db.query('SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?', [userId, seedKey], (err, inv) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Envanter hatası.' }));
+                
+                const userQty = (inv && inv.length > 0) ? inv[0].quantity : 0;
+                if (userQty < amount) {
+                    return db.rollback(() => res.json({ success: false, message: `Envanterde yeterli ${seedKey} yok.` }));
                 }
 
-                // Check User Inventory for Seed
-                const seedKey = itemKey || 'seed';
-                connection.query('SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?', [userId, seedKey], (err, inv) => {
-                    if (err) {
-                        return connection.rollback(() => {
-                            connection.release();
-                            res.status(500).json({ success: false, message: 'Envanter hatası.' });
-                        });
-                    }
-                    
-                    const userQty = (inv && inv.length > 0) ? inv[0].quantity : 0;
-                    if (userQty < amount) {
-                        return connection.rollback(() => {
-                            connection.release();
-                            res.json({ success: false, message: `Envanterde yeterli ${seedKey} yok.` });
-                        });
-                    }
+                // Deduct from Inventory
+                db.query('UPDATE inventory SET quantity = quantity - ? WHERE user_id = ? AND item_key = ?', [amount, userId, seedKey], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Envanter güncellenemedi.' }));
 
-                    // Deduct from Inventory
-                    connection.query('UPDATE inventory SET quantity = quantity - ? WHERE user_id = ? AND item_key = ?', [amount, userId, seedKey], (err) => {
-                        if (err) {
-                            return connection.rollback(() => {
-                                connection.release();
-                                res.status(500).json({ success: false, message: 'Envanter güncellenemedi.' });
-                            });
-                        }
+                    // Add to Farm Reserve
+                    db.query('UPDATE player_farms SET reserve = reserve + ? WHERE id = ?', [amount, farmId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Tarla deposu güncellenemedi.' }));
 
-                        // Add to Farm Reserve
-                        connection.query('UPDATE player_farms SET reserve = reserve + ? WHERE id = ?', [amount, farmId], (err) => {
-                            if (err) {
-                                return connection.rollback(() => {
-                                    connection.release();
-                                    res.status(500).json({ success: false, message: 'Tarla deposu güncellenemedi.' });
-                                });
-                            }
-
-                            connection.commit(err => {
-                                if (err) {
-                                    return connection.rollback(() => {
-                                        connection.release();
-                                        res.status(500).json({ success: false, message: 'Commit Error' });
-                                    });
-                                }
-                                connection.release();
-                                res.json({ success: true, message: `${amount} adet tohum eklendi.` });
-                            });
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                            res.json({ success: true, message: `${amount} adet tohum eklendi.` });
                         });
                     });
                 });
@@ -6347,61 +5965,53 @@ setInterval(() => {
                 return;
             }
 
-            db.getConnection((err, connection) => {
-                if (err) return console.error('Auto-Collect Pool Error:', err);
+            db.beginTransaction(err => {
+                if (err) return console.error('Auto-Collect Transaction Error:', err);
 
-                connection.beginTransaction(err => {
-                    if (err) {
-                        connection.release();
-                        return console.error('Auto-Collect Transaction Error:', err);
+                // 1. Pay User
+                db.query('UPDATE users SET money = money + ? WHERE id = ?', [totalEarnings, job.user_id], (err) => {
+                    if (err) return db.rollback(() => console.error('Auto-Collect User Update Error:', err));
+
+                    // 2. Update Mine (Stock/Inventory +amount, Vault -Salary)
+                    let updateStockQuery;
+                    let updateStockParams;
+
+                    if (productKey) {
+                        updateStockQuery = `
+                            INSERT INTO factory_inventory (mine_id, item_key, amount) 
+                            VALUES (?, ?, ?) 
+                            ON DUPLICATE KEY UPDATE amount = amount + ?
+                        `;
+                        updateStockParams = [job.mine_id, productKey, amount, amount];
+                    } else {
+                        updateStockQuery = 'UPDATE player_mines SET stock = stock + ? WHERE id = ?';
+                        updateStockParams = [amount, job.mine_id];
                     }
 
-                    // 1. Pay User
-                    connection.query('UPDATE users SET money = money + ? WHERE id = ?', [totalEarnings, job.user_id], (err) => {
-                        if (err) return connection.rollback(() => { connection.release(); console.error('Auto-Collect User Update Error:', err) });
+                    db.query(updateStockQuery, updateStockParams, (err) => {
+                        if (err) return db.rollback(() => console.error('Auto-Collect Stock Update Error:', err));
 
-                        // 2. Update Mine (Stock/Inventory +amount, Vault -Salary)
-                        let updateStockQuery;
-                        let updateStockParams;
+                        // Update Vault
+                        db.query('UPDATE player_mines SET vault = vault - ? WHERE id = ?', [totalEarnings, job.mine_id], (err) => {
+                            if (err) return db.rollback(() => console.error('Auto-Collect Vault Update Error:', err));
 
-                        if (productKey) {
-                            updateStockQuery = `
-                                INSERT INTO factory_inventory (mine_id, item_key, amount) 
-                                VALUES (?, ?, ?) 
-                                ON DUPLICATE KEY UPDATE amount = amount + ?
-                            `;
-                            updateStockParams = [job.mine_id, productKey, amount, amount];
-                        } else {
-                            updateStockQuery = 'UPDATE player_mines SET stock = stock + ? WHERE id = ?';
-                            updateStockParams = [amount, job.mine_id];
-                        }
+                            // 3. Log
+                            const logQuery = 'INSERT INTO mine_logs (mine_id, user_id, amount, earnings, product_key) VALUES (?, ?, ?, ?, ?)';
+                            db.query(logQuery, [job.mine_id, job.user_id, amount, totalEarnings, productKey], (err) => {
+                                if (err) return db.rollback(() => console.error('Auto-Collect Log Error:', err));
 
-                        connection.query(updateStockQuery, updateStockParams, (err) => {
-                            if (err) return connection.rollback(() => { connection.release(); console.error('Auto-Collect Stock Update Error:', err) });
+                                // 4. Delete Worker
+                                db.query('DELETE FROM mine_active_workers WHERE id = ?', [job.worker_id], (err) => {
+                                    if (err) return db.rollback(() => console.error('Auto-Collect Delete Error:', err));
 
-                            // Update Vault
-                            connection.query('UPDATE player_mines SET vault = vault - ? WHERE id = ?', [totalEarnings, job.mine_id], (err) => {
-                                if (err) return connection.rollback(() => { connection.release(); console.error('Auto-Collect Vault Update Error:', err) });
-
-                                // 3. Log
-                                const logQuery = 'INSERT INTO mine_logs (mine_id, user_id, amount, earnings, product_key) VALUES (?, ?, ?, ?, ?)';
-                                connection.query(logQuery, [job.mine_id, job.user_id, amount, totalEarnings, productKey], (err) => {
-                                    if (err) return connection.rollback(() => { connection.release(); console.error('Auto-Collect Log Error:', err) });
-
-                                    // 4. Delete Worker
-                                    connection.query('DELETE FROM mine_active_workers WHERE id = ?', [job.worker_id], (err) => {
-                                        if (err) return connection.rollback(() => { connection.release(); console.error('Auto-Collect Delete Error:', err) });
-
-                                        // 5. Notification
-                                        const notifTitle = 'Üretim Tamamlandı';
-                                        const notifMsg = `Otomatik toplama: +${amount} ${productKey || 'Ürün'}, +${totalEarnings} ₺ Kazanç.`;
-                                        connection.query('INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)', [job.user_id, notifTitle, notifMsg, 'production'], (err) => {
-                                            
-                                            connection.commit(err => {
-                                                if (err) return connection.rollback(() => { connection.release(); console.error('Auto-Collect Commit Error:', err) });
-                                                connection.release();
-                                                // Success
-                                            });
+                                    // 5. Notification
+                                    const notifTitle = 'Üretim Tamamlandı';
+                                    const notifMsg = `Otomatik toplama: +${amount} ${productKey || 'Ürün'}, +${totalEarnings} ₺ Kazanç.`;
+                                    db.query('INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)', [job.user_id, notifTitle, notifMsg, 'production'], (err) => {
+                                        
+                                        db.commit(err => {
+                                            if (err) return db.rollback(() => console.error('Auto-Collect Commit Error:', err));
+                                            // Success
                                         });
                                     });
                                 });
@@ -6453,7 +6063,7 @@ app.post('/api/buy-farm', (req, res) => {
         const farmType = types[0];
 
         // 2. Get User Info (Money & License)
-        db.query('SELECT money, license_farm_level, username FROM users WHERE id = ?', [user_id], (err, users) => {
+        db.query('SELECT money, license_farm_level FROM users WHERE id = ?', [user_id], (err, users) => {
             if (err) return res.status(500).json({ message: 'Veritabanı hatası' });
             if (users.length === 0) return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
 
@@ -6492,8 +6102,7 @@ app.post('/api/buy-farm', (req, res) => {
                         if (err) return db.rollback(() => res.status(500).json({ message: 'Bakiye düşülemedi' }));
 
                         // Add Farm
-                        const farmName = `${user.username}'s ${farmType.name} İşletmesi`;
-                        db.query('INSERT INTO player_farms (user_id, farm_type_id, name) VALUES (?, ?, ?)', [user_id, farm_type_id, farmName], (err) => {
+                        db.query('INSERT INTO player_farms (user_id, farm_type_id) VALUES (?, ?)', [user_id, farm_type_id], (err) => {
                             if (err) return db.rollback(() => res.status(500).json({ message: 'Çiftlik eklenemedi' }));
 
                             db.commit(err => {
@@ -6602,85 +6211,47 @@ app.post('/api/ranches/withdraw/:id', (req, res) => {
 // Deposit Feed to Ranch (Reserve)
 app.post('/api/ranches/deposit-feed/:id', (req, res) => {
     const ranchId = req.params.id;
-    const { userId, amount, itemKey } = req.body; 
+    const { userId, amount, itemKey } = req.body; // itemKey should be 'feed'
 
-    const amountInt = parseInt(amount);
-    if (!amountInt || amountInt <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
+    if (!amount || amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
 
-    db.getConnection((err, connection) => {
-        if (err) return res.status(500).json({ success: false, message: 'Database Connection Error' });
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
 
-        connection.beginTransaction(err => {
-            if (err) {
-                connection.release();
-                return res.status(500).json({ success: false, message: 'Transaction Error' });
+        db.query('SELECT * FROM player_ranches WHERE id = ?', [ranchId], (err, ranches) => {
+            if (err || ranches.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Çiftlik bulunamadı.' }));
+            const ranch = ranches[0];
+
+            // Check Capacity (Reserve Capacity)
+            // Assuming reserve capacity is level * 10000 (as defined in frontend)
+            const maxCapacity = (ranch.level || 1) * 10000;
+            const currentAmount = ranch.reserve || 0;
+
+            if (currentAmount + amount > maxCapacity) {
+                return db.rollback(() => res.json({ success: false, message: `Depo kapasitesi yetersiz. (Mevcut: ${currentAmount}, Kapasite: ${maxCapacity})` }));
             }
 
-            connection.query('SELECT * FROM player_ranches WHERE id = ?', [ranchId], (err, ranches) => {
-                if (err || ranches.length === 0) {
-                    return connection.rollback(() => {
-                        connection.release();
-                        res.status(404).json({ success: false, message: 'Çiftlik bulunamadı.' });
-                    });
-                }
-                const ranch = ranches[0];
-
-                const maxCapacity = (ranch.level || 1) * 10000;
-                const currentAmount = ranch.reserve || 0;
-
-                if (currentAmount + amountInt > maxCapacity) {
-                    return connection.rollback(() => {
-                        connection.release();
-                        res.json({ success: false, message: `Depo kapasitesi yetersiz. (Mevcut: ${currentAmount}, Kapasite: ${maxCapacity})` });
-                    });
+            // Check User Inventory for Feed
+            const feedKey = itemKey || 'feed';
+            db.query('SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?', [userId, feedKey], (err, inv) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Envanter hatası.' }));
+                
+                const userQty = (inv && inv.length > 0) ? inv[0].quantity : 0;
+                if (userQty < amount) {
+                    return db.rollback(() => res.json({ success: false, message: `Envanterde yeterli ${feedKey} yok.` }));
                 }
 
-                // Check User Inventory for Feed
-                const feedKey = itemKey || 'feed';
-                connection.query('SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?', [userId, feedKey], (err, inv) => {
-                    if (err) {
-                        return connection.rollback(() => {
-                            connection.release();
-                            res.status(500).json({ success: false, message: 'Envanter hatası.' });
-                        });
-                    }
-                    
-                    const userQty = (inv && inv.length > 0) ? inv[0].quantity : 0;
-                    if (userQty < amountInt) {
-                        return connection.rollback(() => {
-                            connection.release();
-                            res.json({ success: false, message: `Envanterde yeterli ${feedKey} yok.` });
-                        });
-                    }
+                // Deduct from Inventory
+                db.query('UPDATE inventory SET quantity = quantity - ? WHERE user_id = ? AND item_key = ?', [amount, userId, feedKey], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Envanter güncellenemedi.' }));
 
-                    // Deduct from Inventory
-                    connection.query('UPDATE inventory SET quantity = quantity - ? WHERE user_id = ? AND item_key = ?', [amountInt, userId, feedKey], (err) => {
-                        if (err) {
-                            return connection.rollback(() => {
-                                connection.release();
-                                res.status(500).json({ success: false, message: 'Envanter güncellenemedi.' });
-                            });
-                        }
+                    // Add to Ranch Reserve
+                    db.query('UPDATE player_ranches SET reserve = reserve + ? WHERE id = ?', [amount, ranchId], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Çiftlik deposu güncellenemedi.' }));
 
-                        // Add to Ranch Reserve
-                        connection.query('UPDATE player_ranches SET reserve = reserve + ? WHERE id = ?', [amountInt, ranchId], (err) => {
-                            if (err) {
-                                return connection.rollback(() => {
-                                    connection.release();
-                                    res.status(500).json({ success: false, message: 'Çiftlik deposu güncellenemedi.' });
-                                });
-                            }
-
-                            connection.commit(err => {
-                                if (err) {
-                                    return connection.rollback(() => {
-                                        connection.release();
-                                        res.status(500).json({ success: false, message: 'Commit Error' });
-                                    });
-                                }
-                                connection.release();
-                                res.json({ success: true, message: `${amountInt} adet yem eklendi.` });
-                            });
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                            res.json({ success: true, message: `${amount} adet yem eklendi.` });
                         });
                     });
                 });
@@ -6982,7 +6553,7 @@ app.get('/api/ranches/counts', (req, res) => {
 // Get City Farms (All player farms)
 app.get('/api/city-farms', (req, res) => {
     const query = `
-        SELECT pf.*, ft.name as type_name, ft.slug, ft.image_path, u.username, u.avatar
+        SELECT pf.*, ft.name as type_name, ft.slug, ft.image_path, u.username
         FROM player_farms pf
         JOIN farm_types ft ON pf.farm_type_id = ft.id
         JOIN users u ON pf.user_id = u.id
@@ -6998,7 +6569,7 @@ app.get('/api/city-farms', (req, res) => {
 // Get City Ranches (All player ranches)
 app.get('/api/ranches/city', (req, res) => {
     const query = `
-        SELECT pr.id as ranch_id, pr.*, rt.name as type_name, rt.slug as type, rt.image_path, u.username, u.avatar
+        SELECT pr.id as ranch_id, pr.*, rt.name as type_name, rt.slug as type, rt.image_path, u.username
         FROM player_ranches pr
         JOIN ranch_types rt ON pr.ranch_type_id = rt.id
         JOIN users u ON pr.user_id = u.id
@@ -7023,7 +6594,7 @@ app.post('/api/ranches/buy', (req, res) => {
         const rType = types[0];
 
         // 2. Get User Info
-        db.query('SELECT username, money, gold, diamond FROM users WHERE id = ?', [userId], (err, users) => {
+        db.query('SELECT money, gold, diamond FROM users WHERE id = ?', [userId], (err, users) => {
             if (err) return res.status(500).json({ message: 'Veritabanı hatası' });
             if (users.length === 0) return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
 
@@ -7109,10 +6680,8 @@ app.post('/api/ranches/buy', (req, res) => {
                         db.query(updateQuery, [rType.price, rType.gold_price || 0, rType.diamond_price || 0, userId], (err) => {
                             if (err) return db.rollback(() => res.status(500).json({ message: 'Ödeme alınamadı' }));
 
-                            const ranchName = `${user.username}'s ${rType.name} İşletmesi`;
-
                             // Add Ranch
-                            db.query('INSERT INTO player_ranches (user_id, ranch_type_id, reserve, name) VALUES (?, ?, 0, ?)', [userId, rType.id, ranchName], (err) => {
+                            db.query('INSERT INTO player_ranches (user_id, ranch_type_id, reserve) VALUES (?, ?, 0)', [userId, rType.id], (err) => {
                                 if (err) return db.rollback(() => res.status(500).json({ message: 'Çiftlik eklenemedi' }));
 
                                 db.commit(err => {
