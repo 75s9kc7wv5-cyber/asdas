@@ -5197,7 +5197,7 @@ app.post('/api/farms/start', (req, res) => {
             if (results.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Kullanıcı veya Tarla bulunamadı.' }));
 
             const data = results[0];
-            const { energy, health, education_skill, max_workers, current_workers, any_active_workers, reserve, salary, vault, stock, level, production_time } = data;
+            const { energy, health, education_skill, max_workers, current_workers, any_active_workers, reserve, salary, vault, stock, level, production_time, owner_id: ownerId } = data;
             
             // 2. Checks
             const ENERGY_COST = 10;
@@ -6972,6 +6972,10 @@ app.post('/api/properties/collect-tax', (req, res) => {
 
 const PORT = 3000;
 console.log('Attempting to start server on port ' + PORT);
+// --- LOOT BOX SYSTEM ---
+const lootboxRoutes = require('./routes/lootbox')(db);
+app.use('/api/lootbox', lootboxRoutes);
+
 app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
 });
@@ -8089,3 +8093,4 @@ app.post('/api/farms/action', (req, res) => {
         }
     });
 });
+
