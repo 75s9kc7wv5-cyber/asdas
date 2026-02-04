@@ -61,55 +61,61 @@
         /* MAIN */
         main {
             flex: 1;
-            padding: 15px;
-            padding-top: 10px;
+            padding: 20px;
             overflow-y: auto;
             padding-bottom: 80px;
         }
 
         .page-header { 
-            text-align: left; 
-            margin-bottom: 20px; 
-            margin-top: 0;
-            padding: 15px 0;
+            margin-bottom: 25px; 
+            animation: fadeInDown 0.5s; 
+            position: relative;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 15px;
         }
+        
         .back-btn {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid #333;
-            border-radius: 8px;
-            width: 40px;
-            height: 40px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--accent-cyan);
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--accent-cyan);
             cursor: pointer;
             transition: all 0.3s;
+            font-size: 1.2rem;
             flex-shrink: 0;
         }
+        
         .back-btn:hover {
-            background: rgba(255,255,255,0.1);
+            background: var(--accent-cyan);
+            color: #000;
             border-color: var(--accent-cyan);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
         }
-        .page-title-section {
+        
+        .header-content {
             flex: 1;
         }
+        
         .page-title { 
-            font-size: 1.3rem; 
+            font-size: 1.5rem; 
             letter-spacing: 1px; 
-            color: var(--accent-cyan);
-            text-transform: uppercase; 
-            font-weight: 700;
-            margin-bottom: 5px;
+            color: #fff; 
+            font-weight: 800;
+            margin-bottom: 8px;
+            text-align: left;
         }
-        .page-desc {
-            font-size: 0.8rem;
-            color: #888;
-            font-weight: 400;
-            line-height: 1.3;
+        
+        .page-description {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-align: left;
         }
         
         /* KASA KARTI */
@@ -148,7 +154,7 @@
         .card-title { font-size: 1.1rem; color: var(--accent-cyan); margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 5px; }
         
         .form-group { margin-bottom: 15px; }
-        .form-label { display: block; font-size: 0.8rem; color: #aaa; margin-bottom: 5px; }
+        .form-label { display: block; font-size: 0.8rem; color: #fff; margin-bottom: 5px; font-weight: 600; }
         .form-input { 
             width: 100%; background: #111; border: 1px solid #444; color: #fff; 
             padding: 10px; border-radius: 5px; font-family: 'Rajdhani';
@@ -224,6 +230,53 @@
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+
+        /* LOGLAR */
+        .log-container { background: var(--bg-card); border-radius: 10px; padding: 15px; border: 1px solid var(--border-color); }
+        .log-list { max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+        .log-item {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.2s;
+            min-height: 36px;
+        }
+        .log-item:hover { background: rgba(255,255,255,0.05); }
+        .log-avatar {
+            width: 24px; height: 24px; border-radius: 50%; margin-right: 8px; object-fit: cover; border: 1px solid #444;
+        }
+        .log-text { font-size: 0.75rem; color: #ccc; flex: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 3px; }
+        .log-user-link { color: #fff; text-decoration: none; font-weight: 700; }
+        .log-time { font-size: 0.65rem; color: #555; margin-left: auto; white-space: nowrap; }
+        .log-highlight { color: var(--accent-cyan); font-weight: 600; }
+
+        /* INFO LIST STYLE */
+        .info-list { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; margin-bottom: 20px; }
+        .info-list-header { font-size: 0.85rem; color: var(--accent-cyan); font-weight: 700; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .info-item { display: flex; align-items: center; padding: 6px 0; }
+        .info-item:last-child { border-bottom: none; }
+        .info-item i { font-size: 1.1rem; width: 28px; }
+        .info-item .info-label { flex: 1; font-size: 0.85rem; color: #aaa; }
+        .info-item .info-value { font-size: 0.95rem; font-weight: bold; color: #fff; text-align: right; }
+
+        /* TABS */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #111;
+            padding: 5px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: #777; font-family: 'Rajdhani', sans-serif; font-weight: bold; cursor: pointer; border-radius: 6px; transition: all 0.3s; }
+        .tab-btn.active { background: #222; color: var(--accent-cyan); border: 1px solid var(--accent-cyan); box-shadow: 0 0 10px rgba(0, 229, 255, 0.1); }
+        .tab-content { display: none; animation: fadeIn 0.4s; }
+        .tab-content.active { display: block; }
+
     </style>
 </head>
 <body>
@@ -233,111 +286,167 @@
 
         <main>
             <div class="page-header">
-                <h1 class="page-title">HASTANE YÖNETİMİ</h1>
+                <div class="back-btn" onclick="window.location.href='hospital-list.html'">
+                    <i class="fas fa-arrow-left"></i>
+                </div>
+                <div class="header-content">
+                    <div class="page-title">HASTANE YÖNETİMİ</div>
+                    <div class="page-description">Hastaneni geliştir, hastaları tedavi et ve kazan.</div>
+                </div>
             </div>
-            <!-- STATS CARD (Updated to match Hospital Detail Style) -->
-            <div class="hospital-info" style="background: linear-gradient(145deg, #1a1a1a, #111); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 25px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.3); position: relative; overflow: hidden;">
-                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));"></div>
+            <!-- İŞLETME KARTI -->
+            <div class="business-card" style="background: linear-gradient(135deg, rgba(0, 229, 255, 0.1), var(--bg-card)); border: 1px solid var(--accent-cyan); border-radius: 15px; padding: 15px; margin-bottom: 25px; display: flex; align-items: center; gap: 15px; position: relative; overflow: hidden;">
+                <div class="business-icon-wrapper" style="width: 65px; height: 65px; flex-shrink: 0; background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(0, 229, 255, 0.05)); border: 2px solid var(--accent-cyan); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <img src="icons/hospital-icon/hospital.png" class="business-icon" style="width: 60px; height: 60px; object-fit: contain;">
+                </div>
+                <div class="business-info">
+                    <div class="business-name" id="hNameDisplay" style="font-size: 1.2rem; font-weight: 800; color: #fff; text-transform: uppercase;">Yükleniyor...</div>
+                </div>
+            </div>
+
+            
+            <!-- TABS MENU -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('info')">BİLGİLER</button>
+                <button class="tab-btn" onclick="switchTab('settings')">AYARLAR</button>
+                <button class="tab-btn" onclick="switchTab('vault')">KASA</button>
+            </div>
+
+            <!-- TAB: INFO (UPGRADE & LOGS) -->
+            <div id="tab-info" class="tab-content active">
                 
-                <div style="text-align: center; margin-bottom: 10px;">
-                    <img src="icons/hospital-icon/hospital.png" style="width: 60px; height: 60px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(0,229,255,0.4));">
-                </div>
-                <div class="h-level-badge" style="position: absolute; top: 0; right: 0; background: var(--accent-gold); color: #000; padding: 5px 15px; font-weight: 800; font-size: 0.9rem; border-bottom-left-radius: 12px; box-shadow: -2px 2px 15px rgba(255, 215, 0, 0.2);">SEVİYE <span id="statLevel">1</span></div>
-                
-                <div class="h-name" id="hNameDisplay" style="font-size: 1.6rem; font-weight: 900; color: #fff; margin-bottom: 5px; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 0 15px rgba(0, 229, 255, 0.2);">Yükleniyor...</div>
-                <div class="h-owner" style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; display: flex; justify-content: center; align-items: center; gap: 6px;">
-                    <i class="fas fa-user-md"></i> Sahibi: <span id="hOwnerDisplay">...</span>
+                <div class="info-list">
+                    <div class="info-list-header">
+                        <i class="fas fa-info-circle"></i> HASTANE BİLGİLERİ
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-user-tie" style="color:var(--accent-cyan)"></i>
+                        <span class="info-label">İşletme Sahibi</span>
+                        <span class="info-value" id="hOwnerDisplay">...</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-layer-group" style="color:var(--accent-gold)"></i>
+                        <span class="info-label">Seviye</span>
+                        <span class="info-value" id="statLevel">1</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-clock" style="color:var(--accent-gold)"></i>
+                        <span class="info-label">Tedavi Süresi</span>
+                        <span class="info-value" id="statDuration">15 Dk</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-heart" style="color:var(--accent-red)"></i>
+                        <span class="info-label">Sağlık Yenileme</span>
+                        <span class="info-value">%<span id="statRegen">100</span></span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-tag" style="color:var(--accent-green)"></i>
+                        <span class="info-label">Tedavi Ücreti</span>
+                        <span class="info-value"><span id="statPriceDisplay">0</span> ₺</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-bed" style="color:var(--accent-purple)"></i>
+                        <span class="info-label">Kapasite</span>
+                        <span class="info-value" id="statCapacity">0/5</span>
+                    </div>
                 </div>
 
-                <div class="h-stats" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div class="h-stat" style="background: rgba(255,255,255,0.04); padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                        <i class="fas fa-clock" style="color:var(--accent-gold); font-size: 1.1rem;"></i> 
-                        <span style="font-size: 0.8rem; font-weight: 600; color: #ddd;">Süre: <span id="statDuration">15 Dk</span></span>
+                <div class="settings-card">
+                    <div class="info-list-header">
+                        <i class="fas fa-chart-line"></i> GENEL İSTATİSTİKLER
                     </div>
-                    <div class="h-stat" style="background: rgba(255,255,255,0.04); padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                        <i class="fas fa-heart" style="color:var(--accent-red); font-size: 1.1rem;"></i> 
-                        <span style="font-size: 0.8rem; font-weight: 600; color: #ddd;">Yenileme: %<span id="statRegen">100</span></span>
+                    <div class="info-list" style="margin-top:0; background:none; border:none; padding:0;">
+                        <div class="info-item">
+                            <i class="fas fa-procedures" style="color:var(--accent-cyan)"></i>
+                            <span class="info-label">Toplam Tedavi Sayısı</span>
+                            <span class="info-value" id="statTotalTreatments">0</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-coins" style="color:var(--accent-gold)"></i>
+                            <span class="info-label">Toplam Kazanç</span>
+                            <span class="info-value" id="statTotalEarnings">0 ₺</span>
+                        </div>
                     </div>
-                    <div class="h-stat" style="background: rgba(255,255,255,0.04); padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                        <i class="fas fa-tag" style="color:var(--accent-green); font-size: 1.1rem;"></i> 
-                        <span style="font-size: 0.8rem; font-weight: 600; color: #ddd;">Ücret: <span id="statPriceDisplay">0</span> ₺</span>
+                </div>
+
+
+
+                <!-- LOGS CARD (Updated to match Hospital Detail History Style) -->
+                <div class="settings-card">
+                    <div class="info-list-header">
+                        <i class="fas fa-history"></i> SON İŞLEMLER (LOG)
                     </div>
-                    <div class="h-stat" style="background: rgba(255,255,255,0.04); padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                        <i class="fas fa-procedures" style="color:var(--accent-cyan); font-size: 1.1rem;"></i> 
-                        <span style="font-size: 0.8rem; font-weight: 600; color: #ddd;">Toplam: <span id="statTotalTreatments">0</span></span>
-                    </div>
-                    <div class="h-stat" style="background: rgba(255,255,255,0.04); padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                        <i class="fas fa-bed" style="color:var(--accent-purple); font-size: 1.1rem;"></i> 
-                        <span style="font-size: 0.8rem; font-weight: 600; color: #ddd;">Kapasite: <span id="statCapacity">0/5</span></span>
+                    <div id="logsTableBody" style="display: flex; flex-direction: column; gap: 10px; max-height: 200px; overflow-y: auto;">
+                        <div style="text-align:center; color:#666;">Kayıt yok.</div>
                     </div>
                 </div>
             </div>
 
-            <!-- KASA YÖNETİMİ (Updated to match Mine Management Style) -->
-            <div class="settings-card" style="border-color:var(--accent-cyan)">
-                <div class="card-header" style="color:var(--accent-cyan); font-size: 1.1rem; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 5px;">
-                    <img src="icons/inventory-icon/money.png" style="width:24px;height:24px;vertical-align:middle;"> KASA YÖNETİMİ
+            <!-- TAB: SETTINGS (RENAME/PRICE) -->
+            <div id="tab-settings" class="tab-content">
+                <div class="settings-card">
+                    <div class="info-list-header">
+                        <i class="fas fa-edit"></i> BİLGİLERİ DÜZENLE
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Hastane Adı (5-30 Karakter)</label>
+                        <input type="text" id="hNameInput" class="form-input" value="" autocomplete="off" data-lpignore="true" maxlength="30">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tedavi Ücreti (100 - 5.000 ₺)</label>
+                        <input type="number" id="hPriceInput" class="form-input" value="" autocomplete="off" data-lpignore="true" min="100" max="5000">
+                    </div>
+                    <button class="btn-save" onclick="openSettingsModal()">KAYDET</button>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Kasa Bakiyesi</label>
-                    <div style="font-size:1.2rem; font-weight:bold; color:#fff; margin-bottom:10px;" id="hospitalBalance">0 ₺</div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Para Çek</label>
-                    <div style="display:flex; gap:10px;">
-                        <input type="number" id="withdrawAmount" class="form-input" placeholder="Miktar" autocomplete="off" data-lpignore="true">
-                        <button class="btn-save" style="width:auto; background:var(--accent-cyan); color:#000; border:none;" onclick="openWithdrawModal()">ÇEK</button>
+
+                <div class="settings-card upgrade-card">
+                    <div class="card-title" style="border-color:var(--accent-gold); color:var(--accent-gold);">HASTANE SEVİYESİ</div>
+                    
+                    <div class="upgrade-info">
+                        <div class="u-col">
+                            <h4>MEVCUT</h4>
+                            <p id="currentLevel">Seviye 1</p>
+                            <small style="color:#aaa" id="currentCap">5 Yatak</small>
+                        </div>
+                        <div class="u-arrow"><i class="fas fa-arrow-right" style="color:var(--accent-gold)"></i></div>
+                        <div class="u-col">
+                            <h4>SONRAKİ</h4>
+                            <p id="nextLevel">Seviye 2</p>
+                            <small style="color:var(--accent-green)" id="nextCap">55 Yatak</small>
+                        </div>
+                    </div>
+
+                    <button id="upgradeBtn" class="btn-upgrade" onclick="openUpgradeModal()">
+                        <i class="fas fa-arrow-circle-up"></i> GELİŞTİR
+                    </button>
+
+                    <div id="upgradeProgress" class="upgrade-progress-container">
+                        <div class="u-progress-bg">
+                            <div id="uBar" class="u-progress-fill"></div>
+                        </div>
+                        <div id="uTimer" class="u-timer-text">Geliştiriliyor... 10s</div>
                     </div>
                 </div>
             </div>
 
-            <div class="settings-card">
-                <div class="card-title">BİLGİLERİ DÜZENLE</div>
-                <div class="form-group">
-                    <label class="form-label">Hastane Adı</label>
-                    <input type="text" id="hNameInput" class="form-input" value="" autocomplete="off" data-lpignore="true">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Tedavi Ücreti (₺)</label>
-                    <input type="number" id="hPriceInput" class="form-input" value="" autocomplete="off" data-lpignore="true">
-                </div>
-                <button class="btn-save" onclick="openSettingsModal()">KAYDET</button>
-            </div>
-
-            <div class="settings-card upgrade-card">
-                <div class="card-title" style="border-color:var(--accent-gold); color:var(--accent-gold);">HASTANE SEVİYESİ</div>
-                
-                <div class="upgrade-info">
-                    <div class="u-col">
-                        <h4>MEVCUT</h4>
-                        <p id="currentLevel">Seviye 1</p>
-                        <small style="color:#aaa" id="currentCap">5 Yatak</small>
+            <!-- TAB: VAULT (KASA) -->
+            <div id="tab-vault" class="tab-content">
+                <!-- KASA YÖNETİMİ (Updated to match Mine Management Style) -->
+                <div class="settings-card" style="border-color:var(--accent-cyan)">
+                    <div class="info-list-header">
+                        <img src="icons/inventory-icon/money.png" style="width:20px;height:20px;object-fit:contain;"> KASA YÖNETİMİ
                     </div>
-                    <div class="u-arrow"><i class="fas fa-arrow-right"></i></div>
-                    <div class="u-col">
-                        <h4>SONRAKİ</h4>
-                        <p id="nextLevel">Seviye 2</p>
-                        <small style="color:var(--accent-green)" id="nextCap">55 Yatak</small>
+                    <div class="form-group">
+                        <label class="form-label">Kasa Bakiyesi</label>
+                        <div style="font-size:1.2rem; font-weight:bold; color:#fff; margin-bottom:10px;" id="hospitalBalance">0 ₺</div>
                     </div>
-                </div>
-
-                <button id="upgradeBtn" class="btn-upgrade" onclick="openUpgradeModal()">
-                    <i class="fas fa-arrow-circle-up"></i> GELİŞTİR
-                </button>
-
-                <div id="upgradeProgress" class="upgrade-progress-container">
-                    <div class="u-progress-bg">
-                        <div id="uBar" class="u-progress-fill"></div>
+                    <div class="form-group">
+                        <label class="form-label">Para Çek</label>
+                        <div style="display:flex; gap:10px;">
+                            <input type="number" id="withdrawAmount" class="form-input" placeholder="Miktar" autocomplete="off" data-lpignore="true">
+                            <button class="btn-save" style="width:auto; background:var(--accent-cyan); color:#000; border:none;" onclick="openWithdrawModal()">ÇEK</button>
+                        </div>
                     </div>
-                    <div id="uTimer" class="u-timer-text">Geliştiriliyor... 10s</div>
-                </div>
-            </div>
-
-            <!-- LOGS CARD (Updated to match Hospital Detail History Style) -->
-            <div class="history-section" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px;">
-                <div class="hs-title" style="font-size: 1.1rem; font-weight: bold; margin-bottom: 15px; color: #fff; border-bottom: 1px solid #333; padding-bottom: 10px;">SON İŞLEMLER (LOG)</div>
-                <div class="hs-list" id="logsTableBody" style="display: flex; flex-direction: column; gap: 10px; max-height: 200px; overflow-y: auto;">
-                    <div style="text-align:center; color:#666;">Kayıt yok.</div>
                 </div>
             </div>
 
@@ -458,6 +567,7 @@
             document.getElementById('statCapacity').innerText = (hospital.active_patients || 0) + " / " + hospital.capacity;
             document.getElementById('statPriceDisplay').innerText = fmt(hospital.price || 0);
             document.getElementById('statTotalTreatments').innerText = fmt(hospital.total_treatments || 0);
+            document.getElementById('statTotalEarnings').innerText = fmt(hospital.balance || 0) + " ₺"; // Using balance as proxy
             document.getElementById('statDuration').innerText = (hospital.treatment_duration || 15) + " Dk";
             document.getElementById('statRegen').innerText = (hospital.health_regen || 100);
             
@@ -490,16 +600,13 @@
                     // For now, let's use a generic icon or try to use what we have.
                     
                     const row = `
-                        <div class="hs-item" style="display:flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 10px; border-radius: 6px; font-size: 0.9rem; border-left: 3px solid var(--accent-cyan);">
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <img src="${avatar}" style="width:30px; height:30px; border-radius:50%; border:1px solid #444;">
-                                <span class="hs-text">
-                                    <span style="color:var(--accent-cyan); font-weight:bold;">#${log.user_id} - ${log.patient_name}</span> 
-                                    <span style="color:#aaa; margin-left:5px;">tedavi oldu.</span>
-                                    <div style="font-size:0.75rem; color:#555;">${dateStr} ${timeStr}</div>
-                                </span>
+                        <div class="log-item">
+                            <img src="${avatar}" class="log-avatar">
+                            <div class="log-text">
+                                <span class="log-user-link">#${log.user_id} - ${log.patient_name}</span> 
+                                <span class="log-highlight">tedavi oldu</span>
                             </div>
-                            <div style="color:var(--accent-green); font-weight:bold;">+${fmt(log.price)} ₺</div>
+                            <div class="log-time">${dateStr} ${timeStr}</div>
                         </div>
                     `;
                     tbody.innerHTML += row;
@@ -640,12 +747,12 @@
             const name = document.getElementById('hNameInput').value;
             const price = parseInt(document.getElementById('hPriceInput').value);
             
-            if (!name || name.length < 3) {
-                toastr.warning('Hastane adı en az 3 karakter olmalıdır.');
+            if (!name || name.length < 5 || name.length > 30) {
+                toastr.warning('Hastane adı 5-30 karakter arasında olmalıdır.');
                 return;
             }
-            if (isNaN(price) || price < 0 || price > 10000) {
-                toastr.warning('Fiyat 0 ile 10.000 arasında olmalıdır.');
+            if (isNaN(price) || price < 100 || price > 5000) {
+                toastr.warning('Fiyat 100 ile 5.000 arasında olmalıdır.');
                 return;
             }
 
@@ -920,6 +1027,21 @@
                 console.error(err);
                 toastr.error("Bir hata oluştu.");
             });
+        }
+
+        // --- TABS ---
+        function switchTab(tabName) {
+            // Buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById('tab-' + tabName).classList.add('active');
         }
 
     </script>

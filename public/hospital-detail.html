@@ -21,6 +21,7 @@
             --text-white: #ffffff;
             --text-muted: #888;
             --border-color: #333;
+            --accent: var(--accent-cyan);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -73,7 +74,7 @@
             background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));
         }
         .h-name { 
-            font-size: 1.6rem; font-weight: 900; color: #fff; margin-bottom: 5px; margin-top: 10px;
+            font-size: 1rem; font-weight: 900; color: #fff; margin-bottom: 5px; margin-top: 10px;
             text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
         }
         .h-level-badge {
@@ -95,41 +96,84 @@
             display: flex; align-items: center; justify-content: center; gap: 8px;
             border: 1px solid rgba(255,255,255,0.05);
         }
-        .h-stat i { font-size: 1.1rem; }
-        .h-stat span { font-size: 0.95rem; font-weight: 600; color: #ddd; }
+        .h-stat i { font-size: 0.9rem; }
+        .h-stat span { font-size: 0.8rem; font-weight: 600; color: #ddd; }
 
         /* BED GRID (Updated to match Mine Slots) */
-        .slots-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 25px; }
+        .slots-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 25px; }
 
         .slot-card {
-            background: rgba(20,20,20,0.8); border: 1px solid #333; border-radius: 8px;
-            padding: 10px 5px; text-align: center; position: relative; overflow: hidden;
-            transition: all 0.2s; cursor: pointer; min-height: 120px;
+            background: #181818; 
+            border: 2px solid #333; 
+            border-radius: 8px; /* Slightly rounded corners */
+            padding: 30px 5px 10px 5px; /* Top padding for pillow */
+            text-align: center; position: relative; overflow: hidden;
+            transition: all 0.2s; cursor: pointer; min-height: 130px;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
         }
         
+        /* PILLOW (Yastık) */
+        .slot-card::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50%;
+            height: 12px;
+            background: #333;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            transition: background 0.3s;
+            z-index: 1;
+        }
+
+        /* BED FOOT (Ayak ucu) */
+        .slot-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0px;
+            left: 10%;
+            width: 80%;
+            height: 4px;
+            background: #252525;
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+        }
+
         /* Boş Slot */
-        .slot-empty:hover { border-color: var(--accent-green); background: rgba(46, 204, 113, 0.05); }
-        .slot-empty .slot-icon { font-size: 1.5rem; color: #333; margin-bottom: 5px; }
-        .slot-empty .slot-text { color: var(--accent-green); font-weight: 700; font-size: 0.8rem; line-height: 1.2; }
+        .slot-empty:hover { border-color: var(--accent-green); background: rgba(46, 204, 113, 0.05); transform: translateY(-2px); }
+        .slot-empty:hover::before { background: var(--accent-green); }
+        .slot-empty .slot-icon { font-size: 1.5rem; color: #333; margin-bottom: 5px; z-index: 2; transition: color 0.3s; }
+        .slot-empty:hover .slot-icon { color: var(--accent-green); }
+        .slot-empty .slot-text { color: #555; font-weight: 700; font-size: 0.8rem; line-height: 1.2; z-index: 2; }
+        .slot-empty:hover .slot-text { color: var(--accent-green); }
 
         /* Dolu (Başka Oyuncu) */
-        .slot-occupied { border-color: #444; opacity: 0.7; cursor: not-allowed; }
-        .slot-occupied .slot-avatar { width: 35px; height: 35px; border-radius: 50%; border: 2px solid #555; margin-bottom: 5px; }
-        .slot-occupied .slot-text { color: #666; font-size: 0.7rem; }
+        .slot-occupied { border-color: #444; opacity: 0.9; cursor: not-allowed; background: #1a1a1a; }
+        .slot-occupied::before { background: #555; }
+        .slot-occupied .slot-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #555; margin-bottom: 5px; z-index: 2; }
+        .slot-occupied .slot-text { color: #666; font-size: 0.7rem; z-index: 2; }
 
         /* Çalışıyor (Ben) */
-        .slot-working { border-color: var(--accent-green); background: rgba(46, 204, 113, 0.05); cursor: default; }
-        .slot-working .slot-icon { color: var(--accent-green); animation: pulse 1.5s infinite; font-size: 1.5rem; margin-bottom: 5px; }
-        .slot-timer-text { font-size: 0.9rem; font-weight: 800; color: #fff; margin-bottom: 5px; }
+        .slot-working { 
+            border-color: var(--accent-cyan); 
+            background: rgba(0, 229, 255, 0.05); 
+            cursor: default;
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.15), inset 0 0 20px rgba(0,0,0,0.8);
+        }
+        .slot-working::before { background: var(--accent-cyan); box-shadow: 0 0 10px rgba(0, 229, 255, 0.4); }
+        .slot-working .slot-icon { color: var(--accent-cyan); animation: pulse 2s infinite; font-size: 1.8rem; margin-bottom: 5px; z-index: 2; }
+        .slot-timer-text { font-size: 0.9rem; font-weight: 800; color: #fff; margin-bottom: 5px; z-index: 2; text-shadow: 0 2px 4px #000; }
         
         /* Progress Bar */
         .slot-progress-bg { 
-            width: 90%; height: 4px; background: #333; border-radius: 2px; 
-            overflow: hidden;
+            width: 80%; height: 4px; background: #333; border-radius: 2px; 
+            overflow: hidden; z-index: 2; margin-top: 5px;
         }
         .slot-progress-fill { 
-            height: 100%; width: 0%; background: var(--accent-green); 
+            height: 100%; width: 0%; background: var(--accent-cyan); 
             transition: width 1s linear; 
         }
 
@@ -171,22 +215,84 @@
             font-size: 0.8rem;
         }
 
-        /* HISTORY SECTION */
-        .history-section {
+        /* ACCORDION */
+        accordion-card, .accordion-card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .accordion-header {
+            padding: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.02);
+            transition: background 0.2s;
+        }
+        .accordion-header:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .accordion-header.active {
+             border-bottom: 1px solid var(--border-color);
+             background: rgba(255, 255, 255, 0.05);
+        }
+        .accordion-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .accordion-icon {
+            color: #666;
+            transition: transform 0.3s ease;
+        }
+        .accordion-header.active .accordion-icon {
+            transform: rotate(180deg);
+            color: var(--accent);
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .accordion-body {
             padding: 15px;
         }
-        .hs-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 15px; color: #fff; border-bottom: 1px solid #333; padding-bottom: 10px; }
-        .hs-list { display: flex; flex-direction: column; gap: 10px; max-height: 200px; overflow-y: auto; }
-        .hs-item {
-            display: flex; justify-content: space-between; align-items: center;
-            background: #1a1a1a; padding: 10px; border-radius: 6px; font-size: 0.9rem;
-            border-left: 3px solid var(--accent-cyan);
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes workPulse { 
+            0% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 2px var(--accent)); } 
+            50% { transform: scale(1.1); opacity: 0.9; filter: drop-shadow(0 0 8px var(--accent)); } 
+            100% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 2px var(--accent)); } 
         }
-        .hs-time { color: var(--accent-gold); font-weight: bold; }
-        .hs-user { color: #fff; }
+        /* LOGLAR */
+        .log-container { background: var(--bg-card); border-radius: 10px; padding: 15px; border: 1px solid var(--border-color); }
+        .log-list { max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+        .log-item {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.2s;
+            min-height: 36px;
+        }
+        .log-item:hover { background: rgba(255,255,255,0.05); }
+        .log-avatar {
+            width: 24px; height: 24px; border-radius: 50%; margin-right: 8px; object-fit: cover; border: 1px solid #444;
+        }
+        .log-text { font-size: 0.75rem; color: #ccc; flex: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 3px; }
+        .log-user-link { color: #fff; text-decoration: none; font-weight: 700; }
+        .log-time { font-size: 0.65rem; color: #555; margin-left: auto; white-space: nowrap; }
+        .log-highlight { color: var(--accent); font-weight: 600; }
 
         /* MODAL */
         .modal-overlay {
@@ -213,31 +319,46 @@
         .m-btns { display: flex; gap: 10px; margin-top: 20px; }
         .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 1rem; }
         
-        /* MODAL BADGES */
-        .modal-badge-container {
+        /* MODAL LIST */
+        .modal-list {
+            margin: 20px 0;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            margin: 20px 0;
         }
-        .modal-badge {
-            background: #222;
-            border: 1px solid #444;
-            border-radius: 8px;
-            padding: 8px 10px;
+        .modal-list-item {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 8px;
-            min-width: 80px;
+            padding: 12px 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            background: rgba(255, 255, 255, 0.02);
+            transition: background 0.2s;
         }
-        .mb-icon { font-size: 1.2rem; width: 24px; height: 24px; object-fit: contain; }
-        .mb-content { display: flex; flex-direction: column; align-items: flex-start; }
-        .mb-label { font-size: 0.6rem; color: #aaa; text-transform: uppercase; line-height: 1; margin-bottom: 2px; white-space: nowrap; }
-        .mb-val { font-size: 0.85rem; font-weight: bold; color: #fff; line-height: 1; white-space: nowrap; }
+        .modal-list-item:first-child { border-top-left-radius: 8px; border-top-right-radius: 8px; }
+        .modal-list-item:last-child { border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; border-bottom: none; }
+        .modal-list-item:hover { background: rgba(255, 255, 255, 0.05); }
         
-        .badge-time { background: rgba(0, 229, 255, 0.1); border-color: rgba(0, 229, 255, 0.3); }
-        .badge-cost { background: rgba(255, 215, 0, 0.1); border-color: rgba(255, 215, 0, 0.3); }
-        .badge-gain { background: rgba(46, 204, 113, 0.1); border-color: rgba(46, 204, 113, 0.3); }
+        .modal-item-left { display: flex; align-items: center; gap: 12px; }
+        .modal-item-icon { 
+            width: 36px; height: 36px; 
+            border-radius: 8px; background: rgba(255,255,255,0.05); 
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+        }
+        
+        .modal-item-text { display: flex; flex-direction: column; align-items: flex-start; }
+        .modal-item-label { font-size: 0.7rem; color: #888; text-transform: uppercase; font-weight: 600; }
+        .modal-item-desc { font-size: 0.8rem; color: #aaa; }
+
+        .modal-item-right { text-align: right; }
+        .modal-item-value { font-size: 1rem; font-weight: 700; color: #fff; }
+        
+        .c-cyan { color: var(--accent-cyan); }
+        .c-green { color: var(--accent-green); }
+        .c-gold { color: var(--accent-gold); }
+        .bg-cyan-low { background: rgba(0, 229, 255, 0.1); color: var(--accent-cyan); }
+        .bg-green-low { background: rgba(46, 204, 113, 0.1); color: var(--accent-green); }
+        .bg-gold-low { background: rgba(255, 215, 0, 0.1); color: var(--accent-gold); }
         
         @keyframes pulse-red {
             0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
@@ -256,21 +377,66 @@
 
         <main>
             <div id="hospitalInfo" class="hospital-info">
-                <div class="h-name">Yükleniyor...</div>
+                <div style="text-align: center; margin-bottom: 10px;">
+                    <img src="icons/hospital-icon/hospital.png" style="width: 60px; height: 60px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(0,229,255,0.4));">
+                </div>
+                <div class="h-level-badge" id="h-level">SEVİYE -</div>
+                <div class="h-name" id="h-name">Yükleniyor...</div>
+                <div class="h-owner"><i class="fas fa-user-md"></i> Sahibi: <a id="h-owner-link" href="#" style="color:var(--accent-cyan); text-decoration:none;">-</a></div>
+                <div class="h-stats">
+                    <div class="h-stat">
+                        <i class="fas fa-bed" style="color:var(--accent-cyan)"></i> 
+                        <span id="h-capacity">- Kapasite</span>
+                    </div>
+                    <div class="h-stat">
+                        <i class="fas fa-heart" style="color:var(--accent-red)"></i> 
+                        <span id="h-regen">% - Can</span>
+                    </div>
+                    <div class="h-stat">
+                        <i class="fas fa-clock" style="color:var(--accent-gold)"></i> 
+                        <span id="h-duration">Tedavi Süresi: - Dk</span>
+                    </div>
+                    <div class="h-stat">
+                        <i class="fas fa-tag" style="color:var(--accent-green)"></i> 
+                        <span id="h-price">Tedavi Ücreti: - ₺</span>
+                    </div>
+                </div>
             </div>
 
-            <div class="instruction-text" style="text-align:center; color:#888; margin-bottom:15px; font-size:0.9rem;">
-                <i class="fas fa-info-circle"></i> Tedavi olmak için boş bir yatak slotuna tıklayın.
+            <div class="accordion-card open" id="treatmentAccordion">
+                <div class="accordion-header active" onclick="toggleAccordion('treatmentAccordion')">
+                    <span class="accordion-title">
+                        <i class="fas fa-procedures" style="margin-right:8px;"></i>TEDAVİ ODALARI
+                        <span id="h-accordion-capacity" style="font-size: 0.8rem; color: #888; margin-left: 10px; font-weight: normal;">(Kapasite: -/-)</span>
+                    </span>
+                    <i class="fas fa-chevron-down accordion-icon"></i>
+                </div>
+                <div class="accordion-content">
+                    <div class="accordion-body">
+                        <div class="instruction-text" style="text-align:center; color: var(--accent-gold); margin-bottom:15px; font-size:0.9rem;">
+                            <i class="fas fa-info-circle"></i> Tedavi olmak için boş bir yatak slotuna tıklayın.
+                        </div>
+
+                        <div id="slotsGrid" class="slots-container">
+                            <!-- JS ile doldurulacak -->
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div id="slotsGrid" class="slots-container">
-                <!-- JS ile doldurulacak -->
-            </div>
-
-            <div class="history-section">
-                <div class="hs-title">TEDAVİ GEÇMİŞİ</div>
-                <div class="hs-list" id="historyList">
-                    <div style="text-align:center; color:#666;">Kayıt yok.</div>
+            <div class="accordion-card open" id="historyAccordion">
+                <div class="accordion-header active" onclick="toggleAccordion('historyAccordion')">
+                    <span class="accordion-title">
+                        <i class="fas fa-history" style="margin-right:8px;"></i>TEDAVİ GEÇMİŞİ
+                    </span>
+                    <i class="fas fa-chevron-down accordion-icon"></i>
+                </div>
+                <div class="accordion-content">
+                    <div class="accordion-body">
+                         <div class="log-list" id="historyList">
+                            <div style="text-align:center; color:#666;">Kayıt yok.</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -283,26 +449,52 @@
                     Seçilen yatakta tedavi olmak istiyor musunuz?
                 </div>
                 
-                <div class="modal-badge-container">
-                    <div class="modal-badge badge-time">
-                        <i class="fas fa-clock mb-icon" style="color:var(--accent-cyan)"></i>
-                        <div class="mb-content">
-                            <span class="mb-label">SÜRE</span>
-                            <span class="mb-val" id="modalDuration">10 Dk</span>
+                <div class="modal-list">
+                    <!-- SÜRE -->
+                    <div class="modal-list-item">
+                        <div class="modal-item-left">
+                            <div class="modal-item-icon bg-cyan-low">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="modal-item-text">
+                                <span class="modal-item-label">TEDAVİ SÜRESİ</span>
+                                <span class="modal-item-desc">Tamamlanma zamanı</span>
+                            </div>
+                        </div>
+                        <div class="modal-item-right">
+                            <span class="modal-item-value c-cyan" id="modalDuration">10 Dk</span>
                         </div>
                     </div>
-                    <div class="modal-badge badge-cost">
-                        <img src="icons/inventory-icon/money.png" class="mb-icon">
-                        <div class="mb-content">
-                            <span class="mb-label">TEDAVİ ÜCRETİ</span>
-                            <span class="mb-val" id="modalPrice">100 ₺</span>
+
+                    <!-- ÜCRET -->
+                    <div class="modal-list-item">
+                        <div class="modal-item-left">
+                            <div class="modal-item-icon bg-gold-low">
+                                <i class="fas fa-coins"></i>
+                            </div>
+                            <div class="modal-item-text">
+                                <span class="modal-item-label">TEDAVİ ÜCRETİ</span>
+                                <span class="modal-item-desc">Hesabınızdan düşülecek</span>
+                            </div>
+                        </div>
+                        <div class="modal-item-right">
+                            <span class="modal-item-value c-gold" id="modalPrice">100 ₺</span>
                         </div>
                     </div>
-                    <div class="modal-badge badge-gain">
-                        <i class="fas fa-heart mb-icon" style="color:var(--accent-green)"></i>
-                        <div class="mb-content">
-                            <span class="mb-label">KAZANIM</span>
-                            <span class="mb-val">+100 CAN</span>
+
+                    <!-- KAZANIM -->
+                    <div class="modal-list-item">
+                        <div class="modal-item-left">
+                            <div class="modal-item-icon bg-green-low">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <div class="modal-item-text">
+                                <span class="modal-item-label">SAĞLIK KAZANIMI</span>
+                                <span class="modal-item-desc">Yüksek kalite tedavi</span>
+                            </div>
+                        </div>
+                        <div class="modal-item-right">
+                            <span class="modal-item-value c-green" id="modalGain">+100 CAN</span>
                         </div>
                     </div>
                 </div>
@@ -310,6 +502,20 @@
                 <div class="m-btns">
                     <button class="m-btn" style="background:#333; color:#fff;" onclick="closeModal()">İPTAL</button>
                     <button class="m-btn" style="background:var(--accent-green); color:#000;" onclick="startTreatment()">ONAYLA</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESULT MODAL -->
+        <div class="modal-overlay" id="resultModal" style="z-index: 1001;">
+            <div class="modal-content">
+                <div style="margin-bottom: 15px;">
+                    <i id="resultIcon" class="fas" style="font-size: 3rem;"></i>
+                </div>
+                <div class="m-title" id="resultTitle">SONUÇ</div>
+                <div class="m-text" id="resultMessage"></div>
+                <div class="m-btns">
+                    <button class="m-btn btn-confirm" onclick="closeResultModal()">TAMAM</button>
                 </div>
             </div>
         </div>
@@ -323,6 +529,7 @@
         let hospitalData = null;
         let activeTreatments = [];
         let currentUser = null;
+        let lastHistoryJSON = '';
 
         async function initPage() {
             if (!hospitalId) {
@@ -366,32 +573,33 @@
             const duration = h.treatment_duration || 15;
             const regen = h.health_regen || 100;
             
-            document.getElementById('hospitalInfo').innerHTML = `
-                <div style="text-align: center; margin-bottom: 10px;">
-                    <img src="icons/hospital-icon/hospital.png" style="width: 60px; height: 60px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(0,229,255,0.4));">
-                </div>
-                <div class="h-level-badge">SEVİYE ${h.level}</div>
-                <div class="h-name">${h.name}</div>
-                <div class="h-owner"><i class="fas fa-user-md"></i> Sahibi: <a href="profile.html?id=${h.user_id}" style="color:var(--accent-cyan); text-decoration:none;">${h.owner_name}</a></div>
-                <div class="h-stats">
-                    <div class="h-stat">
-                        <i class="fas fa-bed" style="color:var(--accent-cyan)"></i> 
-                        <span>${h.capacity} Kapasite</span>
-                    </div>
-                    <div class="h-stat">
-                        <i class="fas fa-heart" style="color:var(--accent-red)"></i> 
-                        <span>%${regen} Can</span>
-                    </div>
-                    <div class="h-stat">
-                        <i class="fas fa-clock" style="color:var(--accent-gold)"></i> 
-                        <span>Tedavi Süresi: ${duration} Dk</span>
-                    </div>
-                    <div class="h-stat">
-                        <i class="fas fa-tag" style="color:var(--accent-green)"></i> 
-                        <span>Tedavi Ücreti: ${h.price} ₺</span>
-                    </div>
-                </div>
-            `;
+            // Only update active elements
+            const elLevel = document.getElementById('h-level');
+            if(elLevel) elLevel.innerText = `SEVİYE ${h.level}`;
+            
+            const elName = document.getElementById('h-name');
+            if(elName) elName.innerText = h.name;
+            
+            const elOwner = document.getElementById('h-owner-link');
+            if(elOwner) {
+                elOwner.href = `profile.html?id=${h.user_id}`;
+                elOwner.innerText = `#${h.user_id} - ${h.owner_name}`;
+            }
+
+            const elCap = document.getElementById('h-capacity');
+            if(elCap) elCap.innerText = `${activeTreatments.length}/${h.capacity} Kapasite`;
+            
+            const elRegen = document.getElementById('h-regen');
+            if(elRegen) elRegen.innerText = `%${regen} Can`;
+
+            const elDur = document.getElementById('h-duration');
+            if(elDur) elDur.innerText = `Tedavi Süresi: ${duration} Dk`;
+
+            const elPrice = document.getElementById('h-price');
+            if(elPrice) elPrice.innerText = `Tedavi Ücreti: ${h.price} ₺`;
+
+            const elAccCap = document.getElementById('h-accordion-capacity');
+            if(elAccCap) elAccCap.innerText = `(Kapasite: ${activeTreatments.length}/${h.capacity})`;
         }
 
         let timerInterval;
@@ -432,8 +640,14 @@
             for (let i = 1; i <= hospitalData.capacity; i++) {
                 const treatment = treatmentMap[i];
                 const isOccupied = !!treatment;
+
+                let slotEl = document.getElementById(`slot-${i}`);
+                if (!slotEl) {
+                    slotEl = document.createElement('div');
+                    slotEl.id = `slot-${i}`;
+                    container.appendChild(slotEl);
+                }
                 
-                let content = '';
                 if (isOccupied) {
                     const endTime = treatment.clientEndTime;
                     const timeLeft = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
@@ -447,25 +661,48 @@
                     if (!avatarUrl.startsWith('uploads/') && !avatarUrl.startsWith('http')) avatarUrl = 'uploads/avatars/' + avatarUrl;
                     
                     let slotClass = isMe ? 'slot-working' : 'slot-occupied';
+                    let borderCol = isMe ? 'var(--accent-cyan)' : '#444';
 
-                    content = `
-                        <div class="slot-card ${slotClass}">
-                            <img src="${avatarUrl}" class="slot-avatar" style="width:40px; height:40px; border-radius:50%; margin-bottom:5px; border:2px solid ${isMe ? 'var(--accent-green)' : '#444'}">
+                    // Check if content update is needed (prevent flicker)
+                    const currentUserId = slotEl.getAttribute('data-user-id');
+                    if (currentUserId != treatment.user_id) {
+                         slotEl.className = `slot-card ${slotClass}`;
+                         slotEl.setAttribute('data-user-id', treatment.user_id);
+                         slotEl.onclick = null;
+                         slotEl.innerHTML = `
+                            <img src="${avatarUrl}" class="slot-avatar" style="width:40px; height:40px; border-radius:50%; margin-bottom:5px; border:2px solid ${borderCol};">
                             <div class="slot-text" style="font-size:0.8rem; font-weight:bold; color:#fff; margin-bottom:2px;">#${treatment.user_id} - ${treatment.username}</div>
                             <div class="slot-timer-text bed-timer" id="timer-bed-${i}" data-end="${endTime}">${timeStr}</div>
-                        </div>
-                    `;
+                        `;
+                    } else {
+                        // Just update timer and endTime
+                        const timerEl = slotEl.querySelector('.bed-timer');
+                        if(timerEl) {
+                             timerEl.setAttribute('data-end', endTime);
+                             // Optional: update text immediately if skewed
+                             // timerEl.innerText = timeStr; 
+                        }
+                    }
+
                 } else {
-                    content = `
-                        <div class="slot-card slot-empty" onclick="openModal(${i})">
+                    const currentId = slotEl.getAttribute('data-user-id');
+                    // Only render if it was not empty or new
+                    if (currentId !== 'empty') {
+                        slotEl.className = 'slot-card slot-empty';
+                        slotEl.setAttribute('data-user-id', 'empty');
+                        slotEl.onclick = () => openModal(i);
+                        slotEl.innerHTML = `
                             <i class="fas fa-plus-circle slot-icon"></i>
-                            <div class="slot-text">BOŞ<br>YATAK</div>
-                        </div>
-                    `;
+                            <div class="slot-text">BOŞ YATAK</div>
+                        `;
+                    }
                 }
-                html += content;
             }
-            container.innerHTML = html;
+            
+            // Clean extended slots if capacity reduced
+            while (container.children.length > hospitalData.capacity) {
+                container.removeChild(container.lastChild);
+            }
             
             startClientTimers();
         }
@@ -500,6 +737,12 @@
 
         function renderHistory(history) {
             const container = document.getElementById('historyList');
+
+            // Prevent flickering
+            const currentJSON = JSON.stringify(history);
+            if (currentJSON === lastHistoryJSON) return;
+            lastHistoryJSON = currentJSON;
+
             if (!history || history.length === 0) {
                 container.innerHTML = '<div style="text-align:center; color:#666;">Kayıt yok.</div>';
                 return;
@@ -517,12 +760,13 @@
                 const userId = item.user_id || '?';
                 
                 html += `
-                    <div class="hs-item" style="display:flex; align-items:center; gap:10px;">
-                        <img src="${avatar}" style="width:30px; height:30px; border-radius:50%; border:1px solid #444;">
-                        <span class="hs-text" style="flex:1;">
-                            <a href="profile.html?id=${userId}" style="color:var(--accent-cyan); text-decoration:none; font-weight:bold;">#${userId} - ${item.patient_name}</a> 
-                            <span style="color:#aaa; margin-left:5px;">${dateStr} ${timeStr} tarihinde tedavi oldu.</span>
-                        </span>
+                    <div class="log-item">
+                        <img src="${avatar}" class="log-avatar">
+                        <div class="log-text">
+                            <a href="profile.html?id=${userId}" class="log-user-link">#${userId} - ${item.patient_name}</a>
+                            <span class="log-highlight">tedavi oldu</span>
+                        </div>
+                        <div class="log-time">${dateStr} ${timeStr}</div>
                     </div>
                 `;
             });
@@ -540,7 +784,7 @@
             document.getElementById('modalPrice').innerText = `${hospitalData.price} ₺`;
             
             // Update gain badge if exists or add logic for it
-            const gainBadge = document.querySelector('.badge-gain .mb-val');
+            const gainBadge = document.getElementById('modalGain');
             if(gainBadge) gainBadge.innerText = `+${regen} CAN`;
 
             document.getElementById('treatmentModal').style.display = 'flex';
@@ -554,7 +798,7 @@
         async function startTreatment() {
             if (!currentUser) return;
             if (!selectedBedIndex) {
-                toastr.error('Yatak seçimi hatası.');
+                showResultModal(false, 'Yatak seçimi hatası.');
                 return;
             }
 
@@ -569,21 +813,78 @@
                     })
                 });
                 const result = await response.json();
+                
+                closeModal();
 
                 if (result.success) {
-                    toastr.success(result.message, 'Başarılı');
-                    closeModal();
+                    showResultModal(true, result.message);
                     loadHospitalDetails();
                 } else {
-                    toastr.error(result.message, 'Hata');
+                    showResultModal(false, result.message);
                 }
             } catch (error) {
                 console.error(error);
-                toastr.error('Sunucu hatası.', 'Hata');
+                closeModal();
+                showResultModal(false, 'Sunucu hatası.');
             }
         }
 
-        window.addEventListener('load', initPage);
+        function showResultModal(isSuccess, message) {
+            const modal = document.getElementById('resultModal');
+            const icon = document.getElementById('resultIcon');
+            const title = document.getElementById('resultTitle');
+            const desc = document.getElementById('resultMessage');
+
+            if (isSuccess) {
+                icon.className = 'fas fa-check-circle';
+                icon.style.color = 'var(--accent-green)';
+                title.innerText = 'BAŞARILI';
+                title.style.color = 'var(--accent-green)';
+            } else {
+                icon.className = 'fas fa-times-circle';
+                icon.style.color = 'var(--accent-red)';
+                title.innerText = 'BAŞARISIZ';
+                title.style.color = 'var(--accent-red)';
+            }
+
+            desc.innerText = message;
+            modal.style.display = 'flex';
+        }
+
+        function closeResultModal() {
+            document.getElementById('resultModal').style.display = 'none';
+        }
+
+        function toggleAccordion(id) {
+            const card = document.getElementById(id);
+            const header = card.querySelector('.accordion-header');
+            const content = card.querySelector('.accordion-content');
+            
+            if(!header || !content) return;
+
+            header.classList.toggle('active');
+            
+            if (header.classList.contains('active')) {
+                content.style.maxHeight = "2000px";
+            } else {
+                content.style.maxHeight = "0px";
+            }
+        }
+
+        function initAccordions() {
+             const openCards = document.querySelectorAll('.accordion-card.open');
+             openCards.forEach(card => {
+                 const header = card.querySelector('.accordion-header');
+                 const content = card.querySelector('.accordion-content');
+                 if(header) header.classList.add('active'); 
+                 if(content) content.style.maxHeight = "2000px";
+             });
+        }
+
+        window.addEventListener('load', () => {
+            initPage();
+            initAccordions();
+        });
     </script>
     <script src="js/loader-manager.js"></script>
     <script src="js/header-manager.js"></script>

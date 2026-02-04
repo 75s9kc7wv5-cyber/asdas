@@ -116,6 +116,8 @@
             width: 4px;
             background: var(--accent-cyan); 
         }
+        .farm-list-card.red-border::before { background: var(--accent-red); }
+        .farm-list-card.green-border::before { background: var(--accent-green); }
 
         .farm-list-card.city-card {
             flex-direction: column;
@@ -163,7 +165,7 @@
         }
 
         .hospital-info { flex: 1; }
-        .hospital-name { font-size: 1.1rem; font-weight: bold; color: #fff; }
+        .hospital-name { font-size: 1rem; font-weight: bold; color: #fff; }
         .hospital-desc { font-size: 0.8rem; color: #888; }
         .hospital-stats { font-size: 0.9rem; margin-top: 5px; white-space: nowrap; overflow-x: auto; display: flex; align-items:center; gap:5px; }
 
@@ -270,22 +272,62 @@
         }
         .btn-buy-action:hover { box-shadow: 0 0 10px rgba(46, 204, 113, 0.4); }
 
-        /* REQ BADGE */
-        .req-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
-        .req-badge {
-            background: #333;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            font-weight: bold;
-            color: #ccc;
-            border: 1px solid #444;
+        /* REQ BADGE - UPDATED TO MATCH BANK LIST STYLE */
+        .info-list-item {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 5px;
+            padding: 6px 0;
+            transition: all 0.2s;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: transparent;
+            border-radius: 0;
+            border: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 0;
         }
-        .req-badge.ok { border-color: var(--accent-green); color: var(--accent-green); background: rgba(46, 204, 113, 0.1); }
-        .req-badge.fail { border-color: var(--accent-red); color: var(--accent-red); background: rgba(231, 76, 60, 0.1); }
+        .info-list-item:last-child { border-bottom: none; }
+        
+        .info-left { display: flex; align-items: center; gap: 0; flex: 1; }
+        .info-left img, .info-left i {
+            width: 24px; height: 24px; min-width: 24px; margin-right: 10px;
+            object-fit: contain; color: #aaa; text-align: center;
+        }
+        .info-left i { font-size: 1rem; width: 28px; min-width: 28px; text-align: left; }
+        
+        .info-label { color: #aaa; font-size: 0.9rem; font-weight: 500; }
+        .info-value { color: #fff; font-size: 0.9rem; font-weight: 700; text-align: right; margin-left: auto; }
+        
+        .upgrade-cost-status {
+            width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; margin-left: 15px; flex-shrink: 0;
+        }
+        .upgrade-cost-status.ok {
+            background: rgba(46, 204, 113, 0.2); color: var(--accent-green);
+        }
+        .upgrade-cost-status.fail {
+            background: rgba(231, 76, 60, 0.2); color: var(--accent-red);
+        }
+
+        .req-list { 
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            margin: 15px 0;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        /* Input Style */
+        .modal-input-group { margin-bottom: 15px; }
+        .modal-input-label { display: block; color: #888; margin-bottom: 5px; font-size: 0.9rem; }
+        .modal-input { 
+            width: 100%; background: #222; border: 1px solid #444; color: #fff; 
+            padding: 10px; border-radius: 5px; font-family: 'Rajdhani'; font-size: 1rem; outline: none;
+        }
+        .modal-input:focus { border-color: var(--accent-cyan); }
+
         .btn-confirm:disabled { background: #444; color: #888; cursor: not-allowed; }
 
         .stat-badge {
@@ -316,10 +358,8 @@
         
         .modal-content {
             background: #181818; width: 90%; max-width: 400px; padding: 25px; border-radius: 10px;
-            bordediv class="header-badge">
-                    <div class="page-title"><i class="fas fa-hospital" style="color:var(--accent-red)"></i> SAĞLIK SİSTEMİ</div>
-                    <div class="page-desc">Şehirdeki hastaneleri görüntüle, tedavi ol veya kendi hastaneni kurup yönet.</div>
-                </div
+            border: 1px solid #333; position: relative;
+            border-top: 3px solid var(--accent-red);
         }
 
         .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
@@ -365,50 +405,8 @@
             </div>
 
             <div id="tab-buy" class="tab-content">
-                <div id="buySection">
-                    <div class="buy-card">
-                        <div class="buy-icon">
-                            <img src="icons/hospital-icon/hospital.png" style="width:30px; height:30px; object-fit:contain;">
-                        </div>
-                        <div class="buy-info">
-                            <div class="buy-name">Özel Şehir Hastanesi</div>
-                            <div class="buy-desc">Kendi hastaneni kur ve işlet.</div>
-                            <div class="buy-stats">
-                                <i class="fas fa-bed"></i> 5 Yatak &nbsp;|&nbsp; 
-                                <i class="fas fa-clock"></i> 10 Sn &nbsp;|&nbsp; 
-                                <span style="color:var(--accent-gold); font-weight:bold;">50.000 ₺</span>
-                            </div>
-                        </div>
-                        <button class="btn-buy-action" onclick="openBuyModal()">
-                            SATIN AL
-                        </button>
-                    </div>
-                </div>
-
-                <div id="manageSection" style="display:none;">
-                    <div class="hospital-card">
-                        <div class="hospital-content">
-                            <div class="hospital-icon">
-                                <img src="icons/hospital-icon/hospital.png" style="width:30px; height:30px; object-fit:contain;">
-                            </div>
-                            <div class="hospital-info">
-                                <div class="hospital-name" id="myHospitalName">HASTANE ADI</div>
-                                <div class="hospital-desc">Hastaneniz hizmet vermeye hazır.</div>
-                                <div class="hospital-stats">
-                                    <span style="color:var(--accent-purple)" title="Seviye"><i class="fas fa-star"></i> Seviye <span id="myHospitalLevel">1</span></span>
-                                    <span style="color:#444">|</span>
-                                    <span style="color:var(--accent-green)" title="Dolu / Kapasite"><i class="fas fa-bed"></i> <span id="myHospitalActive">0</span>/<span id="myHospitalCapacity">5</span></span>
-                                    <span style="color:#444">|</span>
-                                    <span style="color:var(--accent-cyan)" title="Tedavi Süresi"><i class="fas fa-clock"></i> <span id="myHospitalDuration">10</span> dk</span>
-                                    <span style="color:#444">|</span>
-                                    <span style="color:var(--accent-gold); font-weight:bold;" title="Tedavi Ücreti"><span id="myHospitalPrice">100</span> ₺</span>
-                                </div>
-                            </div>
-                        </div>
-                        <button class="btn-action btn-visit" onclick="window.location.href='hospital-management.html'">
-                            YÖNET
-                        </button>
-                    </div>
+                <div id="myHospitalContainer">
+                    <!-- Dynamic Content -->
                 </div>
             </div>
 
@@ -416,9 +414,19 @@
 
         <div class="modal-overlay" id="confirmBuyModal">
             <div class="modal-content">
-                <h3 style="color:#fff; margin-bottom:10px;">Hastane Satın Al</h3>
-                <p style="color:#888; font-size:0.9rem;">Bu hastaneyi işletmek için gereksinimleri karşılamalısınız.</p>
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="width: 60px; height: 60px; background: #222; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; border: 1px solid #444; color: var(--accent-red);">
+                        <img src="icons/hospital-icon/hospital.png" style="width:32px; height:32px; object-fit:contain;">
+                    </div>
+                    <h3 style="color:#fff; margin-bottom:5px; font-size: 1.4rem;">Yeni Hastane Kur</h3>
+                    <p style="color:#888; font-size:0.9rem;">Kendi hastaneni kur, işlet ve geliştir.</p>
+                </div>
                 
+                <div class="modal-input-group">
+                    <label class="modal-input-label">Hastane Adı <span style="color:#666; font-size:0.8rem;">(Min 3 - Max 30)</span></label>
+                    <input type="text" id="hospitalNameInput" class="modal-input" placeholder="Hastanenize bir isim verin..." maxlength="30" minlength="3">
+                </div>
+
                 <div class="req-list" id="reqList">
                     <!-- Requirements here -->
                 </div>
@@ -469,31 +477,72 @@
             const user = JSON.parse(localStorage.getItem('simWorldUser'));
             if (!user) return;
 
+            const container = document.getElementById('myHospitalContainer');
+            
+            // Render loading only if empty
+            if (container.children.length === 0) {
+                container.innerHTML = '<div style="color:#666; text-align:center;">Yükleniyor...</div>';
+            }
+
             try {
                 const response = await fetch(`/api/hospitals/my/${user.id}`);
                 const result = await response.json();
                 
+                container.innerHTML = '';
+                
                 if (result.success && result.hasHospital) {
                     myHospital = result.hospital;
-                    document.getElementById('buySection').style.display = 'none';
-                    document.getElementById('manageSection').style.display = 'block';
                     
-                    // Update Manage UI
-                    document.getElementById('myHospitalName').innerText = myHospital.name;
-                    document.getElementById('myHospitalLevel').innerText = myHospital.level;
-                    document.getElementById('myHospitalCapacity').innerText = myHospital.capacity;
-                    document.getElementById('myHospitalActive').innerText = myHospital.active_patients || 0;
-                    document.getElementById('myHospitalPrice').innerText = fmt(myHospital.price);
-                    
-                    const duration = myHospital.treatment_duration || 15;
-                    document.getElementById('myHospitalDuration').innerText = duration;
+                    // OWNED STATE
+                    const card = document.createElement('div');
+                    card.className = 'farm-list-card city-card green-border';
+                    card.style.cursor = 'pointer';
+                    card.onclick = () => {
+                        window.location.href = 'hospital-management.html';
+                    };
+
+                    card.innerHTML = `
+                        <div class="city-card-top">
+                            <div class="hospital-icon">
+                                <img src="icons/hospital-icon/hospital.png" style="width:32px; height:32px; object-fit:contain;">
+                            </div>
+                            <div class="hospital-info">
+                                <div class="hospital-name">${myHospital.name || 'Hastaneniz'}</div>
+                                <div class="hospital-desc">Yönetim Paneli</div>
+                            </div>
+                            <i class="fas fa-chevron-right right-arrow"></i>
+                        </div>
+                    `;
+                    container.appendChild(card);
+
                 } else {
                     myHospital = null;
-                    document.getElementById('buySection').style.display = 'block';
-                    document.getElementById('manageSection').style.display = 'none';
+                     
+                    // NOT OWNED STATE
+                    const card = document.createElement('div');
+                    card.className = 'farm-list-card city-card red-border';
+                    card.style.cursor = 'pointer';
+                    card.onclick = () => {
+                        openBuyModal();
+                    };
+
+                    card.innerHTML = `
+                        <div class="city-card-top">
+                            <div class="hospital-icon" style="color:var(--accent-red); border-color:var(--accent-red);">
+                                <img src="icons/hospital-icon/hospital.png" style="width:32px; height:32px; object-fit:contain;">
+                            </div>
+                            <div class="hospital-info">
+                                <div class="hospital-name">Yeni Hastane Kur</div>
+                                <div class="hospital-desc">İşletme satın alıp para kazanabilirsin.</div>
+                            </div>
+                            <i class="fas fa-chevron-right right-arrow" style="color:var(--accent-red);"></i>
+                        </div>
+                    `;
+                    container.appendChild(card);
                 }
             } catch (error) {
                 console.error('Hastane kontrol hatası:', error);
+                container.innerHTML = '<div style="color:red; text-align:center;">Veri yüklenemedi.</div>';
             }
         }
 
@@ -571,7 +620,7 @@
                     { label: 'Para', val: 50000, userVal: user.money, type: 'money', icon: 'icons/inventory-icon/money.png' },
                     { label: 'Altın', val: 500, userVal: user.gold, type: 'gold', icon: 'icons/inventory-icon/gold.png' },
                     { label: 'Elmas', val: 10, userVal: user.diamond || 0, type: 'diamond', icon: 'icons/inventory-icon/diamond.png' },
-                    { label: 'Tahta', val: 1000, userVal: getAmount('lumber'), type: 'item', icon: 'icons/mine-icon/wood.png' },
+                    { label: 'Tahta', val: 1000, userVal: getAmount('lumber'), type: 'item', icon: 'icons/factory-icon/wood-plank.png' },
                     { label: 'Tuğla', val: 1000, userVal: getAmount('brick'), type: 'item', icon: 'icons/factory-icon/brick.png' },
                     { label: 'Cam', val: 500, userVal: getAmount('glass'), type: 'item', icon: 'icons/factory-icon/window.png' },
                     { label: 'Çimento', val: 500, userVal: getAmount('concrete'), type: 'item', icon: 'icons/factory-icon/cement.png' },
@@ -583,37 +632,33 @@
                     const isOk = r.userVal >= r.val;
                     if (!isOk) canBuy = false;
                     
-                    const div = document.createElement('div');
-                    div.className = `req-badge ${isOk ? 'ok' : 'fail'}`;
-                    
-                    // License spans 2 columns
-                    if (r.type === 'license') {
-                        div.style.gridColumn = 'span 2';
-                    }
-                    
                     let valText = fmt(r.val);
-                    if (r.type === 'license') valText = 'Gerekli';
+                    if (r.type === 'license') valText = r.val > 0 ? (r.userVal >= 1 ? 'Var' : 'Yok') : 'Gerekli';
 
-                    // Use img tag for icons instead of font awesome
-                    // Fallback icon if file not found could be handled, but assuming paths are correct based on list_dir
-                    let iconHtml = `<img src="${r.icon}" style="width:20px; height:20px; object-fit:contain;">`;
+                    let iconHtml = `<img src="${r.icon}">`;
                     
-                    // For license, maybe use a generic icon if specific one doesn't exist, 
-                    // but user asked to pull from icons folder. I'll use a placeholder or try to find a relevant one.
-                    // I used 'icons/property-icon/deed.png' as a guess, let's check if it exists or use a generic one.
-                    // Since I didn't check property-icon folder, I will use a font awesome fallback if image fails or just use font awesome for license if no image found.
-                    // Actually, let's stick to the requested image paths. I'll assume deed.png or similar exists or use a known one.
-                    // Let's check property-icon folder first to be sure.
+                    const statusIcon = `
+                        <div class="upgrade-cost-status ${isOk ? 'ok' : 'fail'}">
+                            <i class="fas ${isOk ? 'fa-check' : 'fa-times'}"></i>
+                        </div>`;
                     
+                    const valColor = isOk ? 'var(--accent-green)' : 'var(--accent-red)';
+                    
+                    const div = document.createElement('div');
+                    div.className = 'info-list-item';
                     div.innerHTML = `
-                        ${iconHtml}
-                        <span>${r.label}: ${valText}</span>
-                        <i class="fas ${isOk ? 'fa-check' : 'fa-times'}" style="margin-left:auto;"></i>
+                        <div class="info-left">
+                            ${iconHtml}
+                            <span class="info-label">${r.label}</span>
+                        </div>
+                        <span class="info-value" style="color:${valColor}">${valText}</span>
+                        ${statusIcon}
                     `;
                     reqList.appendChild(div);
                 });
 
                 document.getElementById('btnConfirmBuy').disabled = !canBuy;
+                document.getElementById('hospitalNameInput').value = '';
 
             } catch (error) {
                 console.error(error);
@@ -623,7 +668,16 @@
 
         async function completePurchase() {
             const btn = document.getElementById('btnConfirmBuy');
+            const nameInput = document.getElementById('hospitalNameInput');
+            const hospitalName = nameInput.value.trim();
+
+            if (!hospitalName) {
+                toastr.warning('Lütfen bir hastane adı giriniz.', 'Uyarı');
+                return;
+            }
+
             if (btn) btn.disabled = true;
+            btn.innerText = 'İŞLEM YAPILIYOR...';
 
             const user = JSON.parse(localStorage.getItem('simWorldUser'));
             if (!user) return;
@@ -632,7 +686,7 @@
                 const response = await fetch('/api/hospitals/buy', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: user.id, name: 'Özel Şehir Hastanesi' })
+                    body: JSON.stringify({ userId: user.id, name: hospitalName })
                 });
                 const result = await response.json();
 
@@ -640,18 +694,21 @@
                     toastr.success(result.message, 'Başarılı');
                     closeModal('confirmBuyModal');
                     await checkMyHospital();
+                    // Refetch list to show new hospital
+                    await loadHospitals();
                     if (window.updateHeader) window.updateHeader();
                 } else {
                     toastr.error(result.message, 'Hata');
-                    // Don't close modal on error so user can try again if it's fixable (e.g. money)
-                    // But if it's "Already have hospital", maybe close?
                     if (result.message.includes('Zaten')) closeModal('confirmBuyModal');
                 }
             } catch (error) {
                 console.error(error);
                 toastr.error('Sunucu hatası. Lütfen tekrar deneyin.', 'Hata');
             } finally {
-                if (btn) btn.disabled = false;
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = 'SATIN AL';
+                }
             }
         }
 
@@ -684,21 +741,27 @@
                 starsHtml += '</div>';
 
                 // Owner Visual Logic
-                let ownerImgSrc = 'icons/user.png';
+                let avatarHtml = '';
                 if (h.owner_avatar) {
-                    if (h.owner_avatar.includes('uploads/')) {
-                        ownerImgSrc = h.owner_avatar;
-                    } else {
-                        ownerImgSrc = `uploads/${h.owner_avatar}`;
-                    }
+                    const avatarPath = h.owner_avatar.includes('uploads/') ? h.owner_avatar : `uploads/${h.owner_avatar}`;
+                    avatarHtml = `<img src="${avatarPath}" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(h.owner_name)}&background=random'" style="width:22px; height:22px; border-radius:50%; object-fit:cover; border:1px solid #444;">`;
+                } else {
+                    avatarHtml = `<div style="width:22px; height:22px; border-radius:50%; background:#333; display:flex; align-items:center; justify-content:center; border:1px solid #444;"><i class="fas fa-user" style="font-size:12px; color:#aaa;"></i></div>`;
                 }
 
                 const card = document.createElement('div');
                 card.className = 'farm-list-card city-card';
                 card.style.cursor = 'pointer';
+                
+                const hospitalId = h.id || 0;
                 card.onclick = (e) => {
                     if (e.target.closest('a')) return;
-                    window.location.href = `hospital-detail.html?id=${h.id}`;
+                    if (hospitalId) {
+                        window.location.href = `hospital-detail.html?id=${hospitalId}`;
+                    } else {
+                        console.error('Hastane ID eksik!', h);
+                        toastr.error('Hastane detayına gidilemiyor.');
+                    }
                 };
 
                 card.innerHTML = `
@@ -728,10 +791,12 @@
 
                     <div class="city-card-footer">
                         <div class="owner-info">
-                            <img src="${ownerImgSrc}" onerror="this.src='icons/user.png'">
+                            ${avatarHtml}
                             <span>${h.owner_id} - ${h.owner_name}</span>
                         </div>
-                        ${starsHtml}
+                        <div style="display:flex; align-items:center;">
+                            ${starsHtml}
+                        </div>
                     </div>
                 `;
                 container.appendChild(card);
@@ -762,7 +827,7 @@
             document.getElementById('tab-' + tab).classList.add('active');
 
             if (tab === 'buy') {
-                checkMyHospital();
+                // checkMyHospital(); // Already loaded in initPage
             }
         }
 

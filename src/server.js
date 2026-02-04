@@ -3357,7 +3357,7 @@ db.query(createHospitalActiveTreatmentsTable, (err) => {
 // Get All Hospitals
 app.get('/api/hospitals', (req, res) => {
     const query = `
-        SELECT h.*, u.username as owner_name,
+        SELECT h.*, u.username as owner_name, u.avatar as owner_avatar, u.id as owner_id,
         (SELECT COUNT(*) FROM hospital_active_treatments WHERE hospital_id = h.id) as active_patients
         FROM hospitals h 
         JOIN users u ON h.user_id = u.id 
@@ -4565,8 +4565,7 @@ app.post('/api/mines/start', (req, res) => {
                          return;
                      }
                      
-                     proceedWithProduction(null, null, productionAmount, false);
-
+                     
                      function proceedWithProduction(inputs, pKey, amount, isNewFactory) {
                          // Vault Check
                          const estimatedCost = amount * salary;
