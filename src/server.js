@@ -1500,46 +1500,72 @@ app.post('/api/parties/create', (req, res) => {
 
 const FACTORY_RECIPES = {
     'bakery': [
-        { id: 'bread', name: 'Ekmek', inputs: { wheat: 3, egg: 3, energy: 1 }, output: { bread: 1 } },
-        { id: 'cake', name: 'Kek', inputs: { wheat: 3, egg: 3, fruit: 3, energy: 1 }, output: { cake: 1 } }
+        { id: 'bread', name: 'Ekmek', inputs: { wheat: 3, egg: 3, electricity: 1 }, output: { bread: 1 } },
+        { id: 'cake', name: 'Kek', inputs: { wheat: 3, egg: 3, fruit: 3, electricity: 1 }, output: { cake: 1 } }
     ],
     'ready_food': [
-        { id: 'salad', name: 'Salata', inputs: { vegetable: 3, energy: 1 }, output: { salad: 1 } },
-        { id: 'canned_fruit', name: 'Konserve Meyve', inputs: { fruit: 3, energy: 1 }, output: { canned_fruit: 1 } },
-        { id: 'cooked_meat', name: 'Pişmiş Et', inputs: { meat: 3, olive_oil: 1, energy: 1 }, output: { cooked_meat: 1 } },
-        { id: 'rice_dish', name: 'Pilav', inputs: { rice: 3, olive_oil: 1, energy: 1 }, output: { rice_dish: 1 } },
-        { id: 'meat_dish', name: 'Et Yemeği', inputs: { potato: 3, meat: 3, olive_oil: 1, energy: 1 }, output: { meat_dish: 1 } }
+        { id: 'salad', name: 'Salata', inputs: { vegetable: 3, electricity: 1 }, output: { salad: 1 } },
+        { id: 'canned_fruit', name: 'Konserve Meyve', inputs: { fruit: 3, electricity: 1 }, output: { canned_fruit: 1 } },
+        { id: 'cooked_meat', name: 'Pişmiş Et', inputs: { meat: 3, olive_oil: 1, electricity: 1 }, output: { cooked_meat: 1 } },
+        { id: 'rice_dish', name: 'Pilav', inputs: { rice: 3, olive_oil: 1, electricity: 1 }, output: { rice_dish: 1 } },
+        { id: 'meat_dish', name: 'Et Yemeği', inputs: { potato: 3, meat: 3, olive_oil: 1, electricity: 1 }, output: { meat_dish: 1 } }
     ],
     'olive_oil': [
-        { id: 'olive_oil', name: 'Zeytinyağı', inputs: { olive: 3, energy: 1 }, output: { olive_oil: 1 } }
+        { id: 'olive_oil', name: 'Zeytinyağı', inputs: { olive: 3, electricity: 1 }, output: { olive_oil: 1 } }
     ],
     'sweets': [
-        { id: 'energy_bar', name: 'Enerji Barı', inputs: { honey: 3, wheat: 3, fruit: 3, egg: 3, olive_oil: 1, energy: 1 }, output: { energy_bar: 1 } }
+        { id: 'energy_bar', name: 'Enerji Barı', inputs: { honey: 3, wheat: 3, fruit: 3, egg: 3, olive_oil: 1, electricity: 1 }, output: { energy_bar: 1 } }
     ],
     'gold_factory': [
-        { id: 'gold_ingot', name: 'Altın Külçe', inputs: { gold_nugget: 30, energy: 1 }, output: { gold: 1 } }
+        { id: 'gold_ingot', name: 'Altın Külçe', inputs: { gold_nugget: 30, electricity: 1 }, output: { gold: 1 } }
     ],
     'coal_plant': [
-        { id: 'coal_energy', name: 'Termik Enerji', inputs: { coal: 10 }, output: { energy: 1 } }
+        { id: 'coal_energy', name: 'Termik Enerji', inputs: { coal: 10 }, output: { electricity: 1 } }
     ],
     'nuclear_plant': [
-        { id: 'nuclear_energy', name: 'Nükleer Enerji', inputs: { uranium: 1 }, output: { energy: 3 } }
+        { id: 'nuclear_energy', name: 'Nükleer Enerji', inputs: { uranium: 1 }, output: { electricity: 3 } }
+    ],
+    'chip_factory': [
+        { id: 'chip', name: 'Çip', inputs: { silicon: 3, gold: 1, electricity: 1 }, output: { chip: 1 } }
+    ],
+    'plastic_factory': [
+        { id: 'plastic', name: 'Plastik', inputs: { oil: 3, electricity: 1 }, output: { plastic: 1 } }
+    ],
+    'cable_factory': [
+        { id: 'copper_cable', name: 'Bakır Kablo', inputs: { copper: 3, plastic: 1, electricity: 1 }, output: { copper_cable: 1 } },
+        { id: 'gold_cable', name: 'Altın Kablo', inputs: { gold: 3, plastic: 1, electricity: 1 }, output: { gold_cable: 1 } }
+    ],
+    'electronic_card_factory': [
+        { id: 'electronic_card', name: 'Elektronik Kart', inputs: { plastic: 3, copper_cable: 1, gold_cable: 1, silicon: 1, electricity: 1 }, output: { electronic_card: 1 } }
+    ],
+    'gpu_factory': [
+        { id: 'gx_100', name: 'GX-100', inputs: { chip: 1, electronic_card: 1, plastic: 1, copper_cable: 1, electricity: 1 }, output: { gx_100: 1 } },
+        { id: 'gx_300', name: 'GX-300', inputs: { chip: 2, electronic_card: 1, plastic: 1, silicon: 1, copper_cable: 1, gold_cable: 1, electricity: 2 }, output: { gx_300: 1 } },
+        { id: 'gx_500', name: 'GX-500', inputs: { chip: 3, electronic_card: 2, plastic: 2, silicon: 1, copper_cable: 2, gold_cable: 1, electricity: 3 }, output: { gx_500: 1 } },
+        { id: 'gx_800', name: 'GX-800', inputs: { chip: 4, electronic_card: 2, plastic: 2, silicon: 2, copper_cable: 2, gold_cable: 2, electricity: 4 }, output: { gx_800: 1 } },
+        { id: 'gx_titan', name: 'GX-Titan', inputs: { chip: 6, electronic_card: 3, plastic: 3, silicon: 3, copper_cable: 2, gold_cable: 3, electricity: 6 }, output: { gx_titan: 1 } }
     ]
 };
 
 const FACTORY_INPUTS = {
-    'bakery': ['wheat', 'egg', 'fruit', 'energy'],
-    'ready_food': ['vegetable', 'fruit', 'meat', 'olive_oil', 'rice', 'potato', 'energy'],
-    'olive_oil': ['olive', 'energy'],
-    'sweets': ['honey', 'wheat', 'fruit', 'egg', 'olive_oil', 'energy'],
-    'gold_factory': ['gold_nugget', 'energy'],
+    'bakery': ['wheat', 'egg', 'fruit', 'electricity'],
+    'ready_food': ['vegetable', 'fruit', 'meat', 'olive_oil', 'rice', 'potato', 'electricity'],
+    'olive_oil': ['olive', 'electricity'],
+    'sweets': ['honey', 'wheat', 'fruit', 'egg', 'olive_oil', 'electricity'],
+    'gold_factory': ['gold_nugget', 'electricity'],
+    'chip_factory': ['silicon', 'gold', 'electricity'],
+    'plastic_factory': ['oil', 'electricity'],
+    'cable_factory': ['copper', 'plastic', 'gold', 'electricity'],
+    'electronic_card_factory': ['plastic', 'copper_cable', 'gold_cable', 'silicon', 'electricity'],
+    'gpu_factory': ['electronic_card', 'chip', 'plastic', 'silicon', 'copper_cable', 'gold_cable', 'electricity'],
+    'silicon': ['sand', 'coal', 'electricity'],
     'coal_plant': ['coal'],
     'nuclear_plant': ['uranium'],
-    'lumber': ['wood', 'energy'],
-    'brick': ['stone', 'energy'],
-    'glass': ['sand', 'energy'],
-    'concrete': ['sand', 'stone', 'energy'],
-    'steel': ['iron', 'coal', 'energy']
+    'lumber': ['wood', 'electricity'],
+    'brick': ['stone', 'electricity'],
+    'glass': ['sand', 'electricity'],
+    'concrete': ['sand', 'stone', 'electricity'],
+    'steel': ['iron', 'coal', 'electricity']
 };
 
 const MINE_TYPES = [
@@ -1558,6 +1584,12 @@ const MINE_TYPES = [
     { id: 'glass', name: 'Cam Fabrikası', reqLevel: 12, costMoney: 12000, costGold: 5, costDiamond: 0 },
     { id: 'concrete', name: 'Çimento Fabrikası', reqLevel: 15, costMoney: 15000, costGold: 10, costDiamond: 0 },
     { id: 'steel', name: 'Çelik Fabrikası', reqLevel: 20, costMoney: 25000, costGold: 20, costDiamond: 0 },
+    { id: 'silicon', name: 'Silikon Fabrikası', reqLevel: 25, costMoney: 30000, costGold: 25, costDiamond: 5 },
+    { id: 'chip_factory', name: 'Çip Fabrikası', reqLevel: 35, costMoney: 45000, costGold: 40, costDiamond: 10 },
+    { id: 'plastic_factory', name: 'Plastik Fabrikası', reqLevel: 15, costMoney: 15000, costGold: 10, costDiamond: 0 },
+    { id: 'cable_factory', name: 'Kablo Fabrikası', reqLevel: 18, costMoney: 18000, costGold: 12, costDiamond: 0 },
+    { id: 'electronic_card_factory', name: 'Elektronik Kart Fabrikası', reqLevel: 22, costMoney: 22000, costGold: 18, costDiamond: 2 },
+    { id: 'gpu_factory', name: 'GPU Fabrikası', reqLevel: 40, costMoney: 60000, costGold: 60, costDiamond: 15 },
     { id: 'agricultural', name: 'Tarım Çiftliği', reqLevel: 1, costMoney: 2000, costGold: 0, costDiamond: 0 },
     { id: 'animal', name: 'Hayvan Çiftliği', reqLevel: 3, costMoney: 3000, costGold: 0, costDiamond: 0 },
     { id: 'bakery', name: 'Fırın ve Unlu Mamuller Tesisi', reqLevel: 5, costMoney: 5000, costGold: 0, costDiamond: 0 },
@@ -1616,9 +1648,9 @@ app.post('/api/mines/buy', (req, res) => {
             const user = users[0];
 
             // Check Skill
-            if ((user.education_skill || 1) < mineConfig.reqLevel) {
-                return res.json({ success: false, message: `Eğitim seviyen yetersiz. (Gereken: ${mineConfig.reqLevel})` });
-            }
+            // if ((user.education_skill || 1) < mineConfig.reqLevel) {
+            //    return res.json({ success: false, message: `Eğitim seviyen yetersiz. (Gereken: ${mineConfig.reqLevel})` });
+            // }
 
             // Check License
             db.query('SELECT level FROM licenses WHERE user_id = ? AND mine_type = ?', [userId, mineType], (err, licenses) => {
@@ -1883,6 +1915,8 @@ app.post('/api/mines/withdraw/:id', (req, res) => {
     const mineId = req.params.id;
     const { userId, amount, itemKey } = req.body; // Get amount and itemKey
 
+    console.log(`[Withdraw Request] Mine: ${mineId}, User: ${userId}, Amount: ${amount}, ItemKey: ${itemKey}`);
+
     db.beginTransaction(err => {
         if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
 
@@ -1959,7 +1993,7 @@ app.post('/api/mines/withdraw/:id', (req, res) => {
                                  return db.rollback(() => res.json({ success: false, message: `Yetersiz stok. (Fabrika: ${factoryStock}, Depo: ${mine.stock})` }));
                              }
                         } else {
-                             return db.rollback(() => res.json({ success: false, message: `Yetersiz stok. (Mevcut: ${factoryStock})` }));
+                             return db.rollback(() => res.json({ success: false, message: `Yetersiz stok. (Depoda ${factoryStock} adet ${itemKey || ''} mevcut)` }));
                         }
                     }
                 });
@@ -2040,6 +2074,9 @@ app.post('/api/mines/deposit-raw/:id', (req, res) => {
                 else if (requiredItemKey === 'stone') { validItem = true; targetColumn = 'raw_material_2'; }
             } else if (mine.mine_type === 'steel') {
                 if (requiredItemKey === 'iron') { validItem = true; targetColumn = 'raw_material'; }
+                else if (requiredItemKey === 'coal') { validItem = true; targetColumn = 'raw_material_2'; }
+            } else if (mine.mine_type === 'silicon') {
+                if (requiredItemKey === 'sand') { validItem = true; targetColumn = 'raw_material'; }
                 else if (requiredItemKey === 'coal') { validItem = true; targetColumn = 'raw_material_2'; }
             } else {
                  // Fallback or other types
@@ -2181,9 +2218,9 @@ app.get('/api/mines/upgrade-info/:mineId', (req, res) => {
                         money: lvlInfo.cost_money,
                         gold: lvlInfo.cost_gold,
                         diamond: lvlInfo.cost_diamond,
-                        wood: lvlInfo.cost_wood,
+                        lumber: lvlInfo.cost_wood,
                         brick: lvlInfo.cost_brick,
-                        cement: lvlInfo.cost_cement,
+                        concrete: lvlInfo.cost_cement,
                         glass: lvlInfo.cost_glass,
                         steel: lvlInfo.cost_steel
                     },
@@ -4504,7 +4541,7 @@ app.post('/api/mines/start', (req, res) => {
         // 1. Get User & Mine Data
         // Only count workers whose end_time is in the future
         const query = `
-            SELECT u.energy, u.health, u.education_skill, m.id as mine_id, m.max_workers, m.reserve, m.salary, m.vault, m.mine_type, m.stock, m.level, m.user_id as owner_id,
+            SELECT u.energy, u.health, u.education_skill, m.id as mine_id, m.max_workers, m.reserve, m.salary, m.vault, m.mine_type, m.stock, m.active_recipe_id, m.level, m.user_id as owner_id,
             (SELECT level FROM arge_levels WHERE user_id = m.user_id AND mine_type = m.mine_type) as arge_level,
             (SELECT production_time FROM mine_settings WHERE mine_type = m.mine_type) as production_time,
             (SELECT COUNT(*) FROM mine_active_workers WHERE mine_id = m.id AND end_time > NOW()) as current_workers,
@@ -4568,7 +4605,12 @@ app.post('/api/mines/start', (req, res) => {
                          const baseProduction = mineLevel;
                          const educationBonus = Math.floor(ownerSkill / 10);
                          const argeBonus = (arge_level || 0) * 2;
-                         const productionAmount = baseProduction + educationBonus + argeBonus;
+                         let productionAmount = baseProduction + educationBonus + argeBonus;
+
+                         // Override for GPU Factory
+                         if (data.mine_type === 'gpu_factory') { // Everyone produces 1 GPU
+                             productionAmount = 1;
+                         }
                          
                          console.log(`[Mining Start] User: ${userId}, Mine: ${mineId}, OwnerSkill: ${ownerSkill}, Level: ${mineLevel}, EduBonus: ${educationBonus}, ArgeBonus: ${argeBonus}, Final: ${productionAmount}`);
 
@@ -4614,6 +4656,14 @@ app.post('/api/mines/start', (req, res) => {
                          raw1Name = 'Demir'; 
                          raw2Name = 'Kömür'; 
                      }
+                     else if (data.mine_type === 'silicon') { 
+                         req1 = productionAmount * 3; 
+                         req2 = productionAmount * 1; 
+                         raw1Key = 'sand'; 
+                         raw2Key = 'coal';
+                         raw1Name = 'Kum'; 
+                         raw2Name = 'Kömür'; 
+                     }
                      else {
                          req1 = 0; 
                      }
@@ -4630,21 +4680,21 @@ app.post('/api/mines/start', (req, res) => {
                      }
 
                      // Legacy Factories: Check & Deduct Energy + Raw Materials
-                     const legacyFactories = ['lumber', 'brick', 'glass', 'concrete', 'steel'];
+                     const legacyFactories = ['lumber', 'brick', 'glass', 'concrete', 'steel', 'silicon'];
                      if (legacyFactories.includes(data.mine_type)) {
                          const energyRequired = productionAmount;
                          
                          // Check Energy
-                         const currentEnergy = inventory['energy'] || 0;
+                         const currentEnergy = inventory['electricity'] || 0;
                          
                          if (currentEnergy < energyRequired) {
                              return db.rollback(() => res.json({ success: false, message: `Fabrikada yeterli Elektrik yok! (${energyRequired} gerekli, ${currentEnergy} mevcut)` }));
                          }
 
                          // Prepare legacy factory inputs for deduction
-                         const legacyInputs = { energy: 1 };
-                         if (raw1Key) legacyInputs[raw1Key] = 3;
-                         if (raw2Key) legacyInputs[raw2Key] = 3;
+                         const legacyInputs = { electricity: 1 };
+                         if (raw1Key) legacyInputs[raw1Key] = req1 / productionAmount;
+                         if (raw2Key) legacyInputs[raw2Key] = req2 / productionAmount;
                          
                          proceedWithProduction(legacyInputs, null, productionAmount, true); // true = use factory_inventory
                          return;
@@ -4706,7 +4756,7 @@ app.post('/api/mines/start', (req, res) => {
                      // Check if it's a new factory type
                      const recipes = FACTORY_RECIPES[data.mine_type];
                      if (recipes) {
-                         const recipeId = req.body.recipeId;
+                         const recipeId = data.active_recipe_id; // Use owner's selected recipe
                          const recipe = recipes.find(r => r.id === recipeId) || recipes[0];
                          
                          if (!recipe) return db.rollback(() => res.json({ success: false, message: 'Geçersiz reçete.' }));
@@ -4717,9 +4767,11 @@ app.post('/api/mines/start', (req, res) => {
                          const trNames = {
                              wheat: 'Buğday', egg: 'Yumurta', fruit: 'Meyve', vegetable: 'Sebze',
                              meat: 'Et', olive_oil: 'Zeytinyağı', rice: 'Pirinç', potato: 'Patates',
-                             olive: 'Zeytin', honey: 'Bal', energy: 'Elektrik',
+                             olive: 'Zeytin', honey: 'Bal', electricity: 'Elektrik',
                              wood: 'Odun', stone: 'Taş', iron: 'Demir', coal: 'Kömür',
-                             sand: 'Kum', copper: 'Bakır', uranium: 'Uranyum', gold_nugget: 'Altın Parçası'
+                             sand: 'Kum', copper: 'Bakır', uranium: 'Uranyum', gold_nugget: 'Altın Parçası',
+                             silicon: 'Silikon', gold: 'Altın', chip: 'Çip', oil: 'Petrol', plastic: 'Plastik',
+                             electronic_card: 'Elektronik Kart', gpu: 'Ekran Kartı', copper_cable: 'Bakır Kablo', gold_cable: 'Altın Kablo'
                          };
 
                          for (const [key, val] of Object.entries(recipeInputs)) {
@@ -4739,6 +4791,35 @@ app.post('/api/mines/start', (req, res) => {
                      }); // Close owner query callback
                  });
              });
+        });
+    });
+});
+
+
+// Set Factory Production Recipe
+app.post('/api/mines/set-recipe', (req, res) => {
+    const { userId, mineId, recipeId } = req.body;
+
+    // Verify ownership
+    db.query('SELECT user_id, mine_type FROM player_mines WHERE id = ?', [mineId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, message: 'DB Error' });
+        if (results.length === 0) return res.status(404).json({ success: false, message: 'Maden bulunamadı.' });
+        
+        if (results[0].user_id != userId) {
+            return res.status(403).json({ success: false, message: 'Yetkisiz işlem.' });
+        }
+
+        const mineType = results[0].mine_type;
+        const recipes = FACTORY_RECIPES[mineType];
+        
+        if (!recipes) return res.status(400).json({ success: false, message: 'Bu işletme için üretim ayarı yapılamaz.' });
+        
+        const recipe = recipes.find(r => r.id === recipeId);
+        if (!recipe) return res.status(400).json({ success: false, message: 'Geçersiz üretim tipi.' });
+
+        db.query('UPDATE player_mines SET active_recipe_id = ? WHERE id = ?', [recipeId, mineId], (err) => {
+            if (err) return res.status(500).json({ success: false, message: 'Güncelleme hatası.' });
+            res.json({ success: true, message: 'Üretim hattı güncellendi.' });
         });
     });
 });

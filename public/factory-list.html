@@ -531,7 +531,12 @@
             // Heavy
             { id: 'weapon', category: 'heavy', name: 'Silah Fabrikası', icon: 'fa-crosshairs', color: 'type-weapon', reqLevel: 30, costMoney: 50000, costGold: 50, costDiamond: 10 },
             { id: 'gold_factory', category: 'heavy', name: 'Altın Külçe Fabrikası', img: 'icons/inventory-icon/gold.png', color: 'type-weapon', reqLevel: 20, costMoney: 40000, costGold: 0, costDiamond: 5 },
-            
+            { id: 'silicon', category: 'heavy', name: 'Silikon Fabrikası', img: 'icons/factory-icon/silikon.png', color: 'type-weapon', reqLevel: 25, costMoney: 30000, costGold: 25, costDiamond: 5 },
+            { id: 'plastic_factory', category: 'heavy', name: 'Plastik Fabrikası', img: 'icons/factory-icon/plastic.png', color: 'type-weapon', reqLevel: 15, costMoney: 15000, costGold: 10, costDiamond: 0 },
+            { id: 'cable_factory', category: 'heavy', name: 'Kablo Fabrikası', img: 'icons/factory-icon/cable.png', color: 'type-weapon', reqLevel: 18, costMoney: 18000, costGold: 12, costDiamond: 0 },
+            { id: 'electronic_card_factory', category: 'heavy', name: 'Elektronik Kart Fabrikası', img: 'icons/factory-icon/electronic-board.png', color: 'type-weapon', reqLevel: 22, costMoney: 22000, costGold: 18, costDiamond: 2 },
+            { id: 'chip_factory', category: 'heavy', name: 'Çip Fabrikası', img: 'icons/factory-icon/chip.png', color: 'type-weapon', reqLevel: 35, costMoney: 45000, costGold: 40, costDiamond: 10 },
+            { id: 'gpu_factory', category: 'heavy', name: 'GPU Fabrikası', img: 'icons/factory-icon/video-card.png', color: 'type-weapon', reqLevel: 40, costMoney: 60000, costGold: 60, costDiamond: 15 },
             // Energy
             { id: 'wind_turbine', category: 'energy', name: 'Rüzgar Türbini', img: 'icons/energy-factory-icon/wind-turbine.png', color: 'type-energy', reqLevel: 10, costMoney: 15000, costGold: 5, costDiamond: 0 },
             { id: 'solar_plant', category: 'energy', name: 'Güneş Enerjisi Santrali', img: 'icons/energy-factory-icon/solar-panel.png', color: 'type-energy', reqLevel: 15, costMoney: 20000, costGold: 10, costDiamond: 0 },
@@ -749,16 +754,17 @@
             document.getElementById('mTitle').innerText = selectedMine.name + " Satın Almayı Onaylıyor musun?";
             
             const hasLicense = userLicenses[mineId] > 0;
-            const hasSkill = (userData.education_skill || 1) >= selectedMine.reqLevel;
+            // const hasSkill = (userData.education_skill || 1) >= selectedMine.reqLevel;
             const hasMoney = userData.money >= selectedMine.costMoney;
             const hasGold = userData.gold >= selectedMine.costGold;
             const hasDiamond = (userData.diamond || 0) >= selectedMine.costDiamond;
 
-            const canBuy = hasLicense && hasSkill && hasMoney && hasGold && hasDiamond;
+            const canBuy = hasLicense && hasMoney && hasGold && hasDiamond;
 
             let html = '';
             
-            // Education
+            // Education REQUIRMENT REMOVED
+            /* 
             html += `
                 <div class="info-list-item">
                     <div class="info-left">
@@ -771,6 +777,7 @@
                     </div>
                 </div>
             `;
+            */
             
             // License
             html += `

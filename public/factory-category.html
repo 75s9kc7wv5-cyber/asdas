@@ -506,8 +506,13 @@
             { id: 'sweets', category: 'food', name: 'Tatlı & Şekerleme Üretim Tesisi', img: 'icons/factory-icon/food-factory.png', color: 'type-food', reqLevel: 12, costMoney: 12000, costGold: 5, costDiamond: 0 },
             
             // Heavy
-            { id: 'weapon', category: 'heavy', name: 'Silah Fabrikası', icon: 'fa-crosshairs', color: 'type-weapon', reqLevel: 30, costMoney: 50000, costGold: 50, costDiamond: 10 },
-            { id: 'gold_factory', category: 'heavy', name: 'Altın Külçe Fabrikası', img: 'icons/inventory-icon/gold.png', color: 'type-weapon', reqLevel: 20, costMoney: 40000, costGold: 0, costDiamond: 5 },
+            { id: 'gold_factory', category: 'heavy', name: 'Altın Rafinerisi', img: 'icons/inventory-icon/gold.png', color: 'type-weapon', reqLevel: 20, costMoney: 40000, costGold: 0, costDiamond: 5 },
+             { id: 'silicon', category: 'heavy', name: 'Silikon Fabrikası', img: 'icons/factory-icon/silikon.png', color: 'type-weapon', reqLevel: 25, costMoney: 30000, costGold: 25, costDiamond: 5 },
+            { id: 'plastic_factory', category: 'heavy', name: 'Plastik Fabrikası', img: 'icons/factory-icon/plastic.png', color: 'type-weapon', reqLevel: 15, costMoney: 15000, costGold: 10, costDiamond: 0 },
+            { id: 'cable_factory', category: 'heavy', name: 'Kablo Fabrikası', img: 'icons/factory-icon/cable.png', color: 'type-weapon', reqLevel: 18, costMoney: 18000, costGold: 12, costDiamond: 0 },
+            { id: 'electronic_card_factory', category: 'heavy', name: 'Elektronik Kart Fabrikası', img: 'icons/factory-icon/electronic-board.png', color: 'type-weapon', reqLevel: 22, costMoney: 22000, costGold: 18, costDiamond: 2 },
+            { id: 'chip_factory', category: 'heavy', name: 'Çip Fabrikası', img: 'icons/factory-icon/chip.png', color: 'type-weapon', reqLevel: 35, costMoney: 45000, costGold: 40, costDiamond: 10 },
+            { id: 'gpu_factory', category: 'heavy', name: 'GPU Fabrikası', img: 'icons/factory-icon/video-card.png', color: 'type-weapon', reqLevel: 40, costMoney: 60000, costGold: 60, costDiamond: 15 },
             
             // Energy
             { id: 'wind_turbine', category: 'energy', name: 'Rüzgar Türbini', img: 'icons/energy-factory-icon/wind-turbine.png', color: 'type-energy', reqLevel: 10, costMoney: 15000, costGold: 5, costDiamond: 0 },
@@ -531,6 +536,12 @@
             'olive_oil': { icon: 'fa-bottle-droplet', color: 'var(--accent-cyan)', req: 'Zeytin', out: 'Zeytinyağı', outIcon: 'fa-bottle-water' },
             'sweets': { icon: 'fa-candy-cane', color: 'var(--accent-cyan)', req: 'Bal', out: 'Şekerleme', outIcon: 'fa-candy-cane' },
             'weapon': { icon: 'fa-crosshairs', color: 'var(--accent-red)', req: 'Demir', out: 'Tüfek', outIcon: 'fa-fighter-jet' },
+            'silicon': { icon: 'fa-microchip', color: 'var(--accent-red)', req: 'Kum + Kömür', out: 'Silikon', outIcon: 'fa-microchip' },
+            'plastic_factory': { img: 'icons/factory-icon/plastic.png', color: '#e67e22', req: 'Petrol + Elektrik', out: 'Plastik', outImg: 'icons/factory-icon/plastic.png' },
+            'cable_factory': { img: 'icons/factory-icon/cable.png', color: '#e67e22', req: 'Bakır + Plastik + Elektrik', out: 'Kablo', outImg: 'icons/factory-icon/cable.png' },
+            'electronic_card_factory': { img: 'icons/factory-icon/electronic-board.png', color: '#e67e22', req: 'Kablo + Plastik + Silikon', out: 'Elektronik Kart', outImg: 'icons/factory-icon/electronic-board.png' },
+            'chip_factory': { img: 'icons/factory-icon/chip.png', color: 'var(--accent-red)', req: 'Silikon + Altın + Elektrik', out: 'Çip', outImg: 'icons/factory-icon/chip.png' },
+            'gpu_factory': { img: 'icons/factory-icon/video-card.png', color: 'var(--accent-red)', req: 'Çip + Kart + Elektrik', out: 'GPU', outImg: 'icons/factory-icon/video-card.png' },
             'lumber': { icon: 'fa-tree', color: '#f1c40f', req: 'Odun', out: 'Kereste', outIcon: 'fa-pallet' },
             'brick': { icon: 'fa-th-large', color: '#f1c40f', req: 'Kil', out: 'Tuğla', outIcon: 'fa-cubes' },
             'glass': { icon: 'fa-square', color: '#f1c40f', req: 'Kum', out: 'Cam', outIcon: 'fa-wine-glass' },
@@ -945,7 +956,11 @@
             document.getElementById('mTitle').innerText = title;
             
             const iconDiv = document.getElementById('mIcon');
-            iconDiv.innerHTML = `<i class="fas ${data.icon}"></i>`;
+            if (data.img) {
+                iconDiv.innerHTML = `<img src="${data.img}" style="width: 50px; height: 50px; object-fit: contain;">`;
+            } else {
+                iconDiv.innerHTML = `<i class="fas ${data.icon}"></i>`;
+            }
             iconDiv.style.color = data.color;
 
             // Reçete Güncelle
@@ -953,7 +968,26 @@
             document.getElementById('outText').innerText = `1 ${data.out}`;
             
             const outIcon = document.getElementById('outIcon');
-            outIcon.className = `fas ${data.outIcon} res-img`;
+            if (data.outImg) {
+                const newImg = document.createElement('img');
+                newImg.id = 'outIcon';
+                newImg.src = data.outImg;
+                newImg.className = 'res-img';
+                newImg.style.width = '30px';
+                newImg.style.height = '30px';
+                newImg.style.objectFit = 'contain';
+                outIcon.replaceWith(newImg);
+            } else {
+                if(outIcon.tagName === 'IMG') {
+                    const newI = document.createElement('i');
+                    newI.id = 'outIcon';
+                    newI.className = `fas ${data.outIcon} res-img`;
+                    newI.style.color = '#fff';
+                    outIcon.replaceWith(newI);
+                } else {
+                    outIcon.className = `fas ${data.outIcon} res-img`;
+                }
+            }
             outIcon.style.color = data.color;
 
             // Reset UI

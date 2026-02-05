@@ -644,19 +644,7 @@
                                     <span class="info-label">İşçi Kapasitesi</span>
                                     <span class="info-value" id="info-worker">-</span>
                                 </div>
-                                <div class="info-item">
-                                    <i class="fas fa-box-open" style="color: #e67e22;"></i>
-                                    <span class="info-label">Ürün Deposu</span>
-                                    <span class="info-value" id="info-prod-warehouse">-</span>
-                                </div>
-                                <div id="prod-details" style="padding-left: 40px; margin-bottom: 10px; display: none;">
-                                    <!-- Ürün detayları JS ile doldurulacak -->
-                                </div>
-                                <div class="info-item">
-                                    <i class="fas fa-vault" style="color: var(--accent-green);"></i>
-                                    <span class="info-label">Kasa Kapasitesi</span>
-                                    <span class="info-value" id="info-vault-capacity">-</span>
-                                </div>
+
                                 <div class="info-item">
                                     <i class="fas fa-flask" style="color: #e91e63;"></i>
                                     <span class="info-label">Arge</span>
@@ -690,11 +678,9 @@
                     </div>
                     <div class="accordion-content" style="max-height: 500px;">
                         <div class="accordion-body">
-                            <div class="info-list" style="border:none; padding:0; background:transparent; box-shadow:none; margin:0;">
-                                <div class="info-item">
-                                    <i class="fas fa-hammer" style="color: var(--accent-gold);"></i>
-                                    <span class="info-label">Toplam Üretim Miktarı</span>
-                                    <span class="info-value" id="info-total-production">-</span>
+                            <div class="info-list" id="stats-list" style="border:none; padding:0; background:transparent; box-shadow:none; margin:0;">
+                                <div class="info-item" style="color: #666; font-size: 0.8rem; justify-content: center;">
+                                    Yükleniyor...
                                 </div>
                             </div>
                         </div>
@@ -735,6 +721,16 @@
                             <label class="form-label">Birim Maaş (₺) (0-1000)</label>
                             <input type="number" id="fWageInput" class="form-input" value="2500" min="0" max="1000">
                         </div>
+
+                        <!-- Production Selection (Dynamic) -->
+                        <div class="form-group" id="production-select-container" style="display:none; margin-bottom:15px; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px;">
+                            <label class="form-label" style="color:var(--accent-gold);"><i class="fas fa-industry"></i> Üretim Hattı</label>
+                            <select id="production-select" class="form-input" style="background:#000; color:#fff; border:1px solid #333; margin-bottom:5px;">
+                                <!-- Options populated dynamically -->
+                            </select>
+                            <div style="font-size:0.75rem; color:#888;">Not: Üretim hattını değiştirmek, sadece yeni iş başı yapacak işçileri etkiler.</div>
+                        </div>
+
                         <button class="btn-save" onclick="saveSettings()">KAYDET</button>
                     </div>
                 </div>
@@ -971,21 +967,21 @@
             'lumber': { 
                 raw: [
                     { name: 'Odun', key: 'wood', icon: 'icons/mine-icon/wood.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: { name: 'Tahta', key: 'lumber', icon: 'icons/factory-icon/wood-plank.png' }
             },
             'brick': { 
                 raw: [
                     { name: 'Taş', key: 'stone', icon: 'icons/mine-icon/stone.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: { name: 'Tuğla', key: 'brick', icon: 'icons/factory-icon/brick.png' }
             },
             'glass': { 
                 raw: [
                     { name: 'Kum', key: 'sand', icon: 'icons/mine-icon/sand.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: { name: 'Cam', key: 'glass', icon: 'icons/factory-icon/window.png' }
             },
@@ -993,7 +989,7 @@
                 raw: [
                     { name: 'Kum', key: 'sand', icon: 'icons/mine-icon/sand.png' },
                     { name: 'Taş', key: 'stone', icon: 'icons/mine-icon/stone.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: { name: 'Çimento', key: 'concrete', icon: 'icons/factory-icon/cement.png' }
             },
@@ -1001,16 +997,24 @@
                 raw: [
                     { name: 'Demir', key: 'iron', icon: 'icons/mine-icon/iron.png' },
                     { name: 'Kömür', key: 'coal', icon: 'icons/mine-icon/coal.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: { name: 'Çelik', key: 'steel', icon: 'icons/factory-icon/steel.png' }
+            },
+            'silicon': { 
+                raw: [
+                    { name: 'Kum', key: 'sand', icon: 'icons/mine-icon/sand.png' },
+                    { name: 'Kömür', key: 'coal', icon: 'icons/mine-icon/coal.png' },
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
+                ],
+                prod: { name: 'Silikon', key: 'silicon', icon: 'icons/factory-icon/silikon.png' }
             },
             'bakery': { 
                 raw: [
                     { name: 'Buğday', key: 'wheat', icon: 'icons/farm-icon/wheat.png' },
                     { name: 'Yumurta', key: 'egg', icon: 'icons/ranch-icon/egg.png' },
                     { name: 'Meyve', key: 'fruit', icon: 'icons/farm-icon/fruit.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: [
                     { name: 'Ekmek', key: 'bread', icon: 'icons/food-factory/bread.png' },
@@ -1025,7 +1029,7 @@
                     { name: 'Zeytinyağı', key: 'olive_oil', icon: 'icons/food-factory/olive-oil.png' },
                     { name: 'Pirinç', key: 'rice', icon: 'icons/farm-icon/rice.png' },
                     { name: 'Patates', key: 'potato', icon: 'icons/farm-icon/potato.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: [
                     { name: 'Salata', key: 'salad', icon: 'icons/food-factory/salad.png' },
@@ -1038,7 +1042,7 @@
             'olive_oil': { 
                 raw: [
                     { name: 'Zeytin', key: 'olive', icon: 'icons/farm-icon/olive.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: { name: 'Zeytinyağı', key: 'olive_oil', icon: 'icons/food-factory/olive-oil.png' }
             },
@@ -1049,7 +1053,7 @@
                     { name: 'Meyve', key: 'fruit', icon: 'icons/farm-icon/fruit.png' },
                     { name: 'Yumurta', key: 'egg', icon: 'icons/ranch-icon/egg.png' },
                     { name: 'Zeytinyağı', key: 'olive_oil', icon: 'icons/food-factory/olive-oil.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: [
                     { name: 'Enerji Barı', key: 'energy_bar', icon: 'icons/food-factory/energy-bar.png' }
@@ -1058,29 +1062,109 @@
             'gold_factory': { 
                 raw: [
                     { name: 'Altın Parçası', key: 'gold_nugget', icon: 'icons/mine-icon/gold-nugget.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: { name: 'Altın Külçe', key: 'gold', icon: 'icons/inventory-icon/gold.png' }
             },
             'wind_turbine': { 
                 factoryIcon: 'icons/energy-factory-icon/wind-turbine.png',
                 raw: [],
-                prod: { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                prod: { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
             },
             'solar_plant': { 
                 factoryIcon: 'icons/energy-factory-icon/solar-panel.png',
                 raw: [],
-                prod: { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                prod: { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
             },
             'coal_plant': { 
                 factoryIcon: 'icons/energy-factory-icon/fossil-fuel.png',
                 raw: [{ name: 'Kömür', key: 'coal', icon: 'icons/mine-icon/coal.png' }],
-                prod: { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                prod: { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
             },
             'nuclear_plant': { 
                 factoryIcon: 'icons/energy-factory-icon/nuclear-plant.png',
                 raw: [{ name: 'Uranyum', key: 'uranium', icon: 'icons/mine-icon/uranium.png' }],
-                prod: { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                prod: { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
+            },
+            'chip_factory': { 
+                factoryIcon: 'icons/factory-icon/chip.png',
+                raw: [
+                    { name: 'Silikon', key: 'silicon', icon: 'icons/factory-icon/silikon.png' },
+                    { name: 'Altın', key: 'gold', icon: 'icons/inventory-icon/gold.png' },
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
+                ],
+                prod: { name: 'Çip', key: 'chip', icon: 'icons/factory-icon/chip.png' }
+            },
+            'plastic_factory': { 
+                factoryIcon: 'icons/factory-icon/plastic.png',
+                raw: [
+                    { name: 'Petrol', key: 'oil', icon: 'icons/mine-icon/oil-barrel.png' },
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
+                ],
+                prod: { name: 'Plastik', key: 'plastic', icon: 'icons/factory-icon/plastic.png' }
+            },
+            'cable_factory': { 
+                factoryIcon: 'icons/factory-icon/cable.png',
+                raw: [
+                    { name: 'Bakır', key: 'copper', icon: 'icons/mine-icon/copper.png' },
+                    { name: 'Plastik', key: 'plastic', icon: 'icons/factory-icon/plastic.png' },
+                    { name: 'Altın', key: 'gold', icon: 'icons/inventory-icon/gold.png' },
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
+                ],
+                prod: [
+                    { name: 'Bakır Kablo', key: 'copper_cable', icon: 'icons/factory-icon/copper-cable.png' },
+                    { name: 'Altın Kablo', key: 'gold_cable', icon: 'icons/factory-icon/gold-cable.png' }
+                ]
+            },
+            'electronic_card_factory': { 
+                factoryIcon: 'icons/factory-icon/electronic-board.png',
+                raw: [
+                    { name: 'Plastik', key: 'plastic', icon: 'icons/factory-icon/plastic.png' },
+                    { name: 'Bakır Kablo', key: 'copper_cable', icon: 'icons/factory-icon/copper-cable.png' },
+                    { name: 'Altın Kablo', key: 'gold_cable', icon: 'icons/factory-icon/gold-cable.png' },
+                    { name: 'Silikon', key: 'silicon', icon: 'icons/factory-icon/silikon.png' },
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
+                ],
+                prod: { name: 'Elektronik Kart', key: 'electronic_card', icon: 'icons/factory-icon/electronic-board.png' }
+            },
+            'gpu_factory': {
+                factoryIcon: 'icons/factory-icon/video-card.png',
+                raw: [
+                    { name: 'Çip', key: 'chip', icon: 'icons/factory-icon/chip.png' },
+                    { name: 'Elektronik Kart', key: 'electronic_card', icon: 'icons/factory-icon/electronic-board.png' },
+                    { name: 'Plastik', key: 'plastic', icon: 'icons/factory-icon/plastic.png' },
+                    { name: 'Silikon', key: 'silicon', icon: 'icons/factory-icon/silikon.png' },
+                    { name: 'Bakır Kablo', key: 'copper_cable', icon: 'icons/factory-icon/copper-cable.png' },
+                    { name: 'Altın Kablo', key: 'gold_cable', icon: 'icons/factory-icon/gold-cable.png' },
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
+                ],
+                prod: [
+                    { name: 'GX-100', key: 'gx_100', recipeId: 'gx_100', icon: 'icons/video-card/GX-100.png' },
+                    { name: 'GX-300', key: 'gx_300', recipeId: 'gx_300', icon: 'icons/video-card/GX-300.png' },
+                    { name: 'GX-500', key: 'gx_500', recipeId: 'gx_500', icon: 'icons/video-card/GX-700.png' },
+                    { name: 'GX-800', key: 'gx_800', recipeId: 'gx_800', icon: 'icons/video-card/GX-Eco.png' },
+                    { name: 'GX-Titan', key: 'gx_titan', recipeId: 'gx_titan', icon: 'icons/video-card/GX-Titan.png' }
+                ]
+            },
+            'mine_factory': {
+                raw: [
+                    { name: 'Petrol', key: 'oil', icon: 'icons/mine-icon/oil-barrel.png' },
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
+                ],
+                prod: { name: 'Plastik', key: 'plastic', icon: 'icons/factory-icon/plastic.png' }
+            },
+            'cable_factory': { 
+                factoryIcon: 'icons/factory-icon/cable.png',
+                raw: [
+                    { name: 'Bakır', key: 'copper', icon: 'icons/mine-icon/copper.png' },
+                    { name: 'Plastik', key: 'plastic', icon: 'icons/factory-icon/plastic.png' },
+                    { name: 'Altın', key: 'gold', icon: 'icons/inventory-icon/gold.png' },
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
+                ],
+                prod: [
+                    { name: 'Bakır Kablo', key: 'copper_cable', recipeId: 'copper_cable', icon: 'icons/factory-icon/copper-cable.png' },
+                    { name: 'Altın Kablo', key: 'gold_cable', recipeId: 'gold_cable', icon: 'icons/factory-icon/gold-cable.png' }
+                ]
             }
         };
 
@@ -1141,6 +1225,7 @@
                     productionTime: m.production_time || 10,
                     vault: m.vault || 0,
                     type: m.mine_type,
+                    activeRecipeId: m.active_recipe_id, // Add Active Recipe ID
                     inventory: m.inventory || {},
                     owner_id: m.owner_id,
                     owner_username: m.owner_username || 'Bilinmeyen',
@@ -1183,63 +1268,31 @@
             document.getElementById('info-level').innerText = factory.level + '. Seviye';
             
             // İşletme kategorisi formatı: (Kategori) Fabrikası
-            const productName = factory.type && resourceMap[factory.type] ? resourceMap[factory.type].prod.name : 'Ürün';
+            let productName = 'Ürün';
+            if (factory.type && resourceMap[factory.type]) {
+                const p = resourceMap[factory.type].prod;
+                if (Array.isArray(p)) {
+                   // Dinamik Ürün Seçimi (GPU, Kablo vs.)
+                   if (factory.type === 'gpu_factory' && factory.active_recipe_id) {
+                       const found = p.find(item => item.key === factory.active_recipe_id);
+                       productName = found ? found.name : p[0].name;
+                   } else if (factory.type === 'cable_factory' && factory.active_recipe_id) {
+                       const found = p.find(item => item.key === factory.active_recipe_id);
+                       productName = found ? found.name : p[0].name;
+                   } else {
+                       productName = p[0].name;
+                   }
+                } else {
+                    productName = p.name;
+                }
+            }
             const categoryText = `${productName} Fabrikası`;
             document.getElementById('info-product').innerText = categoryText;
             
             document.getElementById('info-worker').innerText = `${factory.workers}/${factory.maxWorkers}`;
             
-            // Ürün Deposu
-            document.getElementById('info-prod-warehouse').innerText = `${fmt(factory.prod)}/${fmt(factory.prodCap)}`;
-            
-            // Ürün Detayları - inventory objesinden parse et
-            const prodDetailsDiv = document.getElementById('prod-details');
-            if (factory.inventory) {
-                let inventoryData = null;
-                if (typeof factory.inventory === 'string') {
-                    try {
-                        inventoryData = JSON.parse(factory.inventory);
-                    } catch (e) {
-                        console.error('Inventory parse error:', e);
-                    }
-                } else {
-                    inventoryData = factory.inventory;
-                }
-                
-                if (inventoryData) {
-                    let prodDetailsHtml = '';
-                    const resourceInfo = resourceMap[factory.type];
-                    if (resourceInfo && resourceInfo.prod) {
-                        // Ürün bilgisi array mi yoksa tek object mi kontrol et
-                        const products = Array.isArray(resourceInfo.prod) ? resourceInfo.prod : [resourceInfo.prod];
-                        
-                        products.forEach(prodItem => {
-                            if (inventoryData[prodItem.key] > 0) {
-                                prodDetailsHtml += `<div style="font-size: 0.8rem; color: #888; margin: 4px 0;">
-                                    <img src="${prodItem.icon}" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;">
-                                    <span style="color: #aaa;">${prodItem.name}:</span> 
-                                    <span style="color: #fff; font-weight: 600;">${fmt(inventoryData[prodItem.key])}</span>
-                                </div>`;
-                            }
-                        });
-                    }
-                    
-                    if (prodDetailsHtml) {
-                        prodDetailsDiv.innerHTML = prodDetailsHtml;
-                        prodDetailsDiv.style.display = 'block';
-                    } else {
-                        prodDetailsDiv.style.display = 'none';
-                    }
-                } else {
-                    prodDetailsDiv.style.display = 'none';
-                }
-            } else {
-                prodDetailsDiv.style.display = 'none';
-            }
-            
             // Kasa Kapasitesi: kasadaki para / kapasite
             const vaultCapacity = factory.level * 100000;
-            document.getElementById('info-vault-capacity').innerText = `${fmt(factory.vault)} / ${fmt(vaultCapacity)} ₺`;
             
             document.getElementById('info-efficiency').innerText = '%' + factory.efficiency;
             
@@ -1266,6 +1319,28 @@
             
             document.getElementById('fNameInput').value = factory.name;
             document.getElementById('fWageInput').value = factory.wage;
+
+            // Populate Production Select
+            const fConfig = resourceMap[factory.type];
+            const selectContainer = document.getElementById('production-select-container');
+            if (fConfig && Array.isArray(fConfig.prod) && fConfig.prod.length > 1) {
+                const select = document.getElementById('production-select');
+                select.innerHTML = '';
+                fConfig.prod.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.recipeId;
+                    option.text = p.name;
+                    select.appendChild(option);
+                });
+                
+                if (factory.activeRecipeId) {
+                    select.value = factory.activeRecipeId;
+                }
+                
+                selectContainer.style.display = 'block';
+            } else {
+                selectContainer.style.display = 'none';
+            }
 
             // Update Business Card
             document.getElementById('businessName').innerText = factory.name;
@@ -1316,7 +1391,10 @@
                 config.raw.forEach(r => {
                     // Use factory_inventory if available, else fallback to legacy columns for first 2
                     let amount = 0;
-                    if (factory.inventory && factory.inventory[r.key] !== undefined) {
+                    if (factory.inventory && Array.isArray(factory.inventory)) {
+                        const item = factory.inventory.find(i => i.item === r.key);
+                        if (item) amount = item.amount;
+                    } else if (factory.inventory && factory.inventory[r.key] !== undefined) {
                         amount = factory.inventory[r.key];
                     } else {
                         // Legacy fallback
@@ -1332,14 +1410,20 @@
                 config.prod.forEach(p => {
                     // Check factory.inventory first
                     let amount = 0;
-                    if (factory.inventory && factory.inventory[p.key] !== undefined) {
+                    if (factory.inventory && Array.isArray(factory.inventory)) {
+                        const item = factory.inventory.find(i => i.item === p.key);
+                        if (item) amount = item.amount;
+                    } else if (factory.inventory && factory.inventory[p.key] !== undefined) {
                         amount = factory.inventory[p.key];
                     }
                     grid.innerHTML += createCardHTML('prod', p, amount, factory.prodCap, 'pull');
                 });
             } else {
                 let amount = factory.prod; // Legacy fallback
-                if (factory.inventory && factory.inventory[config.prod.key] !== undefined) {
+                if (factory.inventory && Array.isArray(factory.inventory)) {
+                    const item = factory.inventory.find(i => i.item === config.prod.key);
+                    if (item) amount = item.amount;
+                } else if (factory.inventory && factory.inventory[config.prod.key] !== undefined) {
                     amount = factory.inventory[config.prod.key];
                 }
                 grid.innerHTML += createCardHTML('prod', config.prod, amount, factory.prodCap, 'pull');
@@ -1381,15 +1465,83 @@
         }
 
         function updateLogs(logs) {
+            const typeMap = {
+                'lumber': 'Tahta', 'iron': 'Demir', 'gold': 'Altın', 'diamond': 'Elmas',
+                'oil': 'Petrol', 'coal': 'Kömür', 'stone': 'Taş', 'brick': 'Tuğla',
+                'sand': 'Kum', 'copper': 'Bakır', 'uranium': 'Uranyum', 'glass': 'Cam',
+                'concrete': 'Çimento', 'steel': 'Çelik', 'agricultural': 'Ekin',
+                'animal': 'Hayvan', 'food': 'Yemek', 'weapon': 'Silah', 'solar': 'Enerji',
+                'bakery': 'Ekmek', 'ready_food': 'Konserve', 'olive_oil': 'Zeytinyağı', 'sweets': 'Şekerleme',
+                'cable_factory': 'Kablo', 'plastic_factory': 'Plastik', 'chip_factory': 'Çip', 'silicon': 'Silikon',
+                'gpu_factory': 'Ekran Kartı', 'electronic_card_factory': 'Elektronik Kart'
+            };
+
+            const productNames = {
+                'bread': 'Ekmek', 'cake': 'Kek', 'salad': 'Salata', 'canned_fruit': 'Konserve Meyve',
+                'cooked_meat': 'Pişmiş Et', 'rice_dish': 'Pilav', 'meat_dish': 'Et Yemeği',
+                'olive_oil': 'Zeytinyağı', 'energy_bar': 'Enerji Barı', 'gold_ingot': 'Altın Külçe',
+                'energy': 'Enerji', 'silicon': 'Silikon', 'chip': 'Çip', 'plastic': 'Plastik',
+                'gold_cable': 'Altın Kablo', 'copper_cable': 'Bakır Kablo', 'cable': 'Bakır Kablo',
+                'electronic_card': 'Elektronik Kart',
+                'gx_100': 'GX-100', 'gx_300': 'GX-300', 'gx_500': 'GX-500', 'gx_800': 'GX-800', 'gx_titan': 'GX-Titan'
+            };
+
+            const defaultProductName = factory.type ? (typeMap[factory.type] || 'Ürün') : 'Ürün';
+
             // İstatistik Hesaplama
             let totalProd = 0;
+            const productionCounts = {};
+
+            // Olası ürünleri 0 olarak başlat (Hiç üretim olmasa bile listede görünsün)
+            if (factory.type && resourceMap[factory.type]) {
+                const conf = resourceMap[factory.type];
+                if (Array.isArray(conf.prod)) {
+                    conf.prod.forEach(p => {
+                        productionCounts[p.name] = 0;
+                    });
+                } else if (conf.prod) {
+                    productionCounts[conf.prod.name] = 0;
+                }
+            }
+
             if(logs && logs.length > 0) {
                 logs.forEach(l => {
-                    if(l.amount) totalProd += Number(l.amount);
+                    const amt = Number(l.amount) || 0;
+                    totalProd += amt;
+                    
+                    let pName = defaultProductName;
+                    if (l.product_key && productNames[l.product_key]) {
+                        pName = productNames[l.product_key];
+                    } else if (l.product_key) {
+                        pName = l.product_key.toUpperCase();
+                    }
+                    if (productionCounts[pName] === undefined) productionCounts[pName] = 0;
+                    productionCounts[pName] += amt;
                 });
             }
-            const elProd = document.getElementById('info-total-production');
-            if(elProd) elProd.innerText = fmt(totalProd) + ' Adet';
+
+            // İstatistik Arayüzünü Güncelle
+            const container = document.getElementById('stats-list');
+            if (container) {
+                const keys = Object.keys(productionCounts).sort();
+                let html = '';
+                
+                if (keys.length > 0) {
+                     keys.forEach(key => {
+                         html += `
+                            <div class="info-item" style="padding: 4px 0;">
+                                <i class="fas fa-chart-pie" style="color: var(--accent-cyan); font-size:0.8rem;"></i>
+                                <span class="info-label" style="font-size:0.8rem;">${key}</span>
+                                <span class="info-value" style="color:#eee; font-size:0.9rem;">${fmt(productionCounts[key])} Adet</span>
+                            </div>
+                         `;
+                     });
+                } else {
+                    html = '<div class="info-item" style="justify-content:center; color:#666; font-size:0.8rem;">Henüz üretim yapılmadı.</div>';
+                }
+                
+                container.innerHTML = html;
+            }
 
             const list = document.getElementById('logList');
             list.innerHTML = '';
@@ -1399,21 +1551,13 @@
                 return;
             }
 
-            const typeMap = {
-                'lumber': 'Tahta', 'iron': 'Demir', 'gold': 'Altın', 'diamond': 'Elmas',
-                'oil': 'Petrol', 'coal': 'Kömür', 'stone': 'Taş', 'brick': 'Tuğla',
-                'sand': 'Kum', 'copper': 'Bakır', 'uranium': 'Uranyum', 'glass': 'Cam',
-                'concrete': 'Çimento', 'steel': 'Çelik', 'agricultural': 'Ekin',
-                'animal': 'Hayvan', 'food': 'Yemek', 'weapon': 'Silah', 'solar': 'Enerji',
-                'bakery': 'Ekmek', 'ready_food': 'Konserve', 'olive_oil': 'Zeytinyağı', 'sweets': 'Şekerleme'
-            };
-            const productName = factory.type ? (typeMap[factory.type] || 'Ürün') : 'Ürün';
-
             logs.forEach(log => {
                 const date = new Date(log.created_at);
                 const timeStr = date.toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'});
                 const amount = (log.amount !== undefined && log.amount !== null) ? log.amount : '?';
                 const avatarUrl = log.avatar || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
+                
+                const finalProductName = (log.product_key && productNames[log.product_key]) ? productNames[log.product_key] : (log.product_key ? log.product_key.toUpperCase() : defaultProductName);
                 
                 const div = document.createElement('div');
                 div.className = 'log-item';
@@ -1421,7 +1565,7 @@
                     <img src="${avatarUrl}" class="log-avatar" onerror="this.src='uploads/avatars/default.png'">
                     <div class="log-text">
                         <span class="log-user-link" onclick="window.location.href='profile.html?id=${log.user_id}'" style="cursor:pointer;">${log.user_id} - ${log.username}</span>
-                        <span class="log-highlight" style="margin-left: 5px;">${amount}x ${productName} üretti</span>
+                        <span class="log-highlight" style="margin-left: 5px;">${amount}x ${finalProductName} üretti</span>
                     </div>
                     <span class="log-time">${timeStr}</span>
                 `;
@@ -1467,22 +1611,44 @@
             const wage = parseInt(document.getElementById('fWageInput').value);
             
             if(name.length < 3) return toastr.warning("İsim çok kısa.");
-            if(wage < 1 || wage > 1000) return toastr.warning("Maaş 1 ile 1000 arasında olmalıdır.");
+            if(wage < 0 || wage > 10000) return toastr.warning("Maaş 0 ile 10000 arasında olmalıdır.");
 
-            fetch(`/api/mines/update/${mineId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, salary: wage })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(data.success) {
-                    toastr.success(data.message);
+            const promises = [];
+
+            // 1. Update Basic Settings
+            promises.push(
+                fetch(`/api/mines/update/${mineId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, salary: wage })
+                }).then(res => res.json())
+            );
+
+            // 2. Update Production Recipe (If applicable)
+            const selectContainer = document.getElementById('production-select-container');
+            if (selectContainer && selectContainer.style.display !== 'none') {
+                const recipeId = document.getElementById('production-select').value;
+                promises.push(
+                    fetch('/api/mines/set-recipe', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: user.id, mineId: mineId, recipeId: recipeId })
+                    }).then(res => res.json())
+                );
+            }
+
+            Promise.all(promises).then(results => {
+                const settingsRes = results[0];
+                const recipeRes = results[1];
+
+                if (settingsRes.success && (!recipeRes || recipeRes.success)) {
+                    toastr.success('Ayarlar başarıyla kaydedildi.');
                     factory.name = name;
                     factory.wage = wage;
-                    updateUI();
+                    // Reload to reflect all changes properly
+                    loadFactoryData();
                 } else {
-                    toastr.error(data.message);
+                    toastr.error(settingsRes.message || (recipeRes && recipeRes.message));
                 }
             });
         }
@@ -1534,7 +1700,10 @@
                 let currentItemAmount = 0;
                 
                 // Factory'deki mevcut inventory'den bu spesifik item'ın miktarını al
-                if(factory.inventory && factory.inventory[itemKey] !== undefined) {
+                if (factory.inventory && Array.isArray(factory.inventory)) {
+                    const item = factory.inventory.find(i => i.item === itemKey);
+                    if (item) currentItemAmount = item.amount;
+                } else if(factory.inventory && factory.inventory[itemKey] !== undefined) {
                     currentItemAmount = factory.inventory[itemKey];
                 } else {
                     // Eski sistem için fallback
@@ -1562,16 +1731,22 @@
                 // Fabrikada yeterli ürün var mı kontrol et
                 let currentProdAmount = 0;
                 
-                const config = resourceMap[factory.type] || {};
-                if(Array.isArray(config.prod)) {
-                    // Çoklu ürün fabrikaları için
-                    const prodItem = config.prod.find(p => p.key === itemKey);
-                    if(prodItem && factory.inventory) {
-                        currentProdAmount = factory.inventory[itemKey] || 0;
-                    }
+                if (factory.inventory && Array.isArray(factory.inventory)) {
+                    const invItem = factory.inventory.find(i => i.item === itemKey);
+                    if (invItem) currentProdAmount = invItem.amount;
+                } else if (factory.inventory && factory.inventory[itemKey] !== undefined) {
+                    currentProdAmount = factory.inventory[itemKey];
                 } else {
-                    // Tek ürün fabrikaları için
-                    currentProdAmount = factory.prod || 0;
+                    const config = resourceMap[factory.type] || {};
+                    if(Array.isArray(config.prod)) {
+                        // Çoklu ürün fabrikaları için (Eski obj tabanlı inventory varsa)
+                        if(factory.inventory && !Array.isArray(factory.inventory)) {
+                            currentProdAmount = factory.inventory[itemKey] || 0;
+                        }
+                    } else {
+                        // Tek ürün fabrikaları için
+                        currentProdAmount = factory.prod || 0;
+                    }
                 }
                 
                 if(amount > currentProdAmount) {
@@ -1757,7 +1932,11 @@
             // Lisans durumunu ekle
             const licenseStatusIcon = hasLicense ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
             const licenseStatusClass = hasLicense ? 'ok' : 'fail';
-            const categoryName = resourceMap[factory.type] ? resourceMap[factory.type].prod.name : 'Fabrika';
+            let categoryName = 'Fabrika';
+            if (resourceMap[factory.type]) {
+                const p = resourceMap[factory.type].prod;
+                categoryName = Array.isArray(p) ? p[0].name : p.name;
+            }
             
             costsHTML += `
                 <div class="upgrade-cost-item">
