@@ -85,22 +85,6 @@ db.connect((err) => {
             if (err) console.error('Error creating profile_visits table:', err);
             else console.log('Profile Visits table ready');
         });
-
-        // Create Market Listings Table
-        const createMarketTable = `CREATE TABLE IF NOT EXISTS market_listings (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            seller_id INT NOT NULL,
-            item_key VARCHAR(50) NOT NULL,
-            price DECIMAL(15, 2) NOT NULL,
-            quantity INT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
-        )`;
-
-        db.query(createMarketTable, (err) => {
-            if (err) console.error('Error creating market_listings table:', err);
-            else console.log('Market Listings table ready');
-        });
     }
 });
 
@@ -109,8 +93,8 @@ app.use(bodyParser.json());
 
 // Security Headers Middleware - Dış enjeksiyonları engelle
 app.use((req, res, next) => {
-    // Content Security Policy - Relaxed for development resources (CDN, images, etc.)
-    res.setHeader('Content-Security-Policy', "default-src 'self' *; script-src 'self' 'unsafe-inline' 'unsafe-eval' *; style-src 'self' 'unsafe-inline' *; font-src 'self' *; img-src 'self' data: blob: *; connect-src 'self' *; frame-ancestors 'self' *; base-uri 'self'; form-action 'self' *;");
+    // Content Security Policy - Strict mode, dış scriptleri engelle
+    res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'self' 'unsafe-inline' https://code.jquery.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://via.placeholder.com; connect-src 'self' https://cdnjs.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';");
     
     // X-Content-Type-Options - MIME sniffing engelle
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -1500,72 +1484,46 @@ app.post('/api/parties/create', (req, res) => {
 
 const FACTORY_RECIPES = {
     'bakery': [
-        { id: 'bread', name: 'Ekmek', inputs: { wheat: 3, egg: 3, electricity: 1 }, output: { bread: 1 } },
-        { id: 'cake', name: 'Kek', inputs: { wheat: 3, egg: 3, fruit: 3, electricity: 1 }, output: { cake: 1 } }
+        { id: 'bread', name: 'Ekmek', inputs: { wheat: 3, egg: 3, energy: 1 }, output: { bread: 1 } },
+        { id: 'cake', name: 'Kek', inputs: { wheat: 3, egg: 3, fruit: 3, energy: 1 }, output: { cake: 1 } }
     ],
     'ready_food': [
-        { id: 'salad', name: 'Salata', inputs: { vegetable: 3, electricity: 1 }, output: { salad: 1 } },
-        { id: 'canned_fruit', name: 'Konserve Meyve', inputs: { fruit: 3, electricity: 1 }, output: { canned_fruit: 1 } },
-        { id: 'cooked_meat', name: 'Pişmiş Et', inputs: { meat: 3, olive_oil: 1, electricity: 1 }, output: { cooked_meat: 1 } },
-        { id: 'rice_dish', name: 'Pilav', inputs: { rice: 3, olive_oil: 1, electricity: 1 }, output: { rice_dish: 1 } },
-        { id: 'meat_dish', name: 'Et Yemeği', inputs: { potato: 3, meat: 3, olive_oil: 1, electricity: 1 }, output: { meat_dish: 1 } }
+        { id: 'salad', name: 'Salata', inputs: { vegetable: 3, energy: 1 }, output: { salad: 1 } },
+        { id: 'canned_fruit', name: 'Konserve Meyve', inputs: { fruit: 3, energy: 1 }, output: { canned_fruit: 1 } },
+        { id: 'cooked_meat', name: 'Pişmiş Et', inputs: { meat: 3, olive_oil: 1, energy: 1 }, output: { cooked_meat: 1 } },
+        { id: 'rice_dish', name: 'Pilav', inputs: { rice: 3, olive_oil: 1, energy: 1 }, output: { rice_dish: 1 } },
+        { id: 'meat_dish', name: 'Et Yemeği', inputs: { potato: 3, meat: 3, olive_oil: 1, energy: 1 }, output: { meat_dish: 1 } }
     ],
     'olive_oil': [
-        { id: 'olive_oil', name: 'Zeytinyağı', inputs: { olive: 3, electricity: 1 }, output: { olive_oil: 1 } }
+        { id: 'olive_oil', name: 'Zeytinyağı', inputs: { olive: 3, energy: 1 }, output: { olive_oil: 1 } }
     ],
     'sweets': [
-        { id: 'energy_bar', name: 'Enerji Barı', inputs: { honey: 3, wheat: 3, fruit: 3, egg: 3, olive_oil: 1, electricity: 1 }, output: { energy_bar: 1 } }
+        { id: 'energy_bar', name: 'Enerji Barı', inputs: { honey: 3, wheat: 3, fruit: 3, egg: 3, olive_oil: 1, energy: 1 }, output: { energy_bar: 1 } }
     ],
     'gold_factory': [
-        { id: 'gold_ingot', name: 'Altın Külçe', inputs: { gold_nugget: 30, electricity: 1 }, output: { gold: 1 } }
+        { id: 'gold_ingot', name: 'Altın Külçe', inputs: { gold_nugget: 30, energy: 1 }, output: { gold: 1 } }
     ],
     'coal_plant': [
-        { id: 'coal_energy', name: 'Termik Enerji', inputs: { coal: 10 }, output: { electricity: 1 } }
+        { id: 'coal_energy', name: 'Termik Enerji', inputs: { coal: 10 }, output: { energy: 1 } }
     ],
     'nuclear_plant': [
-        { id: 'nuclear_energy', name: 'Nükleer Enerji', inputs: { uranium: 1 }, output: { electricity: 3 } }
-    ],
-    'chip_factory': [
-        { id: 'chip', name: 'Çip', inputs: { silicon: 3, gold: 1, electricity: 1 }, output: { chip: 1 } }
-    ],
-    'plastic_factory': [
-        { id: 'plastic', name: 'Plastik', inputs: { oil: 3, electricity: 1 }, output: { plastic: 1 } }
-    ],
-    'cable_factory': [
-        { id: 'copper_cable', name: 'Bakır Kablo', inputs: { copper: 3, plastic: 1, electricity: 1 }, output: { copper_cable: 1 } },
-        { id: 'gold_cable', name: 'Altın Kablo', inputs: { gold: 3, plastic: 1, electricity: 1 }, output: { gold_cable: 1 } }
-    ],
-    'electronic_card_factory': [
-        { id: 'electronic_card', name: 'Elektronik Kart', inputs: { plastic: 3, copper_cable: 1, gold_cable: 1, silicon: 1, electricity: 1 }, output: { electronic_card: 1 } }
-    ],
-    'gpu_factory': [
-        { id: 'gx_100', name: 'GX-100', inputs: { chip: 1, electronic_card: 1, plastic: 1, copper_cable: 1, electricity: 1 }, output: { gx_100: 1 } },
-        { id: 'gx_300', name: 'GX-300', inputs: { chip: 2, electronic_card: 1, plastic: 1, silicon: 1, copper_cable: 1, gold_cable: 1, electricity: 2 }, output: { gx_300: 1 } },
-        { id: 'gx_500', name: 'GX-500', inputs: { chip: 3, electronic_card: 2, plastic: 2, silicon: 1, copper_cable: 2, gold_cable: 1, electricity: 3 }, output: { gx_500: 1 } },
-        { id: 'gx_800', name: 'GX-800', inputs: { chip: 4, electronic_card: 2, plastic: 2, silicon: 2, copper_cable: 2, gold_cable: 2, electricity: 4 }, output: { gx_800: 1 } },
-        { id: 'gx_titan', name: 'GX-Titan', inputs: { chip: 6, electronic_card: 3, plastic: 3, silicon: 3, copper_cable: 2, gold_cable: 3, electricity: 6 }, output: { gx_titan: 1 } }
+        { id: 'nuclear_energy', name: 'Nükleer Enerji', inputs: { uranium: 1 }, output: { energy: 3 } }
     ]
 };
 
 const FACTORY_INPUTS = {
-    'bakery': ['wheat', 'egg', 'fruit', 'electricity'],
-    'ready_food': ['vegetable', 'fruit', 'meat', 'olive_oil', 'rice', 'potato', 'electricity'],
-    'olive_oil': ['olive', 'electricity'],
-    'sweets': ['honey', 'wheat', 'fruit', 'egg', 'olive_oil', 'electricity'],
-    'gold_factory': ['gold_nugget', 'electricity'],
-    'chip_factory': ['silicon', 'gold', 'electricity'],
-    'plastic_factory': ['oil', 'electricity'],
-    'cable_factory': ['copper', 'plastic', 'gold', 'electricity'],
-    'electronic_card_factory': ['plastic', 'copper_cable', 'gold_cable', 'silicon', 'electricity'],
-    'gpu_factory': ['electronic_card', 'chip', 'plastic', 'silicon', 'copper_cable', 'gold_cable', 'electricity'],
-    'silicon': ['sand', 'coal', 'electricity'],
+    'bakery': ['wheat', 'egg', 'fruit', 'energy'],
+    'ready_food': ['vegetable', 'fruit', 'meat', 'olive_oil', 'rice', 'potato', 'energy'],
+    'olive_oil': ['olive', 'energy'],
+    'sweets': ['honey', 'wheat', 'fruit', 'egg', 'olive_oil', 'energy'],
+    'gold_factory': ['gold_nugget', 'energy'],
     'coal_plant': ['coal'],
     'nuclear_plant': ['uranium'],
-    'lumber': ['wood', 'electricity'],
-    'brick': ['stone', 'electricity'],
-    'glass': ['sand', 'electricity'],
-    'concrete': ['sand', 'stone', 'electricity'],
-    'steel': ['iron', 'coal', 'electricity']
+    'lumber': ['wood', 'energy'],
+    'brick': ['stone', 'energy'],
+    'glass': ['sand', 'energy'],
+    'concrete': ['sand', 'stone', 'energy'],
+    'steel': ['iron', 'coal', 'energy']
 };
 
 const MINE_TYPES = [
@@ -1584,12 +1542,6 @@ const MINE_TYPES = [
     { id: 'glass', name: 'Cam Fabrikası', reqLevel: 12, costMoney: 12000, costGold: 5, costDiamond: 0 },
     { id: 'concrete', name: 'Çimento Fabrikası', reqLevel: 15, costMoney: 15000, costGold: 10, costDiamond: 0 },
     { id: 'steel', name: 'Çelik Fabrikası', reqLevel: 20, costMoney: 25000, costGold: 20, costDiamond: 0 },
-    { id: 'silicon', name: 'Silikon Fabrikası', reqLevel: 25, costMoney: 30000, costGold: 25, costDiamond: 5 },
-    { id: 'chip_factory', name: 'Çip Fabrikası', reqLevel: 35, costMoney: 45000, costGold: 40, costDiamond: 10 },
-    { id: 'plastic_factory', name: 'Plastik Fabrikası', reqLevel: 15, costMoney: 15000, costGold: 10, costDiamond: 0 },
-    { id: 'cable_factory', name: 'Kablo Fabrikası', reqLevel: 18, costMoney: 18000, costGold: 12, costDiamond: 0 },
-    { id: 'electronic_card_factory', name: 'Elektronik Kart Fabrikası', reqLevel: 22, costMoney: 22000, costGold: 18, costDiamond: 2 },
-    { id: 'gpu_factory', name: 'GPU Fabrikası', reqLevel: 40, costMoney: 60000, costGold: 60, costDiamond: 15 },
     { id: 'agricultural', name: 'Tarım Çiftliği', reqLevel: 1, costMoney: 2000, costGold: 0, costDiamond: 0 },
     { id: 'animal', name: 'Hayvan Çiftliği', reqLevel: 3, costMoney: 3000, costGold: 0, costDiamond: 0 },
     { id: 'bakery', name: 'Fırın ve Unlu Mamuller Tesisi', reqLevel: 5, costMoney: 5000, costGold: 0, costDiamond: 0 },
@@ -1648,9 +1600,9 @@ app.post('/api/mines/buy', (req, res) => {
             const user = users[0];
 
             // Check Skill
-            // if ((user.education_skill || 1) < mineConfig.reqLevel) {
-            //    return res.json({ success: false, message: `Eğitim seviyen yetersiz. (Gereken: ${mineConfig.reqLevel})` });
-            // }
+            if ((user.education_skill || 1) < mineConfig.reqLevel) {
+                return res.json({ success: false, message: `Eğitim seviyen yetersiz. (Gereken: ${mineConfig.reqLevel})` });
+            }
 
             // Check License
             db.query('SELECT level FROM licenses WHERE user_id = ? AND mine_type = ?', [userId, mineType], (err, licenses) => {
@@ -1737,20 +1689,12 @@ app.get('/api/mines/detail/:id', (req, res) => {
                     const chanceIncrease = argeLevel * 10;
                     const totalChance = Math.min(baseChance + chanceIncrease, 100);
 
-                    // Fetch Statistics (Total Production & Wages)
-                    const statsQuery = 'SELECT SUM(amount) as total_production, SUM(earnings) as total_wages FROM mine_logs WHERE mine_id = ?';
-                    db.query(statsQuery, [mineId], (err, statsRes) => {
-                        if (err) console.error('Stats Error:', err);
-                        const stats = (statsRes && statsRes.length > 0) ? statsRes[0] : { total_production: 0, total_wages: 0 };
-                        mine.total_production = stats.total_production || 0;
-                        mine.total_wages = stats.total_wages || 0;
-
-                    // Get Logs (Production)
+                    // Get Logs
                     const logQuery = `
                         SELECT ml.*, u.username 
                         FROM mine_logs ml 
                         JOIN users u ON ml.user_id = u.id 
-                        WHERE ml.mine_id = ? AND (ml.log_type IS NULL OR ml.log_type = 'PRODUCTION')
+                        WHERE ml.mine_id = ? 
                         ORDER BY ml.created_at DESC 
                         LIMIT 10
                     `;
@@ -1761,22 +1705,8 @@ app.get('/api/mines/detail/:id', (req, res) => {
                             return res.status(500).json({ success: false, message: 'Logs Error' });
                         }
 
-                        // Get Transaction Logs
-                        const transLogQuery = `
-                            SELECT ml.*, u.username 
-                            FROM mine_logs ml 
-                            JOIN users u ON ml.user_id = u.id 
-                            WHERE ml.mine_id = ? AND ml.log_type IN ('DEPOSIT', 'WITHDRAW')
-                            ORDER BY ml.created_at DESC 
-                            LIMIT 10
-                        `;
-
-                        db.query(transLogQuery, [mineId], (err, transactionLogs) => {
-                            if (err) console.error('Trans Logs Error:', err);
-                            transactionLogs = transactionLogs || [];
-
-                            // Get Inventory
-                            db.query('SELECT item_key, amount FROM factory_inventory WHERE mine_id = ?', [mineId], (err, invRes) => {
+                        // Get Inventory
+                        db.query('SELECT item_key, amount FROM factory_inventory WHERE mine_id = ?', [mineId], (err, invRes) => {
                             const inventory = {};
                             if (invRes) {
                                 invRes.forEach(row => inventory[row.item_key] = row.amount);
@@ -1812,7 +1742,7 @@ app.get('/api/mines/detail/:id', (req, res) => {
                                 mine.arge_level = argeLevel;
                                 mine.efficiency = totalChance;
 
-                                res.json({ success: true, mine, logs, transactionLogs, workers });
+                                res.json({ success: true, mine, logs, workers });
                             });
                         });
                     });
@@ -1820,8 +1750,6 @@ app.get('/api/mines/detail/:id', (req, res) => {
             });
         });
     });
-});
-});
 });
 
 // Update Mine Settings
@@ -1855,54 +1783,9 @@ app.post('/api/mines/deposit/:id', (req, res) => {
                 db.query('UPDATE player_mines SET vault = vault + ? WHERE id = ?', [amount, mineId], (err) => {
                     if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kasa güncellenemedi.' }));
 
-                    // Log Transaction
-                    db.query('INSERT INTO mine_logs (mine_id, user_id, amount, earnings, log_type, description) VALUES (?, ?, 0, ?, "DEPOSIT", ?)', 
-                    [mineId, userId, amount, `${amount} TL yatırıldı`], (err) => {
-                         if (err) console.error('Deposit Log Error:', err); 
-
-                        db.commit(err => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                            res.json({ success: true, message: 'Para yatırıldı.' });
-                        });
-                    });
-                });
-            });
-        });
-    });
-});
-
-// Withdraw Money from Vault
-app.post('/api/mines/withdraw-vault/:id', (req, res) => {
-    const mineId = req.params.id;
-    const { userId, amount } = req.body;
-    
-    if (amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
-
-    db.beginTransaction(err => {
-        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
-
-        // Check Mine Vault
-        db.query('SELECT vault FROM player_mines WHERE id = ?', [mineId], (err, mines) => {
-            if (err || mines.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Maden bulunamadı.' }));
-            if (mines[0].vault < amount) return db.rollback(() => res.json({ success: false, message: 'Kasada yeterli bakiye yok.' }));
-
-            // Update Mine Vault
-            db.query('UPDATE player_mines SET vault = vault - ? WHERE id = ?', [amount, mineId], (err) => {
-                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kasa güncellenemedi.' }));
-
-                // Add to User Money
-                db.query('UPDATE users SET money = money + ? WHERE id = ?', [amount, userId], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kullanıcı bakiyesi güncellenemedi.' }));
-
-                    // Log Transaction
-                    db.query('INSERT INTO mine_logs (mine_id, user_id, amount, earnings, log_type, description) VALUES (?, ?, 0, ?, "WITHDRAW", ?)', 
-                    [mineId, userId, -amount, `${amount} TL çekildi`], (err) => {
-                         if (err) console.error('Withdraw Log Error:', err); 
-
-                        db.commit(err => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                            res.json({ success: true, message: 'Para çekildi ve cüzdana eklendi.' });
-                        });
+                    db.commit(err => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                        res.json({ success: true, message: 'Para yatırıldı.' });
                     });
                 });
             });
@@ -1914,8 +1797,6 @@ app.post('/api/mines/withdraw-vault/:id', (req, res) => {
 app.post('/api/mines/withdraw/:id', (req, res) => {
     const mineId = req.params.id;
     const { userId, amount, itemKey } = req.body; // Get amount and itemKey
-
-    console.log(`[Withdraw Request] Mine: ${mineId}, User: ${userId}, Amount: ${amount}, ItemKey: ${itemKey}`);
 
     db.beginTransaction(err => {
         if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
@@ -1993,7 +1874,7 @@ app.post('/api/mines/withdraw/:id', (req, res) => {
                                  return db.rollback(() => res.json({ success: false, message: `Yetersiz stok. (Fabrika: ${factoryStock}, Depo: ${mine.stock})` }));
                              }
                         } else {
-                             return db.rollback(() => res.json({ success: false, message: `Yetersiz stok. (Depoda ${factoryStock} adet ${itemKey || ''} mevcut)` }));
+                             return db.rollback(() => res.json({ success: false, message: `Yetersiz stok. (Mevcut: ${factoryStock})` }));
                         }
                     }
                 });
@@ -2074,9 +1955,6 @@ app.post('/api/mines/deposit-raw/:id', (req, res) => {
                 else if (requiredItemKey === 'stone') { validItem = true; targetColumn = 'raw_material_2'; }
             } else if (mine.mine_type === 'steel') {
                 if (requiredItemKey === 'iron') { validItem = true; targetColumn = 'raw_material'; }
-                else if (requiredItemKey === 'coal') { validItem = true; targetColumn = 'raw_material_2'; }
-            } else if (mine.mine_type === 'silicon') {
-                if (requiredItemKey === 'sand') { validItem = true; targetColumn = 'raw_material'; }
                 else if (requiredItemKey === 'coal') { validItem = true; targetColumn = 'raw_material_2'; }
             } else {
                  // Fallback or other types
@@ -2218,9 +2096,9 @@ app.get('/api/mines/upgrade-info/:mineId', (req, res) => {
                         money: lvlInfo.cost_money,
                         gold: lvlInfo.cost_gold,
                         diamond: lvlInfo.cost_diamond,
-                        lumber: lvlInfo.cost_wood,
+                        wood: lvlInfo.cost_wood,
                         brick: lvlInfo.cost_brick,
-                        concrete: lvlInfo.cost_cement,
+                        cement: lvlInfo.cost_cement,
                         glass: lvlInfo.cost_glass,
                         steel: lvlInfo.cost_steel
                     },
@@ -2590,7 +2468,7 @@ app.get('/api/bank-accounts/:userId/:bankId', (req, res) => {
     const { userId, bankId } = req.params;
     const query = `
         SELECT ba.*, b.name as bank_name, b.interest_rate, b.loan_rate, b.transfer_fee, b.level,
-        u.username as owner_name, b.owner_id as bank_owner_id, u.avatar as owner_avatar
+        u.username as owner_name
         FROM bank_accounts ba
         JOIN banks b ON ba.bank_id = b.id
         LEFT JOIN users u ON b.owner_id = u.id
@@ -2966,9 +2844,9 @@ app.post('/api/bank-accounts/loan', (req, res) => {
                 const interest = Math.floor(amount * (rate / 100));
                 const totalDebt = amount + interest;
 
-                // Update Account (Add Balance, Set Debt, Set Initial Debt, Set Loan Taken Time)
-                db.query('UPDATE bank_accounts SET balance = balance + ?, loan_debt = ?, initial_loan_debt = ?, loan_taken_at = NOW() WHERE id = ?', 
-                    [amount, totalDebt, totalDebt, accountId], (err) => {
+                // Update Account (Add Balance, Set Debt, Set Loan Taken Time)
+                db.query('UPDATE bank_accounts SET balance = balance + ?, loan_debt = ?, loan_taken_at = NOW() WHERE id = ?', 
+                    [amount, totalDebt, accountId], (err) => {
                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Account update error' }));
 
                         // Log (No Score Increase on Take)
@@ -3479,7 +3357,7 @@ db.query(createHospitalActiveTreatmentsTable, (err) => {
 // Get All Hospitals
 app.get('/api/hospitals', (req, res) => {
     const query = `
-        SELECT h.*, u.username as owner_name, u.avatar as owner_avatar, u.id as owner_id,
+        SELECT h.*, u.username as owner_name,
         (SELECT COUNT(*) FROM hospital_active_treatments WHERE hospital_id = h.id) as active_patients
         FROM hospitals h 
         JOIN users u ON h.user_id = u.id 
@@ -4541,7 +4419,7 @@ app.post('/api/mines/start', (req, res) => {
         // 1. Get User & Mine Data
         // Only count workers whose end_time is in the future
         const query = `
-            SELECT u.energy, u.health, u.education_skill, m.id as mine_id, m.max_workers, m.reserve, m.salary, m.vault, m.mine_type, m.stock, m.active_recipe_id, m.level, m.user_id as owner_id,
+            SELECT u.energy, u.health, u.education_skill, m.id as mine_id, m.max_workers, m.reserve, m.salary, m.vault, m.mine_type, m.stock, m.level, m.user_id as owner_id,
             (SELECT level FROM arge_levels WHERE user_id = m.user_id AND mine_type = m.mine_type) as arge_level,
             (SELECT production_time FROM mine_settings WHERE mine_type = m.mine_type) as production_time,
             (SELECT COUNT(*) FROM mine_active_workers WHERE mine_id = m.id AND end_time > NOW()) as current_workers,
@@ -4605,12 +4483,7 @@ app.post('/api/mines/start', (req, res) => {
                          const baseProduction = mineLevel;
                          const educationBonus = Math.floor(ownerSkill / 10);
                          const argeBonus = (arge_level || 0) * 2;
-                         let productionAmount = baseProduction + educationBonus + argeBonus;
-
-                         // Override for GPU Factory
-                         if (data.mine_type === 'gpu_factory') { // Everyone produces 1 GPU
-                             productionAmount = 1;
-                         }
+                         const productionAmount = baseProduction + educationBonus + argeBonus;
                          
                          console.log(`[Mining Start] User: ${userId}, Mine: ${mineId}, OwnerSkill: ${ownerSkill}, Level: ${mineLevel}, EduBonus: ${educationBonus}, ArgeBonus: ${argeBonus}, Final: ${productionAmount}`);
 
@@ -4656,14 +4529,6 @@ app.post('/api/mines/start', (req, res) => {
                          raw1Name = 'Demir'; 
                          raw2Name = 'Kömür'; 
                      }
-                     else if (data.mine_type === 'silicon') { 
-                         req1 = productionAmount * 3; 
-                         req2 = productionAmount * 1; 
-                         raw1Key = 'sand'; 
-                         raw2Key = 'coal';
-                         raw1Name = 'Kum'; 
-                         raw2Name = 'Kömür'; 
-                     }
                      else {
                          req1 = 0; 
                      }
@@ -4680,27 +4545,28 @@ app.post('/api/mines/start', (req, res) => {
                      }
 
                      // Legacy Factories: Check & Deduct Energy + Raw Materials
-                     const legacyFactories = ['lumber', 'brick', 'glass', 'concrete', 'steel', 'silicon'];
+                     const legacyFactories = ['lumber', 'brick', 'glass', 'concrete', 'steel'];
                      if (legacyFactories.includes(data.mine_type)) {
                          const energyRequired = productionAmount;
                          
                          // Check Energy
-                         const currentEnergy = inventory['electricity'] || 0;
+                         const currentEnergy = inventory['energy'] || 0;
                          
                          if (currentEnergy < energyRequired) {
                              return db.rollback(() => res.json({ success: false, message: `Fabrikada yeterli Elektrik yok! (${energyRequired} gerekli, ${currentEnergy} mevcut)` }));
                          }
 
                          // Prepare legacy factory inputs for deduction
-                         const legacyInputs = { electricity: 1 };
-                         if (raw1Key) legacyInputs[raw1Key] = req1 / productionAmount;
-                         if (raw2Key) legacyInputs[raw2Key] = req2 / productionAmount;
+                         const legacyInputs = { energy: 1 };
+                         if (raw1Key) legacyInputs[raw1Key] = 3;
+                         if (raw2Key) legacyInputs[raw2Key] = 3;
                          
                          proceedWithProduction(legacyInputs, null, productionAmount, true); // true = use factory_inventory
                          return;
                      }
                      
-                     
+                     proceedWithProduction(null, null, productionAmount, false);
+
                      function proceedWithProduction(inputs, pKey, amount, isNewFactory) {
                          // Vault Check
                          const estimatedCost = amount * salary;
@@ -4756,7 +4622,7 @@ app.post('/api/mines/start', (req, res) => {
                      // Check if it's a new factory type
                      const recipes = FACTORY_RECIPES[data.mine_type];
                      if (recipes) {
-                         const recipeId = data.active_recipe_id; // Use owner's selected recipe
+                         const recipeId = req.body.recipeId;
                          const recipe = recipes.find(r => r.id === recipeId) || recipes[0];
                          
                          if (!recipe) return db.rollback(() => res.json({ success: false, message: 'Geçersiz reçete.' }));
@@ -4767,11 +4633,9 @@ app.post('/api/mines/start', (req, res) => {
                          const trNames = {
                              wheat: 'Buğday', egg: 'Yumurta', fruit: 'Meyve', vegetable: 'Sebze',
                              meat: 'Et', olive_oil: 'Zeytinyağı', rice: 'Pirinç', potato: 'Patates',
-                             olive: 'Zeytin', honey: 'Bal', electricity: 'Elektrik',
+                             olive: 'Zeytin', honey: 'Bal', energy: 'Elektrik',
                              wood: 'Odun', stone: 'Taş', iron: 'Demir', coal: 'Kömür',
-                             sand: 'Kum', copper: 'Bakır', uranium: 'Uranyum', gold_nugget: 'Altın Parçası',
-                             silicon: 'Silikon', gold: 'Altın', chip: 'Çip', oil: 'Petrol', plastic: 'Plastik',
-                             electronic_card: 'Elektronik Kart', gpu: 'Ekran Kartı', copper_cable: 'Bakır Kablo', gold_cable: 'Altın Kablo'
+                             sand: 'Kum', copper: 'Bakır', uranium: 'Uranyum', gold_nugget: 'Altın Parçası'
                          };
 
                          for (const [key, val] of Object.entries(recipeInputs)) {
@@ -4791,35 +4655,6 @@ app.post('/api/mines/start', (req, res) => {
                      }); // Close owner query callback
                  });
              });
-        });
-    });
-});
-
-
-// Set Factory Production Recipe
-app.post('/api/mines/set-recipe', (req, res) => {
-    const { userId, mineId, recipeId } = req.body;
-
-    // Verify ownership
-    db.query('SELECT user_id, mine_type FROM player_mines WHERE id = ?', [mineId], (err, results) => {
-        if (err) return res.status(500).json({ success: false, message: 'DB Error' });
-        if (results.length === 0) return res.status(404).json({ success: false, message: 'Maden bulunamadı.' });
-        
-        if (results[0].user_id != userId) {
-            return res.status(403).json({ success: false, message: 'Yetkisiz işlem.' });
-        }
-
-        const mineType = results[0].mine_type;
-        const recipes = FACTORY_RECIPES[mineType];
-        
-        if (!recipes) return res.status(400).json({ success: false, message: 'Bu işletme için üretim ayarı yapılamaz.' });
-        
-        const recipe = recipes.find(r => r.id === recipeId);
-        if (!recipe) return res.status(400).json({ success: false, message: 'Geçersiz üretim tipi.' });
-
-        db.query('UPDATE player_mines SET active_recipe_id = ? WHERE id = ?', [recipeId, mineId], (err) => {
-            if (err) return res.status(500).json({ success: false, message: 'Güncelleme hatası.' });
-            res.json({ success: true, message: 'Üretim hattı güncellendi.' });
         });
     });
 });
@@ -4986,25 +4821,17 @@ app.get('/api/ranches/detail/:id', (req, res) => {
                 if (err) console.error('Count Error:', err);
                 ranch.workers = countRes ? countRes[0].count : 0;
 
-                // Get Stats
-                const statsQuery = 'SELECT SUM(amount) as total_production, SUM(earnings) as total_wages FROM ranch_logs WHERE ranch_id = ?';
-                db.query(statsQuery, [ranchId], (err, statsRes) => {
-                    if (!err && statsRes && statsRes.length > 0) {
-                        ranch.total_production = statsRes[0].total_production || 0;
-                        ranch.total_wages = statsRes[0].total_wages || 0;
-                    }
+                // Get Logs
+                const logQuery = `
+                    SELECT rl.*, u.username, u.avatar, u.level 
+                    FROM ranch_logs rl 
+                    JOIN users u ON rl.user_id = u.id 
+                    WHERE rl.ranch_id = ? 
+                    ORDER BY rl.created_at DESC 
+                    LIMIT 10
+                `;
 
-                    // Get Logs
-                    const logQuery = `
-                        SELECT rl.*, u.username, u.avatar, u.level 
-                        FROM ranch_logs rl 
-                        JOIN users u ON rl.user_id = u.id 
-                        WHERE rl.ranch_id = ? 
-                        ORDER BY rl.created_at DESC 
-                        LIMIT 10
-                    `;
-
-                    db.query(logQuery, [ranchId], (err, logs) => {
+                db.query(logQuery, [ranchId], (err, logs) => {
                     if (err) {
                         console.error('Logs Query Error:', err);
                         return res.status(500).json({ success: false, message: 'Logs Error' });
@@ -5038,7 +4865,6 @@ app.get('/api/ranches/detail/:id', (req, res) => {
                         res.json({ success: true, ranch, logs, workers });
                     });
                 });
-            });
             });
         });
     });
@@ -5188,9 +5014,9 @@ app.post('/api/ranches/collect', (req, res) => {
                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Ranch Update Error' }));
 
                         // Log Transaction
-                        const logQuery = 'INSERT INTO ranch_logs (ranch_id, user_id, message, amount, earnings) VALUES (?, ?, ?, ?, ?)';
+                        const logQuery = 'INSERT INTO ranch_logs (ranch_id, user_id, message, amount) VALUES (?, ?, ?, ?)';
                         const message = `Üretim: +${amount}, Kazanç: ${totalEarnings} ₺`;
-                        db.query(logQuery, [ranchId, userId, message, amount, totalEarnings], (err) => {
+                        db.query(logQuery, [ranchId, userId, message, amount], (err) => {
                             if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log Error' }));
 
                             // Remove Active Worker
@@ -5340,19 +5166,7 @@ app.get('/api/farms/detail/:id', (req, res) => {
                         // Use capacity from database or calculate as fallback
                         farm.reserve_cap = farm.capacity || ((farm.level || 1) * 1000);
                         
-                        // Get Statistics
-                        const statsQuery = 'SELECT SUM(amount) as total_production, SUM(earnings) as total_wages FROM farm_logs WHERE farm_id = ?';
-                        db.query(statsQuery, [farmId], (err, statsResult) => {
-                            if (err) {
-                                console.error('Stats Query Error:', err);
-                                return res.status(500).json({ success: false, message: 'Stats Error' });
-                            }
-                            const stats = statsResult[0] || { total_production: 0, total_wages: 0 };
-                            farm.total_production = stats.total_production || 0;
-                            farm.total_wages = stats.total_wages || 0;
-
-                            res.json({ success: true, farm, logs, workers });
-                        });
+                        res.json({ success: true, farm, logs, workers });
                     });
                 });
             });
@@ -5384,7 +5198,7 @@ app.post('/api/farms/start', (req, res) => {
             if (results.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Kullanıcı veya Tarla bulunamadı.' }));
 
             const data = results[0];
-            const { energy, health, education_skill, max_workers, current_workers, any_active_workers, reserve, salary, vault, stock, level, production_time, owner_id: ownerId } = data;
+            const { energy, health, education_skill, max_workers, current_workers, any_active_workers, reserve, salary, vault, stock, level, production_time } = data;
             
             // 2. Checks
             const ENERGY_COST = 10;
@@ -5517,9 +5331,9 @@ app.post('/api/farms/collect', (req, res) => {
                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Farm Update Error' }));
 
                         // Log Transaction
-                        const logQuery = 'INSERT INTO farm_logs (farm_id, user_id, message, amount, earnings) VALUES (?, ?, ?, ?, ?)';
+                        const logQuery = 'INSERT INTO farm_logs (farm_id, user_id, message, amount) VALUES (?, ?, ?, ?)';
                         const message = `Üretim: +${amount}, Tüketilen Tohum: ${seedCost}, Kazanç: ${totalEarnings} ₺`;
-                        db.query(logQuery, [farmId, userId, message, amount, totalEarnings], (err) => {
+                        db.query(logQuery, [farmId, userId, message, amount], (err) => {
                             if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log Error' }));
 
                             // Remove Active Worker
@@ -5583,52 +5397,9 @@ app.post('/api/farms/deposit/:id', (req, res) => {
                 db.query('UPDATE player_farms SET vault = vault + ? WHERE id = ?', [amount, farmId], (err) => {
                     if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kasa güncellenemedi.' }));
 
-                    // Log
-                    db.query('INSERT INTO farm_logs (farm_id, user_id, message, amount) VALUES (?, ?, ?, ?)', [farmId, userId, 'Kasa Para Yatırma', amount], (err) => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log Error' }));
-
-                        db.commit(err => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                            res.json({ success: true, message: `${amount} ₺ kasaya yatırıldı.` });
-                        });
-                    });
-                });
-            });
-        });
-    });
-});
-
-// Withdraw Money from Farm Vault
-app.post('/api/farms/withdraw/:id', (req, res) => {
-    const farmId = req.params.id;
-    const { userId, amount } = req.body;
-
-    if (amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
-
-    db.beginTransaction(err => {
-        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
-
-        db.query('SELECT * FROM player_farms WHERE id = ?', [farmId], (err, farms) => {
-            if (err || farms.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Tarla bulunamadı.' }));
-            
-            const farm = farms[0];
-            if (farm.user_id != userId) return db.rollback(() => res.status(403).json({ success: false, message: 'Bunu yapmaya yetkiniz yok.' }));
-            if (farm.vault < amount) return db.rollback(() => res.json({ success: false, message: 'Yetersiz kasa bakiyesi.' }));
-
-            db.query('UPDATE player_farms SET vault = vault - ? WHERE id = ?', [amount, farmId], (err) => {
-                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kasa güncellenemedi.' }));
-
-                db.query('UPDATE users SET money = money + ? WHERE id = ?', [amount, userId], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Para yatırılamadı.' }));
-
-                    // Log
-                    db.query('INSERT INTO farm_logs (farm_id, user_id, message, amount) VALUES (?, ?, ?, ?)', [farmId, userId, 'Kasa Para Çekme', amount], (err) => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log Error' }));
-
-                        db.commit(err => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                            res.json({ success: true, message: `${amount} ₺ kasadan çekildi.` });
-                        });
+                    db.commit(err => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                        res.json({ success: true, message: `${amount} ₺ kasaya yatırıldı.` });
                     });
                 });
             });
@@ -6369,7 +6140,7 @@ app.post('/api/ranches/deposit/:id', (req, res) => {
     db.beginTransaction(err => {
         if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
 
-        db.query('SELECT money, username FROM users WHERE id = ?', [userId], (err, users) => {
+        db.query('SELECT money FROM users WHERE id = ?', [userId], (err, users) => {
             if (err || users.length === 0) return db.rollback(() => res.status(500).json({ success: false, message: 'Kullanıcı bulunamadı.' }));
             if (users[0].money < amount) return db.rollback(() => res.json({ success: false, message: 'Yetersiz bakiye.' }));
 
@@ -6379,60 +6150,9 @@ app.post('/api/ranches/deposit/:id', (req, res) => {
                 db.query('UPDATE player_ranches SET vault = vault + ? WHERE id = ?', [amount, ranchId], (err) => {
                     if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kasa güncellenemedi.' }));
 
-                    // Log Transaction
-                    const logQuery = 'INSERT INTO ranch_logs (ranch_id, user_id, log_type, earnings, created_at) VALUES (?, ?, ?, ?, NOW())';
-                    db.query(logQuery, [ranchId, userId, 'DEPOSIT', amount], (err) => {
-                        if (err) {
-                            // If log_type doesn't exist, we might fail. But we can try to be safe or assume it exists based on client JS.
-                            // If it fails, we rollback? Or ignore log?
-                            // Let's rollback to be safe.
-                            console.error('Ranch Log Error:', err);
-                            return db.rollback(() => res.status(500).json({ success: false, message: 'Log hatası.' }));
-                        }
-
-                        db.commit(err => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                            res.json({ success: true, message: 'Para yatırıldı.' });
-                        });
-                    });
-                });
-            });
-        });
-    });
-});
-
-// Withdraw Money from Ranch Vault
-app.post('/api/ranches/withdraw-vault/:id', (req, res) => {
-    const ranchId = req.params.id;
-    const { userId, amount } = req.body;
-    
-    if (amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
-
-    db.beginTransaction(err => {
-        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
-
-        db.query('SELECT user_id, vault FROM player_ranches WHERE id = ?', [ranchId], (err, ranches) => {
-            if (err || ranches.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Çiftlik bulunamadı.' }));
-            const ranch = ranches[0];
-            
-            if (ranch.user_id != userId) return db.rollback(() => res.status(403).json({ success: false, message: 'Yetkisiz işlem.' }));
-            if (ranch.vault < amount) return db.rollback(() => res.json({ success: false, message: 'Kasada yeterli bakiye yok.' }));
-
-            db.query('UPDATE player_ranches SET vault = vault - ? WHERE id = ?', [amount, ranchId], (err) => {
-                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kasa güncellenemedi.' }));
-
-                db.query('UPDATE users SET money = money + ? WHERE id = ?', [amount, userId], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kullanıcı bakiyesi güncellenemedi.' }));
-
-                    // Log Transaction
-                    const logQuery = 'INSERT INTO ranch_logs (ranch_id, user_id, log_type, earnings, created_at) VALUES (?, ?, ?, ?, NOW())';
-                    db.query(logQuery, [ranchId, userId, 'WITHDRAW', -amount], (err) => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log hatası.' }));
-
-                        db.commit(err => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                            res.json({ success: true, message: 'Para çekildi.' });
-                        });
+                    db.commit(err => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                        res.json({ success: true, message: 'Para yatırıldı.' });
                     });
                 });
             });
@@ -7253,14 +6973,6 @@ app.post('/api/properties/collect-tax', (req, res) => {
 
 const PORT = 3000;
 console.log('Attempting to start server on port ' + PORT);
-// --- LOOT BOX SYSTEM ---
-const lootboxRoutes = require('./routes/lootbox')(db);
-app.use('/api/lootbox', lootboxRoutes);
-
-// --- MARKET SYSTEM ---
-const marketRoutes = require('./routes/market')(db);
-app.use('/api/market', marketRoutes);
-
 app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
 });
@@ -8379,4 +8091,126 @@ app.post('/api/farms/action', (req, res) => {
     });
 });
 
+// --- CRYPTO EXCHANGE SYSTEM ---
+
+// 1. Market Data
+app.get('/api/crypto/market', (req, res) => {
+    // Get latest price
+    db.query('SELECT * FROM market_history ORDER BY id DESC LIMIT 1', (err, results) => {
+        if (err) return res.status(500).json({});
+        const currentPrice = results.length ? results[0].price : 100.00;
+
+        // Get History (Last 20)
+        db.query('SELECT * FROM market_history ORDER BY id DESC LIMIT 20', (err, history) => {
+             // Get Recent Trades (Last 10)
+             db.query(`
+                SELECT t.*, u.username, u.avatar 
+                FROM market_trades t 
+                JOIN users u ON t.user_id = u.id 
+                ORDER BY t.created_at DESC LIMIT 10
+             `, (err, trades) => {
+                 res.json({
+                     price: parseFloat(currentPrice),
+                     history: history ? history.reverse().map(h => ({ time: h.created_at, price: parseFloat(h.price) })) : [],
+                     trades: trades || []
+                 });
+             });
+        });
+    });
+});
+
+// 2. Trade Action
+app.post('/api/crypto/trade', (req, res) => {
+    const { userId, type, amount } = req.body;
+    const val = parseFloat(amount);
+    
+    if (!userId || isNaN(val) || val <= 0) return res.json({ success: false, message: 'Geçersiz veri' });
+
+    // Rate Limit Check (60 Seconds)
+    db.query('SELECT last_crypto_trade, money, btc FROM users WHERE id = ?', [userId], (err, users) => {
+        if(err || !users.length) return res.json({ success: false, message: 'Kullanıcı bulunamadı' });
+        
+        const user = users[0];
+        const now = new Date();
+        
+        if (user.last_crypto_trade) {
+            const diff = (now - new Date(user.last_crypto_trade)) / 1000;
+            if (diff < 60) { // 60s LIMIT
+                const waitTime = Math.ceil(60 - diff);
+                return res.json({ success: false, message: `İşlem sınırı: ${waitTime} saniye bekleyin.` });
+            }
+        }
+
+        // Get Price
+        db.query('SELECT price FROM market_history ORDER BY id DESC LIMIT 1', (err, prices) => {
+            const price = prices.length ? parseFloat(prices[0].price) : 100.00;
+            const totalCost = val * price;
+
+            if (type === 'buy') {
+                if (user.money < totalCost) return res.json({ success: false, message: 'Yetersiz Bakiye' });
+                
+                db.beginTransaction(err => {
+                    // Update User (Money, BTC, Timestamp)
+                    db.query('UPDATE users SET money = money - ?, btc = btc + ?, last_crypto_trade = NOW() WHERE id = ?', 
+                        [totalCost, val, userId], (err) => {
+                        if(err) return db.rollback(() => res.json({ success: false, message: 'DB Error 1' }));
+                        
+                        // Log Trade
+                        db.query('INSERT INTO market_trades (user_id, type, price, amount, total_price) VALUES (?, ?, ?, ?, ?)',
+                            [userId, 'buy', price, val, totalCost], (err) => {
+                            
+                            db.commit(err => {
+                                if(err) return db.rollback(() => res.json({ success: false, message: 'Commit Error' }));
+                                res.json({ success: true, message: `Alım Başarılı: ${val} BTC` });
+                            });
+                        });
+                    });
+                });
+
+            } else { // sell
+                 if (parseFloat(user.btc) < val) return res.json({ success: false, message: 'Yetersiz BTC' });
+
+                 db.beginTransaction(err => {
+                    // Update User (Money, BTC, Timestamp)
+                    db.query('UPDATE users SET money = money + ?, btc = btc - ?, last_crypto_trade = NOW() WHERE id = ?', 
+                        [totalCost, val, userId], (err) => {
+                        if(err) return db.rollback(() => res.json({ success: false, message: 'DB Error 1' }));
+                        
+                        // Log Trade
+                        db.query('INSERT INTO market_trades (user_id, type, price, amount, total_price) VALUES (?, ?, ?, ?, ?)',
+                            [userId, 'sell', price, val, totalCost], (err) => {
+                            
+                            db.commit(err => {
+                                if(err) return db.rollback(() => res.json({ success: false, message: 'Commit Error' }));
+                                res.json({ success: true, message: `Satış Başarılı: +$${totalCost.toFixed(2)}` });
+                            });
+                        });
+                    });
+                });
+            }
+        });
+    });
+});
+
+// 3. Price Simulation
+setInterval(() => {
+    // Get last price
+    db.query('SELECT price FROM market_history ORDER BY id DESC LIMIT 1', (err, results) => {
+        if(err) return;
+        let currentPrice = results.length ? parseFloat(results[0].price) : 100.00;
+        
+        // Random Walk
+        // Volatility between -2% and +2%
+        const changePercent = (Math.random() - 0.5) * 0.04; 
+        let newPrice = currentPrice * (1 + changePercent);
+        
+        // Bias towards 1000 if it drifts too far? 
+        // Or just hard limits
+        if(newPrice < 100) newPrice = 100;
+        
+        db.query('INSERT INTO market_history (price, volume) VALUES (?, ?)', [newPrice, Math.random() * 5], (err) => {
+            if(err) console.error(err);
+        });
+    });
+}, 30000); // Every 30 seconds update price
 

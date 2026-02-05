@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim of World - Kripto Borsa</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/global-menu.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/loader-manager.js"></script>
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #161616;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-red: #e74c3c;
+            --text-white: #ffffff;
+            --border-color: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+            overflow: hidden;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+
+        /* HEADER */
+        /* Will be injected by header-manager.js or kept minimalist */
+        
+        main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px; /* Added global padding */
+            padding-bottom: 80px; /* For bottom menu */
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* Spacing between cards */
+        }
+
+        .card-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .price-hero {
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(180deg, rgba(20,20,20,0) 0%, rgba(0,0,0,0.2) 100%);
+            border-bottom: 1px solid #222;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+        }
+        .current-price { font-size: 2rem; font-weight: 800; color: var(--accent-green); line-height: 1; margin-top: 5px; text-shadow: 0 0 15px rgba(46, 204, 113, 0.2); }
+        .market-label { font-size: 0.75rem; color: #666; letter-spacing: 2px; font-weight: 600; }
+
+        .chart-section {
+            height: 180px; 
+            background: #0f0f0f;
+            padding: 10px; 
+            position: relative;
+            width: 100%;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
+        
+        canvas#marketChart {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .actions-container {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .trade-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        
+        .trade-label {
+            font-size: 0.7rem;
+            color: #888;
+            margin-left: 2px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .trade-input {
+            width: 100%;
+            padding: 12px;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            color: #fff;
+            border-radius: 8px;
+            font-family: 'Rajdhani';
+            font-size: 1.2rem; 
+            text-align: center;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .trade-input:focus { outline: none; border-color: var(--accent-cyan); background: #111; }
+
+        .trade-btns { display: flex; gap: 10px; margin-top: 5px; }
+        .t-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.1s, filter 0.2s;
+            color: #fff;
+            font-family: 'Rajdhani';
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .t-btn i { font-size: 0.9rem; }
+        .t-btn:active { transform: scale(0.96); }
+        .disabled-btn { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
+        
+        .btn-buy { background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+        .btn-buy:hover { filter: brightness(1.15); box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3); }
+
+        .btn-sell { background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+        .btn-sell:hover { filter: brightness(1.15); box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3); }
+
+        .user-balance-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 10px;
+            background: rgba(0,0,0,0.2);
+            padding: 8px;
+            border-radius: 6px;
+        }
+        .val-highlight { color: #fff; font-weight: bold; }
+
+        /* LOGS */
+        .logs-section {
+            padding: 0;
+            background: transparent; /* Reset because wrapper handles bg */
+        }
+        .log-header {
+            padding: 10px 15px;
+            font-size: 0.75rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #222;
+            font-weight: bold;
+        }
+        .log-list { padding: 0; }
+        .log-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-bottom: 1px solid #222;
+            font-size: 0.8rem;
+            transition: background 0.2s;
+        }
+        .log-item:hover { background: rgba(255,255,255,0.02); }
+        .log-item:last-child { border-bottom: none; }
+
+        .log-avatar {
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            background: #333;
+            margin-right: 10px;
+            border: 1px solid #444;
+            object-fit: cover;
+        }
+        /* Fallback avatar style if img fails or is text */
+        
+        .log-txt { flex: 1; color: #aaa; }
+        .log-txt strong { color: #fff; }
+        .log-buy { color: var(--accent-green); font-weight: bold; }
+        .log-sell { color: var(--accent-red); font-weight: bold; }
+        .log-time { font-size: 0.7rem; color: #555; }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Header will be injected here -->
+        
+        <main>
+            <div class="card-box">
+                <div class="price-hero">
+                    <div class="market-label">BITCOIN PİYASASI</div>
+                    <div id="priceDisplay" class="current-price">$0.00</div>
+                </div>
+
+                <div class="chart-section">
+                    <canvas id="marketChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card-box actions-container">
+                <div class="user-balance-info">
+                    <span>Kasa: <span id="usdBalance" class="val-highlight">$0</span></span>
+                    <span>Cüzdan: <span id="btcBalance" class="val-highlight">0 BTC</span></span>
+                </div>
+
+                <div class="trade-input-group">
+                    <label class="trade-label" for="amountInput">İşlem Miktarı</label>
+                    <input type="number" id="amountInput" class="trade-input" placeholder="0.00">
+                </div>
+                
+                <div class="trade-btns">
+                    <button class="t-btn btn-buy" onclick="doTrade('buy')">
+                        <i class="fas fa-arrow-up"></i> 
+                        <span>AL</span>
+                    </button>
+                    <button class="t-btn btn-sell" onclick="doTrade('sell')">
+                        <i class="fas fa-arrow-down"></i> 
+                        <span>SAT</span>
+                    </button>
+                </div>
+                <div style="text-align:center; margin-top:15px; font-size:0.85rem; color:#666; background: #111; padding: 10px; border-radius: 6px; border: 1px solid #222;">
+                    Tahmini Tutar: <span id="estTotal" style="color:#fff; font-weight:bold;">-</span>
+                </div>
+            </div>
+
+            <div class="card-box logs-section">
+                <div class="log-header">SON İŞLEMLER</div>
+                <div id="tradeLogs" class="log-list">
+                    <!-- Logs Loaded Here -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Menu injected here -->
+        <div id="bottom-menu"></div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+
+    <!-- Managers -->
+    <script src="js/header-manager.js"></script>
+    <script src="js/menu-manager.js"></script>
+
+    <script>
+        toastr.options = { "positionClass": "toast-top-right", "timeOut": "2000" };
+        let marketChart = null;
+        let currentPrice = 0;
+        let countdownInterval;
+
+        function startTimer(seconds) {
+            if(seconds <= 0) return;
+            const btns = document.querySelectorAll('.t-btn');
+            btns.forEach(b => { 
+                b.disabled = true; 
+                b.classList.add('disabled-btn'); 
+                b.dataset.orgHtml = b.innerHTML;
+            });
+            
+            let remaining = seconds;
+            
+            clearInterval(countdownInterval);
+            updateBtnText(remaining);
+
+            countdownInterval = setInterval(() => {
+                remaining--;
+                updateBtnText(remaining);
+                
+                if(remaining <= 0) {
+                    clearInterval(countdownInterval);
+                    btns.forEach(b => {
+                        b.disabled = false; 
+                        b.classList.remove('disabled-btn');
+                        if(b.classList.contains('btn-buy')) b.innerHTML = `<i class="fas fa-arrow-up"></i> <span>AL</span>`;
+                        else b.innerHTML = `<i class="fas fa-arrow-down"></i> <span>SAT</span>`;
+                    });
+                }
+            }, 1000);
+
+            function updateBtnText(s) {
+                btns.forEach(b => b.innerHTML = `<i class="fas fa-clock"></i> ${s}s`);
+            }
+        }
+
+        // Init Chart
+        const ctx = document.getElementById('marketChart').getContext('2d');
+        
+        // Gradient Background
+        let gradient = ctx.createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, 'rgba(46, 204, 113, 0.25)'); 
+        gradient.addColorStop(1, 'rgba(46, 204, 113, 0)');
+
+        marketChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'BTC/USD',
+                    data: [],
+                    borderColor: '#2ecc71',
+                    borderWidth: 2,
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHitRadius: 20,
+                    pointHoverRadius: 6,
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: '#2ecc71'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: false },
+                    y: { 
+                        display: true,
+                        position: 'right',
+                        grid: { color: '#222' },
+                        ticks: { color: '#666', font: { size: 10 } } 
+                    }
+                },
+                interaction: { intersect: false, mode: 'index' }
+            }
+        });
+
+        // Amount Input Listener for Estimate
+        document.getElementById('amountInput').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            if(val > 0) {
+                const total = val * currentPrice;
+                document.getElementById('estTotal').innerText = '$' + total.toFixed(2);
+            } else {
+                document.getElementById('estTotal').innerText = '-';
+            }
+        });
+
+        async function refreshData() {
+            try {
+                // 1. Get Market Info
+                const res = await fetch('/api/crypto/market');
+                const data = await res.json();
+                
+                currentPrice = data.price;
+                document.getElementById('priceDisplay').innerText = '$' + currentPrice.toFixed(2);
+
+                // Update Chart
+                if(data.history) {
+                    marketChart.data.labels = data.history.map(h => h.time);
+                    marketChart.data.datasets[0].data = data.history.map(h => h.price);
+                    
+                    // Colors based on trend
+                    const start = data.history[0]?.price || 0;
+                    const end = data.history[data.history.length-1]?.price || 0;
+                    const color = end >= start ? '#2ecc71' : '#e74c3c';
+                    
+                    marketChart.data.datasets[0].borderColor = color;
+                    document.getElementById('priceDisplay').style.color = color;
+                    
+                    marketChart.update('none'); // 'none' for no animation on update
+                }
+
+                // Update Logs
+                const logContainer = document.getElementById('tradeLogs');
+                logContainer.innerHTML = data.trades.map(t => {
+                    const actionText = t.type === 'buy' ? 'aldı' : 'sattı';
+                    const actionClass = t.type === 'buy' ? 'log-buy' : 'log-sell';
+                    const amountStr = parseFloat(t.amount).toFixed(6);
+                    const avatarUrl = t.avatar || 'https://via.placeholder.com/30'; 
+                    const tradeId = t.id ? `#${t.id}` : '';
+
+                    return `
+                    <div class="log-item">
+                        <img src="${avatarUrl}" class="log-avatar" alt="av" onerror="this.src='https://via.placeholder.com/30'">
+                        <div class="log-txt">
+                            <strong>${t.username}</strong> <span class="${actionClass}">${amountStr} BTC ${actionText}</span>
+                            <div style="font-size:0.65rem; color:#444;">
+                                <span style="opacity:0.5; margin-right:4px;">${tradeId}</span> 
+                                Fiyat: $${parseFloat(t.price).toFixed(2)}
+                            </div>
+                        </div>
+                        <div class="log-time">${new Date(t.time).toLocaleTimeString()}</div>
+                    </div>
+                    `;
+                }).join('');
+
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function fetchBalance() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if(!user) return;
+            
+            const res = await fetch(`/api/user/me?userId=${user.id}`);
+            const data = await res.json();
+            if(data.success) {
+                document.getElementById('usdBalance').innerText = '$' + Math.floor(data.user.money).toLocaleString();
+                document.getElementById('btcBalance').innerText = parseFloat(data.user.btc || 0).toFixed(8) + ' BTC';
+
+                // Timer Check
+                if(data.user.last_crypto_trade) {
+                    // Convert UTC string to timestamp
+                    // Assuming created_at is standard MySQL timestamp format (UTC or Server Local)
+                    // We calculate diff roughly.
+                    const lastTime = new Date(data.user.last_crypto_trade).getTime();
+                    const now = Date.now();
+                    const diffSeconds = Math.floor((now - lastTime) / 1000);
+                    
+                    if(diffSeconds < 60) {
+                        startTimer(60 - diffSeconds);
+                    }
+                }
+            }
+        }
+
+        async function doTrade(type) {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            const amount = document.getElementById('amountInput').value;
+            
+            if(!amount || amount <= 0) return toastr.warning('Geçerli bir miktar girin');
+
+            try {
+                const res = await fetch('/api/crypto/trade', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: user.id,
+                        type: type,
+                        amount: amount
+                    })
+                });
+                const data = await res.json();
+                
+                if(data.success) {
+                    toastr.success(data.message);
+                    document.getElementById('amountInput').value = '';
+                    document.getElementById('estTotal').innerText = '-';
+                    startTimer(60); // Start manually on success
+                    refreshData();
+                    fetchBalance();
+                } else {
+                    toastr.error(data.message);
+                    if(data.message.includes('bekleyin')) {
+                        // Extract seconds if server told us
+                        // "İşlem sınırı: 45 saniye bekleyin."
+                        const match = data.message.match(/(\d+) saniye/);
+                        if(match) startTimer(parseInt(match[1]));
+                    }
+                }
+            } catch (e) {
+                toastr.error('İşlem hatası');
+            }
+        }
+
+        // --- Init ---
+        window.onload = () => {
+             // Check Login
+             const user = JSON.parse(localStorage.getItem('simWorldUser'));
+             if(!user) window.location.href = 'login.html';
+
+             refreshData();
+             fetchBalance();
+
+             // Auto Refresh Loop
+             setInterval(refreshData, 3000);
+             setInterval(fetchBalance, 10000);
+        };
+
+    </script>
+</body>
+</html>

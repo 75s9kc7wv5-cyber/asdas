@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim of World - Kripto Madenciliği</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0a0a0a; 
+            --bg-card: #141414; 
+            --bg-input: #1a1a1a;
+            --accent: #f7931a; /* Bitcoin Orange */
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71; 
+            --text-white: #ffffff; 
+            --text-muted: #888; 
+            --border-color: #222;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%; max-width: 450px; background-color: var(--bg-dark);
+            height: 100vh; display: flex; flex-direction: column; position: relative;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5); border-left: 1px solid #111; border-right: 1px solid #111;
+        }
+
+        /* MAIN */
+        main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
+
+        .page-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .back-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.2rem;
+            text-decoration: none;
+        }
+
+        .back-btn:hover {
+            background: var(--bg-card);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .page-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .page-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* MINING CARD (HERO) */
+        .mining-hero {
+            background: linear-gradient(135deg, rgba(247, 147, 26, 0.15), var(--bg-card));
+            border: 1px solid var(--accent); 
+            border-radius: 16px;
+            padding: 20px; margin-bottom: 20px; position: relative;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(247, 147, 26, 0.1);
+        }
+
+        .mining-icon {
+            font-size: 3rem;
+            color: var(--accent);
+            margin-bottom: 10px;
+            filter: drop-shadow(0 0 10px rgba(247, 147, 26, 0.5));
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .mining-status {
+            font-size: 0.9rem;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .mining-balance {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+        
+        .mining-balance span {
+            font-size: 1rem;
+            color: var(--accent);
+            margin-left: 5px;
+        }
+
+        /* STATS GRID */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .stat-label { font-size: 0.75rem; color: #888; text-transform: uppercase; margin-bottom: 5px; }
+        .stat-value { font-size: 1.1rem; font-weight: 700; color: #fff; }
+        .stat-unit { font-size: 0.8rem; color: #666; margin-left: 2px; }
+
+        /* GPU RIGS */
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 15px;
+            border-left: 3px solid var(--accent);
+            padding-left: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .rig-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .rig-slot {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .rig-slot.active {
+            border-color: var(--accent-green);
+            background: linear-gradient(90deg, rgba(46, 204, 113, 0.05), transparent);
+        }
+
+        .rig-slot.empty {
+            border-style: dashed;
+            opacity: 0.7;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .rig-slot.empty:hover {
+            border-color: var(--accent);
+            opacity: 1;
+            color: var(--accent);
+        }
+
+        .rig-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* font-size: 1.5rem;  Removed for images */
+            color: #555;
+            flex-shrink: 0;
+            padding: 5px; /* Added padding for images */
+        }
+
+        .rig-slot.active .rig-icon {
+            color: var(--accent);
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .rig-info { flex: 1; }
+        .rig-name { font-weight: 700; color: #fff; font-size: 1rem; }
+        .rig-stats { font-size: 0.8rem; color: #888; margin-top: 3px; }
+        
+        .rig-badges { display: flex; gap: 8px; margin-top: 6px; align-items: center; }
+        .status-badge { font-size: 0.7rem; font-weight: 700; padding: 4px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .badge-active { background: rgba(46, 204, 113, 0.15); color: var(--accent-green); border: 1px solid rgba(46, 204, 113, 0.2); }
+        .badge-broken { background: rgba(231, 76, 60, 0.15); color: #e74c3c; border: 1px solid rgba(231, 76, 60, 0.2); }
+        .badge-inactive { background: #222; color: #666; border: 1px solid #333; }
+        
+        .health-badge { font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 4px; color: #bbb; }
+
+        .rig-slot.locked {
+            opacity: 0.5;
+            background: #0f0f0f;
+            border-style: solid;
+            border-color: #222;
+            justify-content: center;
+        }
+
+        .rig-slot.broken {
+             border-color: #e74c3c;
+             background: rgba(231, 76, 60, 0.1);
+        }
+
+        .rig-action {
+            margin-left: auto;
+        }
+
+        .btn-action {
+            width: 36px; height: 36px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+            color: #fff;
+        }
+        
+        .btn-buy-slot {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-buy-slot:hover { background: #ffaa3b; box-shadow: 0 0 10px rgba(247, 147, 26, 0.4); }
+
+        .btn-start { background: var(--bg-input); border: 1px solid #444; color: var(--accent-green); }
+        .btn-start:hover { background: var(--accent-green); color: #000; }
+        
+        .btn-stop { background: rgba(231, 76, 60, 0.1); border: 1px solid #c0392b; color: #e74c3c; }
+        .btn-stop:hover { background: #e74c3c; color: #fff; }
+
+        .btn-trash { background: rgba(231, 76, 60, 0.2); border: 1px solid #c0392b; color: #e74c3c; }
+        .btn-trash:hover { background: #e74c3c; color: #fff; }
+
+        .btn-install { 
+            background: transparent; border: none; font-weight: 600; font-size: 0.9rem; color: #666; 
+            display: flex; align-items: center; gap: 8px;
+        }
+        .btn-install:hover { color: #fff; }
+
+        /* MODAL */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 200; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .modal-content { background: #181818; width: 90%; max-width: 400px; padding: 25px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
+        .m-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #333; }
+        .m-title { font-size: 1.1rem; font-weight: 700; color: #fff; }
+        .m-close { cursor: pointer; font-size: 1.2rem; color: #888; }
+        .m-body { color: #aaa; font-size: 0.95rem; line-height: 1.5; margin-bottom: 20px; text-align: center; }
+        .m-price { color: #fff; font-size: 1.5rem; font-weight: 700; margin: 10px 0; color: var(--accent-green); }
+        .m-actions { display: flex; gap: 10px; justify-content: center; }
+        .btn-confirm { background: var(--accent-green); color: #000; border: none; padding: 10px 25px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+        .btn-cancel { background: #333; color: #fff; border: none; padding: 10px 25px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+        
+        .m-list { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; text-align: left; }
+        
+        .gpu-item { 
+            background: #111; border: 1px solid #333; border-radius: 8px; padding: 12px; 
+            display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s;
+        }
+        .gpu-item:hover { border-color: var(--accent); background: #1a1a1a; }
+        .gpu-item-icon { font-size: 1.2rem; color: #666; }
+        .gpu-item-info { flex: 1; }
+        .gpu-item-name { font-weight: 700; font-size: 0.95rem; color: #eee; }
+        .gpu-item-count { font-size: 0.8rem; color: #888; }
+        
+        .no-gpu { text-align: center; color: #666; padding: 20px; font-style: italic; font-size: 0.9rem; }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- HEADER injected here -->
+        
+        <main>
+            <!-- HEAD -->
+            <div class="page-header">
+                <a href="home.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+                <div>
+                    <div class="page-title">KRİPTO MERKEZİ</div>
+                    <div class="page-desc">GPU'larınla Bitcoin Madenciliği Yap</div>
+                </div>
+            </div>
+
+            <!-- HERO DASHBOARD -->
+            <div class="mining-hero">
+                <i class="fab fa-bitcoin mining-icon"></i>
+                <div class="mining-status">TOPLAM BAKİYE</div>
+                <div class="mining-balance" id="btcBalance">0.00000000 <span>BTC</span></div>
+            </div>
+
+            <!-- STATS -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Toplam Hash Gücü</div>
+                    <div class="stat-value" id="totalHashrate">0 <span class="stat-unit">TH/s</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Saatlik Kazanç</div>
+                    <div class="stat-value" id="estimatedEarnings">0.0000 <span class="stat-unit">BTC</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Aktif Cihazlar</div>
+                    <div class="stat-value" id="activeRigs">0 <span class="stat-unit">/ 4</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Enerji Tüketimi</div>
+                    <div class="stat-value" id="energyConsumption">0 <span class="stat-unit">kW</span></div>
+                </div>
+            </div>
+
+            <!-- RIGS -->
+            <div class="section-title">
+                <span>MADENCİ CİHAZLARI (RIGS)</span>
+                <span id="rigCount" style="font-size: 0.8rem; color: #666;">0/4 Slot</span>
+            </div>
+
+            <div class="rig-container" id="rigList">
+                <!-- Example Slot: Active (Design Preview) -->
+                <!--
+                <div class="rig-slot active">
+                    <div class="rig-icon"><i class="fas fa-microchip"></i></div>
+                    <div class="rig-info">
+                        <div class="rig-name">GX-Titan</div>
+                        <div class="rig-stats">125 TH/s • 2.5 kW</div>
+                        <div class="rig-status">ÇALIŞIYOR</div>
+                    </div>
+                    <div class="rig-action">
+                        <button class="btn-action btn-stop"><i class="fas fa-power-off"></i></button>
+                    </div>
+                </div>
+                -->
+                
+                <!-- Example Slot: Empty -->
+                 <div class="rig-slot empty" onclick="openInstallModal(0)">
+                    <button class="btn-install"><i class="fas fa-plus-circle"></i> Slot 1 GPU Ekle</button>
+                </div>
+                 <div class="rig-slot empty" onclick="openInstallModal(1)">
+                    <button class="btn-install"><i class="fas fa-plus-circle"></i> Slot 2 GPU Ekle</button>
+                </div>
+                 <div class="rig-slot empty" onclick="openInstallModal(2)">
+                    <button class="btn-install"><i class="fas fa-plus-circle"></i> Slot 3 GPU Ekle</button>
+                </div>
+                 <div class="rig-slot empty" onclick="openInstallModal(3)">
+                    <button class="btn-install"><i class="fas fa-plus-circle"></i> Slot 4 GPU Ekle</button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+    
+    <!-- INSTALL GPU MODAL -->
+    <div class="modal-overlay" id="installModal">
+        <div class="modal-content">
+            <div class="m-header">
+                <div class="m-title">GPU Seçimi</div>
+                <div class="m-close" onclick="closeModal()"><i class="fas fa-times"></i></div>
+            </div>
+            <div class="m-list" id="gpuList">
+                <!-- Javascript ile doldurulacak -->
+                <div class="no-gpu">Envanter taranıyor...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BUY SLOT MODAL -->
+    <div class="modal-overlay" id="buySlotModal">
+        <div class="modal-content">
+            <div class="m-header">
+                <div class="m-title">Yeni Slot Satın Al</div>
+                <div class="m-close" onclick="closeBuyModal()"><i class="fas fa-times"></i></div>
+            </div>
+            <div class="m-body">
+                Daha fazla ekran kartı takabilmek için yeni bir slot aç.<br>
+                Mevcut slot sayısı: <strong id="buyCurrentSlots">1</strong><br>
+                <div class="m-price" id="buySlotPrice">10.000 TL</div>
+            </div>
+            <div class="m-actions">
+                <button class="btn-cancel" onclick="closeBuyModal()">İptal</button>
+                <button class="btn-confirm" onclick="confirmBuySlot()">Satın Al</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="js/header-manager.js"></script>
+    <script src="js/loader-manager.js"></script>
+    
+    <script>
+        let currentUser = null;
+        let miningData = {};
+        
+        const GPU_NAMES = {
+            'gx_100': 'GX-100 Series',
+            'gx_300': 'GX-300 Series',
+            'gx_500': 'GX-500 Series',
+            'gx_800': 'GX-800 Series',
+            'gx_titan': 'GX-Titan'
+        };
+
+        const GPU_ICONS = {
+            'gx_100': 'icons/video-card/GX-100.png',
+            'gx_300': 'icons/video-card/GX-300.png',
+            'gx_500': 'icons/video-card/GX-700.png', // Placeholder
+            'gx_800': 'icons/video-card/GX-700.png', // Placeholder
+            'gx_titan': 'icons/video-card/GX-Titan.png'
+        };
+
+        function getGpuIcon(key) {
+            return GPU_ICONS[key] || 'icons/video-card/GX-100.png';
+        }
+
+        $(document).ready(function() {
+             // Check user login
+             const userStr = localStorage.getItem('simWorldUser');
+             if (!userStr) {
+                 window.location.href = 'login.html';
+                 return;
+             }
+             currentUser = JSON.parse(userStr);
+             
+             // Initial Load
+             loadMiningData();
+             
+             // Auto Refresh
+             setInterval(loadMiningData, 10000);
+        });
+
+        function loadMiningData() {
+            if(!currentUser) return;
+            
+            $.get(`/api/crypto/summary/${currentUser.id}`, function(data) {
+                if(data.success) {
+                    miningData = data;
+                    renderDashboard(data);
+                    renderRigs(data.rigs);
+                } else {
+                    console.error("Mining Data Error:", data.message);
+                }
+            });
+        }
+
+        function renderDashboard(data) {
+            $('#btcBalance').html(`${parseFloat(data.btc_balance).toFixed(8)} <span>BTC</span>`);
+            $('#totalHashrate').html(`${data.total_hashrate} <span class="stat-unit">TH/s</span>`);
+            $('#estimatedEarnings').html(`${parseFloat(data.estimated_earnings).toFixed(8)} <span class="stat-unit">BTC</span>`);
+            $('#activeRigs').html(`${data.active_rigs} <span class="stat-unit">/ ${data.crypto_slots}</span>`);
+            $('#energyConsumption').html(`${data.total_power.toFixed(2)} <span class="stat-unit">kW</span>`);
+            $('#rigCount').text(`${data.active_rigs || 0}/${data.crypto_slots} (Max 10)`);
+        }
+
+        function renderRigs(rigs) {
+            const container = $('#rigList');
+            
+            // Placeholder/Statik öğeleri temizle (ID'si slot- ile başlamayanları sil)
+            container.children().not('[id^="slot-"]').remove();
+            
+            const rigMap = {};
+            if(rigs) rigs.forEach(r => rigMap[r.slot] = r);
+            const unlockedSlots = miningData.crypto_slots || 1;
+            
+            // Ensure 10 slot containers exist
+            for (let i = 0; i < 10; i++) {
+                if ($(`#slot-${i}`).length === 0) {
+                    container.append(`<div id="slot-${i}" class="slot-wrapper"></div>`);
+                }
+            }
+
+            for(let i=0; i<10; i++) {
+                const rig = rigMap[i];
+                const slotNum = i + 1;
+                const slotEl = $(`#slot-${i}`);
+                
+                let desiredType = 'locked';
+                if (i < unlockedSlots) {
+                    if (rig) desiredType = `active-${rig.gpu}`;
+                    else desiredType = 'empty';
+                } else if (i === unlockedSlots) {
+                    desiredType = 'buy';
+                }
+
+                const currentType = slotEl.data('type');
+                
+                // Full Render if type changed
+                if (currentType !== desiredType) {
+                    slotEl.data('type', desiredType);
+                    let html = '';
+                    
+                    if (desiredType.startsWith('active')) {
+                        // Render Active Rig Structure
+                        // We use data-attributes and classes to target updates later
+                        html = `
+                            <div class="rig-slot active js-rig-container">
+                                <div class="rig-icon">
+                                    <img src="${getGpuIcon(rig.gpu)}" style="width: 100%; height: 100%; object-fit: contain;">
+                                </div>
+                                <div class="rig-info">
+                                    <div class="rig-name">${rig.name || rig.gpu}</div>
+                                    <div class="rig-stats">${rig.hashrate} TH/s • ${rig.power} kW</div>
+                                    
+                                    <div class="rig-badges">
+                                        <div class="status-badge badge-active js-status-badge">ÇALIŞIYOR</div>
+                                        <div class="health-badge js-health-badge">
+                                            <i class="fas fa-heartbeat" style="color: var(--accent-green)"></i> %100
+                                        </div>
+                                    </div>
+
+                                    <div class="health-bar-bg" style="width: 100%; height: 4px; background: #222; margin-top: 8px; border-radius: 2px;">
+                                        <div class="js-health-bar" style="width: 100%; height: 100%; background: var(--accent-green); border-radius: 2px;"></div>
+                                    </div>
+                                </div>
+                                <div class="rig-action js-trash-btn" style="display:none;">
+                                    <button class="btn-action btn-trash" onclick="removeRig(${rig.slot})">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    } else if (desiredType === 'empty') {
+                        html = `
+                            <div class="rig-slot empty" onclick="openInstallModal(${i})">
+                                <button class="btn-install"><i class="fas fa-plus-circle"></i> Slot ${slotNum} GPU Ekle</button>
+                            </div>
+                        `;
+                    } else if (desiredType === 'buy') {
+                        html = `
+                            <div class="rig-slot locked">
+                                <button class="btn-buy-slot" onclick="openBuyModal()">
+                                    <i class="fas fa-lock"></i> Slot ${slotNum} Satın Al
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                         html = `
+                            <div class="rig-slot locked" style="opacity: 0.3;">
+                                <span style="color: #444; font-weight: 700;">Slot ${slotNum} <i class="fas fa-lock"></i></span>
+                            </div>
+                        `;
+                    }
+                    slotEl.html(html);
+                }
+                
+                // Smart Update for Active Rigs (Updates every 10s without refreshing image)
+                if (desiredType.startsWith('active') && rig) {
+                    const statusText = (rig.health <= 0) ? 'BOZUK' : (!rig.active ? 'DURDURULDU' : 'ÇALIŞIYOR');
+                    const statusClass = (rig.health <= 0) ? 'broken' : (!rig.active ? 'inactive' : 'active');
+                    const badgeClass = (rig.health <= 0) ? 'badge-broken' : (!rig.active ? 'badge-inactive' : 'badge-active');
+                    const healthColor = rig.health > 50 ? 'var(--accent-green)' : (rig.health > 20 ? 'orange' : 'red');
+
+                    // Update DOM
+                    slotEl.find('.js-rig-container').removeClass('active broken inactive').addClass(statusClass);
+                    slotEl.find('.js-status-badge').removeClass('badge-active badge-broken badge-inactive').addClass(badgeClass).text(statusText);
+                    slotEl.find('.js-health-badge').html(`<i class="fas fa-heartbeat" style="color: ${healthColor}"></i> %${Math.floor(rig.health)}`);
+                    slotEl.find('.js-health-bar').css({ 'width': `${rig.health}%`, 'background': healthColor });
+                    
+                    // Toggle Trash Button
+                    if (rig.health <= 0) {
+                        slotEl.find('.js-trash-btn').show();
+                    } else {
+                        slotEl.find('.js-trash-btn').hide();
+                    }
+                }
+            }
+        }
+
+        let selectedSlot = null;
+
+        function openInstallModal(slotIndex) {
+            selectedSlot = slotIndex;
+            $('#installModal').css('display', 'flex');
+            $('#gpuList').html('<div class="no-gpu">Envanter taranıyor...</div>');
+            
+            // Fetch Inventory
+            $.get(`/api/inventory/${currentUser.id}`, function(inv) {
+                const list = $('#gpuList');
+                list.empty();
+                
+                // Filter GPUs (assuming keys start with gx_)
+                const gpuKeys = Object.keys(inv).filter(k => k.startsWith('gx_') && inv[k] > 0);
+                
+                if (gpuKeys.length === 0) {
+                    list.html('<div class="no-gpu">Envanterinde takılabilir ekran kartı yok.</div>');
+                    return;
+                }
+                
+                gpuKeys.forEach(key => {
+                    const name = GPU_NAMES[key] || key.toUpperCase();
+                    const count = inv[key];
+                    
+                    const item = `
+                        <div class="gpu-item" onclick="installGpu('${key}')">
+                            <div class="gpu-item-icon">
+                                <img src="${getGpuIcon(key)}" style="width: 40px; height: 40px; object-fit: contain;">
+                            </div>
+                            <div class="gpu-item-info">
+                                <div class="gpu-item-name">${name}</div>
+                                <div class="gpu-item-count">Stok: ${count} Adet</div>
+                            </div>
+                            <div style="color:var(--accent-green); font-size:1.2rem;"><i class="fas fa-arrow-right"></i></div>
+                        </div>
+                    `;
+                    list.append(item);
+                });
+            });
+        }
+
+        function closeModal() {
+            $('#installModal').hide();
+            selectedSlot = null;
+        }
+
+        // --- BUY SLOT ---
+        function openBuyModal() {
+            const currentSlots = miningData.crypto_slots || 1;
+            const price = 10000 * Math.pow(2, currentSlots - 1);
+            
+            $('#buyCurrentSlots').text(currentSlots);
+            $('#buySlotPrice').text(price.toLocaleString('tr-TR') + ' TL');
+            $('#buySlotModal').css('display', 'flex');
+        }
+
+        function closeBuyModal() {
+            $('#buySlotModal').hide();
+        }
+
+        function confirmBuySlot() {
+            $.ajax({
+                url: '/api/crypto/buy-slot',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ userId: currentUser.id }),
+                success: function(res) {
+                    if(res.success) {
+                        toastr.success(res.message);
+                        closeBuyModal();
+                        loadMiningData(); // Refresh UI
+                    } else {
+                        toastr.error(res.message);
+                    }
+                },
+                error: function(err) {
+                    toastr.error("Bağlantı hatası");
+                }
+            });
+        }
+        
+        // Close on outside click
+        $(window).click(function(e) {
+            if (e.target.id === 'installModal') closeModal();
+            if (e.target.id === 'buySlotModal') closeBuyModal();
+        });
+
+        function installGpu(gpuKey) {
+            if (selectedSlot === null) return;
+            
+            // Optimistic Update UI
+            // ...
+            
+            $.ajax({
+                url: '/api/crypto/install',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    userId: currentUser.id,
+                    slotIndex: selectedSlot,
+                    gpuKey: gpuKey
+                }),
+                success: function(res) {
+                    if(res.success) {
+                        toastr.success(res.message);
+                        closeModal();
+                        loadMiningData(); // Refresh UI
+                    } else {
+                        toastr.error(res.message);
+                    }
+                },
+                error: function(err) {
+                    toastr.error("Bağlantı hatası");
+                }
+            });
+        }
+        
+        function removeRig(slotIndex) {
+            if(!confirm("Bu bozuk GPU'yu söküp atmak istediğine emin misin? Envantere geri dönmez, silinir.")) return;
+            
+            $.ajax({
+                url: '/api/crypto/remove-rig',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    userId: currentUser.id,
+                    slotIndex: slotIndex
+                }),
+                success: function(res) {
+                    if(res.success) {
+                        toastr.info(res.message);
+                        loadMiningData();
+                    } else {
+                        toastr.error(res.message);
+                    }
+                },
+                error: function() { toastr.error("Hata"); }
+            });
+        }
+    </script>
+</body>
+</html>

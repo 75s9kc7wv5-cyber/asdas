@@ -354,6 +354,10 @@
             copper_cable: { name: 'Bakır Kablo', image: 'icons/factory-icon/copper-cable.png', tab: 'kaynaklar' },
             gold_cable: { name: 'Altın Kablo', image: 'icons/factory-icon/gold-cable.png', tab: 'kaynaklar' },
             electronic_card: { name: 'Elektronik Kart', image: 'icons/factory-icon/electronic-board.png', tab: 'kaynaklar' },
+            
+            // Crypto
+            btc: { name: 'Bitcoin', image: 'icons/inventory-icon/bitcoin.png', tab: 'kaynaklar' },
+
             gx_100: { name: 'GX-100', image: 'icons/video-card/GX-100.png', tab: 'kaynaklar' },
             gx_300: { name: 'GX-300', image: 'icons/video-card/GX-300.png', tab: 'kaynaklar' },
             gx_500: { name: 'GX-500', image: 'icons/video-card/GX-700.png', tab: 'kaynaklar' },
@@ -421,8 +425,9 @@
             renderItems(tabName);
         }
 
-        function formatNumber(num) {
-            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        function formatNumber(num, key) {
+            if (key === 'btc') return parseFloat(num).toFixed(8) + ' BTC';
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + ' Adet';
         }
 
         // Listeyi Render Etme
@@ -437,6 +442,9 @@
                 if (config.tab === tabName) {
                     const qty = currentInventory[key] || 0;
                     
+                    // Sadece elimizde olanları göster (0 dan büyükse)
+                    if (parseFloat(qty) <= 0) return;
+
                     const card = document.createElement('div');
                     card.className = 'inv-card';
                     
@@ -463,7 +471,7 @@
                         </div>
                         <div class="inv-info">
                             <h4>${config.name}</h4>
-                            <p>${formatNumber(qty)} Adet</p>
+                            <p>${formatNumber(qty, key)}</p>
                             ${consumableBadge}
                         </div>
                     `;
