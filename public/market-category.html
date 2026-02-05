@@ -319,7 +319,7 @@
         // Fetch real ad counts
         async function updateMarketCounts() {
             try {
-                const res = await fetch('/api/market-stats');
+                const res = await fetch('/api/market/stats');
                 if (!res.ok) return;
                 const stats = await res.json();
                 

@@ -1713,12 +1713,12 @@ app.get('/api/mines/detail/:id', (req, res) => {
                         mine.total_production = stats.total_production || 0;
                         mine.total_wages = stats.total_wages || 0;
 
-                    // Get Logs (Production)
+                    // Get Logs
                     const logQuery = `
                         SELECT ml.*, u.username 
                         FROM mine_logs ml 
                         JOIN users u ON ml.user_id = u.id 
-                        WHERE ml.mine_id = ? AND (ml.log_type IS NULL OR ml.log_type = 'PRODUCTION')
+                        WHERE ml.mine_id = ? 
                         ORDER BY ml.created_at DESC 
                         LIMIT 10
                     `;
@@ -1729,22 +1729,8 @@ app.get('/api/mines/detail/:id', (req, res) => {
                             return res.status(500).json({ success: false, message: 'Logs Error' });
                         }
 
-                        // Get Transaction Logs
-                        const transLogQuery = `
-                            SELECT ml.*, u.username 
-                            FROM mine_logs ml 
-                            JOIN users u ON ml.user_id = u.id 
-                            WHERE ml.mine_id = ? AND ml.log_type IN ('DEPOSIT', 'WITHDRAW')
-                            ORDER BY ml.created_at DESC 
-                            LIMIT 10
-                        `;
-
-                        db.query(transLogQuery, [mineId], (err, transactionLogs) => {
-                            if (err) console.error('Trans Logs Error:', err);
-                            transactionLogs = transactionLogs || [];
-
-                            // Get Inventory
-                            db.query('SELECT item_key, amount FROM factory_inventory WHERE mine_id = ?', [mineId], (err, invRes) => {
+                        // Get Inventory
+                        db.query('SELECT item_key, amount FROM factory_inventory WHERE mine_id = ?', [mineId], (err, invRes) => {
                             const inventory = {};
                             if (invRes) {
                                 invRes.forEach(row => inventory[row.item_key] = row.amount);
@@ -1780,7 +1766,20 @@ app.get('/api/mines/detail/:id', (req, res) => {
                                 mine.arge_level = argeLevel;
                                 mine.efficiency = totalChance;
 
-                                res.json({ success: true, mine, logs, transactionLogs, workers });
+                                // Get Statistics
+                                const statsQuery = 'SELECT SUM(amount) as total_production, SUM(earnings) as total_wages FROM mine_logs WHERE mine_id = ?';
+                                db.query(statsQuery, [mineId], (err, statsResult) => {
+                                    if (err) {
+                                        console.error('Stats Query Error:', err);
+                                        return res.status(500).json({ success: false, message: 'Stats Error' });
+                                    }
+
+                                    const stats = statsResult[0] || { total_production: 0, total_wages: 0 };
+                                    mine.total_production = stats.total_production || 0;
+                                    mine.total_wages = stats.total_wages || 0;
+
+                                    res.json({ success: true, mine, logs, workers });
+                                });
                             });
                         });
                     });
@@ -1788,8 +1787,6 @@ app.get('/api/mines/detail/:id', (req, res) => {
             });
         });
     });
-});
-});
 });
 
 // Update Mine Settings
@@ -1823,54 +1820,9 @@ app.post('/api/mines/deposit/:id', (req, res) => {
                 db.query('UPDATE player_mines SET vault = vault + ? WHERE id = ?', [amount, mineId], (err) => {
                     if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kasa güncellenemedi.' }));
 
-                    // Log Transaction
-                    db.query('INSERT INTO mine_logs (mine_id, user_id, amount, earnings, log_type, description) VALUES (?, ?, 0, ?, "DEPOSIT", ?)', 
-                    [mineId, userId, amount, `${amount} TL yatırıldı`], (err) => {
-                         if (err) console.error('Deposit Log Error:', err); 
-
-                        db.commit(err => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                            res.json({ success: true, message: 'Para yatırıldı.' });
-                        });
-                    });
-                });
-            });
-        });
-    });
-});
-
-// Withdraw Money from Vault
-app.post('/api/mines/withdraw-vault/:id', (req, res) => {
-    const mineId = req.params.id;
-    const { userId, amount } = req.body;
-    
-    if (amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
-
-    db.beginTransaction(err => {
-        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
-
-        // Check Mine Vault
-        db.query('SELECT vault FROM player_mines WHERE id = ?', [mineId], (err, mines) => {
-            if (err || mines.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Maden bulunamadı.' }));
-            if (mines[0].vault < amount) return db.rollback(() => res.json({ success: false, message: 'Kasada yeterli bakiye yok.' }));
-
-            // Update Mine Vault
-            db.query('UPDATE player_mines SET vault = vault - ? WHERE id = ?', [amount, mineId], (err) => {
-                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kasa güncellenemedi.' }));
-
-                // Add to User Money
-                db.query('UPDATE users SET money = money + ? WHERE id = ?', [amount, userId], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kullanıcı bakiyesi güncellenemedi.' }));
-
-                    // Log Transaction
-                    db.query('INSERT INTO mine_logs (mine_id, user_id, amount, earnings, log_type, description) VALUES (?, ?, 0, ?, "WITHDRAW", ?)', 
-                    [mineId, userId, -amount, `${amount} TL çekildi`], (err) => {
-                         if (err) console.error('Withdraw Log Error:', err); 
-
-                        db.commit(err => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                            res.json({ success: true, message: 'Para çekildi ve cüzdana eklendi.' });
-                        });
+                    db.commit(err => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                        res.json({ success: true, message: 'Para yatırıldı.' });
                     });
                 });
             });
@@ -5502,52 +5454,9 @@ app.post('/api/farms/deposit/:id', (req, res) => {
                 db.query('UPDATE player_farms SET vault = vault + ? WHERE id = ?', [amount, farmId], (err) => {
                     if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kasa güncellenemedi.' }));
 
-                    // Log
-                    db.query('INSERT INTO farm_logs (farm_id, user_id, message, amount) VALUES (?, ?, ?, ?)', [farmId, userId, 'Kasa Para Yatırma', amount], (err) => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log Error' }));
-
-                        db.commit(err => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                            res.json({ success: true, message: `${amount} ₺ kasaya yatırıldı.` });
-                        });
-                    });
-                });
-            });
-        });
-    });
-});
-
-// Withdraw Money from Farm Vault
-app.post('/api/farms/withdraw/:id', (req, res) => {
-    const farmId = req.params.id;
-    const { userId, amount } = req.body;
-
-    if (amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
-
-    db.beginTransaction(err => {
-        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
-
-        db.query('SELECT * FROM player_farms WHERE id = ?', [farmId], (err, farms) => {
-            if (err || farms.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Tarla bulunamadı.' }));
-            
-            const farm = farms[0];
-            if (farm.user_id != userId) return db.rollback(() => res.status(403).json({ success: false, message: 'Bunu yapmaya yetkiniz yok.' }));
-            if (farm.vault < amount) return db.rollback(() => res.json({ success: false, message: 'Yetersiz kasa bakiyesi.' }));
-
-            db.query('UPDATE player_farms SET vault = vault - ? WHERE id = ?', [amount, farmId], (err) => {
-                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kasa güncellenemedi.' }));
-
-                db.query('UPDATE users SET money = money + ? WHERE id = ?', [amount, userId], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Para yatırılamadı.' }));
-
-                    // Log
-                    db.query('INSERT INTO farm_logs (farm_id, user_id, message, amount) VALUES (?, ?, ?, ?)', [farmId, userId, 'Kasa Para Çekme', amount], (err) => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log Error' }));
-
-                        db.commit(err => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                            res.json({ success: true, message: `${amount} ₺ kasadan çekildi.` });
-                        });
+                    db.commit(err => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                        res.json({ success: true, message: `${amount} ₺ kasaya yatırıldı.` });
                     });
                 });
             });
@@ -6288,7 +6197,7 @@ app.post('/api/ranches/deposit/:id', (req, res) => {
     db.beginTransaction(err => {
         if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
 
-        db.query('SELECT money, username FROM users WHERE id = ?', [userId], (err, users) => {
+        db.query('SELECT money FROM users WHERE id = ?', [userId], (err, users) => {
             if (err || users.length === 0) return db.rollback(() => res.status(500).json({ success: false, message: 'Kullanıcı bulunamadı.' }));
             if (users[0].money < amount) return db.rollback(() => res.json({ success: false, message: 'Yetersiz bakiye.' }));
 
@@ -6298,60 +6207,9 @@ app.post('/api/ranches/deposit/:id', (req, res) => {
                 db.query('UPDATE player_ranches SET vault = vault + ? WHERE id = ?', [amount, ranchId], (err) => {
                     if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kasa güncellenemedi.' }));
 
-                    // Log Transaction
-                    const logQuery = 'INSERT INTO ranch_logs (ranch_id, user_id, log_type, earnings, created_at) VALUES (?, ?, ?, ?, NOW())';
-                    db.query(logQuery, [ranchId, userId, 'DEPOSIT', amount], (err) => {
-                        if (err) {
-                            // If log_type doesn't exist, we might fail. But we can try to be safe or assume it exists based on client JS.
-                            // If it fails, we rollback? Or ignore log?
-                            // Let's rollback to be safe.
-                            console.error('Ranch Log Error:', err);
-                            return db.rollback(() => res.status(500).json({ success: false, message: 'Log hatası.' }));
-                        }
-
-                        db.commit(err => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                            res.json({ success: true, message: 'Para yatırıldı.' });
-                        });
-                    });
-                });
-            });
-        });
-    });
-});
-
-// Withdraw Money from Ranch Vault
-app.post('/api/ranches/withdraw-vault/:id', (req, res) => {
-    const ranchId = req.params.id;
-    const { userId, amount } = req.body;
-    
-    if (amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
-
-    db.beginTransaction(err => {
-        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
-
-        db.query('SELECT user_id, vault FROM player_ranches WHERE id = ?', [ranchId], (err, ranches) => {
-            if (err || ranches.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Çiftlik bulunamadı.' }));
-            const ranch = ranches[0];
-            
-            if (ranch.user_id != userId) return db.rollback(() => res.status(403).json({ success: false, message: 'Yetkisiz işlem.' }));
-            if (ranch.vault < amount) return db.rollback(() => res.json({ success: false, message: 'Kasada yeterli bakiye yok.' }));
-
-            db.query('UPDATE player_ranches SET vault = vault - ? WHERE id = ?', [amount, ranchId], (err) => {
-                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kasa güncellenemedi.' }));
-
-                db.query('UPDATE users SET money = money + ? WHERE id = ?', [amount, userId], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kullanıcı bakiyesi güncellenemedi.' }));
-
-                    // Log Transaction
-                    const logQuery = 'INSERT INTO ranch_logs (ranch_id, user_id, log_type, earnings, created_at) VALUES (?, ?, ?, ?, NOW())';
-                    db.query(logQuery, [ranchId, userId, 'WITHDRAW', -amount], (err) => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log hatası.' }));
-
-                        db.commit(err => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                            res.json({ success: true, message: 'Para çekildi.' });
-                        });
+                    db.commit(err => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                        res.json({ success: true, message: 'Para yatırıldı.' });
                     });
                 });
             });
@@ -8298,4 +8156,4 @@ app.post('/api/farms/action', (req, res) => {
     });
 });
 
-
+});

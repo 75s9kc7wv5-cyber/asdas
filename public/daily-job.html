@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="js/loader-manager.js"></script>
     <link rel="stylesheet" href="css/global-menu.css">
     
     <style>
@@ -440,6 +441,9 @@
              return stage ? stage.name : `Seviye ${req}`;
         }
 
+        // Hold loader until jobs are fetched
+        window.holdingLoader = true;
+
         // BAŞLAT
         window.onload = () => {
             // Kullanıcı ID'sini localStorage veya URL'den al
@@ -459,11 +463,17 @@
                 .then(res => res.json())
                 .then(data => {
                     jobs = data;
+                    renderJobs(); // Ensure renderJobs is called if it was missing in my previous read check or just to be safe
                     fetchStatus();
+                    
+                    // Hide loader
+                    if(window.hideLoader) setTimeout(window.hideLoader, 500);
                 })
                 .catch(err => {
                     console.error('Jobs fetch error:', err);
                     toastr.error("İş listesi yüklenirken hata oluştu!");
+                    // Hide loader even on error
+                    if(window.hideLoader) window.hideLoader();
                 });
         }
 
@@ -563,7 +573,7 @@
 
                 let cardClass = "job-card";
                 let actionArea = "";
-                let cardStyle = `border-top: 3px solid ${jobColor};`;
+                let cardStyle = `border-left: 4px solid ${jobColor};`;
                 let clickEvent = "";
 
                 // Only lock if education is insufficient
@@ -1019,6 +1029,6 @@
         */
 
     </script>
-    <script src="js/header-manager.js"></script>
+
 </body>
 </html>

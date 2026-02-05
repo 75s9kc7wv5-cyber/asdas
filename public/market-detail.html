@@ -806,6 +806,12 @@
                     listings.forEach(l => {
                         const div = document.createElement('div');
                         div.className = 'listing-card';
+                        
+                        // Kendi ilanımız ise sol çizgiyi yeşil yap
+                        if (l.seller_id == currentUserId) {
+                             div.style.borderLeftColor = 'var(--success)';
+                        }
+
                         div.onclick = () => openBuyModal(l);
                         
                         const itemInfo = itemDatabase[currentItemId] || { name: 'Ürün', icon: 'img/icon.png' };
@@ -836,10 +842,16 @@
                                     <img src="${avatarUrl}" class="seller-avatar-img">
                                     <span>${l.seller_id} - ${l.seller_name || 'Gizli'}</span>
                                 </div>
+                                <div style="color: #888; font-size: 0.75rem; display: flex; align-items: center; gap: 5px;">
+                                    <i class="far fa-clock"></i>
+                                    <span class="expiry-timer" data-created="${l.created_at}">Hesaplanıyor...</span>
+                                </div>
                             </div>
                         `;
                         list.appendChild(div);
                     });
+
+                    updateTimers();
                 })
                 .catch(err => {
                     console.error("Listings fetch error:", err);
@@ -944,7 +956,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     listingId: currentListing.id,
-                    amount: amount,
+                    quantity: amount,
                     buyerId: currentUserId
                 })
             })
@@ -987,9 +999,9 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    userId: currentUserId,
+                    sellerId: currentUserId,
                     itemId: currentItemId,
-                    amount: amount,
+                    quantity: amount,
                     price: price
                 })
             })
@@ -1022,6 +1034,30 @@
             
             window.location.href = `market-list.html?cat=${foundCat}`;
         }
+
+        function updateTimers() {
+            const timers = document.querySelectorAll('.expiry-timer');
+            timers.forEach(t => {
+                const createdStr = t.getAttribute('data-created');
+                const created = new Date(createdStr);
+                const now = new Date();
+                // 24 hours in ms
+                const expires = new Date(created.getTime() + 24 * 60 * 60 * 1000);
+                const diff = expires - now;
+
+                if (diff <= 0) {
+                    t.innerText = "Süresi Doldu";
+                    t.style.color = "#e74c3c";
+                } else {
+                    const h = Math.floor(diff / (1000 * 60 * 60));
+                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    t.innerText = `${h}s ${m}dk`;
+                }
+            });
+        }
+        
+        // Update timers every minute
+        setInterval(updateTimers, 60000);
     </script>
 </body>
 </html>

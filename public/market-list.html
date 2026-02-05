@@ -6,6 +6,7 @@
     <title>Sim of World - Pazar Listesi</title>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="js/loader-manager.js"></script>
     
     <style>
         :root {
@@ -257,7 +258,7 @@
 
             let stats = {};
             try {
-                const res = await fetch('/api/market-stats');
+                const res = await fetch('/api/market/stats');
                 if (res.ok) stats = await res.json();
             } catch (e) {
                 console.error("Pazar istatistikleri alınamadı:", e);

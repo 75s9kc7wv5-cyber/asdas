@@ -347,10 +347,83 @@
         .up-text { font-size: 0.8rem; color: var(--accent-gold); margin-top: 5px; font-weight: bold; }
 
         /* LOGLAR */
-        .log-container { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; }
-        .log-list { max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-        .log-item { display: flex; justify-content: space-between; font-size: 0.75rem; color: #aaa; border-bottom: 1px solid #222; padding-bottom: 4px; }
-        .log-time { color: #555; }
+        .log-container { background: var(--bg-card); border-radius: 10px; padding: 15px; border: 1px solid var(--border-color); }
+        .log-list {
+            max-height: 250px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 5px 5px;
+        }
+        .log-item {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.2s;
+            min-height: 36px;
+        }
+        .log-item:hover { background: rgba(255,255,255,0.05); }
+        .log-avatar {
+            width: 24px; height: 24px; border-radius: 50%; margin-right: 8px; object-fit: cover; border: 1px solid #444;
+        }
+        .log-text { font-size: 0.75rem; color: #ccc; flex: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 3px; }
+        .log-user-link { color: #fff; text-decoration: none; font-weight: 700; }
+        .log-time { font-size: 0.65rem; color: #555; margin-left: auto; white-space: nowrap; }
+        .log-highlight { color: var(--accent); font-weight: 600; }
+
+        /* ACCORDION */
+        .accordion-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .accordion-header {
+            padding: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.02);
+            transition: background 0.2s;
+        }
+        .accordion-header:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .accordion-header.active {
+             border-bottom: 1px solid var(--border-color);
+             background: rgba(255, 255, 255, 0.05);
+        }
+        .accordion-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .accordion-icon {
+            color: #666;
+            transition: transform 0.3s ease;
+        }
+        .accordion-header.active .accordion-icon {
+            transform: rotate(180deg);
+            color: var(--accent);
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .accordion-body {
+            padding: 15px;
+        }
 
         /* MODAL */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; display: none; justify-content: center; align-items: center; animation: fadeIn 0.3s; }
@@ -502,6 +575,63 @@
         .info-item .info-label { flex: 1; font-size: 0.85rem; color: #aaa; }
         .info-item .info-value { font-size: 0.95rem; font-weight: bold; color: #fff; text-align: right; }
 
+        /* ACCORDION */
+        .accordion-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .accordion-header {
+            padding: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.02);
+            transition: background 0.2s;
+        }
+        .accordion-header:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .accordion-header.active {
+             border-bottom: 1px solid var(--border-color);
+             background: rgba(255, 255, 255, 0.05);
+        }
+        .accordion-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .accordion-icon {
+            color: #666;
+            transition: transform 0.3s ease;
+        }
+        .accordion-header.active .accordion-icon {
+            transform: rotate(180deg);
+            color: var(--accent);
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .accordion-body {
+            padding: 15px;
+        }
+
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes workPulse { 
+            0% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 2px var(--accent)); } 
+            50% { transform: scale(1.1); opacity: 0.9; filter: drop-shadow(0 0 8px var(--accent)); } 
+            100% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 2px var(--accent)); } 
+        }
+
         /* BOTTOM NAV */
         .bottom-nav { position: absolute; bottom: 0; width: 100%; background: #0a0a0a; border-top: 1px solid #333; display: flex; justify-content: space-around; padding: 10px 0; z-index: 10; }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 0.75rem; cursor: pointer; }
@@ -551,116 +681,170 @@
 
             <!-- BİLGİLER TAB -->
             <div id="tab-bilgiler">
-                <div class="info-list">
-                    <div class="info-list-header">
-                        <i class="fas fa-info-circle"></i> İŞLETME BİLGİLERİ
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <div class="accordion-title"><i class="fas fa-info-circle"></i> İŞLETME BİLGİLERİ</div>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
-                    <div class="info-item">
-                        <i class="fas fa-user" style="color: var(--accent-cyan);"></i>
-                        <span class="info-label">İşletme Sahibi</span>
-                        <span class="info-value" id="info-owner">-</span>
+                    <div class="accordion-content" style="max-height: 2000px;">
+                        <div class="accordion-body">
+                            <div class="info-list" style="border:none; padding:0; background:transparent; box-shadow:none; margin:0;">
+                                <div class="info-item">
+                                    <i class="fas fa-user" style="color: var(--accent-cyan);"></i>
+                                    <span class="info-label">İşletme Sahibi</span>
+                                    <span class="info-value" id="info-owner">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-layer-group" style="color: var(--accent-gold);"></i>
+                                    <span class="info-label">İşletme Seviyesi</span>
+                                    <span class="info-value" id="info-level">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-seedling" style="color: var(--accent-green);"></i>
+                                    <span class="info-label">İşletme Kategorisi</span>
+                                    <span class="info-value" id="info-product">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-users" style="color: #3498db;"></i>
+                                    <span class="info-label">İşçi Kapasitesi</span>
+                                    <span class="info-value" id="info-worker">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-warehouse" style="color: #9b59b6;"></i>
+                                    <span class="info-label">Hammadde Deposu</span>
+                                    <span class="info-value" id="info-raw-warehouse">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-box-open" style="color: #e67e22;"></i>
+                                    <span class="info-label">Ürün Deposu</span>
+                                    <span class="info-value" id="info-prod-warehouse">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-vault" style="color: var(--accent-green);"></i>
+                                    <span class="info-label">Kasa Kapasitesi</span>
+                                    <span class="info-value" id="info-vault-capacity">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-flask" style="color: #e91e63;"></i>
+                                    <span class="info-label">Arge Seviyesi</span>
+                                    <span class="info-value" id="info-efficiency" style="color:var(--accent-gold)">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-tachometer-alt" style="color: var(--accent-cyan);"></i>
+                                    <span class="info-label">Üretim Hızı</span>
+                                    <span class="info-value" id="info-speed">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-money-bill-wave" style="color: #27ae60;"></i>
+                                    <span class="info-label">Birim Maaş</span>
+                                    <span class="info-value" id="info-wage">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-calendar-alt" style="color: #e67e22;"></i>
+                                    <span class="info-label">Kuruluş Tarihi</span>
+                                    <span class="info-value" id="info-created">-</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="info-item">
-                        <i class="fas fa-layer-group" style="color: var(--accent-gold);"></i>
-                        <span class="info-label">İşletme Seviyesi</span>
-                        <span class="info-value" id="info-level">-</span>
+                </div>
+
+                <!-- İŞLETME İSTATİSTİKLERİ -->
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <div class="accordion-title"><i class="fas fa-chart-line"></i> İŞLETME İSTATİSTİKLERİ</div>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
-                    <div class="info-item">
-                        <i class="fas fa-seedling" style="color: var(--accent-green);"></i>
-                        <span class="info-label">İşletme Kategorisi</span>
-                        <span class="info-value" id="info-product">-</span>
+                    <div class="accordion-content" style="max-height: 500px;">
+                        <div class="accordion-body">
+                            <div class="info-list" style="border:none; padding:0; background:transparent; box-shadow:none; margin:0;">
+                                <div class="info-item">
+                                    <i class="fas fa-hammer" style="color: var(--accent-gold);"></i>
+                                    <span class="info-label">Toplam Üretim Miktarı</span>
+                                    <span class="info-value" id="info-total-production">-</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="info-item">
-                        <i class="fas fa-users" style="color: #3498db;"></i>
-                        <span class="info-label">İşçi Kapasitesi</span>
-                        <span class="info-value" id="info-worker">-</span>
+                </div>
+
+                <!-- İŞLEM GEÇMİŞİ LOG (ACCORDION) -->
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <div class="accordion-title"><i class="fas fa-history"></i> İŞLEM GEÇMİŞİ</div>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
-                    <div class="info-item">
-                        <i class="fas fa-warehouse" style="color: #9b59b6;"></i>
-                        <span class="info-label">Hammadde Deposu</span>
-                        <span class="info-value" id="info-raw-warehouse">-</span>
-                    </div>
-                    <div class="info-item">
-                        <i class="fas fa-box-open" style="color: #e67e22;"></i>
-                        <span class="info-label">Ürün Deposu</span>
-                        <span class="info-value" id="info-prod-warehouse">-</span>
-                    </div>
-                    <div class="info-item">
-                        <i class="fas fa-vault" style="color: var(--accent-green);"></i>
-                        <span class="info-label">Kasa Kapasitesi</span>
-                        <span class="info-value" id="info-vault-capacity">-</span>
-                    </div>
-                    <div class="info-item">
-                        <i class="fas fa-flask" style="color: #e91e63;"></i>
-                        <span class="info-label">Arge Seviyesi</span>
-                        <span class="info-value" id="info-efficiency" style="color:var(--accent-gold)">-</span>
-                    </div>
-                    <div class="info-item">
-                        <i class="fas fa-tachometer-alt" style="color: var(--accent-cyan);"></i>
-                        <span class="info-label">Üretim Hızı</span>
-                        <span class="info-value" id="info-speed">-</span>
-                    </div>
-                    <div class="info-item">
-                        <i class="fas fa-money-bill-wave" style="color: #27ae60;"></i>
-                        <span class="info-label">Birim Maaş</span>
-                        <span class="info-value" id="info-wage">-</span>
-                    </div>
-                    <div class="info-item">
-                        <i class="fas fa-calendar-alt" style="color: #e67e22;"></i>
-                        <span class="info-label">Kuruluş Tarihi</span>
-                        <span class="info-value" id="info-created">-</span>
+                    <div class="accordion-content" style="max-height: 500px;">
+                        <div class="accordion-body">
+                            <div class="log-list" id="logList">
+                                <!-- JS ile doldurulacak -->
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- AYARLAR TAB -->
             <div id="tab-ayarlar" style="display:none;">
-            <!-- AYARLAR -->
-            <div class="settings-card">
-                <div class="card-header"><i class="fas fa-cogs"></i> GENEL AYARLAR</div>
-                <div class="form-group">
-                    <label class="form-label">İşletme Adı (3-40 karakter)</label>
-                    <input type="text" id="fNameInput" class="form-input" value="Tarla İşletmesi" minlength="3" maxlength="40">
+            <!-- GENEL AYARLAR -->
+            <div class="accordion-card">
+                <div class="accordion-header active" onclick="toggleAccordion(this)">
+                    <div class="accordion-title"><i class="fas fa-cogs"></i> GENEL AYARLAR</div>
+                    <i class="fas fa-chevron-down accordion-icon"></i>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Birim Maaş (₺) (0-1000)</label>
-                    <input type="number" id="fWageInput" class="form-input" value="2500" min="0" max="1000">
+                <div class="accordion-content" style="max-height: 500px;">
+                    <div class="accordion-body">
+                        <div class="form-group">
+                            <label class="form-label">İşletme Adı (3-40 karakter)</label>
+                            <input type="text" id="fNameInput" class="form-input" value="Tarla İşletmesi" minlength="3" maxlength="40">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Birim Maaş (₺) (0-1000)</label>
+                            <input type="number" id="fWageInput" class="form-input" value="2500" min="0" max="1000">
+                        </div>
+                        <button class="btn-save" onclick="saveSettings()">KAYDET</button>
+                    </div>
                 </div>
-                <button class="btn-save" onclick="saveSettings()">KAYDET</button>
             </div>
 
             <!-- GELİŞTİRME -->
-            <div class="settings-card">
-                <div class="card-header" style="color: var(--accent-gold);"><i class="fas fa-arrow-up"></i> GELİŞTİRME</div>
-                
-                <!-- Geliştirme Maliyetleri (Sadece geliştirme yapılmıyorsa göster) -->
-                <div id="upgradeCostsContainer">
-                    <!-- JS ile doldurulacak -->
+            <div class="accordion-card">
+                <div class="accordion-header active" onclick="toggleAccordion(this)">
+                    <div class="accordion-title" style="color: var(--accent-gold);"><i class="fas fa-arrow-up"></i> GELİŞTİRME</div>
+                    <i class="fas fa-chevron-down accordion-icon"></i>
                 </div>
-                
-                <!-- Geliştirme Sayacı (Sadece geliştirme yapılıyorsa göster) -->
-                <div id="upgradeCountdownContainer" style="display: none;">
-                    <div style="text-align: center; padding: 20px 0;">
-                        <div style="font-size: 0.85rem; color: #888; margin-bottom: 15px;">
-                            <i class="fas fa-hammer"></i> GELİŞTİRME DEVAM EDİYOR
+                <div class="accordion-content" style="max-height: 2000px;">
+                    <div class="accordion-body">
+                        <!-- Geliştirme Maliyetleri (Sadece geliştirme yapılmıyorsa göster) -->
+                        <div id="upgradeCostsContainer">
+                            <!-- JS ile doldurulacak -->
                         </div>
                         
-                        <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #333;">
-                            <div style="font-size: 2.5rem; font-weight: 800; color: var(--accent-gold); letter-spacing: 2px;" id="upgradeCountdownText">
-                                00:00
+                        <!-- Geliştirme Sayacı (Sadece geliştirme yapılıyorsa göster) -->
+                        <div id="upgradeCountdownContainer" style="display: none;">
+                            <div style="text-align: center; padding: 20px 0;">
+                                <div style="font-size: 0.85rem; color: #888; margin-bottom: 15px;">
+                                    <i class="fas fa-hammer"></i> GELİŞTİRME DEVAM EDİYOR
+                                </div>
+                                
+                                <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #333;">
+                                    <div style="font-size: 2.5rem; font-weight: 800; color: var(--accent-gold); letter-spacing: 2px;" id="upgradeCountdownText">
+                                        00:00
+                                    </div>
+                                    <div style="font-size: 0.75rem; color: #666; margin-top: 8px;">
+                                        Kalan Süre
+                                    </div>
+                                </div>
+                                
+                                <div style="width: 100%; height: 10px; background: #000; border-radius: 5px; overflow: hidden; border: 1px solid #333; margin-bottom: 20px;">
+                                    <div id="upgradeCountdownBar" style="width: 0%; height: 100%; background: var(--accent-gold); transition: width 1s linear;"></div>
+                                </div>
+                                
+                                <button class="vault-btn" onclick="openSpeedUpModal()" style="background: var(--accent-cyan);">
+                                    <i class="fas fa-bolt"></i> HIZLANDIR
+                                </button>
                             </div>
-                            <div style="font-size: 0.75rem; color: #666; margin-top: 8px;">
-                                Kalan Süre
-                            </div>
                         </div>
-                        
-                        <div style="width: 100%; height: 10px; background: #000; border-radius: 5px; overflow: hidden; border: 1px solid #333; margin-bottom: 20px;">
-                            <div id="upgradeCountdownBar" style="width: 0%; height: 100%; background: var(--accent-gold); transition: width 1s linear;"></div>
-                        </div>
-                        
-                        <button class="vault-btn" onclick="openSpeedUpModal()" style="background: var(--accent-cyan);">
-                            <i class="fas fa-bolt"></i> HIZLANDIR
-                        </button>
                     </div>
                 </div>
             </div>
@@ -680,43 +864,71 @@
 
             <!-- KASA TAB -->
             <div id="tab-kasa" style="display:none;">
-                <!-- KASA BAKİYESİ -->
-                <div class="settings-card">
-                    <div class="card-header" style="color:var(--accent-cyan)">
-                        <i class="fas fa-wallet"></i> KASA BAKİYESİ
+                
+                <!-- KASA YÖNETİMİ (Accordion) -->
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <div class="accordion-title"><i class="fas fa-coins"></i> KASA YÖNETİMİ</div>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
-                    
-                    <div class="vault-balance-section">
-                        <div class="vault-balance-label">Bakiye</div>
-                        <div class="vault-balance-amount" id="fVault">0</div>
-                        <div class="vault-balance-capacity" id="vaultCapacityText">Kapasite: 0/0</div>
-                    </div>
-                </div>
+                    <div class="accordion-content" style="max-height: 1000px;">
+                        <div class="accordion-body">
+                            
+                            <!-- Bakiye Kısmı -->
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                <div style="font-size: 0.9rem; color: #888; margin-bottom: 5px;">MEVCUT BAKİYE</div>
+                                <div class="vault-balance-amount" id="fVault" style="color: var(--accent-gold);">0</div>
+                                <div class="vault-balance-capacity" id="vaultCapacityText" style="color: #666; font-size: 0.85rem;">Kapasite: 0 / 0 ₺</div>
+                                <!-- Progress Bar -->
+                                <div style="width: 100%; height: 6px; background: #222; border-radius: 3px; margin: 10px 0; overflow: hidden; border: 1px solid #333;">
+                                    <div id="vaultProgressBar" style="width: 0%; height: 100%; background: var(--accent-gold); transition: width 0.5s ease;"></div>
+                                </div>
+                            </div>
 
-                <!-- PARA EKLE -->
-                <div class="settings-card">
-                    <div class="card-header" style="color:var(--accent-green)">
-                        <i class="fas fa-plus-circle"></i> PARA EKLE
-                    </div>
-                    
-                    <div class="vault-add-section">
-                        <div class="vault-add-limit">Maksimum: <span id="maxVaultAdd" style="color:var(--accent-green); font-weight:700;">100.000</span> ₺</div>
-                        <div class="vault-input-group">
-                            <input type="number" id="vaultInput" class="form-input" placeholder="Miktar giriniz" style="color:#fff;">
-                            <button class="vault-btn" onclick="confirmAction('vault', 'add', null, null)">
-                                <i class="fas fa-arrow-right"></i> KASAYA EKLE
-                            </button>
+                            <!-- İşlem Kısmı -->
+                            <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border: 1px solid #333;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                    <div style="font-size: 0.85rem; color: #aaa;">İşlem Miktarı:</div>
+                                    <div style="text-align: right; font-size: 0.75rem; color: #888;">
+                                        <span style="margin-right: 10px;">Max Yatır: <span id="maxVaultDeposit" style="color:var(--accent-green); cursor:pointer; font-weight:bold;" onclick="setMaxAmount('deposit')">0</span> <span style="color:var(--accent-green)">₺</span></span>
+                                        <span>Max Çek: <span id="maxVaultWithdraw" style="color:#e74c3c; cursor:pointer; font-weight:bold;" onclick="setMaxAmount('withdraw')">0</span> <span style="color:#e74c3c">₺</span></span>
+                                    </div>
+                                </div>
+                                
+                                <div style="position: relative; margin-bottom: 15px;">
+                                    <input type="number" id="vaultInput" class="form-input" placeholder="0" style="text-align: center; font-size: 1.5rem; color: var(--accent-gold); font-weight: bold; padding-right: 40px; border-color: #444;">
+                                    <span style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #666; font-weight: bold;">₺</span>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <button class="vault-btn" onclick="confirmAction('vault', 'add', null, null)" style="background: var(--accent-green); color: #000;">
+                                        <i class="fas fa-arrow-down"></i> YATIR
+                                    </button>
+                                    <button class="vault-btn" onclick="confirmAction('vault', 'withdraw', null, null)" style="background: #c0392b; color: #fff; border: 1px solid #e74c3c;">
+                                        <i class="fas fa-arrow-up"></i> ÇEK
+                                    </button>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
 
-                <!-- İŞLEM GEÇMİŞİ -->
-                <div class="log-container">
-                    <div class="card-header" style="color:var(--accent-gold)"><i class="fas fa-history"></i> İŞLEM GEÇMİŞİ</div>
-                    <div class="log-list" id="logList">
-                        <!-- JS ile doldurulacak -->
+                <!-- İŞLEM GEÇMİŞİ (Accordion - Ayrı Kart) -->
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <div class="accordion-title"><i class="fas fa-history"></i> SON İŞLEMLER</div>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
+                    </div>
+                    <div class="accordion-content" style="max-height: 500px;">
+                        <div class="accordion-body" style="padding: 10px 0;">
+                            <div class="log-list" id="transLogList" style="max-height: 200px;">
+                                <!-- JS ile doldurulacak -->
+                            </div>
+                        </div>
                     </div>
                 </div>
+
             </div>
 
         </main>
@@ -1285,6 +1497,8 @@
             
             document.getElementById('info-wage').innerText = fmt(factory.wage) + ' ₺/Adet';
             
+            // İstatistikler: Loglardan hesaplanıyor
+            
             // Format creation date
             if (factory.created_at) {
                 const date = new Date(factory.created_at);
@@ -1302,9 +1516,25 @@
             document.getElementById('fWageInput').value = factory.wage;
             
             // Kasa bilgilerini güncelle
-            document.getElementById('fVault').innerText = fmt(factory.vault);
-            document.getElementById('vaultCapacityText').innerText = `Kapasite: ${fmt(factory.vault)}/${fmt(vaultCapacity)}`;
-            document.getElementById('maxVaultAdd').innerText = fmt(factory.level * 100000);
+            const currentVault = factory.vault || 0;
+            // vaultCapacity is defined above
+            
+            if(document.getElementById('fVault')) document.getElementById('fVault').innerText = fmt(currentVault) + ' ₺';
+            if(document.getElementById('vaultCapacityText')) document.getElementById('vaultCapacityText').innerText = `Kapasite: ${fmt(currentVault)} / ${fmt(vaultCapacity)} ₺`;
+
+            // Progress Bar
+            const vPercent = Math.min((currentVault / vaultCapacity) * 100, 100);
+            if(document.getElementById('vaultProgressBar')) {
+                document.getElementById('vaultProgressBar').style.width = `${vPercent}%`;
+            }
+
+            // Max Deposit/Withdraw Inputs
+            const userMoney = user.money || 0;
+            const maxDepositable = Math.min(userMoney, vaultCapacity - currentVault);
+            const maxWithdrawable = currentVault;
+
+            if(document.getElementById('maxVaultDeposit')) document.getElementById('maxVaultDeposit').innerText = fmt(maxDepositable);
+            if(document.getElementById('maxVaultWithdraw')) document.getElementById('maxVaultWithdraw').innerText = fmt(maxWithdrawable);
 
             renderWarehouse();
             
@@ -1354,12 +1584,18 @@
         }
 
         function updateLogs(logs) {
-            const list = document.getElementById('logList');
-            list.innerHTML = '';
-            if(!logs || logs.length === 0) {
-                list.innerHTML = '<div style="text-align:center; color:#555; font-size:0.8rem;">Henüz kayıt yok.</div>';
-                return;
+            // İstatistik Hesaplama
+            let totalProd = 0;
+            if(logs && logs.length > 0) {
+                logs.forEach(l => {
+                    // Only count production logs for total production
+                    if((!l.message || !l.message.includes('Kasa')) && l.amount) {
+                         totalProd += Number(l.amount);
+                    }
+                });
             }
+            const elProd = document.getElementById('info-total-production');
+            if(elProd) elProd.innerText = fmt(totalProd) + ' Adet';
 
             // Determine product name
             let productName = 'Ürün';
@@ -1367,26 +1603,72 @@
                 productName = resourceMap[factory.farm_type].prod.name;
             }
 
-            logs.forEach(l => {
-                const item = document.createElement('div');
-                item.className = 'log-item';
-                item.style.alignItems = 'center';
-                
-                const avatarUrl = l.avatar || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
-                const amount = l.amount || 0;
+            // 1. OLD LOG LIST (Main Info Tab - Production Logs)
+            const list = document.getElementById('logList');
+            if(list) {
+                list.innerHTML = '';
+                const prodLogs = logs ? logs.filter(l => !l.message || !l.message.includes('Kasa')) : [];
 
-                // Format: #id - username (+ amount product) üretti
-                const logText = `#${l.user_id} - ${l.username} <span style="color:var(--accent-green)">(+ ${amount} ${productName})</span> üretti`;
+                if(prodLogs.length === 0) {
+                    list.innerHTML = '<div style="text-align:center; color:#555; font-size:0.8rem;">Henüz kayıt yok.</div>';
+                } else {
+                    prodLogs.forEach(l => {
+                        const item = document.createElement('div');
+                        item.className = 'log-item';
+                        item.style.alignItems = 'center';
+                        
+                        const avatarUrl = l.avatar || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
+                        const amount = l.amount || 0;
+                        const timeStr = new Date(l.created_at).toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
 
-                item.innerHTML = `
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <img src="${avatarUrl}" style="width:24px; height:24px; border-radius:50%; object-fit:cover; border:1px solid #333;">
-                        <span>${logText}</span>
-                    </div>
-                    <span class="log-time">${new Date(l.created_at).toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'})}</span>
-                `;
-                list.appendChild(item);
-            });
+                        item.innerHTML = `
+                            <img src="${avatarUrl}" class="log-avatar" onerror="this.src='uploads/avatars/default.png'">
+                            <div class="log-text">
+                                <span class="log-user-link" onclick="window.location.href='profile.html?id=${l.user_id}'" style="cursor:pointer;">${l.user_id} - ${l.username}</span>
+                                <span class="log-highlight" style="margin-left: 5px;">${amount}x ${productName} üretti</span>
+                            </div>
+                            <span class="log-time">${timeStr}</span>
+                        `;
+                        list.appendChild(item);
+                    });
+                }
+            }
+
+            // 2. NEW VAULT LOG LIST (Kasa Tab - Vault Logs)
+            const transList = document.getElementById('transLogList');
+            if(transList) {
+                transList.innerHTML = '';
+                const vaultLogs = logs ? logs.filter(l => l.message && l.message.includes('Kasa')) : [];
+
+                if(vaultLogs.length === 0) {
+                    transList.innerHTML = '<div style="text-align:center; color:#555; font-size:0.8rem;">İşlem yok.</div>';
+                } else {
+                    vaultLogs.forEach(l => {
+                        const item = document.createElement('div');
+                        item.className = 'log-item';
+                        item.style.alignItems = 'center';
+                        
+                        const avatarUrl = l.avatar || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
+                        const amount = l.amount || 0;
+                        const timeStr = new Date(l.created_at).toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+
+                        const isDeposit = l.message.includes('Yatırma');
+                        const color = isDeposit ? 'var(--accent-green)' : '#e74c3c';
+                        const msg = isDeposit ? 'Para Yatırdı' : 'Para Çekti';
+
+                        item.innerHTML = `
+                            <img src="${avatarUrl}" class="log-avatar" onerror="this.src='uploads/avatars/default.png'">
+                            <div class="log-text">
+                                <span style="font-weight:bold; color:#fff;">${l.username}</span>
+                                <span style="color:#aaa; margin-left:5px;">${msg}:</span>
+                                <span style="color:${color}; font-weight:bold; margin-left:5px;">${fmt(amount)} ₺</span>
+                            </div>
+                            <span class="log-time" style="font-size:0.75rem; color:#666;">${timeStr}</span>
+                        `;
+                        transList.appendChild(item);
+                    });
+                }
+            }
         }
 
         function closeModal(id) {
@@ -1394,6 +1676,16 @@
         }
 
         // --- TAB SİSTEMİ ---
+        function toggleAccordion(header) {
+            header.classList.toggle('active');
+            const content = header.nextElementSibling;
+            if (content.style.maxHeight && content.style.maxHeight !== '0px') {
+                content.style.maxHeight = null;
+            } else {
+                content.style.maxHeight = content.scrollHeight + "px";
+            }
+        }
+
         function switchTab(tab, event) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             event.target.classList.add('active');
@@ -1486,6 +1778,8 @@
                 endpoint = `/api/farms/withdraw-product/${farmId}`;
             } else if(type === 'vault' && action === 'add') {
                 endpoint = `/api/farms/deposit/${farmId}`;
+            } else if(type === 'vault' && action === 'withdraw') {
+                endpoint = `/api/farms/withdraw/${farmId}`;
             }
 
             fetch(endpoint, {
@@ -1847,6 +2141,19 @@
                     }
                 });
             };
+        }
+
+        function setMaxAmount(type) {
+            const vaultCapacity = factory.level * 100000;
+            const currentVault = factory.vault || 0;
+            const userMoney = user.money || 0;
+
+            if (type === 'deposit') {
+                const maxDepositable = Math.min(userMoney, vaultCapacity - currentVault);
+                document.getElementById('vaultInput').value = maxDepositable > 0 ? maxDepositable : 0;
+            } else if (type === 'withdraw') {
+                document.getElementById('vaultInput').value = currentVault;
+            }
         }
 
 
