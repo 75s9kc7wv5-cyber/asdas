@@ -313,6 +313,20 @@
                     reportBtn = `<i class="fas fa-exclamation-circle" style="cursor:pointer; color:#e74c3c; font-size:0.8rem;" onclick="reportMessage(${msg.id})" title="Raporla"></i>`;
                 }
 
+                // JOB AD PARSING
+                let displayMessage = escapeHtml(msg.message);
+                if (msg.message && msg.message.startsWith(':::JOB_AD:::')) {
+                    try {
+                        const jsonStr = msg.message.replace(':::JOB_AD:::', '');
+                        const data = JSON.parse(jsonStr);
+                        // Blue (#3498db) and Bold link
+                        const link = `<a href="factory-work.html?id=${data.id}" class="job-link" style="color:#3498db; font-weight:800; text-decoration:none; border-bottom:1px dashed #3498db;">${escapeHtml(data.name)}</a>`;
+                        displayMessage = `${link} işletmesi işçi arıyor! Maaş <span style="color:#2ecc71; font-weight:bold;">${data.salary} TL</span>`;
+                    } catch (e) {
+                        // Fallback implies original parsing failed
+                    }
+                }
+
                 div.innerHTML = `
                     <div class="msg-avatar" onclick="location.href='profile.html?id=${userId}'" style="cursor:pointer">
                         <img src="${avatarUrl}" alt="${msg.username}">
@@ -329,7 +343,7 @@
                                 <span class="msg-time">${timeStr}</span>
                             </div>
                         </div>
-                        <div class="msg-text" style="${msg.is_deleted ? 'color:#888; font-style:italic;' : ''}">${escapeHtml(msg.message)}</div>
+                        <div class="msg-text" style="${msg.is_deleted ? 'color:#888; font-style:italic;' : ''}">${displayMessage}</div>
                     </div>
                 `;
                 container.appendChild(div);

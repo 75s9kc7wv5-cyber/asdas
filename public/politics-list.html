@@ -102,40 +102,94 @@
         .party-list { display: flex; flex-direction: column; gap: 15px; animation: fadeIn 0.5s; }
 
         .party-card {
-            background: var(--bg-card); border: 1px solid var(--border-color);
-            border-radius: 12px; padding: 15px; position: relative; overflow: hidden;
-            transition: transform 0.2s; display: flex; align-items: center; gap: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            background: rgba(30,30,30,0.95);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 0;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            color: #fff;
+            gap: 0;
         }
-        .party-card:hover { transform: translateY(-3px); border-color: var(--accent); }
-        
-        /* Parti Renk Çizgisi */
-        .party-stripe { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #555; }
+        .party-card:hover {
+            transform: translateY(-2px);
+            border-color: #555;
+            background: rgba(40,40,40,0.95);
+        }
+        .party-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: var(--party-color, #555);
+        }
 
-        .pc-logo { 
-            width: 50px; height: 50px; background: var(--bg-input); border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 800; color: #fff;
-            border: 2px solid #333; z-index: 1;
-        }
-        
-        .pc-info { flex: 1; }
-        .pc-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
-        .pc-name { font-size: 1.1rem; font-weight: 700; color: #fff; }
-        .pc-abbr { font-size: 0.75rem; color: #aaa; background: #222; padding: 1px 6px; border-radius: 4px; }
-        
-        .pc-leader { font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 8px; }
-        .pc-leader i { color: var(--accent-gold); margin-right: 4px; }
-
-        .pc-meta { display: flex; gap: 10px; }
-        .pc-badge { 
-            font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; background: rgba(255,255,255,0.05); 
-            color: #ccc; border: 1px solid #333; display: flex; align-items: center; gap: 4px;
+        .party-card-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            cursor: pointer;
+            width: 100%;
         }
 
-        .btn-join {
-            background: transparent; border: 1px solid var(--accent); color: var(--accent);
-            padding: 6px 12px; border-radius: 6px; font-family: 'Rajdhani'; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 0.8rem;
+        .party-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 8px 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid #333;
+            font-size: 0.85rem;
         }
-        .btn-join:hover { background: var(--accent); color: #000; }
+
+        /* Icon (Logo) */
+        .party-icon {
+            width: 50px; height: 50px;
+            background: #222;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+            border: 1px solid #444;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .party-icon img { width: 100%; height: 100%; object-fit: cover; }
+        .party-icon div { font-weight: 800; font-size: 1rem; color: #fff; }
+
+        .party-info { flex: 1; }
+        .party-name { font-size: 1rem; font-weight: bold; color: #fff; }
+        .party-stats { font-size: 0.75rem; color: #ccc; margin-top: 3px; display: flex; gap: 10px; align-items: center; }
+
+        .stat-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #444;
+            font-size: 0.75rem;
+            color: #ddd;
+        }
+
+        .right-arrow {
+            color: #444;
+            font-size: 1.2rem;
+            margin-left: auto;
+            transition: color 0.2s;
+        }
+        .party-card:hover .right-arrow { color: #fff; }
 
         /* TAB 2: PARTİ KURMA */
         .create-hero {
@@ -437,54 +491,72 @@
             const filtered = parties.filter(p => p.name.toLowerCase().includes(filter.toLowerCase()));
 
             filtered.forEach(p => {
-                let actionButtons = '';
                 const isLeader = Number(user.id) === Number(p.leader_id);
                 const isMember = Number(user.party_id) === Number(p.id);
                 const hasNoParty = !user.party_id;
+                
+                let clickAction = '';
+                let statusText = '';
+                let statusColor = '#aaa';
 
                 if (isLeader) {
-                    actionButtons = `
-                        <button class="btn-join" style="border-color:${p.color}; color:${p.color}; margin-right:5px;" onclick="enterParty(${p.id})">GİR</button>
-                        <button class="btn-join" style="border-color:${p.color}; color:${p.color}" onclick="manageParty(${p.id})">YÖNET</button>
-                    `;
+                    clickAction = `manageParty(${p.id})`;
+                    statusText = "BAŞKAN";
+                    statusColor = "var(--accent-gold)";
                 } else if (isMember) {
-                    actionButtons = `
-                        <button class="btn-join" style="border-color:${p.color}; color:${p.color}" onclick="enterParty(${p.id})">GİR</button>
-                    `;
+                    clickAction = `enterParty(${p.id})`;
+                    statusText = "ÜYE";
+                    statusColor = "var(--accent-cyan)";
                 } else if (hasNoParty) {
                     if (myApplications.includes(p.id)) {
-                        actionButtons = `
-                            <button class="btn-join" style="border-color:#ffd700; color:#ffd700;" onclick="cancelApplication(${p.id}, '${p.name}')">İPTAL ET</button>
-                        `;
+                        clickAction = `cancelApplication(${p.id}, '${p.name.replace(/'/g, "\\'")}')`;
+                        statusText = "BAŞVURULDU";
+                        statusColor = "var(--accent-gold)";
                     } else {
-                        actionButtons = `
-                            <button class="btn-join" style="border-color:${p.color}; color:${p.color}" onclick="applyToParty(${p.id}, '${p.name}')">BAŞVUR</button>
-                        `;
+                        clickAction = `enterParty(${p.id})`;
+                        statusText = "";
+                        statusColor = "transparent";
                     }
+                } else {
+                     // In another party
+                     clickAction = `toastr.info('Başka bir partidesin.')`;
                 }
 
                 let logoHtml = p.abbr;
                 if(p.logo && p.logo !== 'uploads/avatars/default.png') {
                     logoHtml = `<img src="${p.logo}" style="width:100%; height:100%; object-fit:cover;">`;
                 }
+                
+                // Safe handling for username
+                const leaderName = p.leader_name || 'Bilinmiyor';
+                const leaderId = p.leader_id || '?';
 
                 const card = document.createElement('div');
                 card.className = 'party-card';
+                card.style.setProperty('--party-color', p.color);
+                
                 card.innerHTML = `
-                    <div class="party-stripe" style="background:${p.color}"></div>
-                    <div class="pc-logo" style="color:${p.color}; border-color:${p.color}50; overflow:hidden; padding:0;">${logoHtml}</div>
-                    <div class="pc-info">
-                        <div class="pc-head">
-                            <span class="pc-name">${p.name}</span>
+                    <div class="party-card-header" onclick="${clickAction}">
+                        <div class="party-icon" style="color:${p.color}; border-color:${p.color}50;">
+                            ${logoHtml}
                         </div>
-                        <span class="pc-leader"><i class="fas fa-crown"></i> ${p.leader_name || 'Bilinmiyor'}</span>
-                        <div class="pc-meta">
-                            <span class="pc-badge"><i class="fas fa-users"></i> ${p.members_count}</span>
-                            <span class="pc-badge"><i class="fas fa-book"></i> ${p.ideology}</span>
+                        <div class="party-info">
+                            <div class="party-name">${p.name} <span style="font-size:0.8em; color:#888;">(${p.abbr})</span></div>
+                            <div class="party-stats">
+                                <span class="stat-badge"><i class="fas fa-users" style="color: var(--accent-cyan);"></i> ${p.members_count || 0} Üye</span>
+                                <span class="stat-badge"><i class="fas fa-book" style="color: var(--accent-purple);"></i> ${p.ideology}</span>
+                                ${statusText ? `<span class="stat-badge" style="border-color:${statusColor}40; background:${statusColor}10; color:${statusColor};">${statusText}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="right-arrow">
+                             <i class="fas fa-chevron-right"></i>
                         </div>
                     </div>
-                    <div style="display:flex;">
-                        ${actionButtons}
+                    <div class="party-card-footer">
+                        <div class="owner-info" style="display:flex; align-items:center; gap:8px; color:#ccc; font-size:0.85rem;">
+                            <i class="fas fa-crown" style="color:var(--accent-gold);"></i>
+                            <span style="color:#ddd;">${leaderName}</span>
+                        </div>
                     </div>
                 `;
                 container.appendChild(card);

@@ -777,6 +777,31 @@
                     </div>
                 </div>
             </div>
+
+            <!-- İŞÇİ İLANI -->
+            <div class="accordion-card">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <div class="accordion-title">
+                         <i class="fas fa-bullhorn"></i> İŞÇİ İLANI
+                    </div>
+                <div class="accordion-icon"><i class="fas fa-chevron-down"></i></div>
+                </div>
+                <div class="accordion-content">
+                    <div class="accordion-body">
+                         <div class="settings-card" style="border:none; margin:0; padding:0;">
+                            <div class="form-group">
+                                <label class="form-label">Teklif Edilen Maaş (TL)</label>
+                                <input type="number" class="form-input" id="ad-salary" placeholder="1000">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">İlan Ücreti</label>
+                                <div style="color:var(--accent); font-weight:bold;">5.000 ₺ (Kasadan Düşer)</div>
+                            </div>
+                            <button class="btn-save" onclick="postJobAd()"><i class="fas fa-paper-plane"></i> İLAN YAYINLA</button>
+                         </div>
+                    </div>
+                </div>
+            </div>
             </div>
 
             <!-- DEPO TAB -->
@@ -914,6 +939,16 @@
                     <button class="m-btn btn-cancel" onclick="closeModal('speedUpModal')">İPTAL</button>
                     <button class="m-btn btn-confirm" style="background:var(--accent-cyan); color:#000;" onclick="confirmSpeedUp()">HIZLANDIR</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- STATUS MODAL -->
+        <div class="modal-overlay" id="statusModal">
+            <div class="modal-content" id="statusModalContent">
+                <i class="fas" id="statusIcon" style="font-size:3rem; margin-bottom:10px;"></i>
+                <h3 class="m-title" id="statusTitle"></h3>
+                <p class="m-desc" id="statusMessage" style="color:#ccc; margin-bottom:20px;"></p>
+                <button class="m-btn" id="statusBtn" onclick="closeModal('statusModal')">TAMAM</button>
             </div>
         </div>
 
@@ -2177,6 +2212,67 @@
             .catch(err => {
                 console.error(err);
                 toastr.error("Bir hata oluştu.");
+            });
+        }
+
+        function showStatusModal(success, message) {
+            const modal = document.getElementById('statusModal');
+            const content = document.getElementById('statusModalContent');
+            const icon = document.getElementById('statusIcon');
+            const title = document.getElementById('statusTitle');
+            const msg = document.getElementById('statusMessage');
+            const btn = document.getElementById('statusBtn');
+
+            if (success) {
+                content.style.borderTopColor = 'var(--accent-green)';
+                icon.className = 'fas fa-check-circle';
+                icon.style.color = 'var(--accent-green)';
+                title.innerText = 'BAŞARILI';
+                btn.style.background = 'var(--accent-green)';
+                btn.style.color = '#000';
+            } else {
+                content.style.borderTopColor = 'var(--accent)';
+                icon.className = 'fas fa-times-circle';
+                icon.style.color = 'var(--accent)';
+                title.innerText = 'HATA';
+                btn.style.background = 'var(--accent)';
+                btn.style.color = '#fff';
+            }
+
+            msg.innerText = message;
+            modal.style.display = 'flex';
+        }
+
+        function postJobAd() {
+            const salary = parseInt(document.getElementById('ad-salary').value);
+            if (!salary || salary <= 0) {
+                return toastr.warning('Lütfen geçerli bir maaş girin.');
+            }
+
+            if (!confirm(`5.000 ₺ işletme kasasından düşülecek ve ${salary} TL maaş ile işçi ilanı verilecek. Onaylıyor musunuz?`)) return;
+
+            fetch('/api/factory/post-job-ad', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: user.id,
+                    mineId: mineId,
+                    salary: salary
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showStatusModal(true, data.message);
+                    document.getElementById('ad-salary').value = '';
+                    loadFactoryData();
+                } else {
+                    showStatusModal(false, data.message);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showStatusModal(false, 'Bir hata oluştu.');
             });
         }
 

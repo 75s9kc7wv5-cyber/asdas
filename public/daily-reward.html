@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim of World - Günlük Ödül</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/global-menu.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="js/loader-manager.js"></script>
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #161616;
+            --accent-gold: #ffd700;
+            --accent-green: #2ecc71;
+            --accent-blue: #3498db;
+            --text-white: #ffffff;
+            --border-color: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+            overflow: hidden;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+
+        main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            padding-bottom: 80px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-title {
+            text-align: left;
+            font-size: 1.5rem;
+            margin: 0;
+            color: var(--accent-gold);
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            line-height: 1.2;
+        }
+        .header-desc {
+            text-align: left;
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 20px;
+            margin-left: 4px; 
+        }
+        
+        .top-nav {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 5px;
+        }
+        
+        .back-btn {
+            background: transparent;
+            border: 1px solid #333;
+            color: var(--text-white);
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.2s;
+        }
+        .back-btn:hover {
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        /* REWARD GRID */
+        .reward-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            padding: 5px;
+        }
+
+        .reward-box {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            aspect-ratio: 1/1; /* Square */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+            overflow: hidden;
+        }
+        
+        .reward-box:hover { transform: translateY(-2px); border-color: #555; }
+
+        /* States */
+        .status-claimed {
+            background: rgba(46, 204, 113, 0.1);
+            border-color: var(--accent-green);
+            opacity: 0.6;
+        }
+        .status-claimed::after {
+            content: '✓';
+            position: absolute;
+            font-size: 2rem;
+            color: var(--accent-green);
+            text-shadow: 0 0 5px black;
+        }
+
+        .status-current {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(0,0,0,0));
+            border: 2px solid var(--accent-gold);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+            animation: pulseGlow 2s infinite;
+        }
+        .status-locked {
+            opacity: 0.5;
+            filter: grayscale(0.8);
+        }
+        
+        .day-num {
+            position: absolute;
+            top: 2px; left: 4px;
+            font-size: 0.7rem;
+            color: #666;
+            font-weight: bold;
+        }
+        .status-current .day-num { color: var(--accent-gold); }
+
+        .reward-icon {
+            font-size: 1.2rem;
+            margin-bottom: 2px;
+            color: #ddd;
+        }
+        .reward-img {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            margin-bottom: 2px;
+            filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
+        }
+        .day-30 .reward-img {
+            width: 50px;
+            height: 50px;
+        }
+        .reward-val {
+            font-size: 0.65rem;
+            text-align: center;
+            line-height: 1;
+            font-weight: 600;
+        }
+
+        /* Special Days styling */
+        .day-7, .day-14, .day-21, .day-28 {
+            grid-column: span 1;
+            border-color: var(--accent-blue);
+        }
+        /* Day 30 styling removed to be consistent square */
+        .day-30 {
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+        
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.2); border-color: #bfa300; }
+            50% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.6); border-color: #ffd700; transform: scale(1.02); }
+            100% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.2); border-color: #bfa300; }
+        }
+
+        .claim-btn {
+            background: linear-gradient(135deg, var(--accent-gold), #f1c40f);
+            color: #000;
+            border: none;
+            padding: 15px;
+            width: 100%;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 800;
+            font-size: 1.2rem;
+            border-radius: 8px;
+            margin-top: 20px;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.3);
+            transition: all 0.3s;
+            display: none; /* Hidden by default until checked */
+        }
+        .claim-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.5);
+        }
+        .claim-btn:disabled {
+            background: #333; color: #666; box-shadow: none; cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Message Area */
+        .status-msg {
+            text-align: center;
+            color: #aaa;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            min-height: 20px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(0,0,0,0.8); 
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: #1a1a1a;
+            padding: 30px;
+            border: 2px solid var(--accent-gold);
+            width: 85%;
+            max-width: 350px;
+            border-radius: 12px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            animation: zoomIn 0.3s;
+        }
+        .modal-content.error {
+            border-color: #e74c3c;
+        }
+        @keyframes zoomIn {
+            from {transform: scale(0.7); opacity: 0;}
+            to {transform: scale(1); opacity: 1;}
+        }
+        .close-modal {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .modal-icon-display {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+        .success-icon { color: var(--accent-green); text-shadow: 0 0 15px var(--accent-green); }
+        .error-icon { color: #e74c3c; text-shadow: 0 0 15px #e74c3c; }
+        
+        .modal-btn {
+            background: linear-gradient(135deg, var(--accent-gold), #f1c40f);
+            border: none;
+            padding: 12px 30px;
+            font-family: inherit;
+            font-weight: 800;
+            cursor: pointer;
+            margin-top: 20px;
+            border-radius: 5px;
+            color: #000;
+            width: 100%;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Header will be injected here -->
+        
+        <main>
+            <div class="top-nav">
+                <button class="back-btn" onclick="window.location.href='home.html'">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1 class="header-title">GÜNLÜK ÖDÜLLER</h1>
+            </div>
+            <p class="header-desc">Her gün giriş yap, ödülleri topla! 30. gün büyük ödülü kazan.</p>
+
+            <div class="reward-grid" id="rewardGrid">
+                <!-- JS Generated -->
+                <div style="grid-column: span 5; text-align: center; padding: 20px;">Yükleniyor...</div>
+            </div>
+
+            <div class="status-msg" id="statusMsg"></div>
+            
+            <button id="claimBtn" class="claim-btn">ÖDÜLÜ AL</button>
+        </main>
+
+        <!-- Menu injected here -->
+        <div id="bottom-menu"></div>
+
+        <!-- Result Modal -->
+        <div id="resultModal" class="modal">
+            <div class="modal-content" id="modalContent">
+                <span class="close-modal" onclick="closeModal()">&times;</span>
+                <div id="modalIconContainer"></div>
+                <h2 id="modalTitle" style="margin-bottom:10px;"></h2>
+                <p id="modalMessage" style="color:#ddd;"></p>
+                <button class="modal-btn" onclick="closeModal()">TAMAM</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+
+    <!-- Managers -->
+    <script src="js/header-manager.js"></script>
+    <script src="js/menu-manager.js"></script>
+
+    <script>
+        toastr.options = { "positionClass": "toast-bottom-center", "timeOut": "3000" };
+        let canClaimGlobal = false;
+
+        async function init() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if(!user) return window.location.href = 'login.html';
+
+            try {
+                const res = await fetch(`/api/daily-reward/status/${user.id}`);
+                const data = await res.json();
+                
+                if(data.success) {
+                    renderGrid(data.rewards, data.currentStreak, data.canClaim);
+                    updateButton(data.canClaim, data.nextDay, data.remainingMs);
+                    if(data.remainingMs > 0) startTimer(data.remainingMs);
+                } else {
+                    document.getElementById('rewardGrid').innerHTML = 'Hata oluştu.';
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        let timerInterval;
+
+        function startTimer(ms) {
+            if(timerInterval) clearInterval(timerInterval);
+            
+            const dest = Date.now() + ms;
+            
+            timerInterval = setInterval(() => {
+                const now = Date.now();
+                const diff = dest - now;
+                
+                if(diff <= 0) {
+                    clearInterval(timerInterval);
+                    document.getElementById('statusMsg').innerText = "Sayfayı yenile!";
+                    window.location.reload();
+                    return;
+                }
+                
+                const h = Math.floor(diff / (1000 * 60 * 60));
+                const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                document.getElementById('statusMsg').innerText = 
+                    `Sonraki ödül için: ${h}sa ${m}dk ${s}sn`;
+                
+            }, 1000);
+        }
+
+        function renderGrid(rewards, currentStreak, canClaim) {
+            const grid = document.getElementById('rewardGrid');
+            grid.innerHTML = '';
+            
+            // Logic:
+            // currentStreak = number of days completed in current cycle (e.g. 5).
+            // Next reward to claim is day 6.
+            // If canClaim is true, Box 6 is Active. Boxes 1-5 are Claimed. Boxes 7+ Locked.
+            // If canClaim is false (already claimed today), Boxes 1-6 Claimed. Box 7 Locked (User waits for tmrw).
+            
+            // WAIT: If user claimed day 5 today. streak is 5. canClaim false.
+            // Screen should show 1-5 checked. 
+            // If user has streak 5, and it is a NEW DAY. canClaim true. Target is day 6.
+            
+            let targetDay = currentStreak + 1;
+            if (targetDay > 30) targetDay = 1; 
+
+            // If we cannot claim, it means we already claimed the 'currentStreak' day.
+            // So if streak is 5 and cannot claim, boxes 1-5 are checked.
+            // If streak is 5 and CAN claim, boxes 1-5 checked, box 6 is active.
+
+            rewards.forEach(r => {
+                const box = document.createElement('div');
+                box.className = `reward-box day-${r.day}`;
+                
+                let iconHtml = '';
+                if(r.icon && r.icon.startsWith('icons/')) {
+                    // Image from icons folder
+                    iconHtml = `<img src="${r.icon}" class="reward-img" alt="reward">`;
+                } else if (r.icon) {
+                    // FontAwesome Class
+                    iconHtml = `<i class="${r.icon} reward-icon" style="color:${r.iconColor || '#fff'}; font-size: 1.8rem;"></i>`;
+                } else {
+                    // Default
+                    iconHtml = '<i class="fas fa-gift reward-icon"></i>';
+                }
+
+                box.innerHTML = `
+                    <div class="day-num">${r.day}</div>
+                    ${iconHtml}
+                    <div class="reward-val">${r.label}</div>
+                `;
+
+                // Status Logic
+                if (canClaim) {
+                    // We need to claim 'targetDay'
+                    if (r.day < targetDay) {
+                        box.classList.add('status-claimed');
+                    } else if (r.day === targetDay) {
+                        box.classList.add('status-current');
+                        box.onclick = () => doClaim();
+                    } else {
+                        box.classList.add('status-locked');
+                    }
+                } else {
+                    // Waiting for tomorrow
+                    if (r.day <= currentStreak) {
+                        box.classList.add('status-claimed');
+                    } else {
+                        box.classList.add('status-locked');
+                    }
+                }
+
+                grid.appendChild(box);
+            });
+        }
+
+        function updateButton(canClaim, nextDay, remainingMs) {
+            const btn = document.getElementById('claimBtn');
+            const msg = document.getElementById('statusMsg');
+            
+            btn.style.display = 'block';
+            
+            if(canClaim) {
+                btn.disabled = false;
+                btn.innerText = `GÜN ${nextDay} ÖDÜLÜNÜ AL`;
+                btn.classList.remove('disabled');
+                msg.innerText = "Ödülün hazır!";
+                
+                btn.onclick = doClaim;
+            } else {
+                btn.disabled = true;
+                btn.innerText = "BEKLENİYOR";
+                
+                if(remainingMs > 0) {
+                     msg.innerText = "Sıradaki ödül için beklemen gerekiyor.";
+                } else {
+                     msg.innerText = "Bugünkü ödülü zaten aldın. Yarın tekrar gel.";
+                }
+            }
+        }
+
+        async function doClaim() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            const btn = document.getElementById('claimBtn');
+            btn.disabled = true;
+            btn.innerText = "Alınıyor...";
+
+            try {
+                const res = await fetch('/api/daily-reward/claim', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ userId: user.id })
+                });
+                const data = await res.json();
+                
+                if(data.success) {
+                    confetti({
+                        particleCount: 150,
+                        spread: 100,
+                        origin: { y: 0.6 }
+                    });
+                    
+                    showModal(true, 'ÖDÜL ALINDI!', data.message);
+                    
+                    // Refresh view
+                    setTimeout(init, 1500);
+                } else {
+                    showModal(false, 'HATA!', data.message);
+                    btn.innerText = "Hata";
+                    setTimeout(() => init(), 2000); // Re-init to reset button state
+                }
+            } catch(e) {
+                console.error(e);
+                showModal(false, 'HATA!', 'Bağlantı hatası oluştu.');
+            }
+        }
+
+        function showModal(isSuccess, title, msg) {
+            const modal = document.getElementById('resultModal');
+            const content = document.getElementById('modalContent');
+            const iconCont = document.getElementById('modalIconContainer');
+            
+            modal.style.display = 'flex';
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalMessage').innerText = msg;
+            
+            if(isSuccess) {
+                content.classList.remove('error');
+                iconCont.innerHTML = '<i class="fas fa-check-circle modal-icon-display success-icon"></i>';
+                document.getElementById('modalTitle').style.color = 'var(--accent-gold)';
+            } else {
+                content.classList.add('error');
+                iconCont.innerHTML = '<i class="fas fa-times-circle modal-icon-display error-icon"></i>';
+                document.getElementById('modalTitle').style.color = '#e74c3c';
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('resultModal').style.display = 'none';
+        }
+
+        window.onload = init;
+
+    </script>
+</body>
+</html>

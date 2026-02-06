@@ -793,6 +793,10 @@
             else if (type === 'sweets') iconClass = 'fa-candy-cane';
             else if (type === 'weapon') iconClass = 'fa-crosshairs';
             else if (type === 'solar') iconClass = 'fa-solar-panel';
+            else if (type === 'gpu_factory') {
+                iconBox.innerHTML = `<img src="icons/video-card/GX-100.png" style="width:64px;height:64px;object-fit:contain;">`;
+                return;
+            }
             
             iconBox.innerHTML = `<i class="fas ${iconClass}"></i>`; 
         }

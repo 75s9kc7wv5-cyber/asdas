@@ -328,6 +328,11 @@
                 <div class="hint-text">En az 6 karakter, 1 büyük ve 1 küçük harf içermeli</div>
             </div>
 
+            <div class="form-group">
+                <label class="form-label">Referans Kimliği (İsteğe Bağlı)</label>
+                <input type="number" class="form-input" id="referralCode" placeholder="Örn: 10523">
+            </div>
+
             <button type="submit" class="btn-auth">KAYIT OL</button>
         </form>
 
@@ -454,6 +459,7 @@
             const countryCode = document.getElementById('countryCode').value;
             const phone = document.getElementById('phone').value.trim();
             const password = document.getElementById('password').value;
+            const referralCode = document.getElementById('referralCode').value.trim();
             const errorMsg = document.getElementById('errorMsg');
             const successMsg = document.getElementById('successMsg');
 
@@ -496,7 +502,8 @@
                         username, 
                         email,
                         phone: fullPhone,
-                        password 
+                        password,
+                        referralCode
                     })
                 });
 
