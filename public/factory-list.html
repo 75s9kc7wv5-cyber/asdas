@@ -533,6 +533,9 @@
             { id: 'gold_factory', category: 'heavy', name: 'Altın Külçe Fabrikası', img: 'icons/inventory-icon/gold.png', color: 'type-weapon', reqLevel: 20, costMoney: 40000, costGold: 0, costDiamond: 5 },
             { id: 'silicon', category: 'heavy', name: 'Silikon Fabrikası', img: 'icons/factory-icon/silikon.png', color: 'type-weapon', reqLevel: 25, costMoney: 30000, costGold: 25, costDiamond: 5 },
             { id: 'plastic_factory', category: 'heavy', name: 'Plastik Fabrikası', img: 'icons/factory-icon/plastic.png', color: 'type-weapon', reqLevel: 15, costMoney: 15000, costGold: 10, costDiamond: 0 },
+            { id: 'tyre_factory', category: 'heavy', name: 'Lastik Fabrikası', img: 'icons/factory-icon/tire.png', color: 'type-weapon', reqLevel: 17, costMoney: 20000, costGold: 12, costDiamond: 0 },
+            { id: 'engine_factory', category: 'heavy', name: 'Motor Fabrikası', img: 'icons/factory-icon/car-engine.png', color: 'type-weapon', reqLevel: 19, costMoney: 25000, costGold: 15, costDiamond: 2 },
+            { id: 'car_factory', category: 'heavy', name: 'Otomotiv Fabrikası', img: 'icons/factory-icon/car-factory.png', color: 'type-weapon', reqLevel: 24, costMoney: 50000, costGold: 20, costDiamond: 5 },
             { id: 'cable_factory', category: 'heavy', name: 'Kablo Fabrikası', img: 'icons/factory-icon/cable.png', color: 'type-weapon', reqLevel: 18, costMoney: 18000, costGold: 12, costDiamond: 0 },
             { id: 'electronic_card_factory', category: 'heavy', name: 'Elektronik Kart Fabrikası', img: 'icons/factory-icon/electronic-board.png', color: 'type-weapon', reqLevel: 22, costMoney: 22000, costGold: 18, costDiamond: 2 },
             { id: 'chip_factory', category: 'heavy', name: 'Çip Fabrikası', img: 'icons/factory-icon/chip.png', color: 'type-weapon', reqLevel: 35, costMoney: 45000, costGold: 40, costDiamond: 10 },
@@ -584,11 +587,20 @@
                     headers: {'Content-Type': 'application/json'}, 
                     body: JSON.stringify({ username: user.username, password: user.password }) 
                 });
+
+                let freshUser = user;
+                if (uRes.ok) {
+                    const loginData = await uRes.json();
+                    if (loginData.user) {
+                        freshUser = loginData.user;
+                        localStorage.setItem('simWorldUser', JSON.stringify(freshUser));
+                    }
+                }
                 
                 // Fetch Skill
-                const eduRes = await fetch(`/api/education/status/${user.id}`);
+                const eduRes = await fetch(`/api/education/status/${freshUser.id}`);
                 const eduData = await eduRes.json();
-                userData = { ...user, education_skill: eduData.skill }; // Merge skill
+                userData = { ...freshUser, education_skill: eduData.skill }; // Merge skill
 
                 // Fetch Licenses
                 const licRes = await fetch(`/api/licenses/${user.id}`);

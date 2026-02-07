@@ -325,7 +325,7 @@
             oil: { name: 'Petrol', image: 'icons/mine-icon/oil-barrel.png', tab: 'kaynaklar' },
             diamond: { name: 'Elmas', image: 'icons/inventory-icon/diamond.png', tab: 'kaynaklar' },
             uranium: { name: 'Uranyum', image: 'icons/mine-icon/uranium.png', tab: 'kaynaklar' },
-            energy: { name: 'Elektrik', image: 'icons/energy-factory-icon/battery.png', tab: 'kaynaklar' },
+            electricity: { name: 'Elektrik', image: 'icons/energy-factory-icon/battery.png', tab: 'kaynaklar' },
             gold: { name: 'Altın', image: 'icons/inventory-icon/gold.png', tab: 'kaynaklar' },
             gold_nugget: { name: 'Altın Parçası', image: 'icons/mine-icon/gold-nugget.png', tab: 'kaynaklar' },
             copper: { name: 'Bakır', image: 'icons/mine-icon/copper.png', tab: 'kaynaklar' },
@@ -355,6 +355,21 @@
             gold_cable: { name: 'Altın Kablo', image: 'icons/factory-icon/gold-cable.png', tab: 'kaynaklar' },
             electronic_card: { name: 'Elektronik Kart', image: 'icons/factory-icon/electronic-board.png', tab: 'kaynaklar' },
             
+            // Automotive
+            tire: { name: 'Lastik', image: 'icons/factory-icon/tire.png', tab: 'kaynaklar' },
+            engine: { name: 'Motor', image: 'icons/factory-icon/car-engine.png', tab: 'kaynaklar' },
+            noventis: { name: 'Noventis', image: 'icons/car-icon/Noventis.png', tab: 'diger' },
+            stradeo: { name: 'Stradeo', image: 'icons/car-icon/Stradeo.png', tab: 'diger' },
+            rugnar: { name: 'Rugnar', image: 'icons/car-icon/Rugnar.png', tab: 'diger' },
+            veltrano: { name: 'Veltrano', image: 'icons/car-icon/Veltrano.png', tab: 'diger' },
+            zentaro: { name: 'Zentaro', image: 'icons/car-icon/Zentaro.png', tab: 'diger' },
+
+            // Keys (Sandık Anahtarları)
+            key_common: { name: 'Sıradan Anahtar', icon: 'fa-key', color: 'ic-stone', tab: 'diger' },
+            key_rare: { name: 'Nadir Anahtar', icon: 'fa-key', color: 'ic-oil', tab: 'diger' },
+            key_epic: { name: 'Epik Anahtar', icon: 'fa-key', color: 'ic-purple', tab: 'diger' },
+            key_mystic: { name: 'Mistik Anahtar', icon: 'fa-key', color: 'ic-gold', tab: 'diger' },
+
             // Crypto
             btc: { name: 'Bitcoin', image: 'icons/inventory-icon/bitcoin.png', tab: 'kaynaklar' },
 
@@ -378,7 +393,11 @@
             // Military / Other
             weapon: { name: 'Silah', icon: 'fa-crosshairs', color: 'ic-iron', tab: 'diger' },
             ammo: { name: 'Mermi', icon: 'fa-burn', color: 'ic-gold', tab: 'diger' },
-            helmet: { name: 'Kask', icon: 'fa-hard-hat', color: 'ic-green', tab: 'diger' }
+            helmet: { name: 'Kask', icon: 'fa-hard-hat', color: 'ic-green', tab: 'diger' },
+
+            // Extras from Icons
+            cable: { name: 'Kablo', image: 'icons/factory-icon/cable.png', tab: 'kaynaklar' },
+             // Removing Hide Logic for debugging or user request satisfaction
         };
 
         let currentInventory = {};
@@ -392,17 +411,31 @@
             }
 
             try {
-                const response = await fetch(`/api/inventory/${user.id}`);
-                const data = await response.json();
+                // Parallel Fetch: Items + User Data (Balance, Gold, etc.)
+                const [invRes, userRes] = await Promise.all([
+                    fetch(`/api/inventory/${user.id}`),
+                    fetch(`/api/user/me?userId=${user.id}`)
+                ]);
+
+                const invData = await invRes.json();
+                const userDataWrapper = await userRes.json();
                 
-                // API'den gelen dizi formatını objeye çevir (eğer dizi geliyorsa)
-                // API response formatı: [{item_key: 'wood', quantity: 10}, ...] olabilir.
-                // Mevcut kodda `currentInventory = data` denmiş, demek ki API obje dönüyor: { wood: 10, stone: 5 }
-                // Ancak check_inventory_columns.js çıktısına göre tablo yapısı key-value.
-                // Server.js'deki /api/inventory/:userId endpointine bakmak lazım.
-                // Eğer server.js obje dönüyorsa sorun yok.
-                
-                currentInventory = data;
+                // If user fetch successful, use that data
+                if (userDataWrapper.success && userDataWrapper.user) {
+                    const freshUser = userDataWrapper.user;
+                    
+                    // Override Inventory Data with User Attributes (currencies)
+                    invData['money'] = freshUser.money;
+                    invData['gold'] = freshUser.gold;
+                    invData['diamond'] = freshUser.diamond || freshUser.diamonds || 0;
+                    invData['btc'] = freshUser.btc || 0;
+                    invData['gold_nugget'] = freshUser.gold_nugget || 0;
+                    
+                    // Update LocalStorage to keep session fresh
+                    localStorage.setItem('simWorldUser', JSON.stringify(freshUser));
+                }
+
+                currentInventory = invData;
                 
                 // İlk açılışta aktif sekmeyi render et
                 const activeTab = document.querySelector('.tab-btn.active');
@@ -442,8 +475,8 @@
                 if (config.tab === tabName) {
                     const qty = currentInventory[key] || 0;
                     
-                    // Sadece elimizde olanları göster (0 dan büyükse)
-                    if (parseFloat(qty) <= 0) return;
+                    // Sadece elimizde olanları göster (0 dan büyükse) - İPTAL: Kullanıcı her şeyi görmek istiyor.
+                    // if (parseFloat(qty) <= 0) return;
 
                     const card = document.createElement('div');
                     card.className = 'inv-card';

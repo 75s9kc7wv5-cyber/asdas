@@ -544,8 +544,8 @@
                                     <img src="${getGpuIcon(rig.gpu)}" style="width: 100%; height: 100%; object-fit: contain;">
                                 </div>
                                 <div class="rig-info">
-                                    <div class="rig-name">${rig.name || rig.gpu}</div>
-                                    <div class="rig-stats">${rig.hashrate} TH/s • ${rig.power} kW</div>
+                                    <div class="rig-name">${GPU_NAMES[rig.gpu] || rig.name || rig.gpu}</div>
+                                    <div class="rig-stats">${rig.stats.hashrate} TH/s • ${rig.stats.power} kW</div>
                                     
                                     <div class="rig-badges">
                                         <div class="status-badge badge-active js-status-badge">ÇALIŞIYOR</div>

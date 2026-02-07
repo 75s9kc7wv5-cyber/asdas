@@ -94,7 +94,7 @@ app.use(bodyParser.json());
 // Security Headers Middleware - Dış enjeksiyonları engelle
 app.use((req, res, next) => {
     // Content Security Policy - Strict mode, dış scriptleri engelle
-    res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'self' 'unsafe-inline' https://code.jquery.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://via.placeholder.com *; connect-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; frame-ancestors 'none'; base-uri 'self'; form-action 'self';");
+    res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'self' 'unsafe-inline' https://code.jquery.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://www.gravatar.com https://upload.wikimedia.org; connect-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; frame-ancestors 'none'; base-uri 'self'; form-action 'self';");
     
     // X-Content-Type-Options - MIME sniffing engelle
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -145,58 +145,20 @@ app.post('/api/login', (req, res) => {
 });
 
 // Register Endpoint
-const REFERRAL_REWARDS = [
-    { tier: 1, required: 1, reward: { type: 'diamond', value: 1, label: '1 Elmas' } },
-    { tier: 2, required: 3, reward: { type: 'diamond', value: 3, label: '3 Elmas' } },
-    { tier: 3, required: 5, reward: { type: 'diamond', value: 5, label: '5 Elmas' } },
-    { tier: 4, required: 10, reward: { type: 'diamond', value: 10, label: '10 Elmas' } },
-    { tier: 5, required: 20, reward: { type: 'diamond', value: 20, label: '20 Elmas' } },
-    { tier: 6, required: 40, reward: { type: 'diamond', value: 40, label: '40 Elmas' } },
-    { tier: 7, required: 50, reward: { type: 'diamond', value: 50, label: '50 Elmas' } }
-];
-
 app.post('/api/register', (req, res) => {
-    const { username, password, email, phone, referralCode } = req.body;
+    const { username, password } = req.body;
     const defaultAvatar = 'uploads/avatars/default.png';
-
-    // Helper to finish reg
-    const finishRegister = (refId) => {
-        const query = 'INSERT INTO users (username, password, email, phone, money, energy, health, avatar, referrer_id) VALUES (?, ?, ?, ?, 1000, 100, 100, ?, ?)';
-        db.query(query, [username, password, email, phone, defaultAvatar, refId], (err, result) => {
-            if (err) {
-                console.error("Register Error:", err);
-                if (err.code === 'ER_DUP_ENTRY') {
-                    if (err.message.includes('email')) {
-                        return res.status(400).json({ message: 'Bu e-posta adresi zaten kullanımda.' });
-                    }
-                    if (err.message.includes('phone')) {
-                        return res.status(400).json({ message: 'Bu telefon numarası zaten kullanımda.' });
-                    }
-                    return res.status(400).json({ message: 'Kullanıcı adı, e-posta veya telefon zaten kullanımda.' });
-                }
-                return res.status(500).json({ message: 'Kayıt hatası.' });
+    const query = 'INSERT INTO users (username, password, money, energy, health, avatar) VALUES (?, ?, 1000, 100, 100, ?)';
+    db.query(query, [username, password, defaultAvatar], (err, result) => {
+        if (err) {
+            console.error("Register Error:", err);
+            if (err.code === 'ER_DUP_ENTRY') {
+                return res.status(400).json({ message: 'Kullanıcı adı zaten kullanımda.' });
             }
-            res.json({ success: true, message: 'Kayıt başarılı!' });
-        });
-    };
-
-    if (referralCode) {
-        db.query('SELECT id FROM users WHERE id = ?', [referralCode], (err, results) => {
-            if (!err && results.length > 0) {
-                const referrerId = results[0].id;
-                // Increment referrer count
-                db.query('UPDATE users SET referral_count = referral_count + 1 WHERE id = ?', [referrerId], (err) => {
-                    // Start notification for referrer (optional)
-                    finishRegister(referrerId);
-                });
-            } else {
-                // Invalid code, register anyway without referrer
-                finishRegister(null);
-            }
-        });
-    } else {
-        finishRegister(null);
-    }
+            return res.status(500).json({ message: 'Kayıt hatası.' });
+        }
+        res.json({ success: true, message: 'Kayıt başarılı!' });
+    });
 });
 
 // Profile Endpoint
@@ -302,87 +264,7 @@ app.post('/api/profile/:id/comment', (req, res) => {
     });
 });
 
-// --- REFERRAL SYSTEM ---
-app.get('/api/referral/status/:userId', (req, res) => {
-    const userId = req.params.userId;
-    db.query('SELECT referral_count, referral_tier FROM users WHERE id = ?', [userId], (err, results) => {
-        if(err || !results.length) return res.json({ success: false });
-        res.json({
-            success: true,
-            count: results[0].referral_count || 0,
-            tier: results[0].referral_tier || 0,
-            rewards: REFERRAL_REWARDS
-        });
-    });
-});
-
-app.post('/api/referral/claim', (req, res) => {
-    const { userId, tierId } = req.body;
-    
-    db.query('SELECT referral_count, referral_tier FROM users WHERE id = ?', [userId], (err, results) => {
-        if(err || !results.length) return res.json({ success: false, message: 'User not found' });
-        
-        const user = results[0];
-        const currentTier = user.referral_tier || 0;
-        
-        // Check if trying to claim next sequential tier
-        if (tierId !== currentTier + 1) {
-            return res.json({ success: false, message: 'Sırasıyla ödül almalısınız.' });
-        }
-        
-        const rewardConfig = REFERRAL_REWARDS.find(r => r.tier === tierId);
-        if (!rewardConfig) return res.json({ success: false, message: 'Ödül bulunamadı.' });
-        
-        if (user.referral_count < rewardConfig.required) {
-            return res.json({ success: false, message: 'Yeterli referans sayısına ulaşmadınız.' });
-        }
-        
-        // Grant Reward
-        db.beginTransaction(err => {
-            const reward = rewardConfig.reward;
-            let queries = [];
-            
-            // 1. Update Tier
-            queries.push((cb) => {
-                db.query('UPDATE users SET referral_tier = ? WHERE id = ?', [tierId, userId], cb);
-            });
-            
-            // 2. Grant Item/Money
-            if (reward.type === 'money') {
-                 queries.push((cb) => {
-                     db.query('UPDATE users SET money = money + ? WHERE id = ?', [reward.value, userId], cb);
-                 });
-            } else if (reward.type === 'diamond') {
-                 queries.push((cb) => {
-                     db.query('UPDATE users SET diamond = diamond + ? WHERE id = ?', [reward.value, userId], cb);
-                 });
-            } else if (reward.type === 'item') {
-                 queries.push((cb) => {
-                     db.query('INSERT INTO inventory (user_id, item_key, quantity) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE quantity = quantity + ?',
-                     [userId, reward.key, reward.value, reward.value], cb);
-                 });
-            }
-            
-            // Execute Chain
-            function execute(index) {
-                if (index >= queries.length) return commit();
-                queries[index]((err) => {
-                    if (err) return db.rollback(() => res.json({success: false, message: 'DB Error'}));
-                    execute(index + 1);
-                });
-            }
-            execute(0);
-            
-            function commit() {
-                db.commit(err => {
-                    if(err) return db.rollback(() => res.json({success: false, message: 'Commit Error'}));
-                    res.json({ success: true, message: `Ödül Alındı: ${reward.label}` });
-                });
-            }
-        });
-    });
-});
-
+// --- NOTIFICATIONS SYSTEM ---
 
 // Get Notifications
 app.get('/api/notifications/:userId', (req, res) => {
@@ -1627,12 +1509,18 @@ const FACTORY_RECIPES = {
     'nuclear_plant': [
         { id: 'nuclear_energy', name: 'Nükleer Enerji', inputs: { uranium: 1 }, output: { energy: 3 } }
     ],
-    'gpu_factory': [
-        { id: 'gx_100', name: 'GX-100', inputs: { chip: 1, electronic_card: 1, plastic: 1, copper_cable: 1, electricity: 1 }, output: { gx_100: 1 } },
-        { id: 'gx_300', name: 'GX-300', inputs: { chip: 2, electronic_card: 1, plastic: 1, silicon: 1, copper_cable: 1, gold_cable: 1, electricity: 2 }, output: { gx_300: 1 } },
-        { id: 'gx_500', name: 'GX-500', inputs: { chip: 3, electronic_card: 2, plastic: 2, silicon: 1, copper_cable: 2, gold_cable: 1, electricity: 3 }, output: { gx_500: 1 } },
-        { id: 'gx_800', name: 'GX-800', inputs: { chip: 4, electronic_card: 2, plastic: 2, silicon: 2, copper_cable: 2, gold_cable: 2, electricity: 4 }, output: { gx_800: 1 } },
-        { id: 'gx_titan', name: 'GX-Titan', inputs: { chip: 6, electronic_card: 3, plastic: 3, silicon: 3, copper_cable: 2, gold_cable: 3, electricity: 6 }, output: { gx_titan: 1 } }
+    'tyre_factory': [
+        { id: 'tyre', name: 'Lastik', inputs: { oil: 3, energy: 1 }, output: { tire: 1 } }
+    ],
+    'engine_factory': [
+        { id: 'engine', name: 'Motor', inputs: { steel: 3, chip: 1, electronic_card: 1, gold_cable: 3, copper_cable: 3, energy: 1 }, output: { engine: 1 } }
+    ],
+    'car_factory': [
+        { id: 'noventis', name: 'Noventis', inputs: { steel: 2, glass: 4, engine: 1, tire: 4, energy: 1 }, output: { noventis: 1 } },
+        { id: 'stradeo', name: 'Stradeo', inputs: { steel: 4, glass: 4, engine: 1, tire: 4, energy: 2 }, output: { stradeo: 1 } },
+        { id: 'rugnar', name: 'Rugnar', inputs: { steel: 6, glass: 4, engine: 1, tire: 4, energy: 3 }, output: { rugnar: 1 } },
+        { id: 'veltrano', name: 'Veltrano', inputs: { steel: 8, glass: 2, engine: 2, tire: 4, energy: 4 }, output: { veltrano: 1 } },
+        { id: 'zentaro', name: 'Zentaro', inputs: { steel: 10, glass: 2, engine: 2, tire: 4, energy: 5 }, output: { zentaro: 1 } }
     ]
 };
 
@@ -1649,7 +1537,15 @@ const FACTORY_INPUTS = {
     'glass': ['sand', 'energy'],
     'concrete': ['sand', 'stone', 'energy'],
     'steel': ['iron', 'coal', 'energy'],
-    'gpu_factory': ['chip', 'electronic_card', 'plastic', 'copper_cable', 'silicon', 'gold_cable', 'electricity']
+    // New Factories
+    'tyre_factory': ['oil', 'energy'],
+    'engine_factory': ['steel', 'chip', 'electronic_card', 'gold_cable', 'copper_cable', 'energy'],
+    'car_factory': ['steel', 'glass', 'engine', 'tire', 'energy'],
+    'cable_factory': ['copper', 'gold', 'plastic', 'energy'],
+    'chip_factory': ['silicon', 'gold', 'energy'],
+    'plastic_factory': ['oil', 'energy'],
+    'electronic_card_factory': ['copper_cable', 'gold_cable', 'plastic', 'silicon', 'energy'],
+    'gpu_factory': ['chip', 'electronic_card', 'plastic', 'copper_cable', 'gold_cable', 'silicon', 'energy']
 };
 
 const MINE_TYPES = [
@@ -1676,6 +1572,15 @@ const MINE_TYPES = [
     { id: 'sweets', name: 'Tatlı & Şekerleme Üretim Tesisi', reqLevel: 12, costMoney: 12000, costGold: 5, costDiamond: 0 },
     { id: 'weapon', name: 'Silah Fabrikası', reqLevel: 30, costMoney: 50000, costGold: 50, costDiamond: 10 },
     { id: 'gold_factory', name: 'Altın Külçe Fabrikası', reqLevel: 20, costMoney: 40000, costGold: 0, costDiamond: 5 },
+    { id: 'silicon', name: 'Silikon Fabrikası', reqLevel: 25, costMoney: 30000, costGold: 25, costDiamond: 5 },
+    { id: 'plastic_factory', name: 'Plastik Fabrikası', reqLevel: 15, costMoney: 15000, costGold: 10, costDiamond: 0 },
+    { id: 'tyre_factory', name: 'Lastik Fabrikası', reqLevel: 17, costMoney: 20000, costGold: 12, costDiamond: 0 },
+    { id: 'engine_factory', name: 'Motor Fabrikası', reqLevel: 19, costMoney: 25000, costGold: 15, costDiamond: 2 },
+    { id: 'car_factory', name: 'Otomotiv Fabrikası', reqLevel: 24, costMoney: 50000, costGold: 20, costDiamond: 5 },
+    { id: 'cable_factory', name: 'Kablo Fabrikası', reqLevel: 18, costMoney: 18000, costGold: 12, costDiamond: 0 },
+    { id: 'electronic_card_factory', name: 'Elektronik Kart Fabrikası', reqLevel: 22, costMoney: 22000, costGold: 18, costDiamond: 2 },
+    { id: 'chip_factory', name: 'Çip Fabrikası', reqLevel: 35, costMoney: 45000, costGold: 40, costDiamond: 10 },
+    { id: 'gpu_factory', name: 'GPU Fabrikası', reqLevel: 40, costMoney: 60000, costGold: 60, costDiamond: 15 },
     { id: 'solar', name: 'Güneş Santrali', reqLevel: 50, costMoney: 100000, costGold: 100, costDiamond: 20 },
     // Energy Plants
     { id: 'wind_turbine', name: 'Rüzgar Türbini', reqLevel: 10, costMoney: 15000, costGold: 5, costDiamond: 0 },
@@ -1874,6 +1779,40 @@ app.get('/api/mines/detail/:id', (req, res) => {
                     });
                 });
             });
+        });
+    });
+});
+
+// Set Active Recipe
+app.post('/api/mines/set-recipe', (req, res) => {
+    const { userId, mineId, recipeId } = req.body;
+    console.log('Set Recipe Request:', { userId, mineId, recipeId });
+
+    if (!userId || !mineId || !recipeId) {
+        return res.status(400).json({ success: false, message: 'Eksik parametre.' });
+    }
+
+    // Verify ownership
+    db.query('SELECT user_id FROM player_mines WHERE id = ?', [mineId], (err, results) => {
+        if (err) {
+            console.error('DB Error verify owner:', err);
+            return res.status(500).json({ success: false, message: 'DB Error' });
+        }
+        
+        if (results.length === 0) return res.status(404).json({ success: false, message: 'Fabrika bulunamadı.' });
+        
+        // Ensure userId checks out (check if string/int mismatch issues)
+        if (results[0].user_id != userId) {
+             return res.status(403).json({ success: false, message: 'Bu fabrika size ait değil.' });
+        }
+
+        db.query('UPDATE player_mines SET active_recipe_id = ? WHERE id = ?', [recipeId, mineId], (err) => {
+            if (err) {
+                console.error('DB Error update recipe:', err);
+                return res.status(500).json({ success: false, message: 'Tarif güncellenemedi.' });
+            }
+            console.log('Recipe updated successfully for mine:', mineId);
+            res.json({ success: true, message: 'Üretim hattı güncellendi.' });
         });
     });
 });
@@ -2122,55 +2061,6 @@ app.post('/api/mines/deposit-raw/:id', (req, res) => {
                             if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
                             res.json({ success: true, message: `${amount} adet ${requiredItemKey} eklendi.` });
                         });
-                    });
-                });
-            });
-        });
-    });
-});
-
-
-// Job Ad
-app.post('/api/factory/post-job-ad', (req, res) => {
-    const { userId, mineId, salary } = req.body;
-    const AD_COST = 5000;
-
-    if (!salary || salary <= 0) return res.json({ success: false, message: 'Geçersiz maaş.' });
-
-    db.beginTransaction(err => {
-        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
-
-        // 1. Check Factory Ownership and Vault Logic
-        db.query('SELECT * FROM player_mines WHERE id = ? AND user_id = ?', [mineId, userId], (err, mines) => {
-            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
-            if (mines.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Fabrika bulunamadı.' }));
-            
-            const mine = mines[0];
-            if (mine.vault < AD_COST) {
-                return db.rollback(() => res.json({ success: false, message: 'Fabrika kasasında yeterli bakiye yok (5.000 TL).' }));
-            }
-
-            // 2. Deduct Cost and Update Salary
-            db.query('UPDATE player_mines SET vault = vault - ?, salary = ? WHERE id = ?', [AD_COST, salary, mineId], (err) => {
-                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Güncelleme hatası.' }));
-
-                // 3. Post to Global Chat
-                const mineName = mine.name || 'İsimsiz İşletme';
-                // Structured message for frontend parsing
-                const messageData = JSON.stringify({
-                    id: mineId,
-                    name: mineName,
-                    salary: salary
-                });
-                const message = `:::JOB_AD:::${messageData}`;
-                
-                const query = 'INSERT INTO chat_messages (user_id, message, channel) VALUES (?, ?, ?)';
-                db.query(query, [userId, message, 'global'], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Chat hatası.' }));
-
-                    db.commit(err => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit hatası.' }));
-                        res.json({ success: true, message: 'İlan başarıyla yayınlandı.' });
                     });
                 });
             });
@@ -4660,7 +4550,8 @@ app.post('/api/mines/start', (req, res) => {
                          const argeBonus = (arge_level || 0) * 2;
                          let productionAmount = baseProduction + educationBonus + argeBonus;
 
-                         if (data.mine_type === 'gpu_factory') {
+                         // Override for Car Factory (Single Unit Production)
+                         if (data.mine_type === 'car_factory') {
                              productionAmount = 1;
                          }
                          
@@ -4743,7 +4634,9 @@ app.post('/api/mines/start', (req, res) => {
                          proceedWithProduction(legacyInputs, null, productionAmount, true); // true = use factory_inventory
                          return;
                      }
-
+                     // Check if it's a new factory type
+                     const recipes = FACTORY_RECIPES[data.mine_type];
+                     
                      function proceedWithProduction(inputs, pKey, amount, isNewFactory) {
                          // Vault Check
                          const estimatedCost = amount * salary;
@@ -4796,8 +4689,6 @@ app.post('/api/mines/start', (req, res) => {
                          });
                      } // End proceedWithProduction function
 
-                     // Check if it's a new factory type
-                     const recipes = FACTORY_RECIPES[data.mine_type];
                      if (recipes) {
                          const recipeId = req.body.recipeId;
                          const recipe = recipes.find(r => r.id === recipeId) || recipes[0];
@@ -4812,7 +4703,10 @@ app.post('/api/mines/start', (req, res) => {
                              meat: 'Et', olive_oil: 'Zeytinyağı', rice: 'Pirinç', potato: 'Patates',
                              olive: 'Zeytin', honey: 'Bal', energy: 'Elektrik',
                              wood: 'Odun', stone: 'Taş', iron: 'Demir', coal: 'Kömür',
-                             sand: 'Kum', copper: 'Bakır', uranium: 'Uranyum', gold_nugget: 'Altın Parçası'
+                             sand: 'Kum', copper: 'Bakır', uranium: 'Uranyum', gold_nugget: 'Altın Parçası',
+                             steel: 'Çelik', glass: 'Cam', engine: 'Motor', tyre: 'Lastik',
+                             oil: 'Petrol', chip: 'Çip', electronic_card: 'Elektronik Kart',
+                             gold_cable: 'Altın Kablo', copper_cable: 'Bakır Kablo'
                          };
 
                          for (const [key, val] of Object.entries(recipeInputs)) {
@@ -4827,7 +4721,7 @@ app.post('/api/mines/start', (req, res) => {
                          return;
                      }
 
-                     // Legacy Factories
+                     // Fallback for non-factory mines (gold, iron, etc.) that are NOT legacy
                      proceedWithProduction({}, null, productionAmount, false);
                      }); // Close owner query callback
                  });
@@ -7148,8 +7042,398 @@ app.post('/api/properties/collect-tax', (req, res) => {
     });
 });
 
+
+/* ================= DAILY REWARD SYSTEM ================= */
+function getDailyRewards() {
+    const rewards = [];
+    for (let i = 1; i <= 30; i++) {
+        let reward = { day: i, type: 'money', value: i * 500, label: (i * 500) + ' TL', icon: 'fa-coins', iconColor: '#ffd700' };
+        
+        if (i % 5 === 0) { // Every 5 days -> Gold
+            reward.type = 'gold';
+            reward.value = i;
+            reward.label = i + ' Altın';
+            reward.icon = 'fa-gem';
+            reward.iconColor = '#2ecc71';
+        }
+        
+        if (i === 30) {
+            reward.type = 'gold';
+            reward.value = 500;
+            reward.label = '500 Altın';
+        }
+        rewards.push(reward);
+    }
+    return rewards;
+}
+
+app.get('/api/daily-reward/status/:userId', (req, res) => {
+    const userId = req.params.userId;
+    const rewards = getDailyRewards();
+
+    db.query('SELECT * FROM user_daily_rewards WHERE user_id = ?', [userId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, message: 'DB Error' });
+
+        let currentStreak = 0;
+        let lastClaimDate = null;
+
+        if (results.length > 0) {
+            currentStreak = results[0].current_streak;
+            lastClaimDate = results[0].last_claim_date ? new Date(results[0].last_claim_date) : null;
+        }
+
+        const now = new Date();
+        let canClaim = false;
+        let remainingMs = 0;
+        let nextDay = currentStreak + 1;
+
+        if (!lastClaimDate) {
+            canClaim = true;
+        } else {
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            
+            const lastClaimDay = new Date(lastClaimDate);
+            lastClaimDay.setHours(0,0,0,0);
+            
+            const diffTime = Math.abs(today - lastClaimDay);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+
+            if (diffDays === 0) {
+                canClaim = false;
+                const tomorrow = new Date(today);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                remainingMs = tomorrow - now;
+            } else if (diffDays === 1) {
+                canClaim = true;
+            } else {
+                currentStreak = 0;
+                nextDay = 1;
+                canClaim = true;
+            }
+        }
+        
+        if (currentStreak >= 30) {
+            if(canClaim) { // If I finished 30 days and missed a day (or came back next day), start over
+               // But wait, if I just finished day 30 yesterday, today is day 1?
+               // Yes.
+               nextDay = 1;
+            }
+        }
+        // Safegaurd
+        if (nextDay > 30) nextDay = 1;
+
+        res.json({
+            success: true,
+            rewards,
+            currentStreak,
+            canClaim,
+            nextDay,
+            remainingMs
+        });
+    });
+});
+
+app.post('/api/daily-reward/claim', (req, res) => {
+    const { userId } = req.body;
+    
+    db.query('SELECT * FROM user_daily_rewards WHERE user_id = ?', [userId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, message: 'DB Error' });
+
+        let currentStreak = 0;
+        let lastClaimDate = null;
+        let recordExists = false;
+
+        if (results.length > 0) {
+            recordExists = true;
+            currentStreak = results[0].current_streak;
+            lastClaimDate = results[0].last_claim_date ? new Date(results[0].last_claim_date) : null;
+        }
+
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        
+        if (lastClaimDate) {
+            const lastClaimDay = new Date(lastClaimDate);
+            lastClaimDay.setHours(0,0,0,0);
+            const diffTime = Math.abs(today - lastClaimDay);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 0) {
+                return res.json({ success: false, message: 'Bugün zaten ödül aldın.' });
+            }
+            if (diffDays > 1) {
+                currentStreak = 0;
+            }
+        }
+
+        let dayToClaim = currentStreak + 1;
+        if (dayToClaim > 30) {
+             currentStreak = 0;
+             dayToClaim = 1; 
+        }
+
+        const allRewards = getDailyRewards();
+        const reward = allRewards.find(r => r.day === dayToClaim);
+
+        if (!reward) return res.json({ success: false, message: 'Ödül bulunamadı.' });
+
+        let updateSql = '';
+        let params = [];
+
+        if (reward.type === 'money') {
+            updateSql = 'UPDATE users SET money = money + ? WHERE id = ?';
+            params = [reward.value, userId];
+        } else if (reward.type === 'gold') {
+            updateSql = 'UPDATE users SET gold = gold + ? WHERE id = ?';
+            params = [reward.value, userId];
+        }
+
+        db.beginTransaction(err => {
+            if (err) return res.json({ success: false, message: 'Transaction Error' });
+
+            db.query(updateSql, params, (err) => {
+                if (err) return db.rollback(() => res.json({ success: false, message: 'Ödül verilemedi.' }));
+
+                const newStreak = dayToClaim; 
+                
+                let trackerSql = '';
+                let trackerParams = [];
+                
+                if (recordExists) {
+                    trackerSql = 'UPDATE user_daily_rewards SET last_claim_date = NOW(), current_streak = ? WHERE user_id = ?';
+                    trackerParams = [newStreak, userId];
+                } else {
+                    trackerSql = 'INSERT INTO user_daily_rewards (user_id, last_claim_date, current_streak) VALUES (?, NOW(), ?)';
+                    trackerParams = [userId, newStreak];
+                }
+
+                db.query(trackerSql, trackerParams, (err) => {
+                    if (err) return db.rollback(() => res.json({ success: false, message: 'Kayıt güncellenemedi.' }));
+
+                    db.commit(err => {
+                        if (err) return db.rollback(() => res.json({ success: false, message: 'Commit hatası.' }));
+                        res.json({ success: true, message: `${reward.label} kazandın!` });
+                    });
+                });
+            });
+        });
+    });
+});
+
+
+/* ================= REFERRAL SYSTEM ================= */
+app.get('/api/referral/status/:userId', (req, res) => {
+    const userId = req.params.userId;
+    db.query('SELECT referral_count, referral_tier FROM users WHERE id = ?', [userId], (err, results) => {
+        if (err || results.length === 0) return res.status(500).json({ success: false });
+        
+        const rewards = [
+            { tier: 1, limit: 1, reward: '1000 Para' },
+            { tier: 2, limit: 5, reward: '5000 Para + 50 Altın' },
+            { tier: 3, limit: 10, reward: '10000 Para + 100 Altın' },
+            { tier: 4, limit: 25, reward: '25000 Para + 250 Altın' },
+            { tier: 5, limit: 50, reward: '50000 Para + 1 Gx-100' }
+        ];
+
+        res.json({
+            success: true,
+            count: results[0].referral_count || 0,
+            tier: results[0].referral_tier || 0,
+            rewards
+        });
+    });
+});
+
+/* ================= CRYPTO MINING SYSTEM ================= */
+const GPU_STATS = {
+    'gx_100': { hashrate: 10, power: 0.5 },
+    'gx_300': { hashrate: 35, power: 1.2 },
+    'gx_500': { hashrate: 80, power: 2.5 },
+    'gx_800': { hashrate: 150, power: 4.0 },
+    'gx_titan': { hashrate: 350, power: 8.5 }
+};
+
+app.get('/api/crypto/summary/:userId', (req, res) => {
+    const userId = req.params.userId;
+    
+    // Get User for slots and balance
+    db.query('SELECT btc, crypto_slots FROM users WHERE id = ?', [userId], (err, uRes) => {
+        if(err || !uRes.length) return res.status(500).json({success:false, message: 'User Error'});
+        const user = uRes[0];
+
+        // Get Rigs
+        db.query('SELECT * FROM player_rigs WHERE user_id = ? ORDER BY slot_index ASC', [userId], (err, rRes) => {
+            if(err) return res.status(500).json({success:false, message: 'Rig Error'});
+            
+            let totalHashrate = 0;
+            let totalPower = 0;
+            let activeRigs = 0;
+            
+            const rigs = rRes.map(r => {
+                const stats = GPU_STATS[r.gpu_key] || { hashrate: 0, power: 0 };
+                
+                if(r.active && r.health > 0) {
+                    totalHashrate += stats.hashrate;
+                    totalPower += stats.power;
+                    activeRigs++;
+                }
+
+                return {
+                    slot: r.slot_index,
+                    gpu: r.gpu_key,
+                    name: r.gpu_key.toUpperCase(),
+                    active: r.active,
+                    health: r.health,
+                    stats: stats
+                };
+            });
+            
+            // Calc Estimate (Very rough calc)
+            // assume 1 TH/s = 0.00000500 BTC per day
+            const btcPerTH = 0.00000500;
+            const estimatedEarnings = totalHashrate * btcPerTH;
+
+            res.json({
+                success: true,
+                btc_balance: user.btc,
+                crypto_slots: user.crypto_slots || 1,
+                total_hashrate: totalHashrate,
+                total_power: totalPower,
+                active_rigs: activeRigs,
+                estimated_earnings: estimatedEarnings,
+                rigs: rigs
+            });
+        });
+    });
+});
+
+app.post('/api/crypto/install', (req, res) => {
+    const { userId, slotIndex, gpuKey } = req.body;
+    
+    db.query('SELECT crypto_slots FROM users WHERE id = ?', [userId], (err, uRes) => {
+        if(err || !uRes.length) return res.status(500).json({success:false, message:'User Error'});
+        const maxSlots = uRes[0].crypto_slots;
+        
+        if (slotIndex >= maxSlots) return res.json({success:false, message:'Bu slot kilitli!'});
+
+        // Check Inventory
+        db.query('SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?', [userId, gpuKey], (err, iRes) => {
+            if(err) return res.status(500).json({success:false, message:'Inv Error'});
+            if(!iRes.length || iRes[0].quantity < 1) return res.json({success:false, message:'Ekran kartı yok!'});
+            
+            // Check Slot Empty
+            db.query('SELECT id FROM player_rigs WHERE user_id = ? AND slot_index = ?', [userId, slotIndex], (err, sRes) => {
+                if(sRes.length > 0) return res.json({success:false, message:'Slot dolu!'});
+
+                // Transaction: Remove from Inv -> Add to Rigs
+                db.beginTransaction(err => {
+                    if(err) return res.status(500).json({success:false});
+
+                    db.query('UPDATE inventory SET quantity = quantity - 1 WHERE user_id = ? AND item_key = ?', [userId, gpuKey], (err) => {
+                        if(err) return db.rollback(()=>res.json({success:false, message:'Stok düşülemedi'}));
+                        
+                        db.query('INSERT INTO player_rigs (user_id, slot_index, gpu_key, health) VALUES (?, ?, ?, 100)', [userId, slotIndex, gpuKey], (err) => {
+                            if(err) return db.rollback(()=>res.json({success:false, message:'Takılamadı'}));
+                            
+                            db.commit(err => {
+                                if(err) return db.rollback(()=>res.json({success:false, message:'Commit Error'}));
+                                res.json({success:true, message:'GPU Başarıyla takıldı!'});
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+app.post('/api/crypto/buy-slot', (req, res) => {
+    const { userId } = req.body;
+    
+    db.query('SELECT crypto_slots, money FROM users WHERE id = ?', [userId], (err, uRes) => {
+        if(err) return res.status(500).json({success:false});
+        const user = uRes[0];
+        
+        if(user.crypto_slots >= 10) return res.json({success:false, message:'Maksimum slot sayısına ulaştın!'});
+        
+        const price = 10000 * Math.pow(2, user.crypto_slots - 1);
+        
+        if(user.money < price) return res.json({success:false, message:'Yetersiz bakiye!'});
+        
+        db.query('UPDATE users SET money = money - ?, crypto_slots = crypto_slots + 1 WHERE id = ?', [price, userId], (err) => {
+            if(err) return res.status(500).json({success:false, message:'DB Error'});
+            res.json({success:true, message:'Yeni slot açıldı!'});
+        });
+    });
+});
+
+app.post('/api/crypto/remove-rig', (req, res) => {
+    const { userId, slotIndex } = req.body;
+    // Note: User logic says "trash it", so we delete it. Not return to inventory.
+    // Logic: Only allow removing if health <= 0 or user specifically requested trash.
+    // For now simple delete.
+    
+    db.query('DELETE FROM player_rigs WHERE user_id = ? AND slot_index = ?', [userId, slotIndex], (err) => {
+        if(err) return res.status(500).json({success:false});
+        res.json({success:true, message:'Rig söküldü ve atıldı.'});
+    });
+});
+
+/* ================= LOOTBOX SYSTEM ================= */
+app.get('/api/lootbox/keys/:userId', (req, res) => {
+    const userId = req.params.userId;
+    db.query("SELECT item_key, quantity FROM inventory WHERE user_id = ? AND item_key IN ('key_common','key_rare','key_epic','key_mystic')", [userId], (err, results) => {
+        if(err) return res.status(500).json({success:false});
+        // Transform to object key:qty
+        const keys = {};
+        results.forEach(r => keys[r.item_key] = r.quantity);
+        res.json({ success: true, keys });
+    });
+});
+
+app.post('/api/lootbox/open', (req, res) => {
+    const { userId, boxType } = req.body; 
+    const keyItem = 'key_' + boxType;
+    
+    db.query('SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?', [userId, keyItem], (err, curr) => {
+        if(err) return res.json({ success: false, message: 'DB Error' });
+        if(!curr.length || curr[0].quantity < 1) return res.json({ success: false, message: 'Anahtar yok!' });
+
+        db.query('UPDATE inventory SET quantity = quantity - 1 WHERE user_id = ? AND item_key = ?', [userId, keyItem], (err) => {
+            if(err) return res.json({ success: false, message: 'Update Error' });
+            
+            // Rewards
+            let amount = 1000;
+            let label = '1000 TL';
+            let column = 'money';
+            
+            const r = Math.random();
+            if(boxType === 'common') {
+                amount = 1000 + Math.floor(Math.random() * 2000);
+            } else if(boxType === 'rare') {
+                amount = 5000;
+                if(r < 0.2) { column = 'gold'; amount = 25; label = '25 Altın'; }
+                else { label = amount + ' TL'; }
+            } else {
+                amount = 20000;
+                if(r < 0.4) { column = 'gold'; amount = 100; label = '100 Altın'; }
+                else { label = amount + ' TL'; }
+            }
+            
+            db.query(`UPDATE users SET ${column} = ${column} + ? WHERE id = ?`, [amount, userId], (err) => {
+                res.json({ success: true, reward: { name: label, icon: 'fa-gift' } });
+            });
+        });
+    });
+});
+
 const PORT = 3000;
 console.log('Attempting to start server on port ' + PORT);
+app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+});
+
 
 // --- PARTY MANAGEMENT ENDPOINTS ---
 
@@ -8310,7 +8594,7 @@ app.post('/api/crypto/trade', (req, res) => {
             const diff = (now - new Date(user.last_crypto_trade)) / 1000;
             if (diff < 60) { // 60s LIMIT
                 const waitTime = Math.ceil(60 - diff);
-                return res.json({ success: false, message: `İşlem sınırı: 60 saniye. Lütfen ${waitTime} saniye bekleyin.` });
+                return res.json({ success: false, message: `İşlem sınırı: ${waitTime} saniye bekleyin.` });
             }
         }
 
@@ -8332,16 +8616,9 @@ app.post('/api/crypto/trade', (req, res) => {
                         db.query('INSERT INTO market_trades (user_id, type, price, amount, total_price) VALUES (?, ?, ?, ?, ?)',
                             [userId, 'buy', price, val, totalCost], (err) => {
                             
-                            // IMPACT: Price Increase
-                            // Formula: 0.05% fluctuation per 1 BTC traded
-                            const impact = val * 0.0005; 
-                            const newPrice = price * (1 + impact);
-
-                            db.query('INSERT INTO market_history (price, volume) VALUES (?, ?)', [newPrice, val], (err) => {
-                                db.commit(err => {
-                                    if(err) return db.rollback(() => res.json({ success: false, message: 'Commit Error' }));
-                                    res.json({ success: true, message: `Alım Başarılı: ${val} BTC` });
-                                });
+                            db.commit(err => {
+                                if(err) return db.rollback(() => res.json({ success: false, message: 'Commit Error' }));
+                                res.json({ success: true, message: `Alım Başarılı: ${val} BTC` });
                             });
                         });
                     });
@@ -8360,161 +8637,15 @@ app.post('/api/crypto/trade', (req, res) => {
                         db.query('INSERT INTO market_trades (user_id, type, price, amount, total_price) VALUES (?, ?, ?, ?, ?)',
                             [userId, 'sell', price, val, totalCost], (err) => {
                             
-                            // IMPACT: Price Decrease
-                            const impact = val * 0.0005; 
-                            let newPrice = price * (1 - impact);
-                            if(newPrice < 1.00) newPrice = 1.00; // Floor
-
-                            db.query('INSERT INTO market_history (price, volume) VALUES (?, ?)', [newPrice, val], (err) => {
-                                db.commit(err => {
-                                    if(err) return db.rollback(() => res.json({ success: false, message: 'Commit Error' }));
-                                    res.json({ success: true, message: `Satış Başarılı: +$${totalCost.toFixed(2)}` });
-                                });
+                            db.commit(err => {
+                                if(err) return db.rollback(() => res.json({ success: false, message: 'Commit Error' }));
+                                res.json({ success: true, message: `Satış Başarılı: +$${totalCost.toFixed(2)}` });
                             });
                         });
                     });
                 });
             }
         });
-    });
-});
-
-// --- CRYPTO MINING SYSTEM ---
-
-const GPU_STATS = {
-    'gx_100': { hashrate: 10, power: 0.5 },
-    'gx_300': { hashrate: 25, power: 1.0 },
-    'gx_500': { hashrate: 50, power: 1.8 },
-    'gx_800': { hashrate: 80, power: 2.2 },
-    'gx_titan': { hashrate: 150, power: 3.5 }
-};
-
-// 1. Mining Dashboard Summary
-app.get('/api/crypto/summary/:userId', (req, res) => {
-    const userId = req.params.userId;
-    
-    // Get User Data (BTC Balance & Slots)
-    db.query('SELECT btc, crypto_slots FROM users WHERE id = ?', [userId], (err, users) => {
-        if(err) return res.json({ success: false, message: 'Db error' });
-        if(users.length === 0) return res.json({ success: false, message: 'User not found' });
-        
-        const user = users[0];
-        
-        // Get Rigs
-        db.query('SELECT * FROM player_rigs WHERE user_id = ? ORDER BY slot_index ASC', [userId], (err, rigs) => {
-            if(err) return res.json({ success: false, message: 'Db error' });
-            
-            let totalHashrate = 0;
-            let totalPower = 0;
-            let activeRigsCount = 0;
-            
-            // Enrich rig data and calculate totals
-            const processedRigs = rigs.map(r => {
-                const stats = GPU_STATS[r.gpu_key] || { hashrate: 0, power: 0 };
-                // Calculate logic for active state
-                const isWorking = r.active && r.health > 0;
-                
-                if (isWorking) {
-                    totalHashrate += stats.hashrate;
-                    totalPower += stats.power;
-                    activeRigsCount++;
-                }
-                
-                return {
-                    id: r.id,
-                    slot: r.slot_index,
-                    gpu: r.gpu_key, 
-                    name: r.gpu_key,
-                    stats: stats,
-                    active: r.active,
-                    health: r.health || 0
-                };
-            });
-            
-            // Calculate Estimated Earnings (Simplified: 1 TH/s = 0.000001 BTC / Hour)
-            const BTC_PER_TH_HOUR = 0.000001;
-            const estimatedEarnings = totalHashrate * BTC_PER_TH_HOUR;
-            
-            res.json({
-                success: true,
-                btc_balance: user.btc,
-                crypto_slots: user.crypto_slots || 1,
-                active_rigs: activeRigsCount,
-                total_hashrate: totalHashrate,
-                total_power: totalPower,
-                estimated_earnings: estimatedEarnings,
-                rigs: processedRigs
-            });
-        });
-    });
-});
-
-// 2. Buy Slot
-app.post('/api/crypto/buy-slot', (req, res) => {
-    const { userId } = req.body;
-    
-    db.query('SELECT money, crypto_slots FROM users WHERE id = ?', [userId], (err, users) => {
-        if(err || users.length === 0) return res.json({ success: false, message: 'Hata' });
-        
-        const user = users[0];
-        const currentSlots = user.crypto_slots || 1;
-        
-        if (currentSlots >= 10) return res.json({ success: false, message: 'Maksimum slot sayısına ulaştınız.' });
-        
-        const price = 10000 * Math.pow(2, currentSlots - 1);
-        
-        if (user.money < price) return res.json({ success: false, message: 'Yetersiz bakiye' });
-        
-        // Process
-        db.query('UPDATE users SET money = money - ?, crypto_slots = crypto_slots + 1 WHERE id = ?', [price, userId], (err) => {
-            if(err) return res.json({ success: false, message: 'Db error' });
-            res.json({ success: true, message: 'Yeni slot açıldı!', newSlots: currentSlots + 1 });
-        });
-    });
-});
-
-// 3. Install GPU
-app.post('/api/crypto/install', (req, res) => {
-    const { userId, slotIndex, gpuKey } = req.body;
-    
-    // 1. Check Inventory
-    db.query('SELECT * FROM inventory WHERE user_id = ? AND item_key = ? AND quantity > 0', [userId, gpuKey], (err, inv) => {
-        if(err || inv.length === 0) return res.json({ success: false, message: 'Envanterde bu GPU yok.' });
-        
-        // 2. Check if Slot is Occupied
-        db.query('SELECT * FROM player_rigs WHERE user_id = ? AND slot_index = ?', [userId, slotIndex], (err, rigs) => {
-            if(err) return res.json({ success: false, message: 'Db error' });
-            if(rigs.length > 0) return res.json({ success: false, message: 'Bu slot zaten dolu.' });
-            
-            // 3. Install (Insert Rig, Decrease Inventory)
-            db.beginTransaction(err => {
-                if(err) return res.json({ success: false, message: 'Tx error' });
-                
-                db.query('INSERT INTO player_rigs (user_id, slot_index, gpu_key, health, active) VALUES (?, ?, ?, 100, 1)', [userId, slotIndex, gpuKey], (err) => {
-                    if(err) return db.rollback(() => res.json({ success: false, message: 'Insert error' }));
-                    
-                    db.query('UPDATE inventory SET quantity = quantity - 1 WHERE id = ?', [inv[0].id], (err) => {
-                        if(err) return db.rollback(() => res.json({ success: false, message: 'Update Inv error' }));
-                        
-                        db.commit(err => {
-                            if(err) return db.rollback(() => res.json({ success: false, message: 'Commit error' }));
-                            res.json({ success: true, message: 'GPU başarıyla kuruldu.' });
-                        });
-                    });
-                });
-            });
-        });
-    });
-});
-
-// 4. Remove Rig
-app.post('/api/crypto/remove-rig', (req, res) => {
-    const { userId, slotIndex } = req.body;
-    
-    // Just delete, no refund to inventory (as per requirement "silinir")
-    db.query('DELETE FROM player_rigs WHERE user_id = ? AND slot_index = ?', [userId, slotIndex], (err, result) => {
-        if(err) return res.json({ success: false, message: 'Db error' });
-        res.json({ success: true, message: 'Cihaz söküldü ve atıldı.' });
     });
 });
 
@@ -8525,193 +8656,18 @@ setInterval(() => {
         if(err) return;
         let currentPrice = results.length ? parseFloat(results[0].price) : 100.00;
         
-        // STABLE MARKET: No random fluctuation
-        // We just record the current price to keep the history timeline moving
-        db.query('INSERT INTO market_history (price, volume) VALUES (?, ?)', [currentPrice, 0], (err) => {
+        // Random Walk
+        // Volatility between -2% and +2%
+        const changePercent = (Math.random() - 0.5) * 0.04; 
+        let newPrice = currentPrice * (1 + changePercent);
+        
+        // Bias towards 1000 if it drifts too far? 
+        // Or just hard limits
+        if(newPrice < 100) newPrice = 100;
+        
+        db.query('INSERT INTO market_history (price, volume) VALUES (?, ?)', [newPrice, Math.random() * 5], (err) => {
             if(err) console.error(err);
         });
     });
 }, 30000); // Every 30 seconds update price
 
-// ==========================================
-// DAILY REWARD SYSTEM
-// ==========================================
-
-const REWARD_CONFIG = [
-    // Week 1: Basics
-    { day: 1, type: 'money', value: 2500, label: '$2.5k', icon: 'icons/inventory-icon/money.png' },
-    { day: 2, type: 'item', key: 'wood', value: 50, label: '50x Odun', icon: 'icons/mine-icon/wood.png' },
-    { day: 3, type: 'item', key: 'stone', value: 50, label: '50x Taş', icon: 'icons/mine-icon/stone.png' },
-    { day: 4, type: 'item', key: 'key_common', value: 1, label: '1x Sıradan Anahtar', icon: 'fas fa-key', iconColor: '#bdc3c7' },
-    { day: 5, type: 'money', value: 5000, label: '$5k', icon: 'icons/inventory-icon/money.png' },
-    { day: 6, type: 'item', key: 'iron', value: 30, label: '30x Demir', icon: 'icons/mine-icon/iron.png' },
-    { day: 7, type: 'item', key: 'key_rare', value: 1, label: '1x Nadir Anahtar', icon: 'fas fa-key', iconColor: '#3498db' }, // Week 1 Gift
-
-    // Week 2: Farming & Mining
-    { day: 8, type: 'money', value: 10000, label: '$10k', icon: 'icons/inventory-icon/money.png' },
-    { day: 9, type: 'item', key: 'wheat', value: 100, label: '100x Buğday', icon: 'icons/farm-icon/wheat.png' },
-    { day: 10, type: 'item', key: 'coal', value: 50, label: '50x Kömür', icon: 'icons/mine-icon/coal.png' },
-    { day: 11, type: 'item', key: 'key_common', value: 3, label: '3x Sıradan Anahtar', icon: 'fas fa-key', iconColor: '#bdc3c7' },
-    { day: 12, type: 'item', key: 'oil', value: 10, label: '10x Petrol', icon: 'icons/mine-icon/oil-barrel.png' },
-    { day: 13, type: 'gold', value: 10, label: '10x Altın', icon: 'icons/inventory-icon/gold.png' },
-    { day: 14, type: 'item', key: 'key_epic', value: 1, label: '1x Epik Anahtar', icon: 'fas fa-key', iconColor: '#9b59b6' },
-
-    // Week 3: Advanced Materials
-    { day: 15, type: 'money', value: 25000, label: '$25k', icon: 'icons/inventory-icon/money.png' },
-    { day: 16, type: 'item', key: 'copper', value: 50, label: '50x Bakır', icon: 'icons/mine-icon/copper.png' },
-    { day: 17, type: 'item', key: 'sand', value: 100, label: '100x Kum', icon: 'icons/mine-icon/sand.png' },
-    { day: 18, type: 'item', key: 'key_rare', value: 2, label: '2x Nadir Anahtar', icon: 'fas fa-key', iconColor: '#3498db' },
-    { day: 19, type: 'diamond', value: 5, label: '5x Elmas', icon: 'icons/inventory-icon/diamond.png' },
-    { day: 20, type: 'money', value: 50000, label: '$50k', icon: 'icons/inventory-icon/money.png' },
-    { day: 21, type: 'item', key: 'key_mystic', value: 1, label: '1x Mistik Anahtar', icon: 'fas fa-key', iconColor: '#00e5ff' },
-
-    // Week 4: Riches
-    { day: 22, type: 'money', value: 75000, label: '$75k', icon: 'icons/inventory-icon/money.png' },
-    { day: 23, type: 'item', key: 'uranium', value: 5, label: '5x Uranyum', icon: 'icons/mine-icon/uranium.png' },
-    { day: 24, type: 'item', key: 'gold_nugget', value: 5, label: '5x Külçe', icon: 'icons/mine-icon/gold-nugget.png' },
-    { day: 25, type: 'item', key: 'key_epic', value: 2, label: '2x Epik Anahtar', icon: 'fas fa-key', iconColor: '#9b59b6' },
-    { day: 26, type: 'gold', value: 50, label: '50x Altın', icon: 'icons/inventory-icon/gold.png' },
-    { day: 27, type: 'diamond', value: 15, label: '15x Elmas', icon: 'icons/inventory-icon/diamond.png' },
-    { day: 28, type: 'item', key: 'key_mystic', value: 2, label: '2x Mistik Anahtar', icon: 'fas fa-key', iconColor: '#00e5ff' },
-    
-    // Finale
-    { day: 29, type: 'money', value: 250000, label: '$250k', icon: 'icons/inventory-icon/money.png' },
-    { day: 30, type: 'item', key: 'key_mystic', value: 5, label: '5x Mistik Anahtar', icon: 'fas fa-trophy', iconColor: '#ffd700' }
-];
-
-app.get('/api/daily-reward/status/:userId', (req, res) => {
-    const userId = req.params.userId;
-    db.query('SELECT daily_streak, last_daily_claim FROM users WHERE id = ?', [userId], (err, results) => {
-        if(err || !results.length) return res.json({ success: false });
-        
-        const user = results[0];
-        const lastClaim = user.last_daily_claim ? new Date(user.last_daily_claim) : null;
-        const now = new Date();
-        
-        let canClaim = false;
-        let nextDay = (user.daily_streak || 0) + 1;
-        let waitMs = 0;
-        
-        // If 30 days completed, reset loop logic handles effectively by modulo or check
-        if(nextDay > 30) nextDay = 1;
-
-        if (!lastClaim) {
-            canClaim = true; 
-        } else {
-            // 24 Hour Logic
-            const timeSince = now - lastClaim;
-            const cooldown = 24 * 60 * 60 * 1000; // 24 Hours
-            
-            if (timeSince >= cooldown) {
-                canClaim = true;
-            } else {
-                waitMs = cooldown - timeSince;
-            }
-        }
-        
-        res.json({
-            success: true,
-            currentStreak: user.daily_streak || 0,
-            nextDay: nextDay,
-            canClaim: canClaim,
-            rewards: REWARD_CONFIG,
-            remainingMs: waitMs
-        });
-    });
-});
-
-app.post('/api/daily-reward/claim', (req, res) => {
-    const { userId } = req.body;
-    
-    db.query('SELECT daily_streak, last_daily_claim FROM users WHERE id = ?', [userId], (err, results) => {
-        if(err || !results.length) return res.json({ success: false, message: 'Kullanıcı hatası' });
-        
-        const user = results[0];
-        const lastClaim = user.last_daily_claim ? new Date(user.last_daily_claim) : null;
-        const now = new Date();
-        
-        // 24 Hour Logic
-        if (lastClaim) {
-            const timeSince = now - lastClaim;
-            const cooldown = 24 * 60 * 60 * 1000;
-            if (timeSince < cooldown) {
-                 const hoursLeft = Math.ceil((cooldown - timeSince) / (1000 * 60 * 60));
-                 return res.json({ success: false, message: `Henüz zaman dolmadı. ${hoursLeft} saat sonra gel.` });
-            }
-        }
-        
-        let currentStreak = user.daily_streak || 0;
-        let nextDay = currentStreak + 1;
-        
-        if (nextDay > 30) {
-            nextDay = 1; 
-            currentStreak = 0; 
-        }
-
-        const reward = REWARD_CONFIG.find(r => r.day === nextDay);
-        if(!reward) return res.json({ success: false, message: 'Ödül yapılandırması hatası' });
-        
-        // Grant Reward Transaction
-        db.beginTransaction(err => {
-            let queries = [];
-            
-            // 1. Update Streak
-            let newStreak = (currentStreak >= 30) ? 1 : nextDay;
-            queries.push((cb) => {
-                db.query('UPDATE users SET daily_streak = ?, last_daily_claim = NOW() WHERE id = ?', [newStreak, userId], cb);
-            });
-            
-            // 2. Give Rewards
-            if (reward.type === 'money') {
-                queries.push((cb) => {
-                     db.query('UPDATE users SET money = money + ? WHERE id = ?', [reward.value, userId], cb);
-                });
-            } else if (reward.type === 'gold') {
-                 queries.push((cb) => {
-                     db.query('UPDATE users SET gold = gold + ? WHERE id = ?', [reward.value, userId], cb);
-                 });
-            } else if (reward.type === 'diamond') {
-                 queries.push((cb) => {
-                     db.query('UPDATE users SET diamond = diamond + ? WHERE id = ?', [reward.value, userId], cb);
-                 });
-            } else if (reward.type === 'item') {
-                 queries.push((cb) => {
-                     db.query('INSERT INTO inventory (user_id, item_key, quantity) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE quantity = quantity + ?',
-                     [userId, reward.key, reward.value, reward.value], cb);
-                 });
-            } else if (reward.type === 'mix') {
-                 queries.push((cb) => {
-                     db.query('UPDATE users SET money = money + ? WHERE id = ?', [reward.money, userId], cb);
-                 });
-                 if (reward.itemKey) {
-                     queries.push((cb) => {
-                         db.query('INSERT INTO inventory (user_id, item_key, quantity) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE quantity = quantity + ?',
-                         [userId, reward.itemKey, reward.itemVal, reward.itemVal], cb);
-                     });
-                 }
-            }
-
-            // Execute Chain
-            function execute(index) {
-                if (index >= queries.length) return commit();
-                queries[index]((err) => {
-                    if (err) return db.rollback(() => res.json({success: false, message: 'DB Error Step ' + index}));
-                    execute(index + 1);
-                });
-            }
-            
-            execute(0);
-            
-            function commit() {
-                db.commit(err => {
-                    if(err) return db.rollback(() => res.json({success: false, message: 'Commit Error'}));
-                    res.json({ success: true, message: `Ödül Alındı: ${reward.label}`, day: nextDay });
-                });
-            }
-        });
-    });
-});
-
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});

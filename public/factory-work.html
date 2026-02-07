@@ -567,59 +567,72 @@
 
         const factoryRecipes = {
             'bakery': [
-                { id: 'bread', name: 'Ekmek', inputs: { wheat: 3, egg: 3, electricity: 1 }, output: { bread: 1 } },
-                { id: 'cake', name: 'Kek', inputs: { wheat: 3, egg: 3, fruit: 3, electricity: 1 }, output: { cake: 1 } }
+                { id: 'bread', name: 'Ekmek', inputs: { wheat: 3, egg: 3, energy: 1 }, output: { bread: 1 } },
+                { id: 'cake', name: 'Kek', inputs: { wheat: 3, egg: 3, fruit: 3, energy: 1 }, output: { cake: 1 } }
             ],
             'ready_food': [
-                { id: 'salad', name: 'Salata', inputs: { vegetable: 3, electricity: 1 }, output: { salad: 1 } },
-                { id: 'canned_fruit', name: 'Konserve Meyve', inputs: { fruit: 3, electricity: 1 }, output: { canned_fruit: 1 } },
-                { id: 'cooked_meat', name: 'Pişmiş Et', inputs: { meat: 3, olive_oil: 1, electricity: 1 }, output: { cooked_meat: 1 } },
-                { id: 'rice_dish', name: 'Pilav', inputs: { rice: 3, olive_oil: 1, electricity: 1 }, output: { rice_dish: 1 } },
-                { id: 'meat_dish', name: 'Et Yemeği', inputs: { potato: 3, meat: 3, olive_oil: 1, electricity: 1 }, output: { meat_dish: 1 } }
+                { id: 'salad', name: 'Salata', inputs: { vegetable: 3, energy: 1 }, output: { salad: 1 } },
+                { id: 'canned_fruit', name: 'Konserve Meyve', inputs: { fruit: 3, energy: 1 }, output: { canned_fruit: 1 } },
+                { id: 'cooked_meat', name: 'Pişmiş Et', inputs: { meat: 3, olive_oil: 1, energy: 1 }, output: { cooked_meat: 1 } },
+                { id: 'rice_dish', name: 'Pilav', inputs: { rice: 3, olive_oil: 1, energy: 1 }, output: { rice_dish: 1 } },
+                { id: 'meat_dish', name: 'Et Yemeği', inputs: { potato: 3, meat: 3, olive_oil: 1, energy: 1 }, output: { meat_dish: 1 } }
             ],
             'olive_oil': [
-                { id: 'olive_oil', name: 'Zeytinyağı', inputs: { olive: 3, electricity: 1 }, output: { olive_oil: 1 } }
+                { id: 'olive_oil', name: 'Zeytinyağı', inputs: { olive: 3, energy: 1 }, output: { olive_oil: 1 } }
             ],
             'sweets': [
-                { id: 'energy_bar', name: 'Enerji Barı', inputs: { honey: 3, wheat: 3, fruit: 3, egg: 3, olive_oil: 1, electricity: 1 }, output: { energy_bar: 1 } }
+                { id: 'energy_bar', name: 'Enerji Barı', inputs: { honey: 3, wheat: 3, fruit: 3, egg: 3, olive_oil: 1, energy: 1 }, output: { energy_bar: 1 } }
             ],
             'silicon': [
-                { id: 'silicon', name: 'Silikon', inputs: { sand: 3, coal: 1, electricity: 1 }, output: { silicon: 1 } }
+                { id: 'silicon', name: 'Silikon', inputs: { sand: 3, coal: 1, energy: 1 }, output: { silicon: 1 } }
             ],
             'gold_factory': [
-                { id: 'gold_ingot', name: 'Altın Külçe', inputs: { gold_nugget: 30, electricity: 1 }, output: { gold: 1 } }
+                { id: 'gold_ingot', name: 'Altın Külçe', inputs: { gold_nugget: 30, energy: 1 }, output: { gold: 1 } }
             ],
             'wind_turbine': [
-                { id: 'wind_energy', name: 'Rüzgar Enerjisi', inputs: {}, output: { electricity: 1 } }
+                { id: 'wind_energy', name: 'Rüzgar Enerjisi', inputs: {}, output: { energy: 1 } }
             ],
             'solar_plant': [
-                { id: 'solar_energy', name: 'Güneş Enerjisi', inputs: {}, output: { electricity: 1 } }
+                { id: 'solar_energy', name: 'Güneş Enerjisi', inputs: {}, output: { energy: 1 } }
             ],
             'coal_plant': [
-                { id: 'coal_energy', name: 'Termik Enerji', inputs: { coal: 10 }, output: { electricity: 1 } }
+                { id: 'coal_energy', name: 'Termik Enerji', inputs: { coal: 10 }, output: { energy: 1 } }
             ],
             'nuclear_plant': [
-                { id: 'nuclear_energy', name: 'Nükleer Enerji', inputs: { uranium: 1 }, output: { electricity: 3 } }
+                { id: 'nuclear_energy', name: 'Nükleer Enerji', inputs: { uranium: 1 }, output: { energy: 3 } }
             ],
             'chip_factory': [
-                { id: 'chip', name: 'Çip', inputs: { silicon: 3, gold: 1, electricity: 1 }, output: { chip: 1 } }
+                { id: 'chip', name: 'Çip', inputs: { silicon: 3, gold: 1, energy: 1 }, output: { chip: 1 } }
             ],
             'plastic_factory': [
-                { id: 'plastic', name: 'Plastik', inputs: { oil: 3, electricity: 1 }, output: { plastic: 1 } }
+                { id: 'plastic', name: 'Plastik', inputs: { oil: 3, energy: 1 }, output: { plastic: 1 } }
             ],
             'cable_factory': [
-                { id: 'copper_cable', name: 'Bakır Kablo', inputs: { copper: 3, plastic: 1, electricity: 1 }, output: { cable: 1 } },
-                { id: 'gold_cable', name: 'Altın Kablo', inputs: { gold: 3, plastic: 1, electricity: 1 }, output: { gold_cable: 1 } }
+                { id: 'copper_cable', name: 'Bakır Kablo', inputs: { copper: 3, plastic: 1, energy: 1 }, output: { cable: 1 } },
+                { id: 'gold_cable', name: 'Altın Kablo', inputs: { gold: 3, plastic: 1, energy: 1 }, output: { gold_cable: 1 } }
             ],
             'electronic_card_factory': [
-                { id: 'electronic_card', name: 'Elektronik Kart', inputs: { copper_cable: 1, gold_cable: 1, plastic: 3, silicon: 1, electricity: 1 }, output: { electronic_card: 1 } }
+                { id: 'electronic_card', name: 'Elektronik Kart', inputs: { copper_cable: 1, gold_cable: 1, plastic: 3, silicon: 1, energy: 1 }, output: { electronic_card: 1 } }
+            ],
+            'tyre_factory': [
+                { id: 'tyre', name: 'Lastik', inputs: { oil: 3, energy: 1 }, output: { tire: 1 } }
+            ],
+            'engine_factory': [
+                { id: 'engine', name: 'Motor', inputs: { steel: 3, chip: 1, electronic_card: 1, gold_cable: 3, copper_cable: 3, energy: 1 }, output: { engine: 1 } }
+            ],
+            'car_factory': [
+                { id: 'noventis', name: 'Noventis', inputs: { steel: 2, glass: 4, engine: 1, tire: 4, energy: 1 }, output: { noventis: 1 } },
+                { id: 'stradeo', name: 'Stradeo', inputs: { steel: 4, glass: 4, engine: 1, tire: 4, energy: 2 }, output: { stradeo: 1 } },
+                { id: 'rugnar', name: 'Rugnar', inputs: { steel: 6, glass: 4, engine: 1, tire: 4, energy: 3 }, output: { rugnar: 1 } },
+                { id: 'veltrano', name: 'Veltrano', inputs: { steel: 8, glass: 2, engine: 2, tire: 4, energy: 4 }, output: { veltrano: 1 } },
+                { id: 'zentaro', name: 'Zentaro', inputs: { steel: 10, glass: 2, engine: 2, tire: 4, energy: 5 }, output: { zentaro: 1 } }
             ],
             'gpu_factory': [
-                { id: 'gx_100', name: 'GX-100', inputs: { chip: 1, electronic_card: 1, plastic: 1, copper_cable: 1, electricity: 1 }, output: { gx_100: 1 } },
-                { id: 'gx_300', name: 'GX-300', inputs: { chip: 2, electronic_card: 1, plastic: 1, silicon: 1, copper_cable: 1, gold_cable: 1, electricity: 2 }, output: { gx_300: 1 } },
-                { id: 'gx_500', name: 'GX-500', inputs: { chip: 3, electronic_card: 2, plastic: 2, silicon: 1, copper_cable: 2, gold_cable: 1, electricity: 3 }, output: { gx_500: 1 } },
-                { id: 'gx_800', name: 'GX-800', inputs: { chip: 4, electronic_card: 2, plastic: 2, silicon: 2, copper_cable: 2, gold_cable: 2, electricity: 4 }, output: { gx_800: 1 } },
-                { id: 'gx_titan', name: 'GX-Titan', inputs: { chip: 6, electronic_card: 3, plastic: 3, silicon: 3, copper_cable: 2, gold_cable: 3, electricity: 6 }, output: { gx_titan: 1 } }
+                { id: 'gx_100', name: 'GX-100', inputs: { chip: 1, electronic_card: 1, plastic: 1, copper_cable: 1, energy: 1 }, output: { gx_100: 1 } },
+                { id: 'gx_300', name: 'GX-300', inputs: { chip: 2, electronic_card: 1, plastic: 1, silicon: 1, copper_cable: 1, gold_cable: 1, energy: 2 }, output: { gx_300: 1 } },
+                { id: 'gx_500', name: 'GX-500', inputs: { chip: 3, electronic_card: 2, plastic: 2, silicon: 1, copper_cable: 2, gold_cable: 1, energy: 3 }, output: { gx_500: 1 } },
+                { id: 'gx_800', name: 'GX-800', inputs: { chip: 4, electronic_card: 2, plastic: 2, silicon: 2, copper_cable: 2, gold_cable: 2, energy: 4 }, output: { gx_800: 1 } },
+                { id: 'gx_titan', name: 'GX-Titan', inputs: { chip: 6, electronic_card: 3, plastic: 3, silicon: 3, copper_cable: 2, gold_cable: 3, energy: 6 }, output: { gx_titan: 1 } }
             ]
         };
 
@@ -785,6 +798,9 @@
             } else if (type === 'cable_factory') {
                  iconBox.innerHTML = `<img src="icons/factory-icon/cable.png" style="width:64px;height:64px;object-fit:contain;">`;
                  return;
+            } else if (type === 'tyre_factory') {
+                 iconBox.innerHTML = `<img src="icons/factory-icon/tire.png" style="width:64px;height:64px;object-fit:contain;">`;
+                 return;
             }
             else if (type === 'food') iconClass = 'fa-utensils';
             else if (type === 'bakery') iconClass = 'fa-bread-slice';
@@ -815,7 +831,8 @@
                 'bakery': 'Fırın', 'ready_food': 'Konserve Fabrikası', 
                 'olive_oil': 'Zeytinyağı Fabrikası', 'sweets': 'Şekerleme Fabrikası',
                 'wind_turbine': 'Rüzgar Türbini', 'solar_plant': 'Güneş Paneli',
-                'coal_plant': 'Termik Santral', 'nuclear_plant': 'Nükleer Santral'
+                'coal_plant': 'Termik Santral', 'nuclear_plant': 'Nükleer Santral',
+                'tyre_factory': 'Lastik Fabrikası'
             };
             document.getElementById('statCategory').innerText = categoryMap[factoryData.mine_type] || 'Genel Fabrika';
             
@@ -827,7 +844,8 @@
                 'concrete': 'Çimento', 'steel': 'Çelik',
                 'bakery': 'Ekmek/Kek', 'ready_food': 'Hazır Yemek', 'olive_oil': 'Zeytinyağı', 'sweets': 'Enerji Barı',
                 'wind_turbine': 'Elektrik', 'solar_plant': 'Elektrik', 'coal_plant': 'Elektrik', 'nuclear_plant': 'Elektrik',
-                'silicon': 'Silikon', 'chip_factory': 'Çip', 'plastic_factory': 'Plastik', 'cable_factory': 'Kablo', 'gpu_factory': 'Ekran Kartı'
+                'silicon': 'Silikon', 'chip_factory': 'Çip', 'plastic_factory': 'Plastik', 'cable_factory': 'Kablo', 'gpu_factory': 'Ekran Kartı',
+                'tyre_factory': 'Lastik', 'engine_factory': 'Motor'
             };
             
             let productName = typeMap[factoryData.mine_type] || 'Ürün';
@@ -844,6 +862,17 @@
             // Dynamic Product Name for GPU Factory
             if (factoryData.mine_type === 'gpu_factory') {
                 const recipes = factoryRecipes['gpu_factory'];
+                if (factoryData.active_recipe_id) {
+                    const found = recipes.find(r => r.id === factoryData.active_recipe_id);
+                    if (found) productName = found.name;
+                } else if (recipes && recipes.length > 0) {
+                     productName = recipes[0].name;
+                }
+            }
+
+            // Dynamic Product Name for Car Factory
+            if (factoryData.mine_type === 'car_factory') {
+                const recipes = factoryRecipes['car_factory'];
                 if (factoryData.active_recipe_id) {
                     const found = recipes.find(r => r.id === factoryData.active_recipe_id);
                     if (found) productName = found.name;
@@ -898,6 +927,26 @@
                             Yetenek veya seviye ne olursa olsun, her işlemde<br>
                             <strong style="color: #fff; font-size: 1rem;">1 ADET</strong><br>
                             ekran kartı üretilmektedir.<br><br>
+                            <div class="info-list-item" style="padding: 6px 0; border-top: 1px solid #333;">
+                                <div class="info-left">
+                                    <i class="fas fa-coins" style="color: var(--accent-gold); font-size: 0.9rem;"></i>
+                                    <div class="info-label" style="font-size: 0.85rem; font-weight: 700;">İş Başı Kazanç</div>
+                                </div>
+                                <div style="color: var(--accent-gold); font-size: 0.9rem; font-weight: 800;">${formatMoney(unitSalary)} ₺</div>
+                            </div>
+                        </div>
+                    `;
+                } else if (factoryData.mine_type === 'car_factory') {
+                    // Otomotiv Fabrikası İçin Özel Açıklama
+                    const unitSalary = factoryData.salary || 0;
+                    calcContainer.innerHTML = `
+                        <div style="padding: 10px; text-align: center; color: #ccc; font-size: 0.85rem; line-height: 1.5;">
+                            <i class="fas fa-car" style="color: var(--accent-cyan); font-size: 1.5rem; margin-bottom: 10px;"></i><br>
+                            Bu yüksek teknoloji fabrikasında üretim miktarı sabittir.<br>
+                            Yetenek veya seviye ne olursa olsun, her işlemde<br>
+                            <strong style="color: #fff; font-size: 1rem;">1 ADET</strong><br>
+                            otomobil üretilmektedir.<br>
+                            <span style="font-size:0.8rem; color:#aaa;">(Depodan 1 set malzeme eksiltilir)</span><br><br>
                             <div class="info-list-item" style="padding: 6px 0; border-top: 1px solid #333;">
                                 <div class="info-left">
                                     <i class="fas fa-coins" style="color: var(--accent-gold); font-size: 0.9rem;"></i>
@@ -1007,7 +1056,8 @@
                 'concrete': 'Çimento', 'steel': 'Çelik', 'agricultural': 'Ekin',
                 'animal': 'Hayvan', 'food': 'Yemek', 'weapon': 'Silah', 'solar': 'Enerji',
                 'bakery': 'Ekmek', 'ready_food': 'Konserve', 'olive_oil': 'Zeytinyağı', 'sweets': 'Enerji Barı',
-                'silicon': 'Silikon', 'chip_factory': 'Çip', 'plastic_factory': 'Plastik', 'electronic_card_factory': 'Elektronik Kart', 'gpu_factory': 'Ekran Kartı'
+                'silicon': 'Silikon', 'chip_factory': 'Çip', 'plastic_factory': 'Plastik', 'electronic_card_factory': 'Elektronik Kart', 'gpu_factory': 'Ekran Kartı',
+                'tyre_factory': 'Lastik', 'engine_factory': 'Motor', 'car_factory': 'Otomobil'
             };
             
             const productNames = {
@@ -1020,7 +1070,9 @@
                 'wheat': 'Buğday', 'egg': 'Yumurta', 'fruit': 'Meyve', 'vegetable': 'Sebze', 'meat': 'Et',
                 'rice': 'Pirinç', 'potato': 'Patates', 'olive': 'Zeytin', 'honey': 'Bal',
                 'silicon': 'Silikon', 'chip': 'Çip', 'plastic': 'Plastik', 'gold_cable': 'Altın Kablo', 'copper_cable': 'Bakır Kablo', 'electronic_card': 'Elektronik Kart', 'gpu': 'Ekran Kartı', 'cable': 'Bakır Kablo',
-                'gx_100': 'GX-100', 'gx_300': 'GX-300', 'gx_500': 'GX-500', 'gx_800': 'GX-800', 'gx_titan': 'GX-Titan'
+                'gx_100': 'GX-100', 'gx_300': 'GX-300', 'gx_500': 'GX-500', 'gx_800': 'GX-800', 'gx_titan': 'GX-Titan',
+                'tyre': 'Lastik', 'tire': 'Lastik', 'engine': 'Motor',
+                'noventis': 'Noventis', 'rugnar': 'Rugnar', 'stradeo': 'Stradeo', 'veltrano': 'Veltrano', 'zentaro': 'Zentaro'
             };
 
             const defaultProductName = factoryData ? (typeMap[factoryData.mine_type] || 'Ürün') : 'Ürün';
@@ -1083,7 +1135,7 @@
                         'uranium': 'Uranyum', 'gold': 'Altın', 'diamond': 'Elmas', 'oil': 'Petrol',
                         'bakery': 'Ekmek', 'ready_food': 'Yemek', 'olive_oil': 'Zeytinyağı', 'sweets': 'Şekerleme',
                         'silicon': 'Silikon', 'chip_factory': 'Çip', 'plastic_factory': 'Plastik', 'cable_factory': 'Kablo',
-                        'electronic_card_factory': 'Elektronik Kart'
+                        'electronic_card_factory': 'Elektronik Kart', 'tyre_factory': 'Lastik', 'engine_factory': 'Motor', 'car_factory': 'Otomobil'
                     };
                     
                     const productNames = {
@@ -1092,7 +1144,9 @@
                         'olive_oil': 'Zeytinyağı', 'energy_bar': 'Enerji Barı', 'gold_ingot': 'Altın Külçe',
                         'energy': 'Enerji', 'silicon': 'Silikon', 'chip': 'Çip', 'plastic': 'Plastik',
                         'gold_cable': 'Altın Kablo', 'copper_cable': 'Bakır Kablo', 'electronic_card': 'Elektronik Kart',
-                        'gx_100': 'GX-100', 'gx_300': 'GX-300', 'gx_500': 'GX-500', 'gx_800': 'GX-800', 'gx_titan': 'GX-Titan'
+                        'gx_100': 'GX-100', 'gx_300': 'GX-300', 'gx_500': 'GX-500', 'gx_800': 'GX-800', 'gx_titan': 'GX-Titan',
+                        'tyre': 'Lastik', 'tire': 'Lastik', 'engine': 'Motor',
+                        'noventis': 'Noventis', 'rugnar': 'Rugnar', 'stradeo': 'Stradeo', 'veltrano': 'Veltrano', 'zentaro': 'Zentaro'
                     };
                     
                     const productKey = worker.product_key;
@@ -1249,7 +1303,7 @@
             let totalProduction = baseProduction + educationBonus + argeBonus;
             
             // GPU Factory Override: Always 1 unit
-            if (factoryType === 'gpu_factory') {
+            if (factoryType === 'gpu_factory' || factoryType === 'car_factory') {
                 totalProduction = 1;
             }
 
@@ -1261,7 +1315,7 @@
                 'lumber': 'Tahta', 'brick': 'Tuğla', 'glass': 'Cam', 'concrete': 'Çimento', 'steel': 'Çelik',
                 'bakery': 'Ekmek/Kek', 'ready_food': 'Hazır Yemek', 'olive_oil': 'Zeytinyağı', 'sweets': 'Enerji Barı',
                 'wind_turbine': 'Elektrik', 'solar_plant': 'Elektrik', 'coal_plant': 'Elektrik', 'nuclear_plant': 'Elektrik',
-                'gpu_factory': 'Ekran Kartı'
+                'gpu_factory': 'Ekran Kartı', 'car_factory': 'Otomobil'
             };
             const productName = typeMap[factoryData.mine_type] || 'Ürün';
 
@@ -1280,19 +1334,54 @@
             const recipeSelect = document.getElementById('recipeSelect');
             
             if (recipes && recipes.length > 0) {
-                recipeDiv.style.display = 'none';
-                recipeSelect.innerHTML = '';
+                // Determine if we should allow selection or enforce owner's choice
+                const forcedRecipe = factoryData.active_recipe_id;
                 
-                recipes.forEach(r => {
-                    const opt = document.createElement('option');
-                    opt.value = r.id;
-                    opt.innerText = r.name;
-                    recipeSelect.appendChild(opt);
-                });
-                
-                // Trigger change to show reqs
-                updateRecipeReqs();
-                recipeSelect.onchange = updateRecipeReqs;
+                if (forcedRecipe) {
+                    // Force the recipe set by owner
+                    recipeDiv.style.display = 'none'; // Hide text, but we need to set value
+                    
+                    recipeSelect.innerHTML = '';
+                     recipes.forEach(r => {
+                        const opt = document.createElement('option');
+                        opt.value = r.id;
+                        opt.innerText = r.name;
+                        recipeSelect.appendChild(opt);
+                    });
+                    
+                    recipeSelect.value = forcedRecipe;
+                    selectedRecipeId = forcedRecipe;
+                    
+                    // Show message about what is being produced
+                    const recipeName = recipes.find(r => r.id === forcedRecipe)?.name || 'Bilinmeyen Ürün';
+                    const activeProdInfo = document.createElement('div');
+                    activeProdInfo.innerHTML = `<div style="margin: 15px 0; background: rgba(52, 152, 219, 0.1); border: 1px solid var(--accent); padding: 10px; border-radius: 8px; text-align: center;">
+                        <span style="color:#aaa; font-size:0.8rem;">Üretilecek Ürün:</span><br>
+                        <strong style="color:var(--accent-cyan); font-size:1.1rem;">${recipeName}</strong>
+                    </div>`;
+                    
+                    // Insert after title
+                    const titleEl = document.querySelector('.m-title');
+                    if(titleEl && titleEl.nextSibling) {
+                        titleEl.parentNode.insertBefore(activeProdInfo, titleEl.nextSibling);
+                    }
+                    
+                    updateRecipeReqs();
+                } else {
+                    // Allow free selection (Legacy behavior or when no active recipe set)
+                    recipeDiv.style.display = 'block';
+                    recipeSelect.innerHTML = '';
+                    
+                    recipes.forEach(r => {
+                        const opt = document.createElement('option');
+                        opt.value = r.id;
+                        opt.innerText = r.name;
+                        recipeSelect.appendChild(opt);
+                    });
+                    
+                    updateRecipeReqs();
+                    recipeSelect.onchange = updateRecipeReqs;
+                }
             } else {
                 recipeDiv.style.display = 'none';
                 selectedRecipeId = null;
