@@ -3,727 +3,734 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İşletme Yönetimi - Admin Panel</title>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <title>İşletme Yönetimi - Sim of World</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     
     <style>
+        #toast-container { z-index: 999999 !important; }
         :root {
-            --bg-dark: #0a0a0a;
-            --bg-card: #141414;
+            --bg-dark: #0a0a0a; 
+            --bg-card: #141414; 
             --bg-input: #1a1a1a;
+            --accent: #00e5ff; /* İşletme Teması: Cyan */
             --accent-cyan: #00e5ff;
-            --accent-green: #2ecc71;
+            --accent-green: #2ecc71; 
             --accent-gold: #ffd700;
             --accent-red: #e74c3c;
-            --accent-purple: #9b59b6;
-            --accent-orange: #e67e22;
-            --text-white: #ffffff;
-            --text-muted: #888;
+            --text-white: #ffffff; 
+            --text-muted: #888; 
             --border-color: #222;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            background: linear-gradient(135deg, #000000 0%, #1a0000 100%);
+            background-color: #000;
             font-family: 'Rajdhani', sans-serif;
-            color: var(--text-white);
+            display: flex;
+            justify-content: center;
+            align-items: center;
             min-height: 100vh;
-            padding: 20px;
+            color: var(--text-white);
         }
 
-        .container {
-            max-width: 1600px;
-            margin: 0 auto;
+        .game-container {
+            width: 100%; max-width: 450px; background-color: var(--bg-dark);
+            height: 100vh; display: flex; flex-direction: column; position: relative;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5); border-left: 1px solid #111; border-right: 1px solid #111;
         }
 
         /* HEADER */
-        .admin-header {
-            text-align: center;
-            margin-bottom: 40px;
-            padding-bottom: 20px;
-            position: relative;
-        }
+        main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
 
-        .admin-header::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, var(--accent-purple), transparent);
-        }
-
-        h1 {
-            color: var(--accent-purple);
-            font-size: 2.5rem;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            text-shadow: 0 0 20px rgba(155, 89, 182, 0.5);
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
-            color: var(--text-muted);
-            font-size: 1rem;
-            letter-spacing: 1px;
-        }
-
-        .back-btn {
-            position: absolute;
-            top: 0;
-            left: 0;
-            padding: 12px 24px;
-            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(231, 76, 60, 0.1));
-            border: 2px solid var(--accent-red);
-            border-radius: 10px;
-            color: var(--text-white);
-            text-decoration: none;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .back-btn:hover {
-            background: linear-gradient(135deg, rgba(231, 76, 60, 0.3), rgba(231, 76, 60, 0.2));
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(231, 76, 60, 0.4);
-        }
-
-        /* STATS CARDS */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-
-        .stat-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 15px;
-            padding: 25px;
+        /* PAGE HEADER */
+        .page-header {
             display: flex;
-            align-items: center;
-            gap: 20px;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            background: var(--accent-cyan);
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-        }
-
-        .stat-card.farms::before { background: var(--accent-green); }
-        .stat-card.ranches::before { background: var(--accent-orange); }
-        .stat-card.mines::before { background: var(--accent-gold); }
-        .stat-card.factories::before { background: var(--accent-purple); }
-
-        .stat-icon {
-            font-size: 3rem;
-            width: 70px;
-            height: 70px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .stat-info h3 {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-        }
-
-        .stat-info .stat-value {
-            font-size: 2rem;
-            font-weight: 900;
-            color: var(--text-white);
-        }
-
-        /* TAB NAVIGATION */
-        .tab-navigation {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: var(--bg-card);
-            border-radius: 15px;
-            border: 1px solid var(--border-color);
-        }
-
-        .tab-btn {
-            padding: 15px 20px;
-            border: 2px solid transparent;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
-            color: var(--text-white);
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 700;
-            font-family: 'Rajdhani';
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .tab-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 20px rgba(0, 229, 255, 0.3);
-            border-color: var(--accent-cyan);
-        }
-
-        .tab-btn.active {
-            background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(0, 229, 255, 0.1));
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 25px rgba(0, 229, 255, 0.4);
-        }
-
-        .tab-btn i {
-            font-size: 1.3rem;
-        }
-
-        /* TABLE STYLES */
-        .table-container {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 15px;
-            padding: 20px;
-            overflow-x: auto;
-            margin-bottom: 30px;
-        }
-
-        .business-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .business-table thead th {
-            background: linear-gradient(135deg, rgba(0, 229, 255, 0.1), rgba(0, 229, 255, 0.05));
-            color: var(--accent-cyan);
-            padding: 15px;
-            text-align: left;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-size: 0.9rem;
-            border-bottom: 2px solid var(--accent-cyan);
-        }
-
-        .business-table tbody tr {
-            border-bottom: 1px solid var(--border-color);
-            transition: all 0.2s ease;
-        }
-
-        .business-table tbody tr:hover {
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        .business-table tbody td {
-            padding: 15px;
-            color: var(--text-white);
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .owner-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .owner-avatar {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            border: 2px solid var(--accent-cyan);
-        }
-
-        .level-badge {
-            display: inline-block;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--accent-gold), #ff8800);
-            color: #000;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 700;
-        }
-
-        .status-badge.active {
-            background: linear-gradient(135deg, var(--accent-green), #27ae60);
-        }
-
-        .status-badge.working {
-            background: linear-gradient(135deg, var(--accent-orange), #d35400);
-        }
-
-        .status-badge.upgrading {
-            background: linear-gradient(135deg, var(--accent-purple), #8e44ad);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-muted);
-        }
-
-        .empty-state i {
-            font-size: 4rem;
+            align-items: flex-start;
+            gap: 12px;
             margin-bottom: 20px;
-            opacity: 0.3;
         }
-
-        .empty-state p {
-            font-size: 1.1rem;
-            letter-spacing: 1px;
+        .back-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.2rem;
+            text-decoration: none;
         }
-
-        /* LOADING */
-        .loading {
-            text-align: center;
-            padding: 40px;
+        .back-btn:hover {
+            background: var(--bg-card);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .page-title-box {
+            flex: 1;
+        }
+        .page-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .page-desc {
+            font-size: 0.8rem;
             color: var(--text-muted);
+            line-height: 1.3;
         }
 
-        .loading i {
-            font-size: 2rem;
-            animation: spin 1s linear infinite;
+        /* BUSINESS CARD (HERO) */
+        .business-hero {
+            background: linear-gradient(135deg, rgba(0, 229, 255, 0.15), var(--bg-card));
+            border: 1px solid var(--accent); border-radius: 16px;
+            padding: 15px; margin-bottom: 20px; position: relative;
+            display: flex; align-items: center; gap: 15px;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
+            color: var(--accent);
+        }
+        
+        .bh-icon-box {
+            width: 60px; height: 60px; background: rgba(0,0,0,0.3); border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; border: 1px solid var(--accent);
+            font-size: 2rem; color: var(--accent);
+        }
+        
+        .bh-info { flex: 1; }
+        .bh-name { font-size: 1rem; font-weight: 800; color: #fff; margin-bottom: 2px; text-transform: uppercase; }
+        .bh-status { font-size: 0.8rem; color: var(--accent-green); font-weight: 600; }
+
+        /* İSTATİSTİKLER (GRID) */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px; }
+        
+        .stat-card {
+            background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 8px;
+            padding: 10px; text-align: center;
+        }
+        .stat-card i { color: var(--text-muted); font-size: 1rem; margin-bottom: 5px; }
+        .stat-label { display: block; font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px; }
+        .stat-val { font-size: 1rem; font-weight: 700; color: #fff; }
+        
+        /* SLOTS (ARAÇLAR) */
+        .section-header { 
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; 
+            border-bottom: 1px solid #222; padding-bottom: 5px;
+        }
+        .sh-title { font-size: 1rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+        
+        .slots-container { display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; }
+
+        .slot-card {
+            background: #111; border: 1px solid #282828; border-radius: 8px;
+            display: flex; align-items: center; padding: 15px; position: relative;
+            transition: all 0.2s; overflow: hidden; min-height: 90px;
+        }
+        
+        /* Status Lines (Left Border) */
+        .card-ready { border-left: 4px solid var(--accent-green) !important; }
+        .card-working { border-left: 4px solid var(--accent-red) !important; }
+
+        .image-col { width: 60px; display: flex; justify-content: center; align-items: center; margin-right: 15px; }
+        .image-col img { width: 100%; height: auto; object-fit: contain; margin:0; }
+
+        .slot-icon-box {
+            width: 50px; height: 50px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #333;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            margin-right: 15px;
+        }
+        .slot-icon-box img {
+            width: 32px; height: 32px; object-fit: contain;
         }
 
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        .info-col { flex: 1; }
+        .car-title { font-size: 1.1rem; font-weight: 800; color: #fff; text-transform: uppercase; margin-bottom: 8px; line-height: 1; }
+        
+        .badges-row { display: flex; gap: 6px; flex-wrap: wrap; }
+        .info-badge { 
+            font-size: 0.65rem; padding: 3px 6px; border-radius: 4px; font-weight: 700; 
+            display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.08); color: #ccc;
         }
 
-        /* RESPONSIVE */
-        @media (max-width: 768px) {
-            h1 { font-size: 1.8rem; }
-            
-            .back-btn {
-                position: relative;
-                display: block;
-                margin-bottom: 20px;
-            }
-
-            .tab-navigation {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .business-table {
-                font-size: 0.85rem;
-            }
-
-            .business-table thead th,
-            .business-table tbody td {
-                padding: 10px 8px;
-            }
+        .action-col { margin-left: 10px; display: flex; justify-content: flex-end; align-items: center; }
+        
+        .btn-collect-sm {
+            background: var(--accent-green); color: #000; border: none; padding: 8px 15px;
+            border-radius: 6px; font-weight: 800; cursor: pointer; font-size: 0.8rem;
+            animation: pulse-green 1.5s infinite; white-space: nowrap; font-family: 'Rajdhani';
+            display: flex; align-items: center; gap: 5px;
         }
+
+        /* Empty Slot */
+        .slot-empty {
+            border: 2px dashed #333; justify-content: center; color: #666; font-weight: 700;
+            border-left: 2px dashed #333 !important; /* Reset border override */
+        }
+        .slot-empty:hover { border-color: var(--accent); color: var(--accent); border-left-color: var(--accent) !important; background: rgba(0, 229, 255, 0.05); }
+        
+        /* MODAL STYLES */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 1000;
+            display: none; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        .modal-overlay.active { display: flex; }
+
+        .money-highlight {
+            color: var(--accent-gold);
+            font-weight: 800;
+            font-size: 1.4rem;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+            padding: 0 3px;
+            vertical-align: middle;
+        }
+        
+        .m-message {
+            color: #ccc;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
+
+        .modal-content {
+            background: #181818; width: 85%; max-width: 400px; padding: 25px; border-radius: 10px;
+            border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-cyan);
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
+            transform: none;
+        }
+        
+        .m-icon { font-size: 3rem; color: var(--accent-cyan); margin-bottom: 10px; }
+        .m-title { font-size: 1.3rem; margin-bottom: 10px; color: #fff; font-weight: bold; }
+        .m-details { background: #222; padding: 10px; border-radius: 6px; margin-bottom: 20px; text-align: left; font-size: 0.9rem; color: #ccc; }
+        .m-row { display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .m-row:last-child { border: none; padding: 0; margin: 0; }
+        
+        .modal-btns { display: flex; gap: 10px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 1rem; }
+        .btn-confirm { background: var(--accent-green); color: #000; }
+        .btn-cancel { background: #333; color: #fff; }
+        .btn-confirm:hover { box-shadow: 0 0 10px rgba(46, 204, 113, 0.4); }
+        .btn-cancel:hover { background: #444; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .car-option {
+            background: var(--bg-input); border: 1px solid #333; border-radius: 8px; padding: 10px;
+            margin-bottom: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: all 0.2s;
+        }
+        .car-option:hover { border-color: var(--accent); background: rgba(0, 229, 255, 0.05); }
+        .car-info { flex: 1; }
+        .car-name { font-weight: 700; font-size: 0.9rem; display: block; }
+        .car-cost { color: var(--accent-gold); font-size: 0.8rem; }
+        .health-badge { font-size: 0.6rem; font-weight: 600; display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; color: #bbb; }
+        
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="admin-header">
-            <a href="admin.html" class="back-btn">
-                <i class="fas fa-arrow-left"></i>
-                <span>Admin Panele Dön</span>
-            </a>
-            <h1><i class="fas fa-industry"></i> İŞLETME YÖNETİMİ</h1>
-            <p class="subtitle">Sistemdeki Tüm İşletmeleri Görüntüleyin</p>
+    <div class="game-container">
+        <!-- Header injected by header-manager.js -->
+        
+        <main>
+            <div class="page-header">
+                <a href="business-list.html" class="back-btn">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div class="page-title-box">
+                    <h1 class="page-title">RENT A CAR</h1>
+                    <p class="page-desc">Filo Yönetimi ve Kiralama</p>
+                </div>
+            </div>
+
+            <!-- HERO CARD -->
+            <div class="business-hero">
+                <div class="bh-icon-box">
+                    <i class="fas fa-car"></i>
+                </div>
+                <div class="bh-info">
+                    <div class="bh-name">Rent A Car</div>
+                </div>
+            </div>
+
+            <!-- STATS -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <i class="fas fa-car-side"></i>
+                    <span class="stat-label">Toplam Araç</span>
+                    <div class="stat-val" id="totalCars">0</div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-key"></i>
+                    <span class="stat-label">Kirada</span>
+                    <div class="stat-val text-green" id="rentedCars">0</div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-coins"></i>
+                    <span class="stat-label">Kasa Bakiyesi</span>
+                    <div class="stat-val text-gold" id="safeBalance">0.00 ₺</div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-star"></i>
+                    <span class="stat-label">İtibar</span>
+                    <div class="stat-val text-cyan" id="reputation">100</div>
+                </div>
+            </div>
+
+            <!-- SLOTS / GARAGE -->
+            <div class="section-header">
+                <div class="sh-title">
+                    <i class="fas fa-warehouse" style="color:var(--accent)"></i> GARAJ & FİLO
+                </div>
+                <button id="collectAllBtn" onclick="collectAllIncome()" style="display:none; background:var(--accent-green); border:none; padding:6px 15px; border-radius:5px; color:#000; font-weight:700; cursor:pointer; font-size:0.85rem; box-shadow:0 0 10px rgba(46, 204, 113, 0.3);">
+                    <i class="fas fa-check-double"></i> KİRALARI TOPLA
+                </button>
+            </div>
+
+            <div class="slots-container" id="garageSlots">
+                <!-- JS will populate -->
+                <div class="slot-card slot-empty" onclick="openBuyCarModal()">
+                    <i class="fas fa-plus slot-icon"></i>
+                    <span class="slot-text">ARAÇ EKLE</span>
+                </div>
+                <div class="slot-card slot-empty" onclick="openBuyCarModal()">
+                    <i class="fas fa-plus slot-icon"></i>
+                    <span class="slot-text">ARAÇ EKLE</span>
+                </div>
+                <div class="slot-card slot-empty" onclick="openBuyCarModal()">
+                    <i class="fas fa-plus slot-icon"></i>
+                    <span class="slot-text">ARAÇ EKLE</span>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- REWARD/SUCCESS MODAL -->
+    <div class="modal-overlay" id="rewardModal">
+        <div class="modal-content">
+            <i class="fas fa-check-circle m-icon" style="color:var(--accent-green);"></i>
+            <h3 class="m-title">İŞLEM BAŞARILI!</h3>
+            <p class="m-message" id="rewardMsg">İşlem başarıyla tamamlandı.</p>
+            <button class="m-btn btn-confirm" onclick="closeRewardModal()" style="width:100%">HARİKA!</button>
         </div>
+    </div>
 
-        <!-- STATS CARDS -->
-        <div class="stats-grid">
-            <div class="stat-card farms">
-                <div class="stat-icon" style="color: var(--accent-green);">
-                    <i class="fas fa-leaf"></i>
-                </div>
-                <div class="stat-info">
-                    <h3>Toplam Tarla</h3>
-                    <div class="stat-value" id="totalFarms">-</div>
-                </div>
-            </div>
-
-            <div class="stat-card ranches">
-                <div class="stat-icon" style="color: var(--accent-orange);">
-                    <i class="fas fa-horse"></i>
-                </div>
-                <div class="stat-info">
-                    <h3>Toplam Çiftlik</h3>
-                    <div class="stat-value" id="totalRanches">-</div>
-                </div>
-            </div>
-
-            <div class="stat-card mines">
-                <div class="stat-icon" style="color: var(--accent-gold);">
-                    <i class="fas fa-hammer"></i>
-                </div>
-                <div class="stat-info">
-                    <h3>Toplam Maden</h3>
-                    <div class="stat-value" id="totalMines">-</div>
-                </div>
-            </div>
-
-            <div class="stat-card factories">
-                <div class="stat-icon" style="color: var(--accent-purple);">
-                    <i class="fas fa-industry"></i>
-                </div>
-                <div class="stat-info">
-                    <h3>Toplam Fabrika</h3>
-                    <div class="stat-value" id="totalFactories">-</div>
-                </div>
-            </div>
+    <!-- ERROR MODAL -->
+    <div class="modal-overlay" id="errorModal">
+        <div class="modal-content" style="border-top: 3px solid var(--accent-red); box-shadow: 0 0 30px rgba(231, 76, 60, 0.2);">
+            <i class="fas fa-times-circle m-icon" style="color:var(--accent-red);"></i>
+            <h3 class="m-title">HATA!</h3>
+            <p class="m-message" id="errorMsg">Bir sorun oluştu.</p>
+            <button class="m-btn btn-confirm" onclick="closeErrorModal()" style="width:100%; background: var(--accent-red); color: white;">ANLAŞILDI</button>
         </div>
+    </div>
 
-        <!-- TAB NAVIGATION -->
-        <div class="tab-navigation">
-            <button class="tab-btn active" onclick="showTab('farms')">
-                <i class="fas fa-leaf"></i>
-                <span>Tarlalar</span>
-            </button>
-            <button class="tab-btn" onclick="showTab('ranches')">
-                <i class="fas fa-horse"></i>
-                <span>Çiftlikler</span>
-            </button>
-            <button class="tab-btn" onclick="showTab('mines')">
-                <i class="fas fa-hammer"></i>
-                <span>Madenler</span>
-            </button>
-            <button class="tab-btn" onclick="showTab('factories')">
-                <i class="fas fa-industry"></i>
-                <span>Fabrikalar</span>
-            </button>
-        </div>
-
-        <!-- FARMS TAB -->
-        <div id="tab-farms" class="tab-content active">
-            <div class="table-container">
-                <div class="loading">
-                    <i class="fas fa-spinner"></i>
-                    <p>Tarla verileri yükleniyor...</p>
+    <!-- CAR BUY MODAL -->
+    <div class="modal-overlay" id="carBuyModal">
+        <div class="modal-content">
+            <i class="fas fa-times modal-close" style="position:absolute; right:15px; top:15px; color:#888; cursor:pointer;" onclick="closeBuyModal()"></i>
+            <div class="modal-title">ARAÇ ENVANTERİ</div>
+            <p style="text-align:center; color:#888; font-size:0.85rem; margin-bottom:15px; padding:0 10px; line-height:1.4;">
+                Garaja eklemek istediğiniz aracı aşağıdan seçiniz. <br>Seçilen araç slot'a yerleştirilecektir.
+            </p>
+            <div id="carList">
+                <div class="car-option">
+                    <i class="fas fa-car" style="font-size:1.5rem; color:var(--accent);"></i>
+                    <div class="car-info">
+                        <span class="car-name">Fiat Egea</span>
+                        <span class="car-cost" style="color:var(--accent-green)">Kullanıma Hazır</span>
+                    </div>
+                    <button class="slot-btn" style="width:auto; padding:5px 10px;">SEÇ</button>
                 </div>
-            </div>
-        </div>
-
-        <!-- RANCHES TAB -->
-        <div id="tab-ranches" class="tab-content">
-            <div class="table-container">
-                <div class="loading">
-                    <i class="fas fa-spinner"></i>
-                    <p>Çiftlik verileri yükleniyor...</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- MINES TAB -->
-        <div id="tab-mines" class="tab-content">
-            <div class="table-container">
-                <div class="loading">
-                    <i class="fas fa-spinner"></i>
-                    <p>Maden verileri yükleniyor...</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- FACTORIES TAB -->
-        <div id="tab-factories" class="tab-content">
-            <div class="table-container">
-                <div class="loading">
-                    <i class="fas fa-spinner"></i>
-                    <p>Fabrika verileri yükleniyor...</p>
+                <div class="car-option">
+                    <i class="fas fa-car-side" style="font-size:1.5rem; color:var(--accent);"></i>
+                    <div class="car-info">
+                        <span class="car-name">Mercedes C200</span>
+                        <span class="car-cost" style="color:var(--accent-green)">Kullanıma Hazır</span>
+                    </div>
+                    <button class="slot-btn" style="width:auto; padding:5px 10px;">SEÇ</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="js/header-manager.js"></script>
+    <script src="js/menu-manager.js"></script>
+    
     <script>
-        // Tab switching
-        function showTab(tabName) {
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Remove active class from all buttons
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // Show selected tab
-            document.getElementById('tab-' + tabName).classList.add('active');
-            
-            // Add active class to clicked button
-            event.target.closest('.tab-btn').classList.add('active');
-            
-            // Load data for the selected tab
-            loadTabData(tabName);
-        }
+        // Car Config
+        const carConfig = {
+            noventis: { name: 'Noventis', image: 'icons/car-icon/Noventis.png', income: 500, duration: 1 },
+            stradeo: { name: 'Stradeo', image: 'icons/car-icon/Stradeo.png', income: 750, duration: 2 },
+            rugnar: { name: 'Rugnar', image: 'icons/car-icon/Rugnar.png', income: 1200, duration: 3 },
+            veltrano: { name: 'Veltrano', image: 'icons/car-icon/Veltrano.png', income: 2500, duration: 4 },
+            zentaro: { name: 'Zentaro', image: 'icons/car-icon/Zentaro.png', income: 5000, duration: 5 }
+        };
 
-        // Load statistics
-        function loadStats() {
-            fetch('/api/admin/business/stats')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        document.getElementById('totalFarms').textContent = data.stats.farms || 0;
-                        document.getElementById('totalRanches').textContent = data.stats.ranches || 0;
-                        document.getElementById('totalMines').textContent = data.stats.mines || 0;
-                        document.getElementById('totalFactories').textContent = data.stats.factories || 0;
-                    }
-                })
-                .catch(error => {
-                    console.error('İstatistikler yüklenirken hata:', error);
-                    toastr.error('İstatistikler yüklenemedi');
-                });
-        }
+        let currentInventory = {};
+        let selectedSlotId = null;
+        const user = JSON.parse(localStorage.getItem('simWorldUser'));
 
-        // Load data for specific tab
-        function loadTabData(tabName) {
-            const container = document.getElementById('tab-' + tabName).querySelector('.table-container');
-            
-            fetch(`/api/admin/business/${tabName}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        renderTable(container, tabName, data.data);
-                    } else {
-                        container.innerHTML = `
-                            <div class="empty-state">
-                                <i class="fas fa-exclamation-circle"></i>
-                                <p>Veri yüklenirken hata oluştu</p>
-                            </div>
-                        `;
-                    }
-                })
-                .catch(error => {
-                    console.error('Veri yüklenirken hata:', error);
-                    container.innerHTML = `
-                        <div class="empty-state">
-                            <i class="fas fa-exclamation-circle"></i>
-                            <p>Veri yüklenirken hata oluştu</p>
-                        </div>
-                    `;
-                });
-        }
-
-        // Render table based on business type
-        function renderTable(container, type, data) {
-            if (!data || data.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-inbox"></i>
-                        <p>Henüz ${getTypeName(type)} bulunmuyor</p>
-                    </div>
-                `;
+        // === INITIALIZATION ===
+        $(document).ready(function() {
+            if (!user) {
+                window.location.href = 'login.html';
                 return;
             }
-
-            let tableHTML = '<table class="business-table"><thead><tr>';
-            
-            // Table headers based on type
-            switch(type) {
-                case 'farms':
-                    tableHTML += `
-                        <th>ID</th>
-                        <th>Sahip</th>
-                        <th>Tarla Tipi</th>
-                        <th>İsim</th>
-                        <th>Seviye</th>
-                        <th>Alan (m²)</th>
-                        <th>Durum</th>
-                        <th>Oluşturma Tarihi</th>
-                    `;
-                    break;
-                case 'ranches':
-                    tableHTML += `
-                        <th>ID</th>
-                        <th>Sahip</th>
-                        <th>Çiftlik Tipi</th>
-                        <th>İsim</th>
-                        <th>Seviye</th>
-                        <th>Kapasite</th>
-                        <th>Durum</th>
-                        <th>Oluşturma Tarihi</th>
-                    `;
-                    break;
-                case 'mines':
-                    tableHTML += `
-                        <th>ID</th>
-                        <th>Sahip</th>
-                        <th>Maden Tipi</th>
-                        <th>İsim</th>
-                        <th>Seviye</th>
-                        <th>Kapasite</th>
-                        <th>Durum</th>
-                        <th>Oluşturma Tarihi</th>
-                    `;
-                    break;
-                case 'factories':
-                    tableHTML += `
-                        <th>ID</th>
-                        <th>Sahip</th>
-                        <th>Fabrika Tipi</th>
-                        <th>İsim</th>
-                        <th>Seviye</th>
-                        <th>Kapasite</th>
-                        <th>Durum</th>
-                        <th>Oluşturma Tarihi</th>
-                    `;
-                    break;
-            }
-            
-            tableHTML += '</tr></thead><tbody>';
-
-            // Table rows
-            data.forEach(item => {
-                tableHTML += '<tr>';
-                tableHTML += `<td>${item.id}</td>`;
-                tableHTML += `<td>
-                    <div class="owner-info">
-                        <img src="${item.owner_avatar || 'uploads/default-avatar.png'}" alt="${item.owner_username}" class="owner-avatar">
-                        <span>${item.owner_username}</span>
-                    </div>
-                </td>`;
-                
-                switch(type) {
-                    case 'farms':
-                        tableHTML += `<td>${item.farm_type || '-'}</td>`;
-                        tableHTML += `<td>${item.name || 'İsimsiz'}</td>`;
-                        tableHTML += `<td><span class="level-badge">Seviye ${item.level || 1}</span></td>`;
-                        tableHTML += `<td>${item.area || 0} m²</td>`;
-                        break;
-                    case 'ranches':
-                        tableHTML += `<td>${item.ranch_type || '-'}</td>`;
-                        tableHTML += `<td>${item.name || 'İsimsiz'}</td>`;
-                        tableHTML += `<td><span class="level-badge">Seviye ${item.level || 1}</span></td>`;
-                        tableHTML += `<td>${item.capacity || 0}</td>`;
-                        break;
-                    case 'mines':
-                        tableHTML += `<td>${item.mine_type || '-'}</td>`;
-                        tableHTML += `<td>${item.name || 'İsimsiz'}</td>`;
-                        tableHTML += `<td><span class="level-badge">Seviye ${item.level || 1}</span></td>`;
-                        tableHTML += `<td>${item.capacity || 0}</td>`;
-                        break;
-                    case 'factories':
-                        tableHTML += `<td>${item.factory_type || '-'}</td>`;
-                        tableHTML += `<td>${item.name || 'İsimsiz'}</td>`;
-                        tableHTML += `<td><span class="level-badge">Seviye ${item.level || 1}</span></td>`;
-                        tableHTML += `<td>${item.capacity || 0}</td>`;
-                        break;
-                }
-                
-                // Status
-                let statusClass = 'active';
-                let statusText = 'Aktif';
-                
-                if (item.is_working) {
-                    statusClass = 'working';
-                    statusText = 'Çalışıyor';
-                } else if (item.is_upgrading) {
-                    statusClass = 'upgrading';
-                    statusText = 'Yükseltiliyor';
-                }
-                
-                tableHTML += `<td><span class="status-badge ${statusClass}">${statusText}</span></td>`;
-                tableHTML += `<td>${formatDate(item.created_at)}</td>`;
-                tableHTML += '</tr>';
-            });
-
-            tableHTML += '</tbody></table>';
-            container.innerHTML = tableHTML;
-        }
-
-        function getTypeName(type) {
-            const names = {
-                'farms': 'tarla',
-                'ranches': 'çiftlik',
-                'mines': 'maden',
-                'factories': 'fabrika'
-            };
-            return names[type] || type;
-        }
-
-        function formatDate(dateString) {
-            if (!dateString) return '-';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('tr-TR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            toastr.options = {
-                positionClass: 'toast-top-right',
-                timeOut: 3000,
-                closeButton: true,
-                progressBar: true
-            };
-
-            // Load stats
-            loadStats();
-            
-            // Load initial tab data (farms)
-            loadTabData('farms');
+            loadRentData();
         });
+
+        // === API CALLS ===
+        async function loadRentData() {
+            try {
+                // Get Business State (Slots + Safe)
+                const res = await fetch(`/api/business/rent-a-car/${user.id}`);
+                const data = await res.json();
+                
+                // Update Safe Balance
+                $('#safeBalance').text(parseFloat(data.balance || 0).toFixed(2) + ' ₺');
+                
+                // Update Slots
+                renderSlots(data.slots || []);
+                
+                // Also update stats
+                let totalCars = (data.slots || []).length;
+                let activeCars = (data.slots || []).filter(s => s.pending_income === 0).length; // Kirada (working)
+                $('#totalCars').text(totalCars);
+                $('#rentedCars').text(activeCars);
+                
+            } catch (err) {
+                console.error('Data load error:', err);
+            }
+        }
+
+        async function loadInventory() {
+            try {
+                const res = await fetch(`/api/inventory/${user.id}`);
+                const data = await res.json();
+                currentInventory = data;
+                renderInventoryModal();
+            } catch (error) {
+                console.error('Inventory load failed', error);
+                toastr.error('Envanter yüklenemedi.');
+            }
+        }
+
+        async function selectCar(carKey) {
+            if (!selectedSlotId) return;
+
+            try {
+                const res = await fetch('/api/business/rent-a-car/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: user.id,
+                        slotId: selectedSlotId,
+                        carType: carKey
+                    })
+                });
+                const result = await res.json();
+
+                if (result.success) {
+                    toastr.success(result.message);
+                    closeBuyModal();
+                    loadRentData(); // Refresh slots
+                } else {
+                    toastr.error(result.message);
+                }
+            } catch (err) {
+                toastr.error('Bir hata oluştu.');
+            }
+        }
+
+        function closeRewardModal() {
+            $('#rewardModal').fadeOut(200);
+        }
+
+        function closeErrorModal() {
+            $('#errorModal').fadeOut(200);
+        }
+
+        function showRewardModal(message) {
+            $('#rewardMsg').html(message);
+            $('#rewardModal').fadeIn(200).css('display', 'flex');
+        }
+
+        function showErrorModal(message) {
+            $('#errorMsg').html(message);
+            $('#errorModal').fadeIn(200).css('display', 'flex');
+        }
+
+        function showResultModal(success, message) {
+            if(success) {
+                showRewardModal(message);
+            } else {
+                showErrorModal(message);
+            }
+        }
+
+        async function collectIncome(slotId) {
+            try {
+                const res = await fetch('/api/business/rent-a-car/collect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, slotId: slotId })
+                });
+                const result = await res.json();
+                
+                showResultModal(result.success, result.message);
+                
+                if (result.success) {
+                    loadRentData();
+                }
+            } catch (err) {
+                showResultModal(false, 'Bağlantı hatası.');
+            }
+        }
+
+        async function withdrawSafe() {
+            try {
+                const res = await fetch('/api/business/rent-a-car/withdraw', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id })
+                });
+                const result = await res.json();
+                
+                if (result.success) {
+                    toastr.success(result.message);
+                    loadRentData();
+                    // Update header money if possible (optional: window.location.reload() or header update event)
+                } else {
+                    // Suppress error if it's just empty safe
+                    if(res.status === 400 && result.message === 'Çekilecek bakiye yok.') {
+                         toastr.warning(result.message);
+                    } else {
+                         toastr.error(result.message);
+                    }
+                }
+            } catch (err) {
+                toastr.error('Hata oluştu.');
+            }
+        }
+        
+        async function collectAllIncome() {
+             try {
+                const res = await fetch('/api/business/rent-a-car/collect-all', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id })
+                });
+                const result = await res.json();
+                
+                showResultModal(result.success, result.message);
+                
+                if (result.success) {
+                    loadRentData();
+                }
+            } catch (err) {
+                showResultModal(false, 'İşlem başarısız.');
+            }
+        }
+
+        // === RENDERING ===
+        function renderSlots(activeSlots) {
+            const container = document.getElementById('garageSlots');
+            container.innerHTML = '';
+            
+            // Check if there is anything to collect for the "Collect All" button
+            const hasCollectible = activeSlots.some(s => s.hours_passed >= (s.duration || 1));
+            if (hasCollectible) {
+                $('#collectAllBtn').fadeIn(200);
+            } else {
+                $('#collectAllBtn').fadeOut(200);
+            }
+
+            // We have 3 fixed slots logic in frontend for now
+            for (let i = 1; i <= 3; i++) {
+                const slotData = activeSlots.find(s => s.slot_id === i);
+                
+                if (slotData) {
+                    const carInfo = carConfig[slotData.car_type] || { name: 'Bilinmeyen', image: '', income: 0 };
+                    const isReadyToCollect = slotData.hours_passed >= (slotData.duration || 1);
+                    const healthVal = parseFloat(slotData.durability);
+                    const healthColor = getHealthColor(healthVal);
+                    
+                    // Timer Calculation
+                    let timerText = "00:00";
+                    let endTimeAttr = "";
+                    let badgeStyles = "";
+
+                    if (isReadyToCollect) {
+                        timerText = "KİRA TOPLA";
+                        badgeStyles = "color:var(--accent-green);";
+                    } else if (slotData.remaining_ms > 0) {
+                        // Calculate target time based on client's current time + remaining delay from server
+                        const now = new Date().getTime();
+                        const targetTime = now + slotData.remaining_ms;
+                        endTimeAttr = `data-endtime="${targetTime}"`;
+                        
+                        // Limit initial display to simple calculation
+                        const m = Math.floor(slotData.remaining_ms / 60000);
+                        const s = Math.floor((slotData.remaining_ms % 60000) / 1000);
+                        timerText = `${m}:${s < 10 ? '0'+s : s}`;
+                    }
+
+                    // Status Class (Green/Red border)
+                    const statusClass = isReadyToCollect ? 'card-ready' : 'card-working';
+                    
+                    // Action Button or Status Text
+                    let actionHtml = '';
+                    if (isReadyToCollect) {
+                        actionHtml = `
+                            <button class="btn-collect-sm" onclick="collectIncome(${i})">
+                                <i class="fas fa-hand-holding-usd"></i>
+                            </button>
+                        `;
+                    } else {
+                        actionHtml = `
+                            <div style="font-size:0.7rem; color:#666; font-weight:700; text-transform:uppercase;">Çalışıyor</div>
+                        `;
+                    }
+
+                    const html = `
+                    <div class="slot-card ${statusClass}">
+                        <div class="slot-icon-box">
+                            <img src="${carInfo.image}" onerror="this.src='icons/car-icon/Noventis.png'" alt="${carInfo.name}">
+                        </div>
+                        <div class="info-col">
+                            <div class="car-title">${carInfo.name}</div>
+                            <div class="badges-row">
+                                <div class="info-badge" style="color:${healthColor}" title="Kondisyon">
+                                    <i class="fas fa-heartbeat"></i> %${healthVal.toFixed(1)}
+                                </div>
+                                <div class="info-badge" style="color:var(--accent-green)" title="Kazanç">
+                                    <i class="fas fa-coins"></i> +${carInfo.income}
+                                </div>
+                                <div class="info-badge timer-badge" ${endTimeAttr} title="Süre" style="min-width:50px; ${badgeStyles}">
+                                    <i class="fas fa-clock"></i> <span>${timerText}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="action-col">
+                            ${actionHtml}
+                        </div>
+                    </div>`;
+                    
+                    container.insertAdjacentHTML('beforeend', html);
+
+                } else {
+                    // Empty Slot
+                    const html = `
+                    <div class="slot-card slot-empty" onclick="openBuyCarModal(${i})" style="justify-content:center; gap:10px;">
+                        <i class="fas fa-plus fa-lg"></i>
+                        <span class="slot-text">KİRALA</span>
+                    </div>`;
+                    container.insertAdjacentHTML('beforeend', html);
+                }
+            }
+        }
+
+        function getHealthColor(health) {
+            if (health > 70) return '#2ecc71';
+            if (health > 30) return '#f1c40f';
+            return '#e74c3c';
+        }
+
+        function openBuyCarModal(slotId) {
+            selectedSlotId = slotId;
+            loadInventory(); // Fetch fresh inventory
+            $('#carBuyModal').fadeIn(200).css('display', 'flex');
+        }
+        
+        function closeBuyModal() {
+            selectedSlotId = null;
+            $('#carBuyModal').fadeOut(200);
+        }
+
+        function renderInventoryModal() {
+            const list = document.getElementById('carList');
+            list.innerHTML = '';
+            
+            let hasCars = false;
+
+            Object.keys(carConfig).forEach(key => {
+                const qty = currentInventory[key] || 0;
+                if (qty > 0) {
+                    const car = carConfig[key];
+                    const item = document.createElement('div');
+                    item.className = 'car-option';
+                    // Add Click Event Wrapper
+                    item.onclick = () => selectCar(key);
+                    
+                    item.innerHTML = `
+                        <img src="${car.image}" style="width:50px; height:30px; object-fit:contain;" onerror="this.src='icons/car-icon/Noventis.png'">
+                        <div class="car-info">
+                            <span class="car-name">${car.name}</span>
+                            <div style="display:flex; gap:5px; margin-top:5px; flex-wrap:wrap;">
+                                <span class="health-badge" style="color:#2ecc71">
+                                    <i class="fas fa-coins" style="font-size:0.6rem;"></i> ${car.income} ₺
+                                </span>
+                                <span class="health-badge" style="color:#f39c12">
+                                    <i class="fas fa-clock" style="font-size:0.6rem;"></i> ${car.duration} Dakika
+                                </span>
+                                <span class="health-badge" style="color:#9b59b6">
+                                    <i class="fas fa-box" style="font-size:0.6rem;"></i> Stok: ${qty}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                    list.appendChild(item);
+                    hasCars = true;
+                }
+            });
+
+            if (!hasCars) {
+                list.innerHTML = '<div style="text-align:center; color:#888; padding:20px;">Envanterinizde araç bulunmuyor.<br><small>Galeri veya Marketten araç alabilirsiniz.</small></div>';
+            }
+        }
+
+        // Live Timer Update
+        setInterval(function() {
+            $('.timer-badge').each(function() {
+                const endAttr = $(this).attr('data-endtime');
+                if (endAttr) {
+                    const endTime = parseInt(endAttr);
+                    const now = new Date().getTime();
+                    const diff = endTime - now;
+                    
+                    if (diff > 0) {
+                        const m = Math.floor(diff / 60000);
+                        const s = Math.floor((diff % 60000) / 1000);
+                        $(this).find('span').text(`${m}:${s < 10 ? '0'+s : s}`);
+                    } else {
+                        // Time over
+                        $(this).find('span').text('KİRA TOPLA');
+                        $(this).css('color', 'var(--accent-green)');
+                        
+                        // Check if we need to reload to show the button
+                        if (!$(this).data('reloaded')) {
+                            $(this).data('reloaded', true);
+                            setTimeout(loadRentData, 500); 
+                        }
+                    }
+                }
+            });
+        }, 1000);
     </script>
 </body>
 </html>

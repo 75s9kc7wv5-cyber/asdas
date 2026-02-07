@@ -1345,14 +1345,14 @@
                 const p = resourceMap[factory.type].prod;
                 if (Array.isArray(p)) {
                    // Dinamik Ürün Seçimi (GPU, Kablo vs.)
-                   if (factory.type === 'gpu_factory' && factory.active_recipe_id) {
-                       const found = p.find(item => item.key === factory.active_recipe_id);
+                   if (factory.type === 'gpu_factory' && factory.activeRecipeId) {
+                       const found = p.find(item => item.key === factory.activeRecipeId);
                        productName = found ? found.name : p[0].name;
-                   } else if (factory.type === 'cable_factory' && factory.active_recipe_id) {
-                       const found = p.find(item => item.key === factory.active_recipe_id);
+                   } else if (factory.type === 'cable_factory' && factory.activeRecipeId) {
+                       const found = p.find(item => item.key === factory.activeRecipeId);
                        productName = found ? found.name : p[0].name;
-                   } else if (factory.type === 'car_factory' && factory.active_recipe_id) {
-                        const found = p.find(item => item.key === factory.active_recipe_id);
+                   } else if (factory.type === 'car_factory' && factory.activeRecipeId) {
+                        const found = p.find(item => item.key === factory.activeRecipeId);
                         productName = found ? found.name : p[0].name;
                    } else {
                        productName = p[0].name;
@@ -1408,8 +1408,8 @@
                     select.appendChild(option);
                 });
                 
-                if (factory.active_recipe_id) {
-                    select.value = factory.active_recipe_id;
+                if (factory.activeRecipeId) {
+                    select.value = factory.activeRecipeId;
                 }
                 
                 selectContainer.style.display = 'block';

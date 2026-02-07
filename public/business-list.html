@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İşletmeler - Sim of World</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="js/loader-manager.js"></script>
+    
+    <style>
+        :root {
+            --bg-dark: #0a0a0a;
+            --bg-card: #141414;
+            --bg-input: #1a1a1a;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-gold: #ffd700;
+            --accent-red: #e74c3c;
+            --accent-purple: #9b59b6;
+            --accent-orange: #e67e22;
+            --text-white: #ffffff;
+            --text-muted: #888;
+            --border-color: #222;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            background-image: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.95)), url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/World_map_blank_without_borders.svg/2000px-World_map_blank_without_borders.svg.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        main {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            padding-bottom: 80px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .container {
+            width: 100%;
+        }
+
+        /* HEADER */
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .header-back-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            color: var(--text-white);
+            text-decoration: none;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        
+        .header-back-btn:hover {
+            background: var(--accent-cyan);
+            color: #000;
+            border-color: var(--accent-cyan);
+        }
+
+        .header-content h1 {
+            font-size: 1.4rem;
+            color: var(--accent-purple);
+            font-weight: 800;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 0 20px rgba(155, 89, 182, 0.3);
+        }
+
+        .header-content p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* LOADING */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        .loading i {
+            font-size: 2rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* LIST CARD STYLES (Adapted from farm-list.html) */
+        .business-list-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(30,30,30,0.95);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            color: #fff;
+        }
+
+        .business-list-card:hover {
+            transform: translateY(-2px);
+            border-color: #555;
+            background: rgba(40,40,40,0.95);
+        }
+
+        .business-list-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: var(--accent-red); /* Default: Not owned */
+        }
+
+        .business-list-card.owned::before {
+            background: var(--accent-green); /* Owned */
+        }
+
+        .business-icon {
+            width: 50px; 
+            height: 50px;
+            background: #222;
+            border-radius: 8px;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            font-size: 1.5rem;
+            border: 1px solid #444;
+            color: var(--accent-cyan);
+            flex-shrink: 0;
+        }
+
+        .business-info {
+            flex: 1;
+        }
+
+        .business-name {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+
+        .business-desc {
+            font-size: 0.8rem; 
+            color: #888;
+            line-height: 1.2;
+        }
+
+        .business-price {
+            font-size: 0.85rem;
+            color: var(--accent-gold);
+            font-weight: 700;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .action-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-buy-mini {
+            background: var(--accent-green);
+            color: #000;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Rajdhani', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .btn-buy-mini:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.4);
+        }
+
+        .right-arrow {
+            color: #444;
+            font-size: 1.2rem;
+            transition: color 0.2s;
+        }
+
+        .business-list-card:hover .right-arrow {
+            color: var(--accent-cyan);
+        }
+
+        /* MODAL STYLES */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal-content {
+            background: #181818; 
+            width: 90%; 
+            max-width: 400px; 
+            padding: 25px; 
+            border-radius: 10px;
+            border: 1px solid #444; 
+            text-align: center; 
+            border-top: 3px solid var(--accent-gold);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
+            position: relative;
+            animation: modalIn 0.3s ease;
+        }
+
+        @keyframes modalIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .modal-close:hover { color: #fff; }
+
+        .modal-title {
+            color: #fff; 
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .modal-desc {
+            color: #888; 
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 5px;
+        }
+
+        .req-list { 
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            margin: 15px 0;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .info-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            transition: all 0.2s;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .info-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-list-item:hover {
+            opacity: 0.8;
+        }
+
+        .info-left {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            flex: 1;
+        }
+
+        .info-left i {
+            width: 28px;
+            min-width: 28px;
+            text-align: left;
+            margin-right: 10px;
+            font-size: 1rem;
+        }
+
+        .info-left img {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            margin-right: 10px;
+        }
+
+        .info-label {
+            color: #aaa;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .info-value {
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: right;
+            margin-left: auto;
+        }
+
+        .status-icon {
+            margin-left: 10px;
+        }
+
+        .upgrade-cost-status {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            margin-left: 15px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .upgrade-cost-status.ok {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(46, 204, 113, 0.1));
+            color: var(--accent-green);
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
+        }
+        .upgrade-cost-status.fail {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(231, 76, 60, 0.1));
+            color: var(--accent-red);
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.3);
+        }
+
+        .modal-btns {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .m-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Rajdhani';
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .btn-cancel {
+            background: #333;
+            color: #ccc;
+        }
+        
+        .btn-cancel:hover {
+            background: #444;
+        }
+
+        .btn-confirm {
+            background: var(--accent-green);
+            color: #000;
+        }
+
+        .btn-confirm:hover {
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.4);
+        }
+
+        .btn-confirm:disabled {
+            background: #444;
+            color: #888;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- Header injected by header-manager.js -->
+        <main>
+            <div class="container">
+                <div class="page-header">
+                    <a href="home.html" class="header-back-btn">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <div class="header-content">
+                        <h1>İŞLETMELERİM</h1>
+                        <p>Sahip olduğunuz veya yönettiğiniz tüm işletmeler</p>
+                    </div>
+                </div>
+
+                <!-- TAB NAVIGATION REMOVED -->
+
+                <!-- CONTENT AREA -->
+                <div id="business-content">
+                    
+                </div>
+            </div>
+        </main>
+
+        <!-- PURCHASE MODAL -->
+        <div class="modal-overlay" id="buyModal">
+            <div class="modal-content">
+                <i class="fas fa-times modal-close" onclick="closeModal()"></i>
+                <div id="modalIconContainer" style="margin-bottom: 10px; font-size: 3rem; color: var(--accent-cyan);"></div>
+                <h3 class="modal-title" id="mTitle">İşletme Satın Al</h3>
+                <p class="modal-desc" id="mDesc">Bu işletmeyi satın almak için gereksinimleri karşılamalısınız.</p>
+                
+                <div class="req-list" id="reqList">
+                    <!-- Requirements will be injected here -->
+                </div>
+
+                <div class="modal-btns">
+                    <button class="m-btn btn-cancel" onclick="closeModal()">İPTAL</button>
+                    <button class="m-btn btn-confirm" id="btnConfirmBuy">SATIN AL</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/header-manager.js"></script>
+    <script src="js/menu-manager.js"></script>
+
+    <script>
+        const AVAILABLE_BUSINESSES = [
+            {
+                type: 'rent_a_car',
+                name: 'RENT A CAR',
+                desc: 'Araç kiralama filosu. Geniş araç parkı ile müşterilere hizmet verin ve düzenli gelir elde edin.',
+                price: 1000000,
+                goldPrice: 50,
+                diamondPrice: 5,
+                requiredLicense: 'rent_a_car',
+                requiredLicenseName: '1. Seviye Rent A Car Lisansı',
+                icon: 'fa-car',
+                manageUrl: 'business-management.html'
+            }
+        ];
+
+        let userBusinesses = [];
+        let userLicenses = {};
+
+        function initPage() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            toastr.options = {
+                positionClass: 'toast-top-right',
+                timeOut: 3000,
+                closeButton: true,
+                progressBar: true
+            };
+
+            loadData(user.id);
+        }
+
+        function loadData(userId) {
+            $('#business-content').html('<div class="loading"><i class="fas fa-spinner"></i><p>İşletmeler yükleniyor...</p></div>');
+            
+            // Parallel fetches for businesses and licenses
+            Promise.all([
+                fetch(`/api/user-businesses?user_id=${userId}`).then(res => res.json()),
+                fetch(`/api/licenses/${userId}`).then(res => res.json())
+            ])
+            .then(([bizData, licData]) => {
+                if (bizData.success) {
+                    userBusinesses = bizData.businesses;
+                }
+                userLicenses = licData || {};
+                renderBusinesses();
+            })
+            .catch(error => {
+                console.error(error);
+                $('#business-content').html('<div class="empty-state"><p>Bağlantı hatası.</p></div>');
+            });
+        }
+
+        function renderBusinesses() {
+            let html = '';
+            
+            AVAILABLE_BUSINESSES.forEach(biz => {
+                const owned = userBusinesses.find(ub => ub.business_type === biz.type);
+                const isOwned = !!owned;
+                
+                if (isOwned) {
+                    html += `
+                        <a href="${biz.manageUrl}" class="business-list-card owned">
+                            <div class="business-icon">
+                                <i class="fas ${biz.icon}"></i>
+                            </div>
+                            <div class="business-info">
+                                <div class="business-name">${biz.name}</div>
+                                <div class="business-desc">İşletme sahibi sizsiniz. Yönetmek için tıklayın.</div>
+                            </div>
+                            <div class="action-area">
+                                <i class="fas fa-chevron-right right-arrow"></i>
+                            </div>
+                        </a>
+                    `;
+                } else {
+                    html += `
+                        <div class="business-list-card" onclick="openPurchaseModal('${biz.type}')">
+                            <div class="business-icon">
+                                <i class="fas ${biz.icon}"></i>
+                            </div>
+                            <div class="business-info">
+                                <div class="business-name">${biz.name}</div>
+                                <div class="business-desc">${biz.desc}</div>
+                            </div>
+                            <div class="action-area">
+                                <i class="fas fa-chevron-right right-arrow"></i>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            $('#business-content').html(html);
+        }
+        
+        function openPurchaseModal(type) {
+            const biz = AVAILABLE_BUSINESSES.find(b => b.type === type);
+            if (!biz) return;
+            
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            
+            $('#modalIconContainer').html(`<i class="fas ${biz.icon}"></i>`);
+            $('#mTitle').text(biz.name);
+            $('#mDesc').text(biz.desc);
+            
+            let reqHtml = '';
+            let canBuy = true;
+
+            // Helper for generating items
+            const addReqItem = (label, valueObj, isOk, iconPath) => {
+                const statusClass = isOk ? 'ok' : 'fail';
+                const statusIcon = isOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
+                
+                // Using font-awesome icons for resources instead of images for simplicity based on previous context, 
+                // but if images are available they can be used. Sticking to FA icons + user provided structure.
+                
+                let iconHtml = '';
+                if(iconPath) {
+                   iconHtml = `<img src="${iconPath}" alt="">`; 
+                } else {
+                   // Default icons based on label
+                   if(label === 'Para') iconHtml = '<i class="fas fa-coins" style="color:var(--accent-gold); margin-right:10px;"></i>';
+                   else if(label === 'Altın') iconHtml = '<i class="fas fa-cubes" style="color:var(--accent-orange); margin-right:10px;"></i>';
+                   else if(label === 'Elmas') iconHtml = '<i class="fas fa-gem" style="color:var(--accent-cyan); margin-right:10px;"></i>';
+                   else if(label === 'Lisans') iconHtml = '<i class="fas fa-certificate" style="color:var(--accent-purple); margin-right:10px;"></i>';
+                }
+
+                return `
+                <div class="info-list-item">
+                    <div class="info-left">
+                        ${iconHtml}
+                        <span class="info-label">${label}</span>
+                    </div>
+                    <div class="info-value" style="display:flex; align-items:center;">
+                        ${valueObj}
+                        <div class="upgrade-cost-status ${statusClass}">
+                            ${statusIcon}
+                        </div>
+                    </div>
+                </div>`;
+            };
+
+            // Money
+            const hasMoney = user.money >= biz.price;
+            if(!hasMoney) canBuy = false;
+            reqHtml += addReqItem('Para', biz.price.toLocaleString(), hasMoney);
+
+            // Gold
+            if (biz.goldPrice > 0) {
+                const hasGold = user.gold >= biz.goldPrice;
+                if(!hasGold) canBuy = false;
+                reqHtml += addReqItem('Altın', biz.goldPrice, hasGold);
+            }
+
+            // Diamond
+            if (biz.diamondPrice > 0) {
+                const hasDiamond = user.diamond >= biz.diamondPrice;
+                if(!hasDiamond) canBuy = false;
+                reqHtml += addReqItem('Elmas', biz.diamondPrice, hasDiamond);
+            }
+
+            // License
+            if (biz.requiredLicense) {
+                const hasLicense = (userLicenses[biz.requiredLicense] || 0) > 0;
+                if(!hasLicense) canBuy = false;
+                reqHtml += addReqItem('Lisans', biz.requiredLicenseName, hasLicense);
+            }
+
+            $('#reqList').html(reqHtml);
+            
+            const btn = $('#btnConfirmBuy');
+            btn.attr('onclick', `buyBusiness('${type}')`);
+            
+            if (canBuy) {
+                btn.prop('disabled', false).text('SATIN AL');
+            } else {
+                btn.prop('disabled', true).text('YETERSİZ');
+            }
+            
+            $('#buyModal').addClass('active').hide().fadeIn(200).css('display', 'flex');
+        }
+        
+        function closeModal() {
+             $('#buyModal').fadeOut(200, function() {
+                 $(this).removeClass('active');
+             });
+        }
+        
+        // Close modal when clicking outside
+        $(document).click(function(event) { 
+            if($(event.target).is('.modal-overlay')) {
+                closeModal();
+            }
+        });
+
+        function buyBusiness(type) {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            const biz = AVAILABLE_BUSINESSES.find(b => b.type === type);
+            if (!biz) return;
+            
+            // Disable button to prevent double click
+            $('#btnConfirmBuy').prop('disabled', true).text('İŞLENİYOR...');
+
+            fetch('/api/business/buy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: user.id, business_type: type })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    toastr.success(data.message);
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    toastr.error(data.message);
+                    // Re-enable button on error
+                    $('#btnConfirmBuy').prop('disabled', false).text('SATIN AL');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                toastr.error('İşlem sırasında hata oluştu.');
+                $('#btnConfirmBuy').prop('disabled', false).text('SATIN AL');
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', initPage);
+    </script>
+</body>
+</html>

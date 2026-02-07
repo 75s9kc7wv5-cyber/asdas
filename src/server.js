@@ -4484,7 +4484,7 @@ app.post('/api/mines/start', (req, res) => {
         // 1. Get User & Mine Data
         // Only count workers whose end_time is in the future
         const query = `
-            SELECT u.energy, u.health, u.education_skill, m.id as mine_id, m.max_workers, m.reserve, m.salary, m.vault, m.mine_type, m.stock, m.level, m.user_id as owner_id,
+            SELECT u.energy, u.health, u.education_skill, m.id as mine_id, m.max_workers, m.reserve, m.salary, m.vault, m.mine_type, m.stock, m.level, m.user_id as owner_id, m.active_recipe_id,
             (SELECT level FROM arge_levels WHERE user_id = m.user_id AND mine_type = m.mine_type) as arge_level,
             (SELECT production_time FROM mine_settings WHERE mine_type = m.mine_type) as production_time,
             (SELECT COUNT(*) FROM mine_active_workers WHERE mine_id = m.id AND end_time > NOW()) as current_workers,
@@ -4690,7 +4690,16 @@ app.post('/api/mines/start', (req, res) => {
                      } // End proceedWithProduction function
 
                      if (recipes) {
-                         const recipeId = req.body.recipeId;
+                         let recipeId = req.body.recipeId;
+
+                         // Enforce active_recipe_id for Car Factories
+                         if (data.mine_type === 'car_factory') {
+                             if (!data.active_recipe_id) {
+                                  return db.rollback(() => res.json({ success: false, message: 'Bu fabrikanın üretim hattı henüz ayarlanmamış.' }));
+                             }
+                             recipeId = data.active_recipe_id;
+                         }
+
                          const recipe = recipes.find(r => r.id === recipeId) || recipes[0];
                          
                          if (!recipe) return db.rollback(() => res.json({ success: false, message: 'Geçersiz reçete.' }));
@@ -8670,4 +8679,325 @@ setInterval(() => {
         });
     });
 }, 30000); // Every 30 seconds update price
+
+
+// ---------------------------------------------------------------------
+// USER BUSINESSES API
+// ---------------------------------------------------------------------
+
+// Get User Businesses
+app.get('/api/user-businesses', (req, res) => {
+    const userId = req.query.user_id;
+    if (!userId) return res.status(400).json({ success: false, message: 'User ID required' });
+
+    db.query('SELECT * FROM user_businesses WHERE user_id = ?', [userId], (err, results) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+        res.json({ success: true, businesses: results });
+    });
+});
+
+// Buy Business
+app.post('/api/business/buy', (req, res) => {
+    const { user_id, business_type } = req.body;
+    
+    // Config Prices
+    const BUSINESS_PRICES = {
+        'rent_a_car': 1000000 // 1 Million
+    };
+
+    if (!BUSINESS_PRICES[business_type]) {
+        return res.status(400).json({ success: false, message: 'Geçersiz işletme türü' });
+    }
+
+    const cost = BUSINESS_PRICES[business_type];
+
+    // Check user money and ownership
+    db.query('SELECT money FROM users WHERE id = ?', [user_id], (err, users) => {
+        if (err || users.length === 0) return res.status(500).json({ success: false, message: 'Kullanıcı hatası' });
+        
+        const userMoney = users[0].money;
+
+        // Check if already owned
+        db.query('SELECT * FROM user_businesses WHERE user_id = ? AND business_type = ?', [user_id, business_type], (err, businesses) => {
+            if (businesses.length > 0) {
+                return res.status(400).json({ success: false, message: 'Bu işletmeye zaten sahipsiniz.' });
+            }
+
+            if (userMoney < cost) {
+                return res.status(400).json({ success: false, message: 'Yetersiz bakiye (Gereken: ' + cost.toLocaleString() + ')' });
+            }
+
+            // Execute Transaction
+            db.beginTransaction(err => {
+                if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
+
+                // Deduct Money
+                db.query('UPDATE users SET money = money - ? WHERE id = ?', [cost, user_id], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Para düşülemedi' }));
+
+                    // Add Business
+                    db.query('INSERT INTO user_businesses (user_id, business_type) VALUES (?, ?)', [user_id, business_type], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'İşletme eklenemedi' }));
+
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
+                            res.json({ success: true, message: 'İşletme başarıyla satın alındı!' });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+
+
+// ==========================================
+// RENT A CAR BUSINESS LOGIC
+// ==========================================
+
+const RENT_ACAR_CONFIG = {
+    'noventis': { income: 500, damage: 2, duration: 1 },
+    'stradeo': { income: 750, damage: 1.5, duration: 2 },
+    'rugnar': { income: 1200, damage: 1.2, duration: 3 },
+    'veltrano': { income: 2500, damage: 1, duration: 4 },
+    'zentaro': { income: 5000, damage: 0.5, duration: 5 }
+};
+
+// Get Garage & Business State
+app.get('/api/business/rent-a-car/:userId', (req, res) => {
+    const userId = req.params.userId;
+    
+    // Ensure business record exists
+    db.query('INSERT IGNORE INTO user_business (user_id) VALUES (?)', [userId], (err) => {
+        if (err) console.error('Biz init error:', err);
+        
+        const sql = `
+            SELECT b.rent_a_car_balance, 
+                   g.id as slot_record_id, g.slot_id, g.car_type, g.durability, g.last_collection_time
+            FROM user_business b
+            LEFT JOIN user_garage g ON b.user_id = g.user_id
+            WHERE b.user_id = ?
+        `;
+        
+        db.query(sql, [userId], (err, results) => {
+            if (err) return res.status(500).json({ error: err.message });
+            
+            let balance = 0;
+            let slots = [];
+            
+            if (results.length > 0) {
+                balance = results[0].rent_a_car_balance;
+                
+                results.forEach(row => {
+                    if (row.slot_record_id) {
+                        const config = RENT_ACAR_CONFIG[row.car_type] || { income: 0, damage: 0, duration: 1 };
+                        
+                        // Calculate Pending Income
+                        const now = new Date();
+                        const last = new Date(row.last_collection_time);
+                        const diffMs = now - last;
+                        const minutes = Math.floor(diffMs / (1000 * 60));
+                        const pending = minutes * config.income;
+
+                        // Calculate Remaining MS for next collection
+                        const durationMs = (config.duration || 1) * 60 * 1000;
+                        let remainingMs = 0;
+                        
+                        if (diffMs < durationMs) {
+                             remainingMs = durationMs - diffMs;
+                        }
+                        
+                        slots.push({
+                            id: row.slot_record_id,
+                            slot_id: row.slot_id,
+                            car_type: row.car_type,
+                            durability: row.durability,
+                            pending_income: pending > 0 ? pending : 0,
+                            hours_passed: minutes, // Keeping key for frontend compatibility
+                            remaining_ms: remainingMs,
+                            last_collection_time: row.last_collection_time,
+                            duration: config.duration || 1
+                        });
+                    }
+                });
+            }
+            
+            res.json({ balance, slots });
+        });
+    });
+});
+
+// Add Car (Inventory -> Garage)
+app.post('/api/business/rent-a-car/add', (req, res) => {
+    const { userId, slotId, carType } = req.body;
+    
+    // 1. Check Slot
+    db.query('SELECT id FROM user_garage WHERE user_id = ? AND slot_id = ?', [userId, slotId], (err, slots) => {
+        if (err) return res.status(500).json({ message: 'DB Error' });
+        if (slots.length > 0) return res.status(400).json({ message: 'Bu slot zaten dolu!' });
+        
+        // 2. Check Inventory
+        db.query('SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?', [userId, carType], (err, inv) => {
+            if (err) return res.status(500).json({ message: 'DB Error' });
+            if (!inv.length || inv[0].quantity < 1) return res.status(400).json({ message: 'Envanterde bu araç yok!' });
+            
+            // 3. Decrease Inventory
+            db.query('UPDATE inventory SET quantity = quantity - 1 WHERE user_id = ? AND item_key = ?', [userId, carType], (err) => {
+                if (err) return res.status(500).json({ message: 'Stok düşülemedi' });
+                
+                // 4. Add to Garage
+                const sqlInsert = 'INSERT INTO user_garage (user_id, slot_id, car_type, durability, last_collection_time) VALUES (?, ?, ?, 100, NOW())';
+                db.query(sqlInsert, [userId, slotId, carType], (err) => {
+                    if (err) return res.status(500).json({ message: 'Garaja eklenemedi' });
+                    res.json({ success: true, message: 'Araç garaja eklendi ve kiralamaya başladı!' });
+                });
+            });
+        });
+    });
+});
+
+// Collect Income
+app.post('/api/business/rent-a-car/collect', (req, res) => {
+    const { userId, slotId } = req.body;
+    
+    // Get Slot Data
+    db.query('SELECT * FROM user_garage WHERE user_id = ? AND slot_id = ?', [userId, slotId], (err, rows) => {
+        if (err) return res.status(500).json({ message: 'DB Error' });
+        if (!rows.length) return res.status(404).json({ message: 'Slot boş!' });
+        
+        const car = rows[0];
+        const config = RENT_ACAR_CONFIG[car.car_type];
+        if (!config) return res.status(400).json({ message: 'Araç yapılandırması hatalı' });
+        
+        const now = new Date();
+        const last = new Date(car.last_collection_time);
+        const diffMs = now - last;
+        const minutes = Math.floor(diffMs / (1000 * 60));
+        
+        const minDuration = config.duration || 1;
+        if (minutes < minDuration) return res.status(400).json({ message: `Henüz ${minDuration} dakika dolmadı.` });
+        
+        const income = minutes * config.income;
+        const damage = minutes * config.damage;
+        
+        let newDurability = car.durability - damage;
+        
+        // 1. Add to Wallet (Directly to User Inventory/Money)
+        db.query('UPDATE users SET money = money + ? WHERE id = ?', [income, userId], (err) => {
+            if (err) return res.status(500).json({ message: 'Bakiye güncellenemedi' });
+            
+            // 2. Update Car
+            if (newDurability <= 0) {
+                // Car dead
+                db.query('DELETE FROM user_garage WHERE id = ?', [car.id], (err) => {
+                    res.json({ success: true, message: `Toplam <span class="money-highlight">${income} TL</span> toplandı. Araç ömrünü tamamladı.`, removed: true });
+                });
+            } else {
+                db.query('UPDATE user_garage SET durability = ?, last_collection_time = NOW() WHERE id = ?', [newDurability, car.id], (err) => {
+                    res.json({ success: true, message: `Toplam <span class="money-highlight">${income} TL</span> toplandı ve hesabınıza eklendi.`, removed: false, newDurability });
+                });
+            }
+        });
+    });
+});
+
+// Collect All Income
+app.post('/api/business/rent-a-car/collect-all', (req, res) => {
+    const { userId } = req.body;
+    
+    db.query('SELECT * FROM user_garage WHERE user_id = ?', [userId], (err, cars) => {
+        if (err) {
+            console.error('CollectAll DB Error:', err);
+            return res.status(500).json({ message: 'Veritabanı hatası' });
+        }
+        if (!cars || cars.length === 0) return res.json({ success: false, message: 'Garajda araç yok.' });
+
+        let totalIncome = 0;
+        let collectedCount = 0;
+        
+        const processCar = (index) => {
+            if (index >= cars.length) {
+                // Done iterating
+                if (totalIncome > 0) {
+                     db.query('UPDATE users SET money = money + ? WHERE id = ?', [totalIncome, userId], (err) => {
+                         if (err) return res.status(500).json({ message: 'Bakiye güncellenemedi' });
+                         res.json({ success: true, message: `${collectedCount} araçtan toplam <span class="money-highlight">${totalIncome} TL</span> toplandı ve hesabınıza eklendi.` });
+                     });
+                } else {
+                    res.json({ success: false, message: 'Toplanacak gelir yok.' });
+                }
+                return;
+            }
+
+            const car = cars[index];
+            const config = RENT_ACAR_CONFIG[car.car_type];
+            if (!config) {
+                return processCar(index + 1);
+            }
+
+            const now = new Date();
+            const last = new Date(car.last_collection_time);
+            const diffMs = now - last;
+            const minutes = Math.floor(diffMs / (1000 * 60));
+            
+            const minDuration = config.duration || 1;
+
+            if (minutes >= minDuration) {
+                const income = minutes * config.income;
+                const damage = minutes * config.damage;
+                let newDurability = car.durability - damage;
+                
+                totalIncome += income;
+                collectedCount++;
+
+                if (newDurability <= 0) {
+                    db.query('DELETE FROM user_garage WHERE id = ?', [car.id], (err) => {
+                        if(err) console.error("Del Err", err);
+                        processCar(index + 1);
+                    });
+                } else {
+                    db.query('UPDATE user_garage SET durability = ?, last_collection_time = NOW() WHERE id = ?', [newDurability, car.id], (err) => {
+                        if(err) console.error("Upd Err", err);
+                        processCar(index + 1);
+                    });
+                }
+            } else {
+                processCar(index + 1);
+            }
+        };
+
+        try {
+            processCar(0);
+        } catch (e) {
+            console.error("Process loop error", e);
+            res.status(500).json({message: "İşlem hatası"});
+        }
+    });
+});
+
+// Withdraw Safe Logic
+app.post('/api/business/rent-a-car/withdraw', (req, res) => {
+    const { userId } = req.body;
+    
+    db.query('SELECT rent_a_car_balance FROM user_business WHERE user_id = ?', [userId], (err, rows) => {
+        if (err || !rows.length) return res.status(400).json({ message: 'Kasa bilgisi alınamadı' });
+        
+        let amount = parseFloat(rows[0].rent_a_car_balance) || 0;
+        if (amount <= 0) return res.json({ success: false, message: 'Çekilecek bakiye yok.' });
+        
+        // Reset Safe
+        db.query('UPDATE user_business SET rent_a_car_balance = 0 WHERE user_id = ?', [userId], (err) => {
+            if (err) return res.status(500).json({ message: 'İşlem başarısız' });
+            
+            // Add to User Money (Cash)
+            db.query('UPDATE users SET money = money + ? WHERE id = ?', [amount, userId], (err) => {
+                res.json({ success: true, message: `${amount.toFixed(2)} TL ana kasanıza aktarıldı.` });
+            });
+        });
+    });
+});
 

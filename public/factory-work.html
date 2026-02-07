@@ -1336,7 +1336,22 @@
             if (recipes && recipes.length > 0) {
                 // Determine if we should allow selection or enforce owner's choice
                 const forcedRecipe = factoryData.active_recipe_id;
+                const isCarFactory = factoryData.mine_type === 'car_factory';
                 
+                // If it's a Car Factory, we must strict enforcement
+                if (isCarFactory && !forcedRecipe) {
+                    toastr.warning('Fabrika yöneticisi henüz üretim hattını belirlememiş. Şu an üretim yapılamaz.');
+                    // Disable start button
+                     const btn = document.querySelector('.btn-confirm');
+                     if(btn) { 
+                         btn.disabled = true; 
+                         btn.style.opacity = 0.5;
+                         btn.innerText = 'ÜRETİM KAPALI';
+                     }
+                    document.getElementById('workModal').style.display = 'flex';
+                    return; 
+                }
+
                 if (forcedRecipe) {
                     // Force the recipe set by owner
                     recipeDiv.style.display = 'none'; // Hide text, but we need to set value
