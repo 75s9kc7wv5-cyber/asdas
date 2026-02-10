@@ -1277,7 +1277,7 @@ app.get('/api/licenses/:userId', (req, res) => {
         });
         
         // Fetch special licenses from users table
-        const userQuery = 'SELECT license_hospital_level, license_farm_level, license_ranch_level FROM users WHERE id = ?';
+        const userQuery = 'SELECT license_hospital_level, license_farm_level, license_ranch_level, license_property_level FROM users WHERE id = ?';
         db.query(userQuery, [userId], (err, userRes) => {
             if (!err && userRes.length > 0) {
                 if (userRes[0].license_hospital_level > 0) {
@@ -1288,6 +1288,9 @@ app.get('/api/licenses/:userId', (req, res) => {
                 }
                 if (userRes[0].license_ranch_level > 0) {
                     licenses['ranch'] = userRes[0].license_ranch_level;
+                }
+                if (userRes[0].license_property_level > 0) {
+                    licenses['property_license'] = userRes[0].license_property_level;
                 }
             }
             res.json(licenses);
@@ -7130,20 +7133,29 @@ app.post('/api/properties/collect-tax', (req, res) => {
 function getDailyRewards() {
     const rewards = [];
     for (let i = 1; i <= 30; i++) {
-        let reward = { day: i, type: 'money', value: i * 500, label: (i * 500) + ' TL', icon: 'fa-coins', iconColor: '#ffd700' };
+        let reward = { day: i, type: 'money', value: i * 500, label: (i * 500) + ' TL', icon: 'icons/inventory-icon/money.png' };
         
+        if (i % 5 === 3) { // Interspersed Diamonds
+            let val = (Math.floor(i / 5) + 1) * 5;
+            if (val > 25) val = 25;
+            reward.type = 'diamond';
+            reward.value = val;
+            reward.label = val + ' Elmas';
+            reward.icon = 'icons/inventory-icon/diamond.png';
+        }
+
         if (i % 5 === 0) { // Every 5 days -> Gold
             reward.type = 'gold';
             reward.value = i;
             reward.label = i + ' Altın';
-            reward.icon = 'fa-gem';
-            reward.iconColor = '#2ecc71';
+            reward.icon = 'icons/inventory-icon/gold.png';
         }
         
         if (i === 30) {
             reward.type = 'gold';
             reward.value = 500;
             reward.label = '500 Altın';
+            // icon remains gold.png from % 5 block
         }
         rewards.push(reward);
     }
@@ -7269,6 +7281,9 @@ app.post('/api/daily-reward/claim', (req, res) => {
             params = [reward.value, userId];
         } else if (reward.type === 'gold') {
             updateSql = 'UPDATE users SET gold = gold + ? WHERE id = ?';
+            params = [reward.value, userId];
+        } else if (reward.type === 'diamond') {
+            updateSql = 'UPDATE users SET diamond = diamond + ? WHERE id = ?';
             params = [reward.value, userId];
         }
 
@@ -8859,7 +8874,8 @@ app.post('/api/business/buy', (req, res) => {
     
     // Config Prices
     const BUSINESS_PRICES = {
-        'rent_a_car': 1000000 // 1 Million
+        'rent_a_car': 1000000, // 1 Million
+        'real_estate': 5000000 // 5 Million
     };
 
     if (!BUSINESS_PRICES[business_type]) {
@@ -8930,7 +8946,7 @@ app.get('/api/business/rent-a-car/:userId', (req, res) => {
         if (err) console.error('Biz init error:', err);
         
         const sql = `
-            SELECT b.rent_a_car_balance, b.level,
+            SELECT b.rent_a_car_balance, b.level, b.upgrade_end_time,
                    g.id as slot_record_id, g.slot_id, g.car_type, g.durability, g.last_collection_time
             FROM user_business b
             LEFT JOIN user_garage g ON b.user_id = g.user_id
@@ -8942,11 +8958,13 @@ app.get('/api/business/rent-a-car/:userId', (req, res) => {
             
             let balance = 0;
             let level = 1;
+            let upgradeEndTime = null;
             let slots = [];
             
             if (results.length > 0) {
                 balance = results[0].rent_a_car_balance;
                 level = results[0].level || 1;
+                upgradeEndTime = results[0].upgrade_end_time;
                 
                 results.forEach(row => {
                     if (row.slot_record_id) {
@@ -8957,7 +8975,12 @@ app.get('/api/business/rent-a-car/:userId', (req, res) => {
                         const last = new Date(row.last_collection_time);
                         const diffMs = now - last;
                         const minutes = Math.floor(diffMs / (1000 * 60));
-                        const pending = minutes * config.income;
+                        
+                        // Cap at duration (No passive income after rental ends)
+                        const duration = config.duration || 1;
+                        const effectiveMinutes = Math.min(minutes, duration);
+                        
+                        const pending = Math.floor(effectiveMinutes * (config.income / duration));
 
                         // Calculate Remaining MS for next collection
                         const durationMs = (config.duration || 1) * 60 * 1000;
@@ -8982,33 +9005,101 @@ app.get('/api/business/rent-a-car/:userId', (req, res) => {
                 });
             }
             
-            res.json({ balance, level, slots });
+            res.json({ balance, level, slots, upgradeEndTime });
         });
     });
 });
 
-// Upgrade Business
-app.post('/api/business/rent-a-car/upgrade', (req, res) => {
+// Upgrade Business Start
+app.post('/api/business/rent-a-car/start-upgrade', (req, res) => {
     const { userId } = req.body;
-    db.query('SELECT level FROM user_business WHERE user_id = ?', [userId], (err, results) => {
+    db.query('SELECT level, upgrade_end_time FROM user_business WHERE user_id = ?', [userId], (err, results) => {
         if (err || !results.length) return res.status(500).json({ success: false, message: 'İşletme bulunamadı.' });
         
+        // If already upgrading
+        if (results[0].upgrade_end_time && new Date(results[0].upgrade_end_time) > new Date()) {
+             return res.json({ success: true, message: 'Geliştirme zaten devam ediyor', endTime: results[0].upgrade_end_time });
+        }
+
         const currentLevel = results[0].level || 1;
-        const upgradeCost = currentLevel * 500000; // Cost Formula
+        const costs = {
+            money: currentLevel * 500000,
+            gold: currentLevel * 10,
+            inventory: {
+                'lumber': currentLevel * 50,
+                'brick': currentLevel * 50,
+                'glass': currentLevel * 20,
+                'concrete': currentLevel * 20,
+                'steel': currentLevel * 10
+            }
+        };
         
-        db.query('SELECT money FROM users WHERE id = ?', [userId], (err, users) => {
+        // Check User Money/Gold
+        db.query('SELECT money, gold FROM users WHERE id = ?', [userId], (err, users) => {
             if (err) return res.status(500).json({ success: false, message: 'DB Hatası' });
-            if (users[0].money < upgradeCost) return res.json({ success: false, message: `Yetersiz bakiye. Gerekli: ${upgradeCost.toLocaleString()} ₺` });
-            
-            db.query('UPDATE users SET money = money - ? WHERE id = ?', [upgradeCost, userId], (err) => {
-                if (err) return res.status(500).json({ success: false, message: 'Ödeme hatası.' });
+            const user = users[0];
+            if (user.money < costs.money) return res.json({ success: false, message: 'Yetersiz Para' });
+            if (user.gold < costs.gold) return res.json({ success: false, message: 'Yetersiz Altın' });
+
+            // Check Inventory
+            const itemKeys = Object.keys(costs.inventory);
+            db.query('SELECT item_key, quantity FROM inventory WHERE user_id = ? AND item_key IN (?)', [userId, itemKeys], (err, invRows) => {
+                if (err) return res.status(500).json({ success: false, message: 'Envanter Hatası' });
                 
-                db.query('UPDATE user_business SET level = level + 1 WHERE user_id = ?', [userId], (err) => {
-                    if (err) return res.status(500).json({ success: false, message: 'Upgrade hatası.' });
-                    res.json({ success: true, message: `İşletme Seviye ${currentLevel + 1} oldu!`, newLevel: currentLevel + 1 });
+                const invMap = {};
+                invRows.forEach(r => invMap[r.item_key] = r.quantity);
+                
+                for (const k of itemKeys) {
+                    if ((invMap[k] || 0) < costs.inventory[k]) {
+                        return res.json({ success: false, message: `Yetersiz Malzeme: ${k}` });
+                    }
+                }
+                
+                // Deduct & Start
+                const durationSecs = currentLevel * 10;
+                
+                // 1. Deduct Money/Gold
+                db.query('UPDATE users SET money = money - ?, gold = gold - ? WHERE id = ?', [costs.money, costs.gold, userId], (err) => {
+                    if (err) return res.status(500).json({ success: false, message: 'Para düşülemedi' });
+
+                    // 2. Deduct Inventory
+                    let completed = 0;
+                    itemKeys.forEach(k => {
+                        db.query('UPDATE inventory SET quantity = quantity - ? WHERE user_id = ? AND item_key = ?', [costs.inventory[k], userId, k], () => {
+                            completed++;
+                            if(completed === itemKeys.length) {
+                                // 3. Set End Time
+                                const sqlTime = `UPDATE user_business SET upgrade_end_time = DATE_ADD(NOW(), INTERVAL ${durationSecs} SECOND) WHERE user_id = ?`;
+                                db.query(sqlTime, [userId], (err) => {
+                                    if(err) return res.status(500).json({ success: false, message: 'Start error' });
+                                    // Get it back
+                                    db.query('SELECT upgrade_end_time FROM user_business WHERE user_id = ?', [userId], (err, finalRes) => {
+                                        res.json({ success: true, message: 'Geliştirme Başladı', endTime: finalRes[0].upgrade_end_time, duration: durationSecs });
+                                    });
+                                });
+                            }
+                        });
+                    });
                 });
             });
         });
+    });
+});
+
+// Complete Upgrade
+app.post('/api/business/rent-a-car/complete-upgrade', (req, res) => {
+    const { userId } = req.body;
+    db.query('SELECT level, upgrade_end_time FROM user_business WHERE user_id = ?', [userId], (err, results) => {
+         if (err || !results.length) return res.status(500).json({ success: false });
+         
+         const endTime = results[0].upgrade_end_time ? new Date(results[0].upgrade_end_time) : new Date();
+         if (endTime <= new Date()) {
+             db.query('UPDATE user_business SET level = level + 1, upgrade_end_time = NULL WHERE user_id = ?', [userId], (err) => {
+                 res.json({ success: true, message: 'Geliştirme Tamamlandı!', newLevel: results[0].level + 1 });
+             });
+         } else {
+             res.json({ success: false, message: 'Henüz bitmedi' });
+         }
     });
 });
 
@@ -9062,8 +9153,9 @@ app.post('/api/business/rent-a-car/collect', (req, res) => {
         const minDuration = config.duration || 1;
         if (minutes < minDuration) return res.status(400).json({ message: `Henüz ${minDuration} dakika dolmadı.` });
         
-        const income = minutes * config.income;
-        const damage = minutes * config.damage;
+        // Fixed Income (Capped at duration)
+        const income = config.income;
+        const damage = minDuration * config.damage;
         
         let newDurability = car.durability - damage;
         
@@ -9128,8 +9220,9 @@ app.post('/api/business/rent-a-car/collect-all', (req, res) => {
             const minDuration = config.duration || 1;
 
             if (minutes >= minDuration) {
-                const income = minutes * config.income;
-                const damage = minutes * config.damage;
+                // Fixed Income
+                const income = config.income;
+                const damage = minDuration * config.damage;
                 let newDurability = car.durability - damage;
                 
                 totalIncome += income;
@@ -9182,3 +9275,204 @@ app.post('/api/business/rent-a-car/withdraw', (req, res) => {
     });
 });
 
+
+// ==========================================
+// REAL ESTATE BUSINESS ENDPOINTS
+// ==========================================
+
+// Get Property Types
+app.get('/api/property-types', (req, res) => {
+    db.query('SELECT * FROM property_types', (err, rows) => {
+        if (err) return res.status(500).json({error: err});
+        res.json(rows);
+    });
+});
+
+// Get Real Estate State
+app.get('/api/business/real-estate/:userId', (req, res) => {
+    const userId = req.params.userId;
+    
+    // Ensure business record exists
+    db.query('INSERT IGNORE INTO user_business (user_id) VALUES (?)', [userId], (err) => {
+        if (err) console.error('Biz init error:', err);
+        
+        const sql = `
+            SELECT b.real_estate_balance, b.real_estate_level, b.real_estate_upgrade_end_time,
+                   p.id as prop_record_id, p.property_type_id, p.last_collection_time, p.purchase_date,
+                   pt.name, pt.image, pt.income, pt.duration_hours, pt.price
+            FROM user_business b
+            LEFT JOIN user_properties p ON b.user_id = p.user_id
+            LEFT JOIN property_types pt ON p.property_type_id = pt.id
+            WHERE b.user_id = ?
+        `;
+        
+        db.query(sql, [userId], (err, results) => {
+            if (err) return res.status(500).json({ error: err.message });
+            
+            let balance = 0;
+            let level = 1;
+            let upgradeEndTime = null;
+            let slots = [];
+            
+            if (results.length > 0) {
+                balance = results[0].real_estate_balance || 0;
+                level = results[0].real_estate_level || 1;
+                upgradeEndTime = results[0].real_estate_upgrade_end_time;
+                
+                results.forEach(row => {
+                    if (row.prop_record_id) {
+                        // Calculate Pending Income
+                        const now = new Date();
+                        const last = new Date(row.last_collection_time);
+                        const diffMs = now - last;
+                        const durationMs = 3600000; // 1 hour fixed for simplicity per unit? No, use duration.
+                        // property_types.duration_hours is confusing. Is it "validity" or "period"?
+                        // Rent a car duration was LEASE duration.
+                        // Properties are owned forever. 
+                        // Let's assume INCOME is HOURLY.
+                        
+                        // Let's assume income generation is continuous.
+                        const hoursPassed = diffMs / (1000 * 60 * 60);
+                        let pending = Math.floor(row.income * hoursPassed);
+                        // if (pending < 0) pending = 0; // Handled by floor but ensure positive time
+                        if(hoursPassed < 0) pending = 0;
+
+                        slots.push({
+                            id: row.prop_record_id,
+                            type_id: row.property_type_id,
+                            name: row.name,
+                            image: row.image,
+                            income: row.income,
+                            pending_income: pending,
+                            last_collection_time: row.last_collection_time
+                        });
+                    }
+                });
+            }
+            
+            res.json({
+                balance: balance,
+                level: level,
+                upgrade_end_time: upgradeEndTime,
+                slots: slots
+            });
+        });
+    });
+});
+
+// Buy Property
+app.post('/api/business/real-estate/add', (req, res) => {
+    const { userId, typeId } = req.body; 
+    
+    db.query('SELECT * FROM property_types WHERE id = ?', [typeId], (err, props) => {
+        if (err || props.length === 0) return res.status(404).json({ success: false, message: 'Mülk bulunamadı' });
+        
+        const prop = props[0];
+        
+        db.query('SELECT money FROM users WHERE id = ?', [userId], (err, users) => {
+            if (err || users.length === 0) return res.status(500).json({ success: false, message: 'Kullanıcı hatası' });
+            
+            if (users[0].money < prop.price) {
+                return res.json({ success: false, message: 'Yetersiz bakiye.' });
+            }
+            
+            db.query('UPDATE users SET money = money - ? WHERE id = ?', [prop.price, userId], (err) => {
+                if (err) return res.status(500).json({ success: false });
+                
+                db.query('INSERT INTO user_properties (user_id, property_type_id) VALUES (?, ?)', [userId, typeId], (err) => {
+                    if (err) return res.status(500).json({ success: false });
+                    
+                    res.json({ success: true, message: prop.name + ' inşa edildi.' });
+                });
+            });
+        });
+    });
+});
+
+// Collect ALL Real Estate Income
+app.post('/api/business/real-estate/collect-all', (req, res) => {
+    const { userId } = req.body;
+    
+    const sql = `
+        SELECT p.id, p.last_collection_time, pt.income 
+        FROM user_properties p
+        JOIN property_types pt ON p.property_type_id = pt.id
+        WHERE p.user_id = ?
+    `;
+    
+    db.query(sql, [userId], (err, props) => {
+        if (err) return res.status(500).json({ error: err });
+        
+        let totalCollected = 0;
+        let updateIds = [];
+        
+        const now = new Date();
+        
+        props.forEach(p => {
+             const last = new Date(p.last_collection_time);
+             const diffMs = now - last;
+             const hours = diffMs / (1000 * 60 * 60);
+             
+             if (hours >= 0.1) { // Min 6 mins
+                 let pending = Math.floor(p.income * hours);
+                 if (pending > 0) {
+                     totalCollected += pending;
+                     updateIds.push(p.id);
+                 }
+             }
+        });
+        
+        if (totalCollected > 0) {
+            db.query('UPDATE user_business SET real_estate_balance = real_estate_balance + ? WHERE user_id = ?', [totalCollected, userId], (err) => {
+                if (err) return res.status(500).json({ success: false });
+                
+                db.query(`UPDATE user_properties SET last_collection_time = NOW() WHERE id IN (${updateIds.join(',')})`);
+                
+                res.json({ success: true, message: `${totalCollected} TL toplandı.`, amount: totalCollected });
+            });
+        } else {
+            res.json({ success: false, message: 'Toplanacak gelir yok.' });
+        }
+    });
+});
+
+// Withdraw Real Estate Safe
+app.post('/api/business/real-estate/withdraw', (req, res) => {
+    const { userId } = req.body;
+    
+    db.query('SELECT real_estate_balance FROM user_business WHERE user_id = ?', [userId], (err, rows) => {
+        if (err || !rows.length) return res.status(400).json({ message: 'Kasa bilgisi alınamadı' });
+        
+        let amount = parseFloat(rows[0].real_estate_balance) || 0;
+        if (amount <= 0) return res.json({ success: false, message: 'Çekilecek bakiye yok.' });
+        
+        db.query('UPDATE user_business SET real_estate_balance = 0 WHERE user_id = ?', [userId], (err) => {
+            if (err) return res.status(500).json({ message: 'İşlem başarısız' });
+            
+            db.query('UPDATE users SET money = money + ? WHERE id = ?', [amount, userId], (err) => {
+                res.json({ success: true, message: `${amount.toFixed(2)} TL ana kasanıza aktarıldı.` });
+            });
+        });
+    });
+});
+
+// Upgrade (Simplified)
+app.post('/api/business/real-estate/start-upgrade', (req, res) => {
+    const { userId } = req.body;
+    
+    db.query('SELECT real_estate_level FROM user_business WHERE user_id = ?', [userId], (err, rows) => {
+        const currentLevel = rows[0].real_estate_level || 1;
+        const nextLevel = currentLevel + 1;
+        const costMoney = 500000 * nextLevel;
+        
+        db.query('SELECT money FROM users WHERE id = ?', [userId], (err, uRows) => {
+             if(uRows[0].money < costMoney) return res.json({success: false, message: 'Yetersiz Para'});
+             
+             db.query('UPDATE users SET money = money - ? WHERE id = ?', [costMoney, userId], () => {
+                 db.query('UPDATE user_business SET real_estate_level = ? WHERE user_id = ?', [nextLevel, userId], () => {
+                     res.json({ success: true, message: 'Geliştirme başarılı! Yeni seviye: ' + nextLevel });
+                 });
+             });
+        });
+    });
+});

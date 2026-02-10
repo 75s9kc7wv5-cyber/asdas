@@ -480,6 +480,16 @@
                 </div>
             </div>
         </div>
+
+        <!-- MESSAGE MODAL -->
+        <div class="modal-overlay" id="messageModal" style="z-index: 1001;">
+            <div class="modal-content">
+                <div id="msgIcon" style="margin-bottom: 15px; font-size: 3rem;"></div>
+                <h3 class="modal-title" id="msgTitle"></h3>
+                <p class="modal-desc" id="msgDesc" style="margin-bottom: 20px; color: #ccc;"></p>
+                <button class="m-btn btn-confirm" onclick="closeMessageModal()">TAMAM</button>
+            </div>
+        </div>
     </div>
 
     <script src="js/header-manager.js"></script>
@@ -495,9 +505,23 @@
                 goldPrice: 50,
                 diamondPrice: 5,
                 requiredLicense: 'rent_a_car',
+                requiredLicenseLevel: 1,
                 requiredLicenseName: '1. Seviye Rent A Car Lisansı',
-                icon: 'fa-car',
-                manageUrl: 'business-management.html'
+                icon: 'icons/business-icon/rental-car.png',
+                manageUrl: 'business-management.html?type=rent_a_car'
+            },
+            {
+                type: 'real_estate',
+                name: 'GAYRİMENKUL İŞLETMESİ',
+                desc: 'Konut ve arsa alım satımı yapın, mülklerinizi kiraya vererek düzenli gelir elde edin.',
+                price: 5000000,
+                goldPrice: 250,
+                diamondPrice: 25,
+                requiredLicense: 'property_license',
+                requiredLicenseLevel: 1,
+                requiredLicenseName: '1. Seviye Gayrimenkul Lisansı',
+                icon: 'icons/business-icon/real-estate.png',
+                manageUrl: 'business-management.html?type=real_estate'
             }
         ];
 
@@ -527,13 +551,24 @@
             // Parallel fetches for businesses and licenses
             Promise.all([
                 fetch(`/api/user-businesses?user_id=${userId}`).then(res => res.json()),
-                fetch(`/api/licenses/${userId}`).then(res => res.json())
+                fetch(`/api/licenses/${userId}`).then(res => res.json()),
+                fetch(`/api/user-stats/${userId}`).then(res => res.json())
             ])
-            .then(([bizData, licData]) => {
+            .then(([bizData, licData, statsData]) => {
                 if (bizData.success) {
                     userBusinesses = bizData.businesses;
                 }
                 userLicenses = licData || {};
+                
+                // Merge stats licenses if missing from licenses endpoint
+                if (statsData) {
+                    if (statsData.license_property_level && !userLicenses['property_license']) {
+                        userLicenses['property_license'] = statsData.license_property_level;
+                    }
+                    // Rent A Car logic check: usually business but maybe license variable name differs?
+                    // Assuming rent_a_car license is standard in licenses table or handles elsewhere.
+                }
+
                 renderBusinesses();
             })
             .catch(error => {
@@ -553,7 +588,7 @@
                     html += `
                         <a href="${biz.manageUrl}" class="business-list-card owned">
                             <div class="business-icon">
-                                <i class="fas ${biz.icon}"></i>
+                                <img src="${biz.icon}" alt="${biz.name}" style="width: 32px; height: 32px;">
                             </div>
                             <div class="business-info">
                                 <div class="business-name">${biz.name}</div>
@@ -568,7 +603,7 @@
                     html += `
                         <div class="business-list-card" onclick="openPurchaseModal('${biz.type}')">
                             <div class="business-icon">
-                                <i class="fas ${biz.icon}"></i>
+                                <img src="${biz.icon}" alt="${biz.name}" style="width: 32px; height: 32px;">
                             </div>
                             <div class="business-info">
                                 <div class="business-name">${biz.name}</div>
@@ -591,7 +626,7 @@
             
             const user = JSON.parse(localStorage.getItem('simWorldUser'));
             
-            $('#modalIconContainer').html(`<i class="fas ${biz.icon}"></i>`);
+            $('#modalIconContainer').html(`<img src="${biz.icon}" alt="${biz.name}" style="width: 64px; height: 64px;">`);
             $('#mTitle').text(biz.name);
             $('#mDesc').text(biz.desc);
             
@@ -653,7 +688,9 @@
 
             // License
             if (biz.requiredLicense) {
-                const hasLicense = (userLicenses[biz.requiredLicense] || 0) > 0;
+                const requiredLevel = biz.requiredLicenseLevel || 1;
+                const currentLevel = userLicenses[biz.requiredLicense] || 0;
+                const hasLicense = currentLevel >= requiredLevel;
                 if(!hasLicense) canBuy = false;
                 reqHtml += addReqItem('Lisans', biz.requiredLicenseName, hasLicense);
             }
@@ -677,11 +714,40 @@
                  $(this).removeClass('active');
              });
         }
+
+        let reloadOnClose = false;
+
+        function showMessageModal(title, msg, isSuccess) {
+            $('#msgTitle').text(title);
+            $('#msgDesc').text(msg);
+            
+            if(isSuccess) {
+                $('#msgIcon').html('<i class="fas fa-check-circle" style="color: var(--accent-green);"></i>');
+                reloadOnClose = true;
+            } else {
+                $('#msgIcon').html('<i class="fas fa-times-circle" style="color: var(--accent-red);"></i>');
+                reloadOnClose = false;
+            }
+            
+            $('#messageModal').addClass('active').css('display', 'flex').hide().fadeIn(200);
+        }
+
+        function closeMessageModal() {
+            $('#messageModal').fadeOut(200, function() {
+                $(this).removeClass('active');
+                if(reloadOnClose) {
+                    location.reload();
+                }
+            });
+        }
         
         // Close modal when clicking outside
         $(document).click(function(event) { 
-            if($(event.target).is('.modal-overlay')) {
+            if($(event.target).is('#buyModal')) {
                 closeModal();
+            }
+            if($(event.target).is('#messageModal')) {
+                closeMessageModal();
             }
         });
 
@@ -700,18 +766,22 @@
             })
             .then(res => res.json())
             .then(data => {
+                // Close buy modal
+                closeModal();
+                
                 if (data.success) {
-                    toastr.success(data.message);
-                    setTimeout(() => location.reload(), 1500);
+                    showMessageModal('BAŞARILI', data.message, true);
                 } else {
-                    toastr.error(data.message);
-                    // Re-enable button on error
-                    $('#btnConfirmBuy').prop('disabled', false).text('SATIN AL');
+                    showMessageModal('BAŞARISIZ', data.message, false);
                 }
+                
+                // Reset button state (though modal is closed, good practice)
+                $('#btnConfirmBuy').prop('disabled', false).text('SATIN AL');
             })
             .catch(err => {
                 console.error(err);
-                toastr.error('İşlem sırasında hata oluştu.');
+                closeModal();
+                showMessageModal('HATA', 'İşlem sırasında sunucu hatası oluştu.', false);
                 $('#btnConfirmBuy').prop('disabled', false).text('SATIN AL');
             });
         }

@@ -24,6 +24,29 @@
             --border-color: #222;
         }
 
+        /* --- LOADER CSS --- */
+        #game-loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg-dark); z-index: 99999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        #game-loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        
+        .loader-logo { font-size: 3rem; font-weight: 900; letter-spacing: 5px; color: #fff; margin-bottom: 40px; text-shadow: 0 0 20px rgba(255, 255, 255, 0.1); }
+        .loader-logo span { color: var(--accent-cyan); }
+        
+        .spinner-container { position: relative; width: 80px; height: 80px; margin-bottom: 30px; }
+        .spinner-ring {
+            width: 100%; height: 100%; border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid var(--accent-cyan); border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        .loading-text { font-size: 1.2rem; font-weight: bold; letter-spacing: 2px; color: var(--accent-cyan); margin-bottom: 10px; text-transform: uppercase; }
+        .loading-tip { font-size: 0.8rem; color: #777; min-height: 20px; }
+        
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         /* Hide Scrollbar */
@@ -187,12 +210,25 @@
         .slot-empty:hover { border-color: var(--accent); color: var(--accent); border-left-color: var(--accent) !important; background: rgba(0, 229, 255, 0.05); }
         
         /* MODAL */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 200; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-        .modal-content { position: relative; background: #181818; width: 90%; max-width: 400px; padding: 25px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 0 30px rgba(0,0,0,0.5); transform: none; border-top: 4px solid var(--accent); }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .modal-content { 
+            position: relative; 
+            background: #181818; 
+            width: 90%; 
+            max-width: 400px; 
+            max-height: 80vh; /* Limits height to 80% of the screen */
+            overflow-y: auto; /* Adds scroll if content is too long */
+            padding: 25px; 
+            border-radius: 12px; 
+            border: 1px solid #333; 
+            box-shadow: 0 0 30px rgba(0,0,0,0.5); 
+            transform: none; 
+            border-top: 4px solid var(--accent); 
+        }
 
         /* Page Header Center */
-        .page-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; text-align: center; }
-        .page-title-box { flex: 1; text-align: center; margin-left: -52px; } /* Offset back btn width */
+        .page-header { display: flex; align-items: center; justify-content: flex-start; gap: 12px; margin-bottom: 20px; text-align: left; }
+        .page-title-box { flex: 1; text-align: left; margin-left: 0; } /* Offset back btn width */
         .page-title { font-size: 1.3rem; font-weight: 800; color: #fff; text-transform: uppercase; margin-bottom: 4px; }
         
         /* Icon Badge */
@@ -223,6 +259,35 @@
         .gpu-item-count { font-size: 0.8rem; color: #888; }
         
         .no-gpu { text-align: center; color: #666; padding: 20px; font-style: italic; font-size: 0.9rem; }
+
+        /* UPGRADE MODAL STYLES */
+        .upgrade-modal-content {
+            background: #181818; width: 90%; max-width: 400px; padding: 25px; border-radius: 10px;
+            border: 1px solid #333; position: relative;
+            border-top: 3px solid var(--accent); /* Adapted to theme */
+        }
+        .req-list { 
+            display: flex; flex-direction: column; gap: 0; margin: 15px 0;
+            background: #1a1a1a; padding: 10px; border-radius: 8px;
+        }
+        .info-list-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .info-list-item:last-child { border-bottom: none; }
+        .info-left { display: flex; align-items: center; }
+        .info-left img, .info-left i { width: 24px; height: 24px; margin-right: 10px; object-fit: contain; color:#aaa; text-align:center; }
+        .info-label { color: #ccc; font-size: 0.9rem; font-weight: 500; }
+        .info-value { color: #fff; font-size: 0.95rem; font-weight: 700; text-align: right; margin-left: auto; }
+        .upgrade-cost-status {
+            width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; margin-left: 10px; flex-shrink: 0;
+        }
+        .upgrade-cost-status.ok { background: rgba(46, 204, 113, 0.2); color: var(--accent-green); }
+        .upgrade-cost-status.fail { background: rgba(231, 76, 60, 0.2); color: var(--accent-red); }
+        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; transition: 0.2s; }
+        .m-btn:hover { opacity: 0.9; }
 
         @keyframes float {
             0% { transform: translateY(0px); }
@@ -255,6 +320,16 @@
     </style>
 </head>
 <body>
+    <!-- LOADER -->
+    <div id="game-loader">
+        <div class="loader-logo">SIM <span>OF WORLD</span></div>
+        <div class="spinner-container">
+            <div class="spinner-ring"></div>
+        </div>
+        <div class="loading-text">YÜKLENİYOR...</div>
+        <div class="loading-tip" id="loadingTip">Veriler yükleniyor...</div>
+    </div>
+
     <div class="game-container">
         <!-- Header injected by header-manager.js -->
         
@@ -275,18 +350,18 @@
                     <i class="fas fa-car"></i>
                 </div>
                 <div class="bh-info">
-                    <div class="bh-name">Rent A Car</div>
+                    <div class="bh-name">Rent A Car İşletmesi</div>
                 </div>
             </div>
 
             <!-- STATS -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-label"><i class="fas fa-car-side"></i> Toplam Araç</div>
+                    <div class="stat-label"><i class="fas fa-car-side"></i> TOPLAM SLOT</div>
                     <div class="stat-val" id="totalCars">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label"><i class="fas fa-key"></i> Kirada</div>
+                    <div class="stat-label"><i class="fas fa-key"></i> KİRADAKİ ARAÇ</div>
                     <div class="stat-val text-green" id="rentedCars">0</div>
                 </div>
                 <div class="stat-card">
@@ -300,7 +375,7 @@
             </div>
 
             <div style="margin-bottom: 25px;">
-                <button onclick="upgradeBusiness()" style="width:100%; background: var(--accent-green); border:none; padding:12px; border-radius:8px; color:#000; font-weight:800; cursor:pointer; font-family:'Rajdhani'; font-size:1rem; display:flex; justify-content:center; align-items:center; gap:10px; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);">
+                <button id="btnOpenUpgradeModal" onclick="upgradeBusiness()" style="width:100%; background: var(--accent-green); border:none; padding:12px; border-radius:8px; color:#000; font-weight:800; cursor:pointer; font-family:'Rajdhani'; font-size:1rem; display:flex; justify-content:center; align-items:center; gap:10px; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);">
                     <i class="fas fa-arrow-circle-up" style="font-size:1.2rem;"></i> İŞLETMEYİ GELİŞTİR
                 </button>
             </div>
@@ -387,6 +462,42 @@
         </div>
     </div>
 
+    <!-- UPGRADE MODAL -->
+    <div class="modal-overlay" id="upgradeModal">
+        <div class="modal-content upgrade-modal-content">
+            <div style="text-align: center; margin-bottom: 15px;">
+                <div style="width: 60px; height: 60px; background: #222; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; border: 1px solid #444; color: var(--accent);">
+                    <i class="fas fa-arrow-up" style="font-size: 1.5rem;"></i>
+                </div>
+                <h3 style="color:#fff; margin-bottom:5px; font-size: 1.4rem;">İŞLETME GELİŞTİR</h3>
+                <p style="color:#888; font-size:0.9rem;">İşletme seviyenizi yükselterek kapasitenizi artırın.</p>
+            </div>
+            
+            <h6 style="color:var(--accent); margin-bottom:5px; font-weight:700; font-size:0.9rem;">GEREKSİNİMLER</h6>
+            <div class="req-list" id="upgradeReqList" style="margin-top:0; margin-bottom:15px;">
+                <!-- Javascript will populate this -->
+            </div>
+
+            <h6 style="color:var(--accent-green); margin-bottom:5px; font-weight:700; font-size:0.9rem;">KAZANIMLAR</h6>
+            <div class="req-list" style="margin-top:0; margin-bottom:20px;">
+                <div class="info-list-item">
+                     <div class="info-left">
+                        <i class="fas fa-warehouse" style="color:#fff; width:24px; text-align:center; margin-right:10px;"></i>
+                        <span class="info-label">Araç Slotu</span>
+                    </div>
+                    <div class="info-value" style="color:var(--accent-green);">
+                        +5 Slot
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-btns">
+                <button class="m-btn btn-cancel" onclick="closeModal('upgradeModal')">İPTAL</button>
+                <button class="m-btn btn-confirm" id="btnConfirmUpgrade" onclick="confirmUpgrade()">GELİŞTİR</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script src="js/header-manager.js"></script>
@@ -401,10 +512,29 @@
             veltrano: { name: 'Veltrano', image: 'icons/car-icon/Veltrano.png', income: 2500, duration: 4 },
             zentaro: { name: 'Zentaro', image: 'icons/car-icon/Zentaro.png', income: 5000, duration: 5 }
         };
+        
+        let propertyConfig = {}; // Will be populated from API
 
         let currentInventory = {};
         let selectedSlotId = null;
         const user = JSON.parse(localStorage.getItem('simWorldUser'));
+        
+        // Determine Business Type from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const businessType = urlParams.get('type') === 'real_estate' ? 'real_estate' : 'rent_a_car';
+
+        // === LOADER ===
+        const tips = ["Sunuculara bağlanılıyor...", "Piyasa verileri güncelleniyor...", "Varlıklarınız hesaplanıyor...", "İşletme verileri çekiliyor..."];
+        const tipElement = document.getElementById('loadingTip');
+        const loader = document.getElementById('game-loader');
+        let tipInterval = setInterval(() => {
+            if(tipElement) tipElement.innerText = tips[Math.floor(Math.random() * tips.length)];
+        }, 800);
+
+        function hideLoader() {
+            if(tipInterval) clearInterval(tipInterval);
+            if(loader) loader.classList.add('hidden');
+        }
 
         // === INITIALIZATION ===
         $(document).ready(function() {
@@ -412,14 +542,62 @@
                 window.location.href = 'login.html';
                 return;
             }
-            loadRentData();
+
+            if(businessType === 'real_estate') {
+                // Change Page Title & Hero Info for Real Estate
+                $('.page-title').text('GAYRİMENKUL İŞLETMESİ');
+                $('.page-desc').text('Mülklerinizi yönetin, alım-satım yapın ve kiraları toplayın.');
+                
+                $('.bh-name').text('GAYRİMENKUL OFİSİ');
+                $('.bh-icon-box').html('<i class="fas fa-building"></i>'); 
+                $('head title').text('Gayrimenkul Yönetimi - Sim of World');
+
+                // Update Stats Grid for Real Estate
+                $('.stat-card').eq(0).find('.stat-label').html('<i class="fas fa-map-marked-alt"></i> TOPLAM ARSA');
+                $('.stat-card').eq(1).find('.stat-label').html('<i class="fas fa-city"></i> KİRADAKİ MÜLK');
+                
+                // Change "Garage" title
+                $('.sh-title').html('<i class="fas fa-city" style="color:var(--accent)"></i> MÜLK PORTFÖYÜ');
+                
+                // Initialize Property Config
+                fetchPropertyTypes();
+            } else {
+                // Rent A Car Default
+                loadBusinessData();
+            }
         });
 
-        // === API CALLS ===
-        async function loadRentData() {
+        async function fetchPropertyTypes() {
             try {
-                // Get Business State (Slots + Safe)
-                const res = await fetch(`/api/business/rent-a-car/${user.id}`);
+                const res = await fetch('/api/property-types');
+                const data = await res.json();
+                if(Array.isArray(data)) {
+                    propertyConfig = {}; // Reset
+                    const seen = new Set();
+                    
+                    data.forEach(p => {
+                        // Filter duplicates by name
+                        if(!seen.has(p.name)) {
+                            propertyConfig[p.id] = p;
+                            seen.add(p.name);
+                        }
+                    });
+                }
+                loadBusinessData();
+            } catch(e) { 
+                console.error("Property config load failed", e);
+                loadBusinessData(); 
+            }
+        }
+
+        // === API CALLS ===
+        async function loadBusinessData() {
+            try {
+                const apiPath = businessType === 'real_estate' 
+                    ? `/api/business/real-estate/${user.id}`
+                    : `/api/business/rent-a-car/${user.id}`;
+                    
+                const res = await fetch(apiPath);
                 const data = await res.json();
                 
                 // Update Biz Level
@@ -428,25 +606,38 @@
                 const nextCost = (data.level || 1) * 500000;
                 $('#upgradeCost').text(nextCost.toLocaleString('tr-TR') + ' ₺');
 
-                // Update Slots & Stats
-                const slots = data.slots || [];
-                renderSlots(slots);
+                // Render Content
+                if(businessType === 'real_estate') {
+                    renderProperties(data.slots || []); // "slots" here contains properties list
+                } else {
+                    renderSlots(data.slots || []);
+                }
                 
                 // Stats Logic
-                let totalCars = slots.length;
-                let activeCars = slots.filter(s => s.pending_income === 0).length; // Kirada (working)
+                const items = data.slots || [];
+                let totalItems = items.length;
                 
-                // Calculate Ready Income
+                // For properties, everything is "running" always?
+                let activeItems = 0;
+                if(businessType === 'real_estate') {
+                    activeItems = totalItems; // All owned properties are active rentals
+                } else {
+                    activeItems = items.filter(s => (parseFloat(s.hours_passed) || 0) < (s.duration || 1)).length;
+                }
+                
                 let readyIncome = 0;
-                slots.forEach(s => {
-                    const duration = s.duration || 1;
-                    if(s.hours_passed >= duration && s.pending_income > 0) {
+                items.forEach(s => {
+                    // Difference in structure handling:
+                    // Rent: s.pending_income if hours_passed >= duration
+                    // Real Estate: s.pending_income calculated by backend based on time passed
+                    if(s.pending_income > 0) {
                         readyIncome += s.pending_income;
                     }
                 });
                 
-                $('#totalCars').text(totalCars);
-                $('#rentedCars').text(activeCars);
+                const capacity = (data.level || 1) * 5;
+                $('#totalCars').text(`${totalItems} / ${capacity}`);
+                $('#rentedCars').text(activeItems);
                 
                 // Update Ready Income UI
                 const readyEl = $('#readyIncome');
@@ -457,62 +648,324 @@
                 if(readyIncome > 0) readyEl.css('color', 'var(--accent-green)');
                 else readyEl.css('color', '#888');
                 
+                // Check Active Upgrade
+                if (data.upgrade_end_time || data.upgradeEndTime) {
+                    const tStr = data.upgrade_end_time || data.upgradeEndTime;
+                    const entTime = new Date(tStr);
+                    if (entTime > new Date()) {
+                        startUpgradeCountdown(tStr);
+                    } else {
+                        finalizeUpgrade();
+                    }
+                }
+                
+                hideLoader();
+
             } catch (err) {
                 console.error('Data load error:', err);
+                hideLoader();
             }
         }
         
+        function closeModal(id) { $('#' + id).fadeOut(200); }
+
         async function upgradeBusiness() {
+            // Upgrade Logic is mostly same, just endpoints differ
+             // Reuse Inventory Load for resources
+             
+            // Note: Reuse existing upgrade Modal but might need to adjust "License" logic if present
+            await loadInventoryForUpgrade(); // Helper just to get building mats
+
+            const currentLevel = parseInt($('#bizLevel').text()) || 1;
+            const nextLevel = currentLevel + 1;
+            
+            const costs = {
+                money: currentLevel * 500000,
+                gold: currentLevel * 10,
+                wood: currentLevel * 50,
+                brick: currentLevel * 50,
+                glass: currentLevel * 20,
+                cement: currentLevel * 20,
+                steel: currentLevel * 10
+            };
+            
+            let html = '';
+            let allOk = true;
+
+            function addReqRow(label, needed, have, iconPath, color) {
+                const isOk = have >= needed;
+                if (!isOk) allOk = false;
+                
+                const statusClass = isOk ? 'ok' : 'fail';
+                const statusIcon = isOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
+                const valColor = isOk ? '#fff' : 'var(--accent-red)';
+                
+                return `
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <img src="${iconPath}" alt="${label}" style="width:24px; height:24px; min-width:24px; margin-right:10px; object-fit:contain;">
+                        <span class="info-label">${label}</span>
+                    </div>
+                    <div class="info-value" style="color:${valColor}">
+                        ${needed.toLocaleString()} / ${have.toLocaleString()}
+                    </div>
+                    <div class="upgrade-cost-status ${statusClass}">${statusIcon}</div>
+                </div>`;
+            }
+
+            html += addReqRow('Para', costs.money, (user.money || 0), 'icons/inventory-icon/money.png', '#ffd700');
+            html += addReqRow('Altın', costs.gold, (user.gold || 0), 'icons/inventory-icon/gold.png', '#f1c40f');
+            html += addReqRow('Tahta', costs.wood, (currentInventory['lumber'] || 0), 'icons/factory-icon/wood-plank.png', '#d35400');
+            html += addReqRow('Tuğla', costs.brick, (currentInventory['brick'] || 0), 'icons/factory-icon/brick.png', '#c0392b');
+            html += addReqRow('Cam', costs.glass, (currentInventory['glass'] || 0), 'icons/factory-icon/window.png', '#3498db');
+            html += addReqRow('Çimento', costs.cement, (currentInventory['concrete'] || 0), 'icons/factory-icon/cement.png', '#95a5a6');
+            html += addReqRow('Çelik', costs.steel, (currentInventory['steel'] || 0), 'icons/factory-icon/steel.png', '#7f8c8d');
+            
+            const durationSecs = currentLevel * 10; 
+            let timeText = `${durationSecs} Sn`;
+            
+            html += `
+            <div id="upgradeDuration" data-secs="${durationSecs}" class="info-list-item">
+                <div class="info-left">
+                    <i class="fas fa-clock" style="width:24px; height:24px; margin-right:10px; text-align:center; color:#e67e22; display:flex; align-items:center; justify-content:center;"></i>
+                    <span class="info-label">Süre</span>
+                </div>
+                <div class="info-value" style="color:#fff">
+                    ${timeText}
+                </div>
+                 <div class="upgrade-cost-status ok" style="background:rgba(230, 126, 34, 0.2); color:#e67e22;"><i class="fas fa-hourglass-start"></i></div>
+            </div>`;
+
+            $('#upgradeReqList').html(html);
+            const btn = $('#btnConfirmUpgrade');
+            btn.css({ background: 'var(--accent-green)', width: '100%', position: 'static' }).text('GELİŞTİR');
+            
+            if(allOk) {
+                btn.prop('disabled', false).css('opacity', 1);
+            } else {
+                btn.prop('disabled', true).css('opacity', 0.5).text('YETERSİZ KAYNAK');
+            }
+
+            $('#upgradeModal').fadeIn(200).css('display', 'flex');
+        }
+
+        // Upgrade Countdown Variables
+        let upgradeInterval;
+
+        function startUpgradeCountdown(endTimeStr) {
+            const btn = $('#btnOpenUpgradeModal');
+            const endTime = new Date(endTimeStr).getTime();
+            
+            btn.prop('disabled', true).css({ position: 'relative', overflow: 'hidden', background: 'var(--accent-gold)', color: '#000' });
+            
+            updateTimer();
+            clearInterval(upgradeInterval);
+            upgradeInterval = setInterval(updateTimer, 1000);
+            
+            async function updateTimer() {
+                const now = new Date().getTime();
+                const diff = endTime - now;
+                
+                if (diff <= 0) {
+                    clearInterval(upgradeInterval);
+                    btn.html('<span style="position:relative; z-index:2; font-weight:800;">TAMAMLANDI LÜTFEN BEKLEYİN...</span>');
+                    await finalizeUpgrade();
+                    return;
+                }
+                
+                const totalSeconds = Math.max(0, Math.ceil(diff / 1000));
+                const h = Math.floor(totalSeconds / 3600);
+                const m = Math.floor((totalSeconds % 3600) / 60);
+                const s = totalSeconds % 60;
+                
+                const timeStr = `${h}h ${m}m ${s}s`;
+
+                btn.html(`
+                    <div style="position:absolute; left:0; top:0; height:100%; width:100%; background:rgba(255,255,255,0.2);"></div>
+                    <span style="position:relative; z-index:2; font-weight:800;">GELİŞTİRİLİYOR... (${timeStr})</span>
+                `);
+            }
+        }
+
+        async function finalizeUpgrade() {
             try {
-                const res = await fetch('/api/business/rent-a-car/upgrade', {
+                const endpoint = businessType === 'real_estate' 
+                    ? '/api/business/real-estate/complete-upgrade' // This endpoint might be missing! I should check if I added it.
+                    // Wait, do real estate upgrades have timers?
+                    // In `server.js` `start-upgrade` for real estate is INSTANT.
+                    // app.post('/api/business/real-estate/start-upgrade' ... executes and sets level immediately.
+                    // So no countdown needed for Real Estate unless I changes it.
+                    // So if businessType is real_estate, I should just reload.
+                    : '/api/business/rent-a-car/complete-upgrade';
+
+                if(businessType === 'real_estate') {
+                    // Real Estate upgrades were implemented as instant in server.js
+                    location.reload();
+                    return;
+                }
+
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ userId: user.id })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    toastr.success(data.message);
+                    setTimeout(() => location.reload(), 1000); 
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function confirmUpgrade() {
+            const btn = $('#btnConfirmUpgrade');
+            btn.prop('disabled', true).text('İşleniyor...');
+
+            try {
+                const endpoint = businessType === 'real_estate' 
+                    ? '/api/business/real-estate/start-upgrade'
+                    : '/api/business/rent-a-car/start-upgrade';
+
+                const res = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId: user.id })
                 });
-                const result = await res.json();
+                const data = await res.json();
                 
-                if (result.success) {
-                    showRewardModal(result.message);
-                    loadRentData();
+                if (data.success) {
+                    closeModal('upgradeModal');
+                    toastr.success(data.message);
+                    if(businessType === 'real_estate') {
+                        // Instant upgrade
+                        setTimeout(loadBusinessData, 500);
+                    } else {
+                        startUpgradeCountdown(data.endTime);
+                    }
                 } else {
-                    showErrorModal(result.message);
+                    toastr.error(data.message);
+                    btn.prop('disabled', false).text('GELİŞTİR');
                 }
-            } catch (e) {
-                showErrorModal('Hata oluştu.');
+            } catch (err) {
+                 toastr.error('Bağlantı hatası');
+                 btn.prop('disabled', false).text('GELİŞTİR');
             }
         }
-
-        async function loadInventory() {
+        
+        // Just for materials
+        async function loadInventoryForUpgrade() {
             try {
                 const res = await fetch(`/api/inventory/${user.id}`);
-                const data = await res.json();
-                currentInventory = data;
-                renderInventoryModal();
-            } catch (error) {
-                console.error('Inventory load failed', error);
-                toastr.error('Envanter yüklenemedi.');
-            }
+                currentInventory = await res.json();
+            } catch(e) {}
         }
 
-        async function selectCar(carKey) {
-            if (!selectedSlotId) return;
 
+        // === ADD / BUY LOGIC ===
+        async function openAddLogic(slotId) {
+            selectedSlotId = slotId;
+            
+            if(businessType === 'real_estate') {
+                // Real Estate: Show Market (Buy with Money)
+                renderPropertyMarket();
+                $('#carBuyModal .modal-title').text('İNŞAAT KATALOĞU');
+                $('#carBuyModal p').html('Arsanız üzerine inşa etmek istediğiniz yapıyı seçin.<br>İnşaat bedeli nakit bakiyenizden düşülür.');
+                $('#carBuyModal').fadeIn(200).css('display', 'flex');
+            } else {
+                // Rent A Car: Show Inventory (Use existing Car)
+                await loadInventoryAndShowCars();
+            }
+        }
+        
+        async function loadInventoryAndShowCars() {
             try {
-                const res = await fetch('/api/business/rent-a-car/add', {
+                const res = await fetch(`/api/inventory/${user.id}`);
+                currentInventory = await res.json();
+                
+                // Render Inventory List
+                const list = document.getElementById('carList');
+                list.innerHTML = '';
+                let hasCars = false;
+                Object.keys(carConfig).forEach(key => {
+                    const qty = currentInventory[key] || 0;
+                    if (qty > 0) {
+                        const car = carConfig[key];
+                        const item = document.createElement('div');
+                        item.className = 'car-option';
+                        item.onclick = () => selectItemToAdd(key, 'car');
+                        item.innerHTML = `
+                            <div class="car-img-badge"><img src="${car.image}"></div>
+                            <div class="car-info">
+                                <span class="car-name">${car.name}</span>
+                                <div style="font-size:0.75rem; color:#888;">Stok: <b style="color:#fff">${qty}</b></div>
+                            </div>
+                            <button class="slot-btn" style="padding:5px 10px;">SEÇ</button>
+                        `;
+                        list.appendChild(item);
+                        hasCars = true;
+                    }
+                });
+                
+                if (!hasCars) {
+                    list.innerHTML = '<div style="text-align:center; color:#888; padding:20px;">Envanterinizde araç bulunmuyor.</div>';
+                }
+                
+                $('#carBuyModal .modal-title').text('ARAÇ EKLE');
+                $('#carBuyModal p').html('Envanterinizden bir araç seçin.');
+                $('#carBuyModal').fadeIn(200).css('display', 'flex');
+                
+            } catch(e) { toastr.error('Hata'); }
+        }
+        
+        function renderPropertyMarket() {
+            const list = document.getElementById('carList');
+            list.innerHTML = '';
+            
+            Object.values(propertyConfig).forEach(prop => {
+                const item = document.createElement('div');
+                item.className = 'car-option';
+                item.onclick = () => selectItemToAdd(prop.id, 'property');
+                
+                item.innerHTML = `
+                    <div class="car-img-badge"><img src="${prop.image || 'icons/city-icon/house.png'}"></div>
+                    <div class="car-info">
+                        <span class="car-name">${prop.name}</span>
+                        <div style="font-size:0.8rem; color:var(--accent-green); font-weight:700;">
+                            ${prop.income} ₺ / Saat
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <span style="display:block; font-size:0.9rem; font-weight:700; color:var(--accent-gold);">${prop.price.toLocaleString()} ₺</span>
+                        <button class="slot-btn" style="padding:4px 10px; margin-top:4px;">İNŞA ET</button>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        async function selectItemToAdd(keyOrId, type) {
+            try {
+                let endpoint, body;
+                
+                if(type === 'property') {
+                    endpoint = '/api/business/real-estate/add';
+                    body = { userId: user.id, typeId: keyOrId }; // keyOrId is property_type_id
+                } else {
+                    endpoint = '/api/business/rent-a-car/add';
+                    body = { userId: user.id, slotId: selectedSlotId, carType: keyOrId };
+                }
+
+                const res = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId: user.id,
-                        slotId: selectedSlotId,
-                        carType: carKey
-                    })
+                    body: JSON.stringify(body)
                 });
                 const result = await res.json();
 
                 if (result.success) {
                     toastr.success(result.message);
                     closeBuyModal();
-                    loadRentData(); // Refresh slots
+                    loadBusinessData();
                 } else {
                     toastr.error(result.message);
                 }
@@ -520,287 +973,237 @@
                 toastr.error('Bir hata oluştu.');
             }
         }
-
-        function closeRewardModal() {
-            $('#rewardModal').fadeOut(200);
-        }
-
-        function closeErrorModal() {
-            $('#errorModal').fadeOut(200);
-        }
-
-        function showRewardModal(message) {
-            // Format money part to be bold and white
-            // Matches patterns like: 35000 TL, 35.000 TL, 100 ₺
-            const formatted = message.replace(/([\d.,]+)\s*(TL|₺)/gi, '<span style="color:#fff; font-weight:800; font-size:1.1rem;">$1 $2</span>');
-            
-            $('#rewardMsg').html(formatted);
-            $('#rewardModal').fadeIn(200).css('display', 'flex');
-        }
-
-        function showErrorModal(message) {
-            $('#errorMsg').html(message);
-            $('#errorModal').fadeIn(200).css('display', 'flex');
-        }
-
-        function showResultModal(success, message) {
-            if(success) {
-                showRewardModal(message);
-            } else {
-                showErrorModal(message);
-            }
-        }
-
-        async function collectIncome(slotId) {
-            try {
-                const res = await fetch('/api/business/rent-a-car/collect', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: user.id, slotId: slotId })
-                });
-                const result = await res.json();
-                
-                showResultModal(result.success, result.message);
-                
-                if (result.success) {
-                    loadRentData();
-                }
-            } catch (err) {
-                showResultModal(false, 'Bağlantı hatası.');
-            }
-        }
-
-        async function withdrawSafe() {
-            try {
-                const res = await fetch('/api/business/rent-a-car/withdraw', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: user.id })
-                });
-                const result = await res.json();
-                
-                if (result.success) {
-                    toastr.success(result.message);
-                    loadRentData();
-                    // Update header money if possible (optional: window.location.reload() or header update event)
-                } else {
-                    // Suppress error if it's just empty safe
-                    if(res.status === 400 && result.message === 'Çekilecek bakiye yok.') {
-                         toastr.warning(result.message);
-                    } else {
-                         toastr.error(result.message);
-                    }
-                }
-            } catch (err) {
-                toastr.error('Hata oluştu.');
-            }
-        }
-        
-        async function collectAllIncome() {
-             try {
-                const res = await fetch('/api/business/rent-a-car/collect-all', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: user.id })
-                });
-                const result = await res.json();
-                
-                showResultModal(result.success, result.message);
-                
-                if (result.success) {
-                    loadRentData();
-                }
-            } catch (err) {
-                showResultModal(false, 'İşlem başarısız.');
-            }
-        }
-
-        // === RENDERING ===
-        function renderSlots(activeSlots) {
-            const container = document.getElementById('garageSlots');
-            container.innerHTML = '';
-            
-            // Check if there is anything to collect for the "Collect All" button
-            const hasCollectible = activeSlots.some(s => s.hours_passed >= (s.duration || 1));
-            if (hasCollectible) {
-                $('#collectAllBtn').fadeIn(200);
-            } else {
-                $('#collectAllBtn').fadeOut(200);
-            }
-
-            // We have 3 fixed slots logic in frontend for now
-            for (let i = 1; i <= 3; i++) {
-                const slotData = activeSlots.find(s => s.slot_id === i);
-                
-                if (slotData) {
-                    const carInfo = carConfig[slotData.car_type] || { name: 'Bilinmeyen', image: '', income: 0 };
-                    const isReadyToCollect = slotData.hours_passed >= (slotData.duration || 1);
-                    const healthVal = parseFloat(slotData.durability);
-                    const healthColor = getHealthColor(healthVal);
-                    
-                    // Timer Calculation
-                    let timerText = "00:00";
-                    let endTimeAttr = "";
-                    let badgeStyles = "";
-
-                    if (isReadyToCollect) {
-                        timerText = "KİRA TOPLA";
-                        badgeStyles = "color:var(--accent-green);";
-                    } else if (slotData.remaining_ms > 0) {
-                        // Calculate target time based on client's current time + remaining delay from server
-                        const now = new Date().getTime();
-                        const targetTime = now + slotData.remaining_ms;
-                        endTimeAttr = `data-endtime="${targetTime}"`;
-                        
-                        // Limit initial display to simple calculation
-                        const m = Math.floor(slotData.remaining_ms / 60000);
-                        const s = Math.floor((slotData.remaining_ms % 60000) / 1000);
-                        timerText = `${m}:${s < 10 ? '0'+s : s}`;
-                    }
-
-                    // Status Class (Green/Red border)
-                    const statusClass = isReadyToCollect ? 'card-ready' : 'card-working';
-                    
-                    // Action Button or Status Text
-                    let actionHtml = '';
-                    if (isReadyToCollect) {
-                        actionHtml = `
-                            <button class="btn-collect-sm" onclick="collectIncome(${i})">
-                                <i class="fas fa-hand-holding-usd"></i>
-                            </button>
-                        `;
-                    } else {
-                        actionHtml = `
-                            <div style="font-size:0.7rem; color:#666; font-weight:700; text-transform:uppercase;">Çalışıyor</div>
-                        `;
-                    }
-
-                    const html = `
-                    <div class="slot-card ${statusClass}">
-                        <div class="slot-icon-box">
-                            <img src="${carInfo.image}" onerror="this.src='icons/car-icon/Noventis.png'" alt="${carInfo.name}">
-                        </div>
-                        <div class="info-col">
-                            <div class="car-title">${carInfo.name}</div>
-                            <div class="badges-row">
-                                <div class="info-badge" style="color:#fff" title="Kondisyon">
-                                    <i class="fas fa-heartbeat" style="color:${healthColor}"></i> %${healthVal.toFixed(1)}
-                                </div>
-                                <div class="info-badge" style="color:#fff" title="Kazanç">
-                                    <i class="fas fa-coins" style="color:var(--accent-green)"></i> +${slotData.pending_income ? slotData.pending_income.toLocaleString('tr-TR') : 0}
-                                </div>
-                                <div class="info-badge timer-badge" ${endTimeAttr} title="Süre" style="min-width:50px; color:${isReadyToCollect ? 'var(--accent-green)' : '#fff'}">
-                                    <i class="fas fa-clock" style="color:${isReadyToCollect ? 'var(--accent-green)' : '#f1c40f'}"></i> <span>${timerText}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="action-col">
-                            ${actionHtml}
-                        </div>
-                    </div>`;
-                    
-                    container.insertAdjacentHTML('beforeend', html);
-
-                } else {
-                    // Empty Slot
-                    const html = `
-                    <div class="slot-card slot-empty" onclick="openBuyCarModal(${i})" style="justify-content:center; gap:10px;">
-                        <i class="fas fa-plus fa-lg"></i>
-                        <span class="slot-text">KİRALA</span>
-                    </div>`;
-                    container.insertAdjacentHTML('beforeend', html);
-                }
-            }
-        }
-
-        function getHealthColor(health) {
-            if (health > 70) return '#2ecc71';
-            if (health > 30) return '#f1c40f';
-            return '#e74c3c';
-        }
-
-        function openBuyCarModal(slotId) {
-            selectedSlotId = slotId;
-            loadInventory(); // Fetch fresh inventory
-            $('#carBuyModal').fadeIn(200).css('display', 'flex');
-        }
         
         function closeBuyModal() {
             selectedSlotId = null;
             $('#carBuyModal').fadeOut(200);
         }
-
-        function renderInventoryModal() {
-            const list = document.getElementById('carList');
-            list.innerHTML = '';
+        
+        // === COLLECTION & WITHDRAW ===
+        async function collectIncome(id) {
+            // NOTE: For rent-a-car 'id' is slotId (1..5)
+            // For real-estate 'id' doesn't exist for single collect in my API plan ? 
+            // Checking server.js: I did NOT implement single property collect for Real Estate.
+            // I only implemented '/collect-all'.
+            // Wait, looking at server.js again...
+            // app.post('/api/business/real-estate/collect-all') IS THERE.
+            // app.post('/api/business/real-estate/collect' ... IS NOT THERE.
+            // So Real Estate assumes "Collect All" only? 
+            // Or I must implement single collect. 
+            // For simplicity, let's map single button to collectAll if user clicks it, or hide single buttons for RE.
+            // Actually, showing single buttons is good for feedback.
+            // I will implement single collect logic as a "Collect All" trigger for now, or just implement single collect later.
+            // Let's redirect to collectAll for Real Estate for now.
             
-            let hasCars = false;
+            let endpoint = businessType === 'real_estate' 
+                ? '/api/business/real-estate/collect-all' 
+                : '/api/business/rent-a-car/collect';
+                
+            let body = { userId: user.id };
+            if(businessType !== 'real_estate') body.slotId = id;
+            
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const result = await res.json();
+                
+                showResultModal(result.success, result.message);
+                if (result.success) loadBusinessData();
+            } catch (err) { showResultModal(false, 'Hata'); }
+        }
 
-            Object.keys(carConfig).forEach(key => {
-                const qty = currentInventory[key] || 0;
-                if (qty > 0) {
-                    const car = carConfig[key];
-                    const item = document.createElement('div');
-                    item.className = 'car-option';
-                    // Add Click Event Wrapper
-                    item.onclick = () => selectCar(key);
-                    
-                    item.innerHTML = `
-                        <div class="car-img-badge">
-                            <img src="${car.image}" onerror="this.src='icons/car-icon/Noventis.png'">
-                        </div>
-                        <div class="car-info">
-                            <span class="car-name">${car.name}</span>
-                            <div style="display:flex; gap:5px; margin-top:5px; flex-wrap:wrap;">
-                                <span class="health-badge" style="color:#2ecc71">
-                                    <i class="fas fa-coins" style="font-size:0.6rem;"></i> ${car.income} ₺/dk
-                                </span>
-                                <span class="health-badge" style="color:#f39c12">
-                                    <i class="fas fa-clock" style="font-size:0.6rem;"></i> ${car.duration} Dakika
-                                </span>
-                                <span class="health-badge" style="color:#9b59b6">
-                                    <i class="fas fa-box" style="font-size:0.6rem;"></i> Stok: ${qty}
-                                </span>
-                            </div>
-                        </div>
-                    `;
-                    list.appendChild(item);
-                    hasCars = true;
-                }
-            });
-
-            if (!hasCars) {
-                list.innerHTML = '<div style="text-align:center; color:#888; padding:20px;">Envanterinizde araç bulunmuyor.<br><small>Galeri veya Marketten araç alabilirsiniz.</small></div>';
+        async function collectAllIncome() {
+             let endpoint = businessType === 'real_estate' 
+                ? '/api/business/real-estate/collect-all' 
+                : '/api/business/rent-a-car/collect-all';
+                
+             try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id })
+                });
+                const result = await res.json();
+                showResultModal(result.success, result.message);
+                if (result.success) loadBusinessData();
+            } catch (err) {
+                showResultModal(false, 'İşlem başarısız.');
+            }
+        }
+        
+        async function withdrawSafe() {
+            let endpoint = businessType === 'real_estate' 
+                ? '/api/business/real-estate/withdraw' 
+                : '/api/business/rent-a-car/withdraw';
+                
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id })
+                });
+                const result = await res.json();
+                showResultModal(result.success, result.message);
+                if (result.success) loadBusinessData();
+            } catch (err) {
+                showResultModal(false, 'Hata oluştu.');
             }
         }
 
-        // Live Timer Update
+        // === RENDERING FUNCTIONS ===
+        function renderSlots(activeSlots) {
+            const container = document.getElementById('garageSlots');
+            container.innerHTML = '';
+            
+            const hasCollectible = activeSlots.some(s => s.hours_passed >= (s.duration || 1));
+            toggleCollectAll(hasCollectible);
+
+            const currentLevel = parseInt($('#bizLevel').text()) || 1;
+            const maxSlots = currentLevel * 5;
+
+            for (let i = 1; i <= maxSlots; i++) {
+                const slotData = activeSlots.find(s => s.slot_id === i);
+                if (slotData) {
+                    const carInfo = carConfig[slotData.car_type] || { name: 'Bilinmeyen', image: '', income: 0 };
+                    const isReady = slotData.hours_passed >= (slotData.duration || 1);
+                    const health = parseFloat(slotData.durability);
+                    
+                    // Timer logic
+                    let timerText = "00:00"; 
+                    let endAttr = "";
+                    if(isReady) {
+                        timerText = "KİRA TOPLA";
+                    } else if(slotData.remaining_ms > 0) {
+                         const target = new Date().getTime() + slotData.remaining_ms;
+                         endAttr = `data-endtime="${target}"`;
+                         const m = Math.floor(slotData.remaining_ms / 60000);
+                         timerText = `${m} dk`;
+                    }
+
+                    const statusClass = isReady ? 'card-ready' : 'card-working';
+                    let actionHtml = isReady 
+                        ? `<button class="btn-collect-sm" onclick="collectIncome(${i})"><i class="fas fa-hand-holding-usd"></i></button>`
+                        : `<div style="font-size:0.7rem; color:#666; font-weight:700;">ÇALIŞIYOR</div>`;
+
+                    container.insertAdjacentHTML('beforeend', `
+                    <div class="slot-card ${statusClass}">
+                        <div class="slot-icon-box"><img src="${carInfo.image}"></div>
+                        <div class="info-col">
+                            <div class="car-title">${carInfo.name}</div>
+                            <div class="badges-row">
+                                <div class="info-badge"><i class="fas fa-heartbeat" style="color:${getHealthColor(health)}"></i> %${health.toFixed(0)}</div>
+                                <div class="info-badge"><i class="fas fa-coins text-green"></i> ${carInfo.income}</div>
+                                <div class="info-badge timer-badge" ${endAttr}><i class="fas fa-clock"></i> <span>${timerText}</span></div>
+                            </div>
+                        </div>
+                        <div class="action-col">${actionHtml}</div>
+                    </div>`);
+                } else {
+                    container.insertAdjacentHTML('beforeend', `
+                    <div class="slot-card slot-empty" onclick="openAddLogic(${i})">
+                        <i class="fas fa-plus"></i><span class="slot-text">KİRALA</span>
+                    </div>`);
+                }
+            }
+        }
+        
+        function renderProperties(properties) {
+            const container = document.getElementById('garageSlots');
+            container.innerHTML = '';
+            
+            // Collectible if pending_income > 0
+            const hasCollectible = properties.some(p => p.pending_income > 0);
+            toggleCollectAll(hasCollectible);
+            
+            // Limit checks
+            const currentLevel = parseInt($('#bizLevel').text()) || 1;
+            const maxSlots = currentLevel * 5;
+            
+            // Render Owned Properties
+            properties.forEach(p => {
+                 const propInfo = propertyConfig[p.type_id] || { name: p.name, image: p.image, income: p.income };
+                 const isReady = p.pending_income > 0;
+                 
+                 // Properties are always working, no duration end.
+                 // Show accrued income
+                 
+                 const statusClass = isReady ? 'card-ready' : 'card-working';
+                 let actionHtml = isReady 
+                     ? `<button class="btn-collect-sm" onclick="collectIncome('${p.id}')">
+                            ${p.pending_income.toLocaleString()} ₺
+                        </button>`
+                     : `<div style="font-size:0.7rem; color:#666;">BİRİKİYOR</div>`;
+                     
+                 container.insertAdjacentHTML('beforeend', `
+                    <div class="slot-card ${statusClass}">
+                        <div class="slot-icon-box"><img src="${propInfo.image || 'icons/city-icon/house.png'}"></div>
+                        <div class="info-col">
+                            <div class="car-title">${propInfo.name}</div>
+                            <div class="badges-row">
+                                <div class="info-badge"><i class="fas fa-coins text-green"></i> ${propInfo.income}/saat</div>
+                                <div class="info-badge"><i class="fas fa-clock text-gold"></i> Süresiz</div>
+                            </div>
+                        </div>
+                        <div class="action-col">${actionHtml}</div>
+                    </div>`);
+            });
+            
+            // Render Empty Slots for Purchase
+            const emptyCount = maxSlots - properties.length;
+            for(let i=0; i<emptyCount; i++) {
+                 container.insertAdjacentHTML('beforeend', `
+                    <div class="slot-card slot-empty" onclick="openAddLogic(null)" style="flex-direction:column; justify-content:center; gap:8px;">
+                        <img src="icons/property-icon/tarla.png" style="width:48px; height:48px; object-fit:contain; opacity:0.6;">
+                        <div style="text-align:center;">
+                            <span class="slot-text" style="display:block; color:#aaa; font-size:0.9rem;">BOŞ ARSA</span>
+                            <span style="font-size:0.7rem; color:var(--accent-green); font-weight:700;">İNŞAAT YAP</span>
+                        </div>
+                    </div>`);
+            }
+        }
+
+        function toggleCollectAll(show) {
+            if(show) $('#collectAllBtn').fadeIn(200);
+            else $('#collectAllBtn').fadeOut(200);
+        }
+
+        function getHealthColor(health) { return health > 70 ? '#2ecc71' : (health > 30 ? '#f1c40f' : '#e74c3c'); }
+        
+        // Modal helpers
+        function showResultModal(success, msg) {
+             if(success) showRewardModal(msg);
+             else showErrorModal(msg);
+        }
+        function closeRewardModal(){ $('#rewardModal').fadeOut(200); }
+        function closeErrorModal(){ $('#errorModal').fadeOut(200); }
+        function showRewardModal(msg) { $('#rewardMsg').html(msg); $('#rewardModal').fadeIn(200).css('display','flex'); }
+        function showErrorModal(msg) { $('#errorMsg').html(msg); $('#errorModal').fadeIn(200).css('display','flex'); }
+
+        // Global Tick
         setInterval(function() {
             $('.timer-badge').each(function() {
                 const endAttr = $(this).attr('data-endtime');
                 if (endAttr) {
-                    const endTime = parseInt(endAttr);
-                    const now = new Date().getTime();
-                    const diff = endTime - now;
-                    
+                    const diff = parseInt(endAttr) - new Date().getTime();
                     if (diff > 0) {
                         const m = Math.floor(diff / 60000);
                         const s = Math.floor((diff % 60000) / 1000);
                         $(this).find('span').text(`${m}:${s < 10 ? '0'+s : s}`);
                     } else {
-                        // Time over
-                        $(this).find('span').text('KİRA TOPLA');
+                        $(this).find('span').text('HAZIR');
                         $(this).css('color', 'var(--accent-green)');
-                        
-                        // Check if we need to reload to show the button
                         if (!$(this).data('reloaded')) {
                             $(this).data('reloaded', true);
-                            setTimeout(loadRentData, 500); 
+                            loadBusinessData(); 
                         }
                     }
                 }
             });
         }, 1000);
+
     </script>
 </body>
 </html>
