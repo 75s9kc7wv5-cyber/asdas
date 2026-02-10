@@ -14,6 +14,7 @@
         :root {
             --bg-dark: #0d0d0d;
             --bg-card: #161616;
+            --accent: #f7931a;
             --accent-cyan: #00e5ff;
             --accent-green: #2ecc71;
             --accent-red: #e74c3c;
@@ -171,47 +172,83 @@
         }
         .val-highlight { color: #fff; font-weight: bold; }
 
-        /* LOGS */
-        .logs-section {
-            padding: 0;
-            background: transparent; /* Reset because wrapper handles bg */
+        /* ACCORDION */
+        .accordion-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
         }
-        .log-header {
-            padding: 10px 15px;
-            font-size: 0.75rem;
+        .accordion-header {
+            padding: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.02);
+            transition: background 0.2s;
+        }
+        .accordion-header:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .accordion-header.active {
+             border-bottom: 1px solid var(--border-color);
+             background: rgba(255, 255, 255, 0.05);
+        }
+        .accordion-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .accordion-icon {
             color: #666;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: 1px solid #222;
-            font-weight: bold;
+            transition: transform 0.3s ease;
         }
-        .log-list { padding: 0; }
+        .accordion-header.active .accordion-icon {
+            transform: rotate(180deg);
+            color: var(--accent);
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .accordion-body {
+            padding: 15px;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* LOGLAR */
+        .log-container { background: var(--bg-card); border-radius: 10px; padding: 15px; border: 1px solid var(--border-color); }
+        .log-list { max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
         .log-item {
             display: flex;
             align-items: center;
-            padding: 8px 12px;
-            border-bottom: 1px solid #222;
-            font-size: 0.8rem;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
             transition: background 0.2s;
+            min-height: 36px;
         }
-        .log-item:hover { background: rgba(255,255,255,0.02); }
-        .log-item:last-child { border-bottom: none; }
-
+        .log-item:hover { background: rgba(255,255,255,0.05); }
         .log-avatar {
-            width: 24px; height: 24px;
-            border-radius: 50%;
-            background: #333;
-            margin-right: 10px;
-            border: 1px solid #444;
-            object-fit: cover;
+            width: 24px; height: 24px; border-radius: 50%; margin-right: 8px; object-fit: cover; border: 1px solid #444;
         }
-        /* Fallback avatar style if img fails or is text */
-        
-        .log-txt { flex: 1; color: #aaa; }
-        .log-txt strong { color: #fff; }
+        .log-text { font-size: 0.75rem; color: #ccc; flex: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 3px; }
+        .log-user-link { color: #fff; text-decoration: none; font-weight: 700; }
+        .log-time { font-size: 0.65rem; color: #555; margin-left: auto; white-space: nowrap; }
+        .log-highlight { color: var(--accent); font-weight: 600; }
+
+        /* Legacy styles mapping for JS compatibility if needed or removed */
         .log-buy { color: var(--accent-green); font-weight: bold; }
         .log-sell { color: var(--accent-red); font-weight: bold; }
-        .log-time { font-size: 0.7rem; color: #555; }
 
     </style>
 </head>
@@ -258,10 +295,20 @@
                 </div>
             </div>
 
-            <div class="card-box logs-section">
-                <div class="log-header">SON İŞLEMLER</div>
-                <div id="tradeLogs" class="log-list">
-                    <!-- Logs Loaded Here -->
+            <!-- LOGLAR -->
+            <div class="accordion-card">
+                <div class="accordion-header active" onclick="toggleAccordion(this)">
+                    <div class="accordion-title">
+                        <i class="fas fa-history"></i> <span id="logTitle">Son İşlemler</span>
+                    </div>
+                    <i class="fas fa-chevron-down accordion-icon"></i>
+                </div>
+                <div class="accordion-content" style="max-height: 500px;">
+                    <div class="accordion-body">
+                        <div class="log-list" id="tradeLogs">
+                            <div style="text-align:center; color:#666; font-size:0.8rem; padding:10px;">Yükleniyor...</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -405,22 +452,20 @@
                     const actionClass = t.type === 'buy' ? 'log-buy' : 'log-sell';
                     const amountStr = parseFloat(t.amount).toFixed(6);
                     const avatarUrl = t.avatar || 'https://via.placeholder.com/30'; 
-                    const tradeId = t.id ? `#${t.id}` : '';
-
+                    
                     return `
                     <div class="log-item">
                         <img src="${avatarUrl}" class="log-avatar" alt="av" onerror="this.src='https://via.placeholder.com/30'">
-                        <div class="log-txt">
-                            <strong>${t.username}</strong> <span class="${actionClass}">${amountStr} BTC ${actionText}</span>
-                            <div style="font-size:0.65rem; color:#444;">
-                                <span style="opacity:0.5; margin-right:4px;">${tradeId}</span> 
-                                Fiyat: $${parseFloat(t.price).toFixed(2)}
-                            </div>
+                        <div class="log-text">
+                            <span class="log-user-link">${t.username}</span> 
+                            <span class="${actionClass}" style="margin-left: 5px;">${amountStr} BTC ${actionText}</span>
+                            <span style="font-size: 0.65rem; color: #666; margin-left: auto;">($${parseFloat(t.price).toFixed(2)})</span>
                         </div>
                         <div class="log-time">${new Date(t.time).toLocaleTimeString()}</div>
                     </div>
                     `;
                 }).join('');
+
 
             } catch (e) {
                 console.error(e);
@@ -446,9 +491,11 @@
                     const now = Date.now();
                     const diffSeconds = Math.floor((now - lastTime) / 1000);
                     
+                    /* Rate Limit Removed
                     if(diffSeconds < 60) {
                         startTimer(60 - diffSeconds);
                     }
+                    */
                 }
             }
         }
@@ -475,7 +522,7 @@
                     toastr.success(data.message);
                     document.getElementById('amountInput').value = '';
                     document.getElementById('estTotal').innerText = '-';
-                    startTimer(60); // Start manually on success
+                    // startTimer(60); // Rate limit removed
                     refreshData();
                     fetchBalance();
                 } else {
@@ -506,6 +553,15 @@
              setInterval(fetchBalance, 10000);
         };
 
+        function toggleAccordion(header) {
+            header.classList.toggle('active');
+            const content = header.nextElementSibling;
+            if (content.style.maxHeight && content.style.maxHeight !== '0px') {
+                content.style.maxHeight = '0px';
+            } else {
+                content.style.maxHeight = '500px'; 
+            }
+        }
     </script>
 </body>
 </html>

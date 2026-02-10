@@ -26,6 +26,10 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
+        /* Hide Scrollbar */
+        ::-webkit-scrollbar { display: none; }
+        * { -ms-overflow-style: none; scrollbar-width: none; }
+
         body {
             background-color: #000;
             font-family: 'Rajdhani', sans-serif;
@@ -48,7 +52,7 @@
         /* PAGE HEADER */
         .page-header {
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             gap: 12px;
             margin-bottom: 20px;
         }
@@ -115,8 +119,12 @@
             background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 8px;
             padding: 10px; text-align: center;
         }
-        .stat-card i { color: var(--text-muted); font-size: 1rem; margin-bottom: 5px; }
-        .stat-label { display: block; font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px; }
+        .stat-label { 
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            font-size: 0.75rem; color: #ffd700; text-transform: uppercase; 
+            margin-bottom: 5px; font-weight: 700; 
+        }
+        /* Old icon style removed - see bottom of CSS */
         .stat-val { font-size: 1rem; font-weight: 700; color: #fff; }
         
         /* SLOTS (ARAÇLAR) */
@@ -159,7 +167,7 @@
         .badges-row { display: flex; gap: 6px; flex-wrap: wrap; }
         .info-badge { 
             font-size: 0.65rem; padding: 3px 6px; border-radius: 4px; font-weight: 700; 
-            display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.08); color: #ccc;
+            display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.08); color: #fff;
         }
 
         .action-col { margin-left: 10px; display: flex; justify-content: flex-end; align-items: center; }
@@ -178,59 +186,66 @@
         }
         .slot-empty:hover { border-color: var(--accent); color: var(--accent); border-left-color: var(--accent) !important; background: rgba(0, 229, 255, 0.05); }
         
-        /* MODAL STYLES */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); z-index: 1000;
-            display: none; justify-content: center; align-items: center;
-            animation: fadeIn 0.3s;
-        }
-        .modal-overlay.active { display: flex; }
+        /* MODAL */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 200; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .modal-content { position: relative; background: #181818; width: 90%; max-width: 400px; padding: 25px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 0 30px rgba(0,0,0,0.5); transform: none; border-top: 4px solid var(--accent); }
 
-        .money-highlight {
-            color: var(--accent-gold);
-            font-weight: 800;
-            font-size: 1.4rem;
-            text-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
-            padding: 0 3px;
-            vertical-align: middle;
+        /* Page Header Center */
+        .page-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; text-align: center; }
+        .page-title-box { flex: 1; text-align: center; margin-left: -52px; } /* Offset back btn width */
+        .page-title { font-size: 1.3rem; font-weight: 800; color: #fff; text-transform: uppercase; margin-bottom: 4px; }
+        
+        /* Icon Badge */
+        .stat-label i { 
+            font-size: 1rem; color: #ffd700; 
+            margin-right: 5px;
+        }
+        .m-title { font-size: 1.1rem; font-weight: 700; color: #fff; margin:0; }
+        .modal-title { font-size: 1.2rem; font-weight: 800; color: #fff; text-align: center; margin-bottom: 15px; }
+        .m-close { cursor: pointer; font-size: 1.2rem; color: #888; transition:color 0.2s; }
+        .m-close:hover { color:#fff; }
+        .m-body { color: #aaa; font-size: 0.95rem; line-height: 1.5; margin-bottom: 20px; text-align: center; }
+        .m-price { font-size: 1.5rem; font-weight: 700; margin: 10px 0; color: var(--accent-green); }
+        .m-actions { display: flex; gap: 10px; justify-content: center; }
+        .btn-confirm { background: var(--accent-green); color: #000; border: none; padding: 10px 25px; border-radius: 8px; font-weight: 700; cursor: pointer; font-family:'Rajdhani'; font-size:0.95rem; }
+        .btn-cancel { background: #333; color: #fff; border: none; padding: 10px 25px; border-radius: 8px; font-weight: 700; cursor: pointer; font-family:'Rajdhani'; font-size:0.95rem; }
+        
+        .m-list { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; text-align: left; }
+        
+        .gpu-item { 
+            background: #111; border: 1px solid #333; border-radius: 8px; padding: 12px; 
+            display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s;
+        }
+        .gpu-item:hover { border-color: var(--accent); background: #1a1a1a; }
+        .gpu-item-icon { font-size: 1.2rem; color: #666; }
+        .gpu-item-info { flex: 1; }
+        .gpu-item-name { font-weight: 700; font-size: 0.95rem; color: #eee; }
+        .gpu-item-count { font-size: 0.8rem; color: #888; }
+        
+        .no-gpu { text-align: center; color: #666; padding: 20px; font-style: italic; font-size: 0.9rem; }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
         }
         
-        .m-message {
-            color: #ccc;
-            font-size: 0.95rem;
-            line-height: 1.6;
-            margin-bottom: 25px;
-            font-weight: 500;
-        }
-
-        .modal-content {
-            background: #181818; width: 85%; max-width: 400px; padding: 25px; border-radius: 10px;
-            border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-cyan);
-            box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
-            transform: none;
-        }
-        
-        .m-icon { font-size: 3rem; color: var(--accent-cyan); margin-bottom: 10px; }
-        .m-title { font-size: 1.3rem; margin-bottom: 10px; color: #fff; font-weight: bold; }
-        .m-details { background: #222; padding: 10px; border-radius: 6px; margin-bottom: 20px; text-align: left; font-size: 0.9rem; color: #ccc; }
-        .m-row { display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px solid #333; padding-bottom: 5px; }
-        .m-row:last-child { border: none; padding: 0; margin: 0; }
-        
-        .modal-btns { display: flex; gap: 10px; }
-        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 1rem; }
-        .btn-confirm { background: var(--accent-green); color: #000; }
-        .btn-cancel { background: #333; color: #fff; }
-        .btn-confirm:hover { box-shadow: 0 0 10px rgba(46, 204, 113, 0.4); }
-        .btn-cancel:hover { background: #444; }
-
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        /* @keyframes fadeInDown removed as per new design request */
 
         .car-option {
             background: var(--bg-input); border: 1px solid #333; border-radius: 8px; padding: 10px;
             margin-bottom: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: all 0.2s;
         }
+        .car-img-badge {
+            width: 60px; height: 60px;
+            background: rgba(255,255,255,0.03); 
+            border: 1px solid #2a2a2a; 
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            padding: 5px;
+        }
+        .car-img-badge img { width: 45px; height: auto; object-fit: contain; }
         .car-option:hover { border-color: var(--accent); background: rgba(0, 229, 255, 0.05); }
         .car-info { flex: 1; }
         .car-name { font-weight: 700; font-size: 0.9rem; display: block; }
@@ -267,25 +282,27 @@
             <!-- STATS -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <i class="fas fa-car-side"></i>
-                    <span class="stat-label">Toplam Araç</span>
+                    <div class="stat-label"><i class="fas fa-car-side"></i> Toplam Araç</div>
                     <div class="stat-val" id="totalCars">0</div>
                 </div>
                 <div class="stat-card">
-                    <i class="fas fa-key"></i>
-                    <span class="stat-label">Kirada</span>
+                    <div class="stat-label"><i class="fas fa-key"></i> Kirada</div>
                     <div class="stat-val text-green" id="rentedCars">0</div>
                 </div>
                 <div class="stat-card">
-                    <i class="fas fa-coins"></i>
-                    <span class="stat-label">Kasa Bakiyesi</span>
-                    <div class="stat-val text-gold" id="safeBalance">0.00 ₺</div>
+                    <div class="stat-label"><i class="fas fa-coins"></i> Hazır Gelir</div>
+                    <div class="stat-val text-gold" id="readyIncome">0 ₺</div>
                 </div>
                 <div class="stat-card">
-                    <i class="fas fa-star"></i>
-                    <span class="stat-label">İtibar</span>
-                    <div class="stat-val text-cyan" id="reputation">100</div>
+                    <div class="stat-label"><i class="fas fa-star"></i> Seviye</div>
+                    <div class="stat-val text-cyan" id="bizLevel">1</div>
                 </div>
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <button onclick="upgradeBusiness()" style="width:100%; background: var(--accent-green); border:none; padding:12px; border-radius:8px; color:#000; font-weight:800; cursor:pointer; font-family:'Rajdhani'; font-size:1rem; display:flex; justify-content:center; align-items:center; gap:10px; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);">
+                    <i class="fas fa-arrow-circle-up" style="font-size:1.2rem;"></i> İŞLETMEYİ GELİŞTİR
+                </button>
             </div>
 
             <!-- SLOTS / GARAGE -->
@@ -319,11 +336,15 @@
 
     <!-- REWARD/SUCCESS MODAL -->
     <div class="modal-overlay" id="rewardModal">
-        <div class="modal-content">
-            <i class="fas fa-check-circle m-icon" style="color:var(--accent-green);"></i>
-            <h3 class="m-title">İŞLEM BAŞARILI!</h3>
-            <p class="m-message" id="rewardMsg">İşlem başarıyla tamamlandı.</p>
-            <button class="m-btn btn-confirm" onclick="closeRewardModal()" style="width:100%">HARİKA!</button>
+        <div class="modal-content" style="text-align: center; border-top: 4px solid var(--accent-green); background: linear-gradient(135deg, #18191a, #0a0a0a);">
+            <div style="width: 80px; height: 80px; background: rgba(46, 204, 113, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto;">
+                <i class="fas fa-coins" style="font-size: 2.5rem; color: var(--accent-green);"></i>
+            </div>
+            <h3 class="m-title" style="margin-bottom: 5px;">TAHSİLAT BAŞARILI</h3>
+            <p class="m-message" id="rewardMsg" style="color:#aaa; font-size: 1rem; font-weight: 500; margin-bottom: 20px;">İşlem başarıyla tamamlandı.</p>
+            <button class="m-btn btn-confirm" onclick="closeRewardModal()" style="width:100%; padding: 12px; font-size:1rem; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);">
+                TAMAM
+            </button>
         </div>
     </div>
 
@@ -340,7 +361,7 @@
     <!-- CAR BUY MODAL -->
     <div class="modal-overlay" id="carBuyModal">
         <div class="modal-content">
-            <i class="fas fa-times modal-close" style="position:absolute; right:15px; top:15px; color:#888; cursor:pointer;" onclick="closeBuyModal()"></i>
+            <i class="fas fa-times modal-close" style="position:absolute; right:15px; top:15px; color:#fff; font-size:1.2rem; cursor:pointer; z-index:10;" onclick="closeBuyModal()"></i>
             <div class="modal-title">ARAÇ ENVANTERİ</div>
             <p style="text-align:center; color:#888; font-size:0.85rem; margin-bottom:15px; padding:0 10px; line-height:1.4;">
                 Garaja eklemek istediğiniz aracı aşağıdan seçiniz. <br>Seçilen araç slot'a yerleştirilecektir.
@@ -401,20 +422,63 @@
                 const res = await fetch(`/api/business/rent-a-car/${user.id}`);
                 const data = await res.json();
                 
-                // Update Safe Balance
-                $('#safeBalance').text(parseFloat(data.balance || 0).toFixed(2) + ' ₺');
+                // Update Biz Level
+                $('#bizLevel').text(data.level || 1);
                 
-                // Update Slots
-                renderSlots(data.slots || []);
+                const nextCost = (data.level || 1) * 500000;
+                $('#upgradeCost').text(nextCost.toLocaleString('tr-TR') + ' ₺');
+
+                // Update Slots & Stats
+                const slots = data.slots || [];
+                renderSlots(slots);
                 
-                // Also update stats
-                let totalCars = (data.slots || []).length;
-                let activeCars = (data.slots || []).filter(s => s.pending_income === 0).length; // Kirada (working)
+                // Stats Logic
+                let totalCars = slots.length;
+                let activeCars = slots.filter(s => s.pending_income === 0).length; // Kirada (working)
+                
+                // Calculate Ready Income
+                let readyIncome = 0;
+                slots.forEach(s => {
+                    const duration = s.duration || 1;
+                    if(s.hours_passed >= duration && s.pending_income > 0) {
+                        readyIncome += s.pending_income;
+                    }
+                });
+                
                 $('#totalCars').text(totalCars);
                 $('#rentedCars').text(activeCars);
                 
+                // Update Ready Income UI
+                const readyEl = $('#readyIncome');
+                readyEl.text(readyIncome.toLocaleString('tr-TR') + ' ₺');
+                
+                // Color coding
+                readyEl.removeClass('text-gold text-green text-red');
+                if(readyIncome > 0) readyEl.css('color', 'var(--accent-green)');
+                else readyEl.css('color', '#888');
+                
             } catch (err) {
                 console.error('Data load error:', err);
+            }
+        }
+        
+        async function upgradeBusiness() {
+            try {
+                const res = await fetch('/api/business/rent-a-car/upgrade', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id })
+                });
+                const result = await res.json();
+                
+                if (result.success) {
+                    showRewardModal(result.message);
+                    loadRentData();
+                } else {
+                    showErrorModal(result.message);
+                }
+            } catch (e) {
+                showErrorModal('Hata oluştu.');
             }
         }
 
@@ -466,7 +530,11 @@
         }
 
         function showRewardModal(message) {
-            $('#rewardMsg').html(message);
+            // Format money part to be bold and white
+            // Matches patterns like: 35000 TL, 35.000 TL, 100 ₺
+            const formatted = message.replace(/([\d.,]+)\s*(TL|₺)/gi, '<span style="color:#fff; font-weight:800; font-size:1.1rem;">$1 $2</span>');
+            
+            $('#rewardMsg').html(formatted);
             $('#rewardModal').fadeIn(200).css('display', 'flex');
         }
 
@@ -615,14 +683,14 @@
                         <div class="info-col">
                             <div class="car-title">${carInfo.name}</div>
                             <div class="badges-row">
-                                <div class="info-badge" style="color:${healthColor}" title="Kondisyon">
-                                    <i class="fas fa-heartbeat"></i> %${healthVal.toFixed(1)}
+                                <div class="info-badge" style="color:#fff" title="Kondisyon">
+                                    <i class="fas fa-heartbeat" style="color:${healthColor}"></i> %${healthVal.toFixed(1)}
                                 </div>
-                                <div class="info-badge" style="color:var(--accent-green)" title="Kazanç">
-                                    <i class="fas fa-coins"></i> +${carInfo.income}
+                                <div class="info-badge" style="color:#fff" title="Kazanç">
+                                    <i class="fas fa-coins" style="color:var(--accent-green)"></i> +${slotData.pending_income ? slotData.pending_income.toLocaleString('tr-TR') : 0}
                                 </div>
-                                <div class="info-badge timer-badge" ${endTimeAttr} title="Süre" style="min-width:50px; ${badgeStyles}">
-                                    <i class="fas fa-clock"></i> <span>${timerText}</span>
+                                <div class="info-badge timer-badge" ${endTimeAttr} title="Süre" style="min-width:50px; color:${isReadyToCollect ? 'var(--accent-green)' : '#fff'}">
+                                    <i class="fas fa-clock" style="color:${isReadyToCollect ? 'var(--accent-green)' : '#f1c40f'}"></i> <span>${timerText}</span>
                                 </div>
                             </div>
                         </div>
@@ -678,12 +746,14 @@
                     item.onclick = () => selectCar(key);
                     
                     item.innerHTML = `
-                        <img src="${car.image}" style="width:50px; height:30px; object-fit:contain;" onerror="this.src='icons/car-icon/Noventis.png'">
+                        <div class="car-img-badge">
+                            <img src="${car.image}" onerror="this.src='icons/car-icon/Noventis.png'">
+                        </div>
                         <div class="car-info">
                             <span class="car-name">${car.name}</span>
                             <div style="display:flex; gap:5px; margin-top:5px; flex-wrap:wrap;">
                                 <span class="health-badge" style="color:#2ecc71">
-                                    <i class="fas fa-coins" style="font-size:0.6rem;"></i> ${car.income} ₺
+                                    <i class="fas fa-coins" style="font-size:0.6rem;"></i> ${car.income} ₺/dk
                                 </span>
                                 <span class="health-badge" style="color:#f39c12">
                                     <i class="fas fa-clock" style="font-size:0.6rem;"></i> ${car.duration} Dakika

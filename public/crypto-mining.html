@@ -137,7 +137,20 @@
             text-align: center;
         }
         
-        .stat-label { font-size: 0.75rem; color: #888; text-transform: uppercase; margin-bottom: 5px; }
+        .stat-label { 
+            font-size: 0.85rem; 
+            color: #ffd700; /* Yellow */
+            text-transform: uppercase; 
+            margin-bottom: 8px; 
+            font-weight: 700;
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 8px;
+        }
+        
+        .stat-label i { font-size: 1rem; color: #ffd700; }
+        
         .stat-value { font-size: 1.1rem; font-weight: 700; color: #fff; }
         .stat-unit { font-size: 0.8rem; color: #666; margin-left: 2px; }
 
@@ -339,19 +352,19 @@
             <!-- STATS -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-label">Toplam Hash Gücü</div>
+                    <div class="stat-label"><i class="fas fa-microchip"></i> Toplam Hash Gücü</div>
                     <div class="stat-value" id="totalHashrate">0 <span class="stat-unit">TH/s</span></div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Saatlik Kazanç</div>
+                    <div class="stat-label"><i class="fas fa-coins"></i> Saatlik Kazanç</div>
                     <div class="stat-value" id="estimatedEarnings">0.0000 <span class="stat-unit">BTC</span></div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Aktif Cihazlar</div>
+                    <div class="stat-label"><i class="fas fa-server"></i> Aktif Cihazlar</div>
                     <div class="stat-value" id="activeRigs">0 <span class="stat-unit">/ 4</span></div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Enerji Tüketimi</div>
+                    <div class="stat-label"><i class="fas fa-bolt"></i> Enerji Tüketimi</div>
                     <div class="stat-value" id="energyConsumption">0 <span class="stat-unit">kW</span></div>
                 </div>
             </div>
@@ -453,6 +466,14 @@
             'gx_500': 'icons/video-card/GX-700.png', // Placeholder
             'gx_800': 'icons/video-card/GX-700.png', // Placeholder
             'gx_titan': 'icons/video-card/GX-Titan.png'
+        };
+        
+        const GPU_INFO = {
+            'gx_100': { hashrate: 25, daily: 0.006 },
+            'gx_300': { hashrate: 80, daily: 0.020 },
+            'gx_500': { hashrate: 200, daily: 0.050 },
+            'gx_800': { hashrate: 400, daily: 0.100 },
+            'gx_titan': { hashrate: 2500, daily: 0.625 }
         };
 
         function getGpuIcon(key) {
@@ -635,6 +656,7 @@
                 gpuKeys.forEach(key => {
                     const name = GPU_NAMES[key] || key.toUpperCase();
                     const count = inv[key];
+                    const info = GPU_INFO[key] || { hashrate: '?', daily: '?' };
                     
                     const item = `
                         <div class="gpu-item" onclick="installGpu('${key}')">
@@ -643,7 +665,12 @@
                             </div>
                             <div class="gpu-item-info">
                                 <div class="gpu-item-name">${name}</div>
-                                <div class="gpu-item-count">Stok: ${count} Adet</div>
+                                <div class="gpu-item-count" style="color:#aaa; font-size:0.8rem;">Stok: <span style="color:#fff">${count} Adet</span></div>
+                                <div style="color:var(--accent); font-size:0.75rem; margin-top:2px;">
+                                    <i class="fas fa-bolt"></i> ${info.hashrate} TH/s 
+                                    <span style="color:#666">|</span> 
+                                    <i class="fab fa-bitcoin"></i> ~${info.daily} /gün
+                                </div>
                             </div>
                             <div style="color:var(--accent-green); font-size:1.2rem;"><i class="fas fa-arrow-right"></i></div>
                         </div>

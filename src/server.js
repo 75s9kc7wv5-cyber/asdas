@@ -18,13 +18,79 @@ const upload = multer({
     fileFilter: (req, file, cb) => {
         const filetypes = /jpeg|jpg|png|gif/;
         const mimetype = filetypes.test(file.mimetype);
-        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
         if (mimetype && extname) {
             return cb(null, true);
         }
-        cb(new Error('Sadece resim dosyaları (jpeg, jpg, png, gif) yüklenebilir!'));
+        cb(new Error('Only images are allowed!'));
     }
 });
+
+// --- CRYPTO STATE MANAGEMENT ---
+const CRYPTO_STATE_FILE = path.join(__dirname, 'data', 'crypto_state.json');
+let cryptoState = { totalMined: 0, floatingBTC: 0 };
+
+// Load State
+function loadCryptoState() {
+    try {
+        if (fs.existsSync(CRYPTO_STATE_FILE)) {
+            const data = fs.readFileSync(CRYPTO_STATE_FILE, 'utf8');
+            cryptoState = JSON.parse(data);
+            console.log('Crypto State loaded:', cryptoState);
+        } else {
+             // Init defaults or sync with DB if needed
+             // For now start fresh or 0
+             saveCryptoState();
+        }
+    } catch (e) {
+        console.error('Error loading crypto state:', e);
+    }
+}
+
+// Save State
+function saveCryptoState() {
+    try {
+        fs.writeFileSync(CRYPTO_STATE_FILE, JSON.stringify(cryptoState, null, 4));
+    } catch (e) {
+        console.error('Error saving crypto state:', e);
+    }
+}
+
+// Initial Load
+loadCryptoState();
+
+// Sync Check (Optional: Run once to set TotalMined from DB if 0)
+// We'll leave it 0 and let it grow or manual set.
+
+function calculateCryptoPrice() {
+    // Formula: Price = (TotalMined * 0.1) * ScarcityFactor
+    // ScarcityFactor = 1 + (1 - Floating/TotalMined)
+    // If Floating == TotalMined (Low Demand), Factor = 1. Price = 0.1 * Mined
+    // If Floating == 0 (High Demand), Factor = 2. Price = 0.2 * Mined
+    
+    // Safety for 0
+    if (cryptoState.totalMined <= 0) return 1000.00; // Base Price
+    
+    // Eski çarpan 0.05 idi (Eşik 20.000 BTC).
+    // Yeni çarpan 2.0 (Eşik 500 BTC). Fiyatın 1000$ üzerine çıkması kolaylaştı.
+    const basePrice = cryptoState.totalMined * 2.0; 
+    
+    let floatRatio = 0;
+    if (cryptoState.totalMined > 0) {
+        floatRatio = cryptoState.floatingBTC / cryptoState.totalMined;
+    }
+    if (floatRatio > 1) floatRatio = 1; // Should not happen but safety
+    
+    // Scarcity varies from 1.0 (All Floating) to 2.0 (None Floating)
+    const scarcity = 1 + (1 - floatRatio);
+    
+    // Minimum price 1000
+    let price = Math.max(1000, basePrice * scarcity);
+    return price;
+}
+
+// --- END CRYPTO STATE ---
+
+
 
 const db = mysql.createConnection({
     host: 'localhost',
@@ -4349,6 +4415,14 @@ app.get('/api/admin/users', (req, res) => {
     });
 });
 
+// Get Crypto Holders
+app.get('/api/admin/crypto-holders', (req, res) => {
+    db.query('SELECT id, username, btc FROM users WHERE btc > 0 ORDER BY btc DESC LIMIT 50', (err, results) => {
+        if (err) return res.status(500).json({ error: err });
+        res.json(results);
+    });
+});
+
 // Update User
 app.post('/api/admin/update-user', (req, res) => {
     const { id, money, gold, diamond, energy, health, level } = req.body;
@@ -7256,12 +7330,16 @@ app.get('/api/referral/status/:userId', (req, res) => {
 
 /* ================= CRYPTO MINING SYSTEM ================= */
 const GPU_STATS = {
-    'gx_100': { hashrate: 10, power: 0.5 },
-    'gx_300': { hashrate: 35, power: 1.2 },
-    'gx_500': { hashrate: 80, power: 2.5 },
-    'gx_800': { hashrate: 150, power: 4.0 },
-    'gx_titan': { hashrate: 350, power: 8.5 }
+    'gx_100': { hashrate: 25, power: 0.5, damage: 0.0001 },      // Günlük: 0.006 BTC
+    'gx_300': { hashrate: 80, power: 1.2, damage: 0.00015 },     // Günlük: 0.020 BTC
+    'gx_500': { hashrate: 200, power: 2.5, damage: 0.0002 },     // Günlük: 0.050 BTC
+    'gx_800': { hashrate: 400, power: 4.0, damage: 0.0003 },     // Günlük: 0.100 BTC
+    'gx_titan': { hashrate: 2500, power: 8.5, damage: 0.0005 }   // Günlük: 0.625 BTC
 };
+
+// REVISED BALANCED ECONOMY
+// 1 TH/s = 0.00025 BTC / Gün
+const BTC_PER_TH_DAILY = 0.00025000;
 
 app.get('/api/crypto/summary/:userId', (req, res) => {
     const userId = req.params.userId;
@@ -7275,17 +7353,51 @@ app.get('/api/crypto/summary/:userId', (req, res) => {
         db.query('SELECT * FROM player_rigs WHERE user_id = ? ORDER BY slot_index ASC', [userId], (err, rRes) => {
             if(err) return res.status(500).json({success:false, message: 'Rig Error'});
             
+            // const BTC_PER_TH_DAILY = 0.00000500;  <-- REMOVED (Now using global constant)
+            const BTC_PER_TH_SECOND = BTC_PER_TH_DAILY / 86400;
+
             let totalHashrate = 0;
             let totalPower = 0;
             let activeRigs = 0;
+            let totalMined = 0;
+            let needsInit = false;
             
+            const now = new Date();
+
             const rigs = rRes.map(r => {
-                const stats = GPU_STATS[r.gpu_key] || { hashrate: 0, power: 0 };
+                const stats = GPU_STATS[r.gpu_key] || { hashrate: 0, power: 0, damage: 0 };
                 
                 if(r.active && r.health > 0) {
                     totalHashrate += stats.hashrate;
                     totalPower += stats.power;
                     activeRigs++;
+
+                    if (!r.last_collection) {
+                        // First Init for new rigs
+                        db.query('UPDATE player_rigs SET last_collection = NOW() WHERE id = ?', [r.id]);
+                        r.last_collection = now;
+                    } else {
+                        // Mining Calculation (Offline Progress)
+                        const lastCollection = new Date(r.last_collection);
+                        const diffSeconds = (now - lastCollection) / 1000;
+                        
+                        if(diffSeconds > 1) { // Min 1 second
+                            const minedAmount = stats.hashrate * BTC_PER_TH_SECOND * diffSeconds;
+                            totalMined += minedAmount;
+
+                            // Health Degradation System
+                            const damage = (stats.damage || 0.00005) * diffSeconds;
+                            r.health = Math.max(0, r.health - damage);
+
+                            if (r.health <= 0) {
+                                // Auto-Delete Broken Rig
+                                db.query('DELETE FROM player_rigs WHERE id = ?', [r.id]);
+                            } else {
+                                // Update Rig Health & Collection Time Individually
+                                db.query('UPDATE player_rigs SET health = ?, last_collection = NOW() WHERE id = ?', [r.health, r.id]);
+                            }
+                        }
+                    }
                 }
 
                 return {
@@ -7298,10 +7410,21 @@ app.get('/api/crypto/summary/:userId', (req, res) => {
                 };
             });
             
-            // Calc Estimate (Very rough calc)
-            // assume 1 TH/s = 0.00000500 BTC per day
-            const btcPerTH = 0.00000500;
-            const estimatedEarnings = totalHashrate * btcPerTH;
+            // Process Earnings
+            if(totalMined > 0) {
+                db.query('UPDATE users SET btc = btc + ? WHERE id = ?', [totalMined, userId]);
+                
+                // --- UPDATE GLOBAL STATE ---
+                cryptoState.totalMined += totalMined;
+                saveCryptoState();
+                // ---------------------------
+
+                // Reflect in response
+                user.btc = (parseFloat(user.btc) || 0) + totalMined;
+            }
+            
+            // Calc Estimate
+            const estimatedEarnings = totalHashrate * BTC_PER_TH_DAILY;
 
             res.json({
                 success: true,
@@ -7342,7 +7465,7 @@ app.post('/api/crypto/install', (req, res) => {
                     db.query('UPDATE inventory SET quantity = quantity - 1 WHERE user_id = ? AND item_key = ?', [userId, gpuKey], (err) => {
                         if(err) return db.rollback(()=>res.json({success:false, message:'Stok düşülemedi'}));
                         
-                        db.query('INSERT INTO player_rigs (user_id, slot_index, gpu_key, health) VALUES (?, ?, ?, 100)', [userId, slotIndex, gpuKey], (err) => {
+                        db.query('INSERT INTO player_rigs (user_id, slot_index, gpu_key, health, last_collection) VALUES (?, ?, ?, 100, NOW())', [userId, slotIndex, gpuKey], (err) => {
                             if(err) return db.rollback(()=>res.json({success:false, message:'Takılamadı'}));
                             
                             db.commit(err => {
@@ -8599,6 +8722,7 @@ app.post('/api/crypto/trade', (req, res) => {
         const user = users[0];
         const now = new Date();
         
+        /* Rate Limit Removed
         if (user.last_crypto_trade) {
             const diff = (now - new Date(user.last_crypto_trade)) / 1000;
             if (diff < 60) { // 60s LIMIT
@@ -8606,6 +8730,7 @@ app.post('/api/crypto/trade', (req, res) => {
                 return res.json({ success: false, message: `İşlem sınırı: ${waitTime} saniye bekleyin.` });
             }
         }
+        */
 
         // Get Price
         db.query('SELECT price FROM market_history ORDER BY id DESC LIMIT 1', (err, prices) => {
@@ -8615,10 +8740,17 @@ app.post('/api/crypto/trade', (req, res) => {
             if (type === 'buy') {
                 if (user.money < totalCost) return res.json({ success: false, message: 'Yetersiz Bakiye' });
                 
+                // --- CHECK FLOATING SUPPLY ---
+                if (val > cryptoState.floatingBTC) {
+                    return res.json({ success: false, message: `Piyasada yeterli arz yok! (Stok: ${cryptoState.floatingBTC.toFixed(5)} BTC)` });
+                }
+                // -----------------------------
+
                 db.beginTransaction(err => {
                     // Update User (Money, BTC, Timestamp)
-                    db.query('UPDATE users SET money = money - ?, btc = btc + ?, last_crypto_trade = NOW() WHERE id = ?', 
-                        [totalCost, val, userId], (err) => {
+                    // USE JS DATE for Consistency to avoid Timezone Skews (170s bug)
+                    db.query('UPDATE users SET money = money - ?, btc = btc + ?, last_crypto_trade = ? WHERE id = ?', 
+                        [totalCost, val, new Date(), userId], (err) => {
                         if(err) return db.rollback(() => res.json({ success: false, message: 'DB Error 1' }));
                         
                         // Log Trade
@@ -8627,6 +8759,12 @@ app.post('/api/crypto/trade', (req, res) => {
                             
                             db.commit(err => {
                                 if(err) return db.rollback(() => res.json({ success: false, message: 'Commit Error' }));
+                                
+                                // --- UPDATE FLOATING ---
+                                cryptoState.floatingBTC = Math.max(0, cryptoState.floatingBTC - val);
+                                saveCryptoState();
+                                // -----------------------
+
                                 res.json({ success: true, message: `Alım Başarılı: ${val} BTC` });
                             });
                         });
@@ -8638,8 +8776,9 @@ app.post('/api/crypto/trade', (req, res) => {
 
                  db.beginTransaction(err => {
                     // Update User (Money, BTC, Timestamp)
-                    db.query('UPDATE users SET money = money + ?, btc = btc - ?, last_crypto_trade = NOW() WHERE id = ?', 
-                        [totalCost, val, userId], (err) => {
+                    // USE JS DATE for Consistency
+                    db.query('UPDATE users SET money = money + ?, btc = btc - ?, last_crypto_trade = ? WHERE id = ?', 
+                        [totalCost, val, new Date(), userId], (err) => {
                         if(err) return db.rollback(() => res.json({ success: false, message: 'DB Error 1' }));
                         
                         // Log Trade
@@ -8648,6 +8787,12 @@ app.post('/api/crypto/trade', (req, res) => {
                             
                             db.commit(err => {
                                 if(err) return db.rollback(() => res.json({ success: false, message: 'Commit Error' }));
+                                
+                                // --- UPDATE FLOATING ---
+                                cryptoState.floatingBTC += val;
+                                saveCryptoState();
+                                // -----------------------
+
                                 res.json({ success: true, message: `Satış Başarılı: +$${totalCost.toFixed(2)}` });
                             });
                         });
@@ -8660,25 +8805,34 @@ app.post('/api/crypto/trade', (req, res) => {
 
 // 3. Price Simulation
 setInterval(() => {
-    // Get last price
-    db.query('SELECT price FROM market_history ORDER BY id DESC LIMIT 1', (err, results) => {
-        if(err) return;
-        let currentPrice = results.length ? parseFloat(results[0].price) : 100.00;
-        
-        // Random Walk
-        // Volatility between -2% and +2%
-        const changePercent = (Math.random() - 0.5) * 0.04; 
-        let newPrice = currentPrice * (1 + changePercent);
-        
-        // Bias towards 1000 if it drifts too far? 
-        // Or just hard limits
-        if(newPrice < 100) newPrice = 100;
-        
-        db.query('INSERT INTO market_history (price, volume) VALUES (?, ?)', [newPrice, Math.random() * 5], (err) => {
-            if(err) console.error(err);
-        });
+    // New Price Logic based on Total Mined and Floating Supply
+    const newPrice = calculateCryptoPrice();
+    
+    // Slight jitter to make it look alive (±0.5%)
+    const jitter = (Math.random() - 0.5) * 0.01;
+    const finalPrice = newPrice * (1 + jitter);
+
+    db.query('INSERT INTO market_history (price, volume) VALUES (?, ?)', [finalPrice, Math.random() * 5], (err) => {
+        if(err) console.error(err);
     });
 }, 30000); // Every 30 seconds update price
+
+// --- ADMIN STATS ---
+app.get('/api/admin/crypto-stats', (req, res) => {
+    db.query('SELECT SUM(amount) as volume, SUM(total_price) as fiat_volume FROM market_trades', (err, results) => {
+        const volume = (results && results[0] && results[0].volume) || 0;
+        const fiatVolume = (results && results[0] && results[0].fiat_volume) || 0;
+        
+        res.json({
+            totalMined: cryptoState.totalMined,
+            floatingBTC: cryptoState.floatingBTC,
+            price: calculateCryptoPrice(),
+            volumeBTC: volume,
+            volumeMoney: fiatVolume
+        });
+    });
+});
+
 
 
 // ---------------------------------------------------------------------
@@ -8776,7 +8930,7 @@ app.get('/api/business/rent-a-car/:userId', (req, res) => {
         if (err) console.error('Biz init error:', err);
         
         const sql = `
-            SELECT b.rent_a_car_balance, 
+            SELECT b.rent_a_car_balance, b.level,
                    g.id as slot_record_id, g.slot_id, g.car_type, g.durability, g.last_collection_time
             FROM user_business b
             LEFT JOIN user_garage g ON b.user_id = g.user_id
@@ -8787,10 +8941,12 @@ app.get('/api/business/rent-a-car/:userId', (req, res) => {
             if (err) return res.status(500).json({ error: err.message });
             
             let balance = 0;
+            let level = 1;
             let slots = [];
             
             if (results.length > 0) {
                 balance = results[0].rent_a_car_balance;
+                level = results[0].level || 1;
                 
                 results.forEach(row => {
                     if (row.slot_record_id) {
@@ -8826,7 +8982,32 @@ app.get('/api/business/rent-a-car/:userId', (req, res) => {
                 });
             }
             
-            res.json({ balance, slots });
+            res.json({ balance, level, slots });
+        });
+    });
+});
+
+// Upgrade Business
+app.post('/api/business/rent-a-car/upgrade', (req, res) => {
+    const { userId } = req.body;
+    db.query('SELECT level FROM user_business WHERE user_id = ?', [userId], (err, results) => {
+        if (err || !results.length) return res.status(500).json({ success: false, message: 'İşletme bulunamadı.' });
+        
+        const currentLevel = results[0].level || 1;
+        const upgradeCost = currentLevel * 500000; // Cost Formula
+        
+        db.query('SELECT money FROM users WHERE id = ?', [userId], (err, users) => {
+            if (err) return res.status(500).json({ success: false, message: 'DB Hatası' });
+            if (users[0].money < upgradeCost) return res.json({ success: false, message: `Yetersiz bakiye. Gerekli: ${upgradeCost.toLocaleString()} ₺` });
+            
+            db.query('UPDATE users SET money = money - ? WHERE id = ?', [upgradeCost, userId], (err) => {
+                if (err) return res.status(500).json({ success: false, message: 'Ödeme hatası.' });
+                
+                db.query('UPDATE user_business SET level = level + 1 WHERE user_id = ?', [userId], (err) => {
+                    if (err) return res.status(500).json({ success: false, message: 'Upgrade hatası.' });
+                    res.json({ success: true, message: `İşletme Seviye ${currentLevel + 1} oldu!`, newLevel: currentLevel + 1 });
+                });
+            });
         });
     });
 });
