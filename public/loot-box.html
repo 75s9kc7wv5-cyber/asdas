@@ -366,16 +366,16 @@
 
         function updateUI() {
             // Count
-            document.getElementById('keyCountCommon').innerText = userKeys.common;
-            document.getElementById('keyCountRare').innerText = userKeys.rare;
-            document.getElementById('keyCountMystic').innerText = userKeys.mystic;
-            document.getElementById('keyCountEpic').innerText = userKeys.epic;
+            document.getElementById('keyCountCommon').innerText = userKeys.common || 0;
+            document.getElementById('keyCountRare').innerText = userKeys.rare || 0;
+            document.getElementById('keyCountMystic').innerText = userKeys.mystic || 0;
+            document.getElementById('keyCountEpic').innerText = userKeys.epic || 0;
 
             // Buttons
-            document.getElementById('btnCommon').disabled = (userKeys.common < 1 || isOpening);
-            document.getElementById('btnRare').disabled = (userKeys.rare < 1 || isOpening);
-            document.getElementById('btnMystic').disabled = (userKeys.mystic < 1 || isOpening);
-            document.getElementById('btnEpic').disabled = (userKeys.epic < 1 || isOpening);
+            document.getElementById('btnCommon').disabled = ((userKeys.common || 0) < 1 || isOpening);
+            document.getElementById('btnRare').disabled = ((userKeys.rare || 0) < 1 || isOpening);
+            document.getElementById('btnMystic').disabled = ((userKeys.mystic || 0) < 1 || isOpening);
+            document.getElementById('btnEpic').disabled = ((userKeys.epic || 0) < 1 || isOpening);
         }
 
         async function openBox(type) {

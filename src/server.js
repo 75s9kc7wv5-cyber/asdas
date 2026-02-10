@@ -7321,27 +7321,53 @@ app.post('/api/daily-reward/claim', (req, res) => {
 
 
 /* ================= REFERRAL SYSTEM ================= */
+const REFERRAL_REWARDS = [
+    { tier: 1, required: 1, reward: { label: '5 Elmas' }, money: 0, gold: 0, diamond: 5, items: [] },
+    { tier: 2, required: 5, reward: { label: '25 Elmas' }, money: 0, gold: 0, diamond: 25, items: [] },
+    { tier: 3, required: 10, reward: { label: '50 Elmas' }, money: 0, gold: 0, diamond: 50, items: [] },
+    { tier: 4, required: 25, reward: { label: '150 Elmas' }, money: 0, gold: 0, diamond: 150, items: [] },
+    { tier: 5, required: 50, reward: { label: '500 Elmas' }, money: 0, gold: 0, diamond: 500, items: [] }
+];
+
 app.get('/api/referral/status/:userId', (req, res) => {
     const userId = req.params.userId;
     db.query('SELECT referral_count, referral_tier FROM users WHERE id = ?', [userId], (err, results) => {
         if (err || results.length === 0) return res.status(500).json({ success: false });
         
-        const rewards = [
-            { tier: 1, limit: 1, reward: '1000 Para' },
-            { tier: 2, limit: 5, reward: '5000 Para + 50 Altın' },
-            { tier: 3, limit: 10, reward: '10000 Para + 100 Altın' },
-            { tier: 4, limit: 25, reward: '25000 Para + 250 Altın' },
-            { tier: 5, limit: 50, reward: '50000 Para + 1 Gx-100' }
-        ];
-
         res.json({
             success: true,
             count: results[0].referral_count || 0,
             tier: results[0].referral_tier || 0,
-            rewards
+            rewards: REFERRAL_REWARDS
         });
     });
 });
+
+app.post('/api/referral/claim', (req, res) => {
+    const { userId, tierId } = req.body;
+    
+    db.query('SELECT referral_count, referral_tier FROM users WHERE id = ?', [userId], (err, results) => {
+        if (err || !results.length) return res.json({ success: false, message: 'Kullanıcı bulunamadı' });
+        
+        const count = results[0].referral_count || 0;
+        const currentTier = results[0].referral_tier || 0;
+        
+        if (tierId !== currentTier + 1) return res.json({ success: false, message: 'Önceki ödülleri almalısınız.' });
+        
+        const reward = REFERRAL_REWARDS.find(r => r.tier === tierId);
+        if(!reward) return res.json({ success: false, message: 'Ödül bulunamadı.' });
+        
+        if (count < reward.required) return res.json({ success: false, message: 'Yeterli referans yok.' });
+        
+        // Give Reward (Only Diamonds)
+        db.query('UPDATE users SET diamond = diamond + ?, referral_tier = ? WHERE id = ?', 
+            [reward.diamond, tierId, userId], (err) => {
+                if(err) return res.json({ success: false, message: 'Hata oluştu' });
+                res.json({ success: true, message: `${reward.diamond} Elmas Eklendi!` });
+        });
+    });
+});
+
 
 /* ================= CRYPTO MINING SYSTEM ================= */
 const GPU_STATS = {
@@ -7532,9 +7558,14 @@ app.get('/api/lootbox/keys/:userId', (req, res) => {
     const userId = req.params.userId;
     db.query("SELECT item_key, quantity FROM inventory WHERE user_id = ? AND item_key IN ('key_common','key_rare','key_epic','key_mystic')", [userId], (err, results) => {
         if(err) return res.status(500).json({success:false});
-        // Transform to object key:qty
-        const keys = {};
-        results.forEach(r => keys[r.item_key] = r.quantity);
+        
+        // Transform to object key:qty (frontend format)
+        const keys = { common: 0, rare: 0, mystic: 0, epic: 0 };
+        results.forEach(r => {
+            const k = r.item_key.replace('key_', '');
+            if(keys[k] !== undefined) keys[k] = r.quantity;
+        });
+        
         res.json({ success: true, keys });
     });
 });
@@ -7544,33 +7575,67 @@ app.post('/api/lootbox/open', (req, res) => {
     const keyItem = 'key_' + boxType;
     
     db.query('SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?', [userId, keyItem], (err, curr) => {
-        if(err) return res.json({ success: false, message: 'DB Error' });
-        if(!curr.length || curr[0].quantity < 1) return res.json({ success: false, message: 'Anahtar yok!' });
+        if(err) return res.json({ success: false, message: 'Veritabanı hatası' });
+        if(!curr.length || curr[0].quantity < 1) return res.json({ success: false, message: 'Yetersiz Anahtar!' });
 
+        // Decrease Key (Consume)
         db.query('UPDATE inventory SET quantity = quantity - 1 WHERE user_id = ? AND item_key = ?', [userId, keyItem], (err) => {
-            if(err) return res.json({ success: false, message: 'Update Error' });
+            if(err) return res.json({ success: false, message: 'İşlem hatası' });
             
-            // Rewards
-            let amount = 1000;
-            let label = '1000 TL';
-            let column = 'money';
-            
+            // --- Generate Rewards ---
+            const rewards = [];
             const r = Math.random();
-            if(boxType === 'common') {
-                amount = 1000 + Math.floor(Math.random() * 2000);
-            } else if(boxType === 'rare') {
-                amount = 5000;
-                if(r < 0.2) { column = 'gold'; amount = 25; label = '25 Altın'; }
-                else { label = amount + ' TL'; }
+            
+            // LOGIC
+            if (boxType === 'common') {
+                if (r < 0.1) {
+                    rewards.push({ type: 'item', key: 'gold', amount: 5 + Math.floor(Math.random()*5), name: 'Altın' });
+                } else {
+                    const mon = 2000 + Math.floor(Math.random() * 3000);
+                    rewards.push({ type: 'money', amount: mon, key: 'money' });
+                }
+            } 
+            else if (boxType === 'rare') {
+                if (r < 0.3) {
+                    rewards.push({ type: 'item', key: 'gold', amount: 15 + Math.floor(Math.random()*15), name: 'Altın' });
+                } else {
+                    const mon = 10000 + Math.floor(Math.random() * 5000);
+                    rewards.push({ type: 'money', amount: mon, key: 'money' });
+                }
+            }
+            else if (boxType === 'epic') {
+                 if (r < 0.4) {
+                     rewards.push({ type: 'item', key: 'gold', amount: 50 + Math.floor(Math.random()*30), name: 'Altın' });
+                 } else {
+                     const mon = 25000 + Math.floor(Math.random() * 15000);
+                     rewards.push({ type: 'money', amount: mon, key: 'money' });
+                 }
+            }
+            else if (boxType === 'mystic') {
+                 if (r < 0.5) {
+                     rewards.push({ type: 'item', key: 'gold', amount: 100 + Math.floor(Math.random()*50), name: 'Altın' });
+                 } else {
+                      const mon = 50000 + Math.floor(Math.random() * 25000);
+                      rewards.push({ type: 'money', amount: mon, key: 'money' });
+                 }
             } else {
-                amount = 20000;
-                if(r < 0.4) { column = 'gold'; amount = 100; label = '100 Altın'; }
-                else { label = amount + ' TL'; }
+                 // Fallback
+                 rewards.push({ type: 'money', amount: 500, key: 'money' });
             }
             
-            db.query(`UPDATE users SET ${column} = ${column} + ? WHERE id = ?`, [amount, userId], (err) => {
-                res.json({ success: true, reward: { name: label, icon: 'fa-gift' } });
-            });
+            // Distribute (Simplified for Money/Gold)
+            const rw = rewards[0];
+            if (rw && rw.type === 'money') {
+                db.query('UPDATE users SET money = money + ? WHERE id = ?', [rw.amount, userId], () => {
+                    res.json({ success: true, rewards });
+                });
+            } else if (rw && rw.key === 'gold') {
+                db.query('UPDATE users SET gold = gold + ? WHERE id = ?', [rw.amount, userId], () => {
+                    res.json({ success: true, rewards });
+                });
+            } else {
+                res.json({ success: true, rewards });
+            }
         });
     });
 });
@@ -9299,8 +9364,10 @@ app.get('/api/business/real-estate/:userId', (req, res) => {
         const sql = `
             SELECT b.real_estate_balance, b.real_estate_level, b.real_estate_upgrade_end_time,
                    p.id as prop_record_id, p.property_type_id, p.last_collection_time, p.purchase_date,
-                   pt.name, pt.image, pt.income, pt.duration_hours, pt.price
+                   pt.name, pt.image, pt.income, pt.duration_hours, pt.price,
+                   u.money as wallet_money, u.gold as wallet_gold
             FROM user_business b
+            JOIN users u ON b.user_id = u.id
             LEFT JOIN user_properties p ON b.user_id = p.user_id
             LEFT JOIN property_types pt ON p.property_type_id = pt.id
             WHERE b.user_id = ?
@@ -9311,12 +9378,16 @@ app.get('/api/business/real-estate/:userId', (req, res) => {
             
             let balance = 0;
             let level = 1;
+            let walletMoney = 0;
+            let walletGold = 0;
             let upgradeEndTime = null;
             let slots = [];
             
             if (results.length > 0) {
                 balance = results[0].real_estate_balance || 0;
                 level = results[0].real_estate_level || 1;
+                walletMoney = parseFloat(results[0].wallet_money || 0);
+                walletGold = parseInt(results[0].wallet_gold || 0);
                 upgradeEndTime = results[0].real_estate_upgrade_end_time;
                 
                 results.forEach(row => {
@@ -9334,8 +9405,19 @@ app.get('/api/business/real-estate/:userId', (req, res) => {
                         // Let's assume income generation is continuous.
                         const hoursPassed = diffMs / (1000 * 60 * 60);
                         let pending = Math.floor(row.income * hoursPassed);
-                        // if (pending < 0) pending = 0; // Handled by floor but ensure positive time
                         if(hoursPassed < 0) pending = 0;
+
+                        // LIFETIME CHECK (30 Days)
+                        const LIFETIME_DAYS = 30;
+                        const purchaseDate = new Date(row.purchase_date);
+                        const ageMs = now - purchaseDate;
+                        const ageDays = ageMs / (1000 * 60 * 60 * 24);
+                        
+                        if (ageDays >= LIFETIME_DAYS) {
+                           // Expired - Delete it (DISABLED FOR SAFETY)
+                           // db.query('DELETE FROM user_properties WHERE id = ?', [row.prop_record_id]);
+                           // continue; // Skip adding to slots
+                        }
 
                         slots.push({
                             id: row.prop_record_id,
@@ -9344,7 +9426,10 @@ app.get('/api/business/real-estate/:userId', (req, res) => {
                             image: row.image,
                             income: row.income,
                             pending_income: pending,
-                            last_collection_time: row.last_collection_time
+                            last_collection_time: row.last_collection_time,
+                            purchase_date: row.purchase_date,
+                            duration: row.duration_hours,
+                            price: row.price
                         });
                     }
                 });
@@ -9353,6 +9438,7 @@ app.get('/api/business/real-estate/:userId', (req, res) => {
             res.json({
                 balance: balance,
                 level: level,
+                wallet: { money: walletMoney, gold: walletGold },
                 upgrade_end_time: upgradeEndTime,
                 slots: slots
             });
@@ -9360,30 +9446,106 @@ app.get('/api/business/real-estate/:userId', (req, res) => {
     });
 });
 
-// Buy Property
+// Buy Property (Construct)
 app.post('/api/business/real-estate/add', (req, res) => {
     const { userId, typeId } = req.body; 
-    
+
     db.query('SELECT * FROM property_types WHERE id = ?', [typeId], (err, props) => {
         if (err || props.length === 0) return res.status(404).json({ success: false, message: 'Mülk bulunamadı' });
         
         const prop = props[0];
+        const costMoney = parseFloat(prop.cost_money || 0);
+        const costGold = parseInt(prop.cost_gold || 0);
         
-        db.query('SELECT money FROM users WHERE id = ?', [userId], (err, users) => {
+        let reqMaterials = {};
+        try {
+            if(typeof prop.req_materials === 'string') reqMaterials = JSON.parse(prop.req_materials);
+            else reqMaterials = prop.req_materials || {};
+        } catch(e) {}
+        
+        // 1. Check User Money & Gold
+        db.query('SELECT money, gold FROM users WHERE id = ?', [userId], (err, users) => {
             if (err || users.length === 0) return res.status(500).json({ success: false, message: 'Kullanıcı hatası' });
             
-            if (users[0].money < prop.price) {
-                return res.json({ success: false, message: 'Yetersiz bakiye.' });
-            }
+            const u = users[0];
+            if (u.money < costMoney) return res.json({ success: false, message: 'Yetersiz Para.' });
+            if (u.gold < costGold) return res.json({ success: false, message: 'Yetersiz Altın.' });
             
-            db.query('UPDATE users SET money = money - ? WHERE id = ?', [prop.price, userId], (err) => {
-                if (err) return res.status(500).json({ success: false });
-                
-                db.query('INSERT INTO user_properties (user_id, property_type_id) VALUES (?, ?)', [userId, typeId], (err) => {
-                    if (err) return res.status(500).json({ success: false });
+            // 2. Check Inventory (Materials)
+            const matKeys = Object.keys(reqMaterials);
+            if (matKeys.length === 0) {
+                // No materials needed, just deduct money/gold
+                completeConstruction(userId, typeId, costMoney, costGold, {}, prop.name, res);
+            } else {
+                db.query('SELECT item_key, quantity FROM inventory WHERE user_id = ? AND item_key IN (?)', [userId, matKeys], (err, invRows) => {
+                    if (err) return res.status(500).json({ success: false, message: 'Envanter hatası' });
                     
-                    res.json({ success: true, message: prop.name + ' inşa edildi.' });
+                    const userInv = {};
+                    invRows.forEach(r => userInv[r.item_key] = r.quantity);
+                    
+                    for (const key of matKeys) {
+                        const needed = reqMaterials[key];
+                        const have = userInv[key] || 0;
+                        if (have < needed) return res.json({ success: false, message: `Yetersiz malzeme: ${key}` });
+                    }
+                    
+                    // All OK
+                    completeConstruction(userId, typeId, costMoney, costGold, reqMaterials, prop.name, res);
                 });
+            }
+        });
+    });
+});
+
+function completeConstruction(userId, typeId, money, gold, materials, propName, res) {
+    // Deduct Money & Gold
+    db.query('UPDATE users SET money = money - ?, gold = gold - ? WHERE id = ?', [money, gold, userId], (err) => {
+        if (err) return res.status(500).json({ success: false });
+
+        // Deduct Materials
+        const matKeys = Object.keys(materials);
+        if (matKeys.length > 0) {
+            // Processing deductions sequentially or constructing a case query
+            // Simple sequential for safety
+            matKeys.forEach(k => {
+                db.query('UPDATE inventory SET quantity = quantity - ? WHERE user_id = ? AND item_key = ?', [materials[k], userId, k]);
+            });
+        }
+        
+        // Insert Property
+        db.query('INSERT INTO user_properties (user_id, property_type_id, purchase_date, last_collection_time) VALUES (?, ?, NOW(), NOW())', [userId, typeId], (err, result) => {
+            if (err) return res.status(500).json({ success: false });
+            
+            // Return updated slots data ? Or just success
+            // Optionally we can give XP here
+            res.json({ success: true, message: propName + ' inşa edildi.' });
+        });
+    });
+}
+
+// Collect Single Real Estate Income
+app.post('/api/business/real-estate/collect', (req, res) => {
+    const { userId, slotId } = req.body; // slotId = user_properties.id
+    
+    db.query('SELECT p.id, p.last_collection_time, pt.income FROM user_properties p JOIN property_types pt ON p.property_type_id = pt.id WHERE p.id = ? AND p.user_id = ?', [slotId, userId], (err, props) => {
+        if (err || props.length === 0) return res.status(500).json({ success: false, message: 'Mülk hatası' });
+        
+        const p = props[0];
+        const now = new Date();
+        const last = new Date(p.last_collection_time);
+        const diffMs = now - last;
+        const hours = diffMs / (1000 * 60 * 60);
+        
+        const pending = Math.floor(p.income * hours);
+        
+        if (pending <= 0) return res.json({ success: false, message: 'Henüz gelir yok.' });
+        
+        db.query('UPDATE users SET money = money + ? WHERE id = ?', [pending, userId], (err) => {
+            if (err) return res.status(500).json({ success: false });
+            
+            db.query('UPDATE user_properties SET last_collection_time = NOW() WHERE id = ?', [slotId], (err) => {
+                if(err) return res.status(500).json({ success: false });
+                res.json({ success: true, amount: pending });
             });
         });
     });
@@ -9413,7 +9575,7 @@ app.post('/api/business/real-estate/collect-all', (req, res) => {
              const diffMs = now - last;
              const hours = diffMs / (1000 * 60 * 60);
              
-             if (hours >= 0.1) { // Min 6 mins
+             if (hours >= 0.01) { // Min 0.6 mins (36 sn)
                  let pending = Math.floor(p.income * hours);
                  if (pending > 0) {
                      totalCollected += pending;
@@ -9456,23 +9618,57 @@ app.post('/api/business/real-estate/withdraw', (req, res) => {
     });
 });
 
-// Upgrade (Simplified)
+// Upgrade (Start)
 app.post('/api/business/real-estate/start-upgrade', (req, res) => {
     const { userId } = req.body;
     
-    db.query('SELECT real_estate_level FROM user_business WHERE user_id = ?', [userId], (err, rows) => {
+    db.query('SELECT real_estate_level, real_estate_upgrade_end_time FROM user_business WHERE user_id = ?', [userId], (err, rows) => {
+        if(err) return res.json({success:false, message:'Veri hatası'});
+        
         const currentLevel = rows[0].real_estate_level || 1;
         const nextLevel = currentLevel + 1;
         const costMoney = 500000 * nextLevel;
         
+        // Already upgrading?
+        if(rows[0].real_estate_upgrade_end_time && new Date(rows[0].real_estate_upgrade_end_time) > new Date()) {
+             return res.json({success: false, message: 'Zaten geliştirme sürüyor.'});
+        }
+        
         db.query('SELECT money FROM users WHERE id = ?', [userId], (err, uRows) => {
              if(uRows[0].money < costMoney) return res.json({success: false, message: 'Yetersiz Para'});
              
+             // Duration: 10 minutes * Level (Example)
+             const durationMinutes = 10 * currentLevel;
+             const endTime = new Date(Date.now() + durationMinutes * 60000);
+             
              db.query('UPDATE users SET money = money - ? WHERE id = ?', [costMoney, userId], () => {
-                 db.query('UPDATE user_business SET real_estate_level = ? WHERE user_id = ?', [nextLevel, userId], () => {
-                     res.json({ success: true, message: 'Geliştirme başarılı! Yeni seviye: ' + nextLevel });
+                 db.query('UPDATE user_business SET real_estate_upgrade_end_time = ? WHERE user_id = ?', [endTime, userId], () => {
+                     res.json({ success: true, message: 'Geliştirme başlatıldı.', endTime: endTime });
                  });
              });
+        });
+    });
+});
+
+// Complete Upgrade
+app.post('/api/business/real-estate/complete-upgrade', (req, res) => {
+    const { userId } = req.body;
+    
+    db.query('SELECT real_estate_level, real_estate_upgrade_end_time FROM user_business WHERE user_id = ?', [userId], (err, rows) => {
+        if(err || !rows.length) return res.json({success:false, message:'Kullanıcı bulunamadı'});
+        
+        const endTime = rows[0].real_estate_upgrade_end_time;
+        if(!endTime) return res.json({success:false, message:'Aktif geliştirme yok.'});
+        
+        if(new Date() < new Date(endTime)) {
+            return res.json({success:false, message:'Süre henüz dolmadı.'});
+        }
+        
+        const nextLevel = (rows[0].real_estate_level || 1) + 1;
+        
+        db.query('UPDATE user_business SET real_estate_level = ?, real_estate_upgrade_end_time = NULL WHERE user_id = ?', [nextLevel, userId], (err) => {
+            if(err) return res.json({success:false, message:'Hata'});
+            res.json({ success: true, message: 'İşletme seviyesi yükseltildi!' });
         });
     });
 });
