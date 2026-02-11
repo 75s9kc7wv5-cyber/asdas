@@ -203,6 +203,19 @@
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
+        .game-desc {
+            margin: 20px 0;
+            padding: 20px;
+            background: var(--glass-bg);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+            backdrop-filter: blur(5px);
+            animation: fadeInUp 0.8s ease backwards 0.6s;
+        }
+        .desc-head { color: #ffff00; font-weight:700; margin-bottom:10px; font-size:1.1rem; letter-spacing:1px; text-shadow: 0 0 10px rgba(255, 255, 0, 0.5); }
+        .desc-body { color:#ddd; font-size:0.9rem; line-height:1.6; }
+
     </style>
 </head>
 <body>
@@ -278,6 +291,15 @@
             <div class="stat-card">
                 <div class="stat-value count" data-target="490">0</div>
                 <div class="stat-label">İşletmeler</div>
+            </div>
+        </div>
+
+        <div class="game-desc">
+            <div class="desc-head">GERÇEK BİR DÜNYA SİMÜLASYONU</div>
+            <div class="desc-body">
+                Kendi şirketini kur, fabrikalarını yönet, ticaret yap ve dünya siyasetine yön ver. 
+                Sim of World'de her oyuncu ekonominin bir parçasıdır. 
+                Sıfırdan başla ve imparatorluğunu yükselt!
             </div>
         </div>
 

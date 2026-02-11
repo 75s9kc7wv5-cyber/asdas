@@ -160,7 +160,7 @@ app.use(bodyParser.json());
 // Security Headers Middleware - Dış enjeksiyonları engelle
 app.use((req, res, next) => {
     // Content Security Policy - Strict mode, dış scriptleri engelle
-    res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'self' 'unsafe-inline' https://code.jquery.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://www.gravatar.com https://upload.wikimedia.org; connect-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; frame-ancestors 'none'; base-uri 'self'; form-action 'self';");
+    res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'self' 'unsafe-inline' https://code.jquery.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://www.gravatar.com https://upload.wikimedia.org https://images.unsplash.com https://flagcdn.com; connect-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; frame-ancestors 'none'; base-uri 'self'; form-action 'self';");
     
     // X-Content-Type-Options - MIME sniffing engelle
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -4308,7 +4308,7 @@ app.post('/api/daily-jobs/start', (req, res) => {
             const today = new Date().toISOString().split('T')[0];
             db.query('SELECT id FROM completed_daily_jobs WHERE user_id = ? AND job_id = ? AND completed_at = ?', [userId, jobId, today], (err, completed) => {
                 if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
-                // if (completed.length > 0) return db.rollback(() => res.json({ success: false, message: 'Bu işi bugün zaten yaptın.' }));
+                if (completed.length > 0) return db.rollback(() => res.json({ success: false, message: 'Bu işi bugün zaten yaptın.' }));
 
                 // 3. Get Job Info & User Info
                 db.query('SELECT * FROM daily_jobs WHERE id = ?', [jobId], (err, jobs) => {
@@ -4382,8 +4382,16 @@ app.post('/api/daily-jobs/complete', (req, res) => {
 
                         // 5. Add to Completed
                         const today = new Date().toISOString().split('T')[0];
-                        db.query('INSERT INTO completed_daily_jobs (user_id, job_id, completed_at) VALUES (?, ?, ?)', [userId, jobId, today], (err) => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log completed error' }));
+                        const insertLogQuery = `
+                            INSERT INTO completed_daily_jobs (user_id, job_id, completed_at) 
+                            VALUES (?, ?, ?) 
+                            ON DUPLICATE KEY UPDATE completed_at=completed_at
+                        `;
+                        db.query(insertLogQuery, [userId, jobId, today], (err) => {
+                            if (err) {
+                                console.error('Complete Job Log Error:', err);
+                                return db.rollback(() => res.status(500).json({ success: false, message: 'Log completed error: ' + err.message }));
+                            }
 
                             // Notification
                             const notifTitle = 'Günlük İş Tamamlandı';
