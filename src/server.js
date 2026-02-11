@@ -4234,8 +4234,10 @@ app.get('/api/daily-jobs', (req, res) => {
             id: job.id,
             name: job.name,
             icon: job.icon,
+            color: job.color,
             time: job.time,
             minLevel: job.minLevel,
+            reqEducation: job.reqEducation,
             costH: job.costH,
             costE: job.costE,
             reward: {
@@ -4306,7 +4308,7 @@ app.post('/api/daily-jobs/start', (req, res) => {
             const today = new Date().toISOString().split('T')[0];
             db.query('SELECT id FROM completed_daily_jobs WHERE user_id = ? AND job_id = ? AND completed_at = ?', [userId, jobId, today], (err, completed) => {
                 if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'DB Error' }));
-                if (completed.length > 0) return db.rollback(() => res.json({ success: false, message: 'Bu işi bugün zaten yaptın.' }));
+                // if (completed.length > 0) return db.rollback(() => res.json({ success: false, message: 'Bu işi bugün zaten yaptın.' }));
 
                 // 3. Get Job Info & User Info
                 db.query('SELECT * FROM daily_jobs WHERE id = ?', [jobId], (err, jobs) => {
@@ -9439,7 +9441,7 @@ app.get('/api/business/real-estate/:userId', (req, res) => {
                 balance: balance,
                 level: level,
                 wallet: { money: walletMoney, gold: walletGold },
-                upgrade_end_time: upgradeEndTime,
+                upgradeEndTime: upgradeEndTime,
                 slots: slots
             });
         });

@@ -246,6 +246,35 @@
         .log-time { font-size: 0.65rem; color: #555; margin-left: auto; white-space: nowrap; }
         .log-highlight { color: var(--accent); font-weight: 600; }
 
+        /* HEADER STYLES */
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 5px;
+        }
+        .back-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.2rem;
+            text-decoration: none;
+        }
+        .back-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .page-title { font-size: 1.5rem; font-weight: 800; line-height: 1; color: #fff; text-transform:uppercase; letter-spacing:1px; }
+        .page-subtitle { font-size: 0.8rem; color: #888; font-weight:500; }
+
         /* Legacy styles mapping for JS compatibility if needed or removed */
         .log-buy { color: var(--accent-green); font-weight: bold; }
         .log-sell { color: var(--accent-red); font-weight: bold; }
@@ -258,6 +287,15 @@
         <!-- Header will be injected here -->
         
         <main>
+            <!-- Page Header -->
+            <div class="page-header">
+                <a href="home.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+                <div>
+                    <h2 class="page-title">Kripto Borsa</h2>
+                    <div class="page-subtitle">Canlı Bitcoin piyasası ve anlık işlem platformu.</div>
+                </div>
+            </div>
+
             <div class="card-box">
                 <div class="price-hero">
                     <div class="market-label">BITCOIN PİYASASI</div>
@@ -296,18 +334,15 @@
             </div>
 
             <!-- LOGLAR -->
-            <div class="accordion-card">
-                <div class="accordion-header active" onclick="toggleAccordion(this)">
-                    <div class="accordion-title">
-                        <i class="fas fa-history"></i> <span id="logTitle">Son İşlemler</span>
+            <div class="card-box">
+                <div class="price-hero" style="padding: 10px; border-radius: 12px 12px 0 0;">
+                    <div class="market-label" style="font-size: 0.9rem; color: var(--accent);">
+                        <i class="fas fa-history"></i> SON İŞLEMLER
                     </div>
-                    <i class="fas fa-chevron-down accordion-icon"></i>
                 </div>
-                <div class="accordion-content" style="max-height: 500px;">
-                    <div class="accordion-body">
-                        <div class="log-list" id="tradeLogs">
-                            <div style="text-align:center; color:#666; font-size:0.8rem; padding:10px;">Yükleniyor...</div>
-                        </div>
+                <div style="padding: 15px;">
+                    <div class="log-list" id="tradeLogs">
+                        <div style="text-align:center; color:#666; font-size:0.8rem; padding:10px;">Yükleniyor...</div>
                     </div>
                 </div>
             </div>
@@ -447,24 +482,40 @@
 
                 // Update Logs
                 const logContainer = document.getElementById('tradeLogs');
-                logContainer.innerHTML = data.trades.map(t => {
-                    const actionText = t.type === 'buy' ? 'aldı' : 'sattı';
-                    const actionClass = t.type === 'buy' ? 'log-buy' : 'log-sell';
-                    const amountStr = parseFloat(t.amount).toFixed(6);
-                    const avatarUrl = t.avatar || 'https://via.placeholder.com/30'; 
-                    
-                    return `
-                    <div class="log-item">
-                        <img src="${avatarUrl}" class="log-avatar" alt="av" onerror="this.src='https://via.placeholder.com/30'">
-                        <div class="log-text">
-                            <span class="log-user-link">${t.username}</span> 
-                            <span class="${actionClass}" style="margin-left: 5px;">${amountStr} BTC ${actionText}</span>
-                            <span style="font-size: 0.65rem; color: #666; margin-left: auto;">($${parseFloat(t.price).toFixed(2)})</span>
+                if(!data.trades || data.trades.length === 0) {
+                     if(logContainer.innerHTML.indexOf('Henüz işlem kaydı bulunmuyor') === -1) {
+                         logContainer.innerHTML = '<div style="text-align:center; padding:15px; color:#555; font-style:italic;">Henüz işlem kaydı bulunmuyor.</div>';
+                     }
+                } else {
+                    const newHtml = data.trades.map(t => {
+                        const actionText = t.type === 'buy' ? 'aldı' : 'sattı';
+                        const actionClass = t.type === 'buy' ? 'log-buy' : 'log-sell';
+                        const amountStr = parseFloat(t.amount).toFixed(6);
+                        const avatarUrl = t.avatar || 'uploads/avatars/default.png'; 
+                        const userId = t.user_id;
+
+                        // Fix for avatar loop: onerror clears itself
+                        // Display: Avatar | ID-User | Amount | ... | Price | Time
+                        
+                        return `
+                        <div class="log-item">
+                            <img src="${avatarUrl}" class="log-avatar" alt="av" onerror="this.onerror=null;this.src='uploads/avatars/default.png'">
+                            <div class="log-text">
+                                <span class="log-user-link">#${userId} - ${t.username}</span> 
+                                <span class="${actionClass}" style="margin-left: 8px; font-size:0.8rem;">${amountStr} BTC ${actionText}</span>
+                            </div>
+                            <div style="margin-left:auto; display:flex; align-items:center; gap:10px;">
+                                <span style="color:#fff; font-weight:bold; font-size:0.9rem;">$${parseFloat(t.price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                <div class="log-time" style="margin:0;">${new Date(t.created_at || t.time || Date.now()).toLocaleTimeString()}</div>
+                            </div>
                         </div>
-                        <div class="log-time">${new Date(t.time).toLocaleTimeString()}</div>
-                    </div>
-                    `;
-                }).join('');
+                        `;
+                    }).join('');
+
+                    if(logContainer.innerHTML !== newHtml) {
+                        logContainer.innerHTML = newHtml;
+                    }
+                }
 
 
             } catch (e) {
@@ -552,16 +603,6 @@
              setInterval(refreshData, 3000);
              setInterval(fetchBalance, 10000);
         };
-
-        function toggleAccordion(header) {
-            header.classList.toggle('active');
-            const content = header.nextElementSibling;
-            if (content.style.maxHeight && content.style.maxHeight !== '0px') {
-                content.style.maxHeight = '0px';
-            } else {
-                content.style.maxHeight = '500px'; 
-            }
-        }
     </script>
 </body>
 </html>

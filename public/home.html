@@ -177,7 +177,7 @@
         <main>
             
             <div class="welcome-section">
-                <div class="welcome-title">HOŞ GELDİN BAŞKAN</div>
+                <div class="welcome-title">HOŞ GELDİN <span id="welcome-name" style="color:var(--accent-cyan);">BAŞKAN</span></div>
                 <div class="welcome-sub">İmparatorluğunu yönetmeye hazır mısın?</div>
             </div>
 
@@ -319,6 +319,11 @@
             if (!user) {
                 window.location.href = 'login.html';
                 return;
+            }
+            
+            // Set Welcome Name
+            if(user.username) {
+                document.getElementById('welcome-name').innerText = user.username.toUpperCase();
             }
         });
     </script>
