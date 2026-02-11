@@ -397,6 +397,16 @@
         </div>
     </div>
 
+    <!-- Notification Modal -->
+    <div class="modal-overlay" id="notificationModal" style="z-index: 10001;">
+        <div class="modal-content" style="max-width: 400px; text-align: center; border-top: 3px solid var(--accent-cyan);">
+            <i class="fas" id="notifIcon" style="font-size: 3rem; margin-bottom: 20px;"></i>
+            <h3 class="modal-title" id="notifTitle" style="margin-bottom: 10px;">BAŞLIK</h3>
+            <p class="modal-text" id="notifMessage" style="text-align: center; margin-bottom: 25px; font-size: 1rem;">Mesaj içeriği</p>
+            <button class="btn-auth" id="notifBtn" onclick="closeNotificationModal()">TAMAM</button>
+        </div>
+    </div>
+
     <!-- Cookie Banner -->
     <div class="cookie-banner" id="cookieBanner">
         <div class="cookie-content">
@@ -452,6 +462,51 @@
             document.getElementById('cookieBanner').style.display = 'none';
         }
 
+        let isSuccess = false;
+
+        function showNotification(type, title, message) {
+            const modal = document.getElementById('notificationModal');
+            const icon = document.getElementById('notifIcon');
+            const titleEl = document.getElementById('notifTitle');
+            const msgEl = document.getElementById('notifMessage');
+            const btn = document.getElementById('notifBtn');
+            const content = modal.querySelector('.modal-content');
+
+            modal.style.display = 'flex';
+            titleEl.innerText = title;
+            msgEl.innerText = message;
+            
+            if (type === 'success') {
+                isSuccess = true;
+                icon.className = 'fas fa-check-circle';
+                icon.style.color = 'var(--accent-green)';
+                titleEl.style.color = 'var(--accent-green)';
+                content.style.borderColor = 'var(--accent-green)';
+                btn.style.background = 'var(--accent-green)';
+                btn.innerText = "GİRİŞE YÖNLENDİR";
+                
+                // Otomatik yönlendirme (2 saniye sonra)
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+            } else {
+                isSuccess = false;
+                icon.className = 'fas fa-times-circle';
+                icon.style.color = 'var(--accent-red)';
+                titleEl.style.color = 'var(--accent-red)';
+                content.style.borderColor = 'var(--accent-red)';
+                btn.style.background = 'var(--accent-red)';
+                btn.innerText = "TAMAM";
+            }
+        }
+
+        function closeNotificationModal() {
+            document.getElementById('notificationModal').style.display = 'none';
+            if(isSuccess) {
+                window.location.href = 'login.html';
+            }
+        }
+
         async function handleRegister(e) {
             e.preventDefault();
             const username = document.getElementById('username').value.trim();
@@ -465,14 +520,12 @@
 
             // Validasyonlar
             if (username.length < 3 || username.length > 20) {
-                errorMsg.innerText = 'Kullanıcı adı 3-20 karakter arasında olmalı!';
-                errorMsg.style.display = 'block';
+                showNotification('error', 'Hata', 'Kullanıcı adı 3-20 karakter arasında olmalı!');
                 return;
             }
 
             if (password.length < 6) {
-                errorMsg.innerText = 'Şifre en az 6 karakter olmalı!';
-                errorMsg.style.display = 'block';
+                showNotification('error', 'Hata', 'Şifre en az 6 karakter olmalı!');
                 return;
             }
 
@@ -480,15 +533,13 @@
             const hasUpperCase = /[A-Z]/.test(password);
             const hasLowerCase = /[a-z]/.test(password);
             if (!hasUpperCase || !hasLowerCase) {
-                errorMsg.innerText = 'Şifre en az 1 büyük ve 1 küçük harf içermeli!';
-                errorMsg.style.display = 'block';
+                showNotification('error', 'Hata', 'Şifre en az 1 büyük ve 1 küçük harf içermeli!');
                 return;
             }
 
             // Telefon format kontrolü (sadece rakam)
             if (!/^\d+$/.test(phone)) {
-                errorMsg.innerText = 'Telefon numarası sadece rakamlardan oluşmalı!';
-                errorMsg.style.display = 'block';
+                showNotification('error', 'Hata', 'Telefon numarası sadece rakamlardan oluşmalı!');
                 return;
             }
 
@@ -510,20 +561,13 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    successMsg.style.display = 'block';
-                    errorMsg.style.display = 'none';
-                    setTimeout(() => {
-                        window.location.href = 'login.html';
-                    }, 1500);
+                    showNotification('success', 'Kayıt Başarılı!', 'Hesabınız başarıyla oluşturuldu. Giriş sayfasına yönlendiriliyorsunuz.');
                 } else {
-                    errorMsg.innerText = data.message || 'Kayıt başarısız.';
-                    errorMsg.style.display = 'block';
-                    successMsg.style.display = 'none';
+                    showNotification('error', 'Kayıt Başarısız', data.message || 'Bir hata oluştu.');
                 }
             } catch (err) {
                 console.error(err);
-                errorMsg.innerText = 'Sunucu hatası!';
-                errorMsg.style.display = 'block';
+                showNotification('error', 'Sunucu Hatası', 'Sunucu ile bağlantı kurulamadı.');
             }
         }
     </script>

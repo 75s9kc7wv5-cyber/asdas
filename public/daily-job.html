@@ -333,10 +333,10 @@
                 </div>
                 
                 <h3 class="m-title" style="color: var(--accent-gold); font-size: 1.3rem;">GÖREV TAMAMLANDI!</h3>
-                <p class="m-sub" style="color: #aaa; margin-bottom: 25px;">Çalışmayı başarıyla bitirdin ve ödüllerini kazandın.</p>
+                <p class="m-sub" id="rewardMsg" style="color: #aaa; margin-bottom: 25px;">Çalışmayı başarıyla bitirdin ve ödüllerini kazandın.</p>
                 
                 <h4 style="color:#fff; font-size:0.8rem; margin-bottom:10px; text-transform:uppercase; font-weight:700; text-align:left; padding-left:5px;">KAZANILAN ÖDÜLLER</h4>
-                <div class="req-list" id="rewardGrid">
+                <div class="reward-grid" id="rewardGrid">
                      <!-- Filled by JS -->
                 </div>
 
@@ -499,16 +499,12 @@
                 .then(res => res.json())
                 .then(data => {
                     jobs = data;
-                    renderJobs(); // Ensure renderJobs is called if it was missing in my previous read check or just to be safe
-                    fetchStatus();
-                    
-                    // Hide loader
-                    if(window.hideLoader) setTimeout(window.hideLoader, 500);
+                    // Önce kullanıcı istatistiklerini çekelim (Eğitim seviyesi için)
+                    fetchUserStats();
                 })
                 .catch(err => {
                     console.error('Jobs fetch error:', err);
                     toastr.error("İş listesi yüklenirken hata oluştu!");
-                    // Hide loader even on error
                     if(window.hideLoader) window.hideLoader();
                 });
         }
@@ -519,8 +515,8 @@
                 .then(data => {
                     if (data.success) {
                         user.completedJobs = data.completedJobs;
+                        user.cooldowns = data.cooldowns || []; 
                         
-                        // Aktif iş varsa
                         if (data.activeJob) {
                             activeJob = {
                                 id: data.activeJob.job_id,
@@ -529,7 +525,6 @@
                                 remainingTime: data.activeJob.remainingTime
                             };
 
-                            // Eğer süre dolmuşsa otomatik tamamla
                             if (activeJob.remainingTime <= 0) {
                                 completeJob();
                             } else {
@@ -539,30 +534,17 @@
                         } else {
                             renderJobs();
                         }
-
-                        // Kullanıcı İstatistiklerini Güncelle
-                        /*
-                        const logList = document.getElementById('historyList');
-                        logList.innerHTML = '';
-                        data.logs.forEach(log => {
-                            const date = new Date(log.created_at);
-                            const timeStr = date.getHours() + ":" + (date.getMinutes()<10?'0':'') + date.getMinutes();
-                            const item = document.createElement('div');
-                            item.className = 'hist-item';
-                            item.innerHTML = `<span>${log.reward_text}</span><span>${timeStr}</span>`;
-                            logList.appendChild(item);
-                        });
-                        */
-
-                        // Kullanıcı İstatistiklerini Güncelle (Server'dan taze veri çekmek daha iyi olurdu ama şimdilik elimizdekilerle devam)
-                        fetchUserStats();
                     } else {
                         toastr.error(data.error || "Durum bilgisi alınamadı!");
                     }
+                    
+                    // Loader'ı burada gizleyelim, her şey yüklendi
+                    if(window.hideLoader) window.hideLoader();
                 })
                 .catch(err => {
                     console.error('Status fetch error:', err);
                     toastr.error("Sunucu bağlantı hatası (Status)!");
+                    if(window.hideLoader) window.hideLoader();
                 });
         }
 
@@ -572,7 +554,13 @@
                 .then(data => {
                     user = { ...user, ...data };
                     if(window.updateHeader) window.updateHeader(user);
-                    renderJobs();
+                    // Kullanıcı verisi geldikten sonra statüleri (iş durumlarını) çek
+                    fetchStatus();
+                })
+                .catch(err => {
+                    console.error('Stats fetch error:', err);
+                    // Hata olsa bile statüyü çekmeyi dene
+                    fetchStatus();
                 });
         }
 
@@ -590,31 +578,49 @@
             ];
 
             jobs.forEach((job, index) => {
-                const isCompleted = false; 
-                const isLocked = user.level < job.minLevel;
                 const isActive = activeJob && activeJob.job_id === job.id;
                 const isWorkingOther = activeJob && activeJob.job_id !== job.id;
                 
+                // Cooldown Check
+                const cooldownObj = user.cooldowns ? user.cooldowns.find(c => c.jobId === job.id) : null;
+                const isCooldown = !!cooldownObj;
+                let remainingCooldown = 0;
+                
+                if (isCooldown) {
+                    const completedTime = new Date(cooldownObj.completedAt).getTime();
+                    // Fix: Ensure we parse specific timezone if needed, but Date constructor usually handles DB ISO string ok
+                    // Our DB is sending "2024-02-11T10:00:00.000Z"
+                    const availableTime = completedTime + (24 * 60 * 60 * 1000);
+                    const now = new Date().getTime();
+                    remainingCooldown = Math.max(0, Math.floor((availableTime - now) / 1000));
+                }
+
                 const reqEdu = job.reqEducation || 0;
                 const userEdu = user.education_skill || 0;
                 const isEduLocked = userEdu < reqEdu;
+                
+                const isLocked = isEduLocked;
 
                 // Color Selection
                 let jobColor = isActive ? '#e74c3c' : '#2ecc71';
-                if(isEduLocked) jobColor = '#555';
+                if(isLocked) jobColor = '#555';
+                if(isCooldown) jobColor = '#888';
 
                 let cardStyle = `border-left: 4px solid ${jobColor};`;
                 let cardClass = "job-card";
                 let clickEvent = "";
 
-                if (isEduLocked) {
+                if (isLocked) {
                     cardClass += " locked";
                     cardStyle = `border-left: 4px solid #444; border-color: #333;`; 
                 } else if (isActive) {
                     cardClass += " active-job-card";
+                } else if (isCooldown) {
+                    // cardClass += " locked"; // Optional: keep visual opacity
+                    cardStyle += " cursor: not-allowed; opacity: 0.6; filter: grayscale(0.5); border-color: #333;";
                 }
 
-                if (!isEduLocked && !isActive && !isWorkingOther) {
+                if (!isLocked && !isActive && !isWorkingOther && !isCooldown) {
                     cardStyle += " cursor: pointer;";
                     clickEvent = `onclick="openJobConfirmation(${job.id})"`;
                 } else if (isWorkingOther) {
@@ -649,9 +655,10 @@
                 if(job.time >= 60) timeDisplay = Math.floor(job.time/60) + " dk";
                 let timeBadge = `<span style="${commonBadgeStyle}"><i class="fas fa-clock" style="color:#ffd700;"></i> ${timeDisplay}</span>`;
 
+                let rightIcon = `<i class="fas fa-chevron-right" style="color:${jobColor}"></i>`;
+
                 // If Active: Override Badges
                 if (isActive) {
-                    // Calculate Timer
                     let initText = "00:00";
                     if (activeJob && activeJob.remainingTime) {
                         const r = activeJob.remainingTime;
@@ -659,15 +666,19 @@
                         const s = Math.floor(r % 60);
                         initText = `${m<10?'0':''}${m}:${s<10?'0':''}${s}`;
                     }
-                    
-                    // Show ONLY Timer with Yellow Clock
                     timeBadge = `<span style="${commonBadgeStyle} border-color: #ffd700;"><i class="fas fa-clock" style="color:#ffd700;"></i> <span id="jobTimer-${job.id}">${initText}</span></span>`;
-                    
-                    // Clear others
-                    eduBadge = ''; 
-                    healthBadge = '';
-                    energyBadge = '';
-                    moneyBadge = '';
+                    eduBadge = ''; healthBadge = ''; energyBadge = ''; moneyBadge = '';
+                } 
+                // If Cooldown: Override Badges
+                else if (isCooldown) {
+                     const h = Math.floor(remainingCooldown / 3600);
+                     const m = Math.floor((remainingCooldown % 3600) / 60);
+                     const s = remainingCooldown % 60;
+                     const timeStr = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+
+                     timeBadge = `<span style="${commonBadgeStyle} border-color: #e74c3c; width: 100px; justify-content: center;"><i class="fas fa-history" style="color:#e74c3c;"></i> <span class="cooldown-timer" data-seconds="${remainingCooldown}">${timeStr}</span></span>`;
+                     eduBadge = ''; healthBadge = ''; energyBadge = ''; moneyBadge = '';
+                     rightIcon = `<i class="fas fa-lock" style="color:#666"></i>`;
                 }
 
                 const html = `
@@ -685,11 +696,43 @@
                                 ${moneyBadge}
                             </div>
                         </div>
-                        <div class="arrow-indicator"><i class="fas fa-chevron-right" style="color:${jobColor}"></i></div>
+                        <div class="arrow-indicator">${rightIcon}</div>
                     </div>
                 `;
                 container.appendChild(stringToNode(html));
             });
+            
+            startCooldownTimers();
+        }
+
+        // COOLDOWN TIMER LOGIC
+        let cooldownInterval = null;
+        function startCooldownTimers() {
+            if(cooldownInterval) clearInterval(cooldownInterval);
+            
+            const timers = document.querySelectorAll('.cooldown-timer');
+            if(timers.length === 0) return;
+
+            cooldownInterval = setInterval(() => {
+                let activeCount = 0;
+                document.querySelectorAll('.cooldown-timer').forEach(el => {
+                    let sec = parseInt(el.getAttribute('data-seconds'));
+                    if(sec > 0) {
+                        sec--;
+                        el.setAttribute('data-seconds', sec);
+                        
+                        const h = Math.floor(sec / 3600);
+                        const m = Math.floor((sec % 3600) / 60);
+                        const s = sec % 60;
+                        el.innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+                        activeCount++;
+                    } else {
+                        el.innerText = "YENİLE";
+                        // Optionally refresh page or row here
+                    }
+                });
+                if(activeCount === 0) clearInterval(cooldownInterval);
+            }, 1000);
         }
 
         // Helper string to node
@@ -771,7 +814,7 @@
                 durTxt,
                 true // Always OK, just info
             );
-            
+
             // 1. Min Eğitim (Varsa)
             const eduMet = (user.education_skill || 0) >= (job.reqEducation || 0);
             if((job.reqEducation || 0) > 0) {

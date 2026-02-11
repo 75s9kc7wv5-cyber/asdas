@@ -162,12 +162,38 @@
             display: flex; align-items: center; justify-content: center;
             border: 1px solid #444;
             color: var(--accent-cyan);
+            flex-shrink: 0;
         }
 
-        .hospital-info { flex: 1; }
-        .hospital-name { font-size: 1rem; font-weight: bold; color: #fff; }
-        .hospital-desc { font-size: 0.8rem; color: #888; }
-        .hospital-stats { font-size: 0.9rem; margin-top: 5px; white-space: nowrap; overflow-x: auto; display: flex; align-items:center; gap:5px; }
+        .hospital-info { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: row; 
+            align-items: center; 
+            justify-content: space-between; 
+            gap: 10px;
+            overflow: hidden;
+            min-width: 0;
+        }
+        
+        .hospital-name { 
+            font-size: 1rem; 
+            font-weight: bold; 
+            color: #fff; 
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .hospital-desc { font-size: 0.8rem; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .hospital-stats { 
+            font-size: 0.9rem; 
+            margin-top: 0; 
+            white-space: nowrap; 
+            display: flex; 
+            align-items: center; 
+            gap: 5px;
+            flex-shrink: 0; /* Prevent stats from shrinking */
+        }
 
         .right-arrow {
             color: #444;
@@ -440,6 +466,30 @@
         
 
 
+        <!-- REWARD/SUCCESS MODAL -->
+        <div class="modal-overlay" id="rewardModal">
+            <div class="modal-content">
+                <i class="fas fa-check-circle m-icon" style="color:var(--accent-green); font-size: 3rem; margin-bottom: 20px;"></i>
+                <h3 class="m-title" style="color:#fff; margin-bottom:15px; font-size: 1.4rem; font-weight:bold;">İŞLEM BAŞARILI!</h3>
+                <p style="color:#888; font-size:1rem; margin-bottom:25px; line-height:1.5;" id="rewardMsg">Hastane başarıyla satın alındı.</p>
+                <div style="display:flex; justify-content:center;">
+                    <button class="m-btn btn-confirm" onclick="document.getElementById('rewardModal').classList.remove('active')" style="width:100%; max-width:200px; padding:12px; border-radius:8px;">HARİKA!</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ERROR MODAL -->
+        <div class="modal-overlay" id="errorModal">
+            <div class="modal-content" style="border-top: 3px solid var(--accent-red); box-shadow: 0 0 30px rgba(231, 76, 60, 0.2);">
+                <i class="fas fa-times-circle m-icon" style="color:var(--accent-red); font-size: 3rem; margin-bottom: 20px;"></i>
+                <h3 class="m-title" style="color:#fff; margin-bottom:15px; font-size: 1.4rem; font-weight:bold;">HATA!</h3>
+                <p style="color:#888; font-size:1rem; margin-bottom:25px; line-height:1.5;" id="errorMsg">İşlem başarısız.</p>
+                <div style="display:flex; justify-content:center;">
+                    <button class="m-btn btn-confirm" onclick="document.getElementById('errorModal').classList.remove('active')" style="width:100%; max-width:200px; padding:12px; border-radius:8px; background: var(--accent-red); color: white;">ANLAŞILDI</button>
+                </div>
+            </div>
+        </div>
+
         <div id="menu-container"></div>
 
     </div>
@@ -550,65 +600,49 @@
             const user = JSON.parse(localStorage.getItem('simWorldUser'));
             if (!user) return;
 
+            const modal = document.getElementById('confirmBuyModal');
+            modal.style.display = 'flex'; // Ensure flex for centering
+            modal.classList.add('active'); // Add active class if used by CSS
+            
             const reqList = document.getElementById('reqList');
             reqList.innerHTML = '<div style="text-align:center; color:#888;">Veriler kontrol ediliyor...</div>';
-            document.getElementById('confirmBuyModal').style.display = 'flex';
             document.getElementById('btnConfirmBuy').disabled = true;
 
             try {
                 // Fetch user inventory and licenses
-                const [invRes, licRes] = await Promise.all([
+                // Fetch User Stats for Money/Gold/Diamond and Inventory for Items
+                const [userStatsRes, invRes, licRes] = await Promise.all([
+                    fetch(`/api/user-stats/${user.id}`),
                     fetch(`/api/inventory/${user.id}`),
                     fetch(`/api/licenses/${user.id}`)
                 ]);
                 
+                const userStats = await userStatsRes.json();
                 const inventory = await invRes.json();
                 const licenses = await licRes.json();
                 
                 // Helper to find item amount
                 const getAmount = (key) => {
-                    // API returns object { wood: 100, stone: 50 }
-                    // or array depending on implementation.
-                    // Based on server.js line 590, it returns object { item_key: quantity }
-                    // BUT wait, server.js line 590 returns object { wood: 10, stone: 5 }
-                    // Let's check if inventory is array or object
-                    
                     if (Array.isArray(inventory)) {
-                        // If array [{item_key: 'wood', amount: 10}]
                         const item = inventory.find(i => i.item_key === key);
                         return item ? (item.amount || item.quantity) : 0;
                     } else {
-                        // If object { wood: 10 }
                         return inventory[key] || 0;
                     }
                 };
-
+                
                 // Helper to check license
                 const hasLicense = (key, level) => {
-                    // licenses objesi { hospital: 1, bank: 0 } şeklinde geliyor olabilir (licence.html'deki yapıya göre)
-                    // Veya array [{license_key: 'hospital', level: 1}] şeklinde.
-                    // licence.html'de userLicenses objesi kullanılıyor: userLicenses['hospital'] = level
-                    // API /api/licenses/:userId ne dönüyor?
-                    // server.js'e bakarsak: SELECT * FROM licenses WHERE user_id = ?
-                    // Bu array döner: [{license_key: 'hospital', level: 1}, ...]
+                    // Check against userStats.license_hospital_level etc first (from users table)
+                    if (key === 'hospital' && userStats.license_hospital_level >= level) return true;
                     
                     if (Array.isArray(licenses)) {
-                        const lic = licenses.find(l => l.license_key === key || l.license_key === 'hospital'); // 'hospital' key'i bazen farklı olabilir, kontrol edelim.
-                        // licence.html'de id: 'hospital' kullanılıyor.
-                        // server.js'de buy endpointinde 'hospital_license' aranıyor.
-                        // Muhtemelen veritabanında 'hospital' veya 'hospital_license' olarak kayıtlı.
-                        // licence.html'de processBuyLicense fonksiyonu mineId gönderiyor. mineId='hospital'.
-                        // server.js'de /api/licenses/buy endpointi: INSERT INTO licenses ... license_key = ?
-                        // Yani key 'hospital' olarak kaydediliyor.
-                        // Ancak server.js /api/hospitals/buy endpointinde 'hospital_license' aranıyor (Line 3434).
-                        // Bu bir uyumsuzluk. Düzeltilmesi gerek.
-                        // Şimdilik frontend tarafında her iki ihtimali de kontrol edelim.
-                        
-                        const found = licenses.find(l => l.license_key === 'hospital' || l.license_key === 'hospital_license');
+                        // Check licenses table if array
+                        const found = licenses.find(l => l.mine_type === key || l.mine_type === key + '_license');
                         return found && found.level >= level;
                     } else {
-                        // Eğer obje geliyorsa { hospital: 1 }
-                        return (licenses['hospital'] || licenses['hospital_license'] || 0) >= level;
+                        // If object { key: value }
+                        return (licenses[key] || licenses[key + '_license'] || 0) >= level;
                     }
                 };
 
@@ -617,9 +651,9 @@
 
                 // Requirements
                 const reqs = [
-                    { label: 'Para', val: 50000, userVal: user.money, type: 'money', icon: 'icons/inventory-icon/money.png' },
-                    { label: 'Altın', val: 500, userVal: user.gold, type: 'gold', icon: 'icons/inventory-icon/gold.png' },
-                    { label: 'Elmas', val: 10, userVal: user.diamond || 0, type: 'diamond', icon: 'icons/inventory-icon/diamond.png' },
+                    { label: 'Para', val: 50000, userVal: userStats.money || 0, type: 'money', icon: 'icons/inventory-icon/money.png' },
+                    { label: 'Altın', val: 500, userVal: userStats.gold || 0, type: 'gold', icon: 'icons/inventory-icon/gold.png' },
+                    { label: 'Elmas', val: 10, userVal: userStats.diamond || 0, type: 'diamond', icon: 'icons/inventory-icon/diamond.png' },
                     { label: 'Tahta', val: 1000, userVal: getAmount('lumber'), type: 'item', icon: 'icons/factory-icon/wood-plank.png' },
                     { label: 'Tuğla', val: 1000, userVal: getAmount('brick'), type: 'item', icon: 'icons/factory-icon/brick.png' },
                     { label: 'Cam', val: 500, userVal: getAmount('glass'), type: 'item', icon: 'icons/factory-icon/window.png' },
@@ -691,14 +725,22 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    toastr.success(result.message, 'Başarılı');
                     closeModal('confirmBuyModal');
+                    const rewardModal = document.getElementById('rewardModal');
+                    const rewardMsg = document.getElementById('rewardMsg');
+                    if (rewardMsg) rewardMsg.innerText = result.message || 'Hastaneniz başarıyla satın alındı!';
+                    if (rewardModal) rewardModal.classList.add('active');
+                    
                     await checkMyHospital();
                     // Refetch list to show new hospital
                     await loadHospitals();
-                    if (window.updateHeader) window.updateHeader();
+                    if (window.updateHeaderStats) window.updateHeaderStats();
                 } else {
-                    toastr.error(result.message, 'Hata');
+                    const errorModal = document.getElementById('errorModal');
+                    const errorMsg = document.getElementById('errorMsg');
+                    if (errorMsg) errorMsg.innerText = result.message || 'Satın alma işlemi başarısız oldu.';
+                    if (errorModal) errorModal.classList.add('active');
+                    
                     if (result.message.includes('Zaten')) closeModal('confirmBuyModal');
                 }
             } catch (error) {
@@ -815,7 +857,11 @@
 
 
         function closeModal(id) {
-            document.getElementById(id).style.display = 'none';
+            const el = document.getElementById(id);
+            if(el) {
+                el.classList.remove('active');
+                el.style.display = 'none'; // Fallback for some styles
+            }
         }
 
         // --- SEKME YÖNETİMİ ---

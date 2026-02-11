@@ -186,8 +186,6 @@
     <div class="auth-container">
         <div class="logo">Sim of <span>World</span></div>
         
-        <div class="error-msg" id="errorMsg">Kullanıcı adı veya şifre hatalı!</div>
-
         <form id="loginForm" onsubmit="handleLogin(event)">
             <div class="form-group">
                 <label class="form-label">Kullanıcı Adı</label>
@@ -204,6 +202,16 @@
 
         <div class="auth-footer">
             Hesabın yok mu? <a href="register.html" class="auth-link">Kayıt Ol</a>
+        </div>
+    </div>
+
+    <!-- Notification Modal -->
+    <div class="modal-overlay" id="notificationModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:10001; align-items:center; justify-content:center;">
+        <div class="modal-content" style="background:#161616; width:90%; max-width:400px; padding:30px; border-radius:10px; border:1px solid #333; text-align:center; position:relative; border-top: 3px solid var(--accent-cyan);">
+            <i class="fas" id="notifIcon" style="font-size: 3rem; margin-bottom: 20px;"></i>
+            <h3 class="modal-title" id="notifTitle" style="color:#fff; margin-bottom:10px; font-size:1.5rem; font-weight:700;">BAŞLIK</h3>
+            <p class="modal-text" id="notifMessage" style="color:#ccc; text-align: center; margin-bottom: 25px; font-size: 1rem;">Mesaj içeriği</p>
+            <button class="btn-auth" id="notifBtn" onclick="closeNotificationModal()">TAMAM</button>
         </div>
     </div>
 
@@ -254,11 +262,55 @@
             document.getElementById('cookieBanner').style.display = 'none';
         }
 
+        let isSuccess = false;
+
+        function showNotification(type, title, message) {
+            const modal = document.getElementById('notificationModal');
+            const icon = document.getElementById('notifIcon');
+            const titleEl = document.getElementById('notifTitle');
+            const msgEl = document.getElementById('notifMessage');
+            const btn = document.getElementById('notifBtn');
+            const content = modal.querySelector('.modal-content');
+
+            modal.style.display = 'flex';
+            titleEl.innerText = title;
+            msgEl.innerText = message;
+            
+            if (type === 'success') {
+                isSuccess = true;
+                icon.className = 'fas fa-check-circle';
+                icon.style.color = 'var(--accent-green)';
+                titleEl.style.color = 'var(--accent-green)';
+                content.style.borderColor = 'var(--accent-green)';
+                btn.style.background = 'var(--accent-green)';
+                btn.innerText = "OYUNA GİR";
+                
+                // Otomatik yönlendirme (1.5 saniye sonra)
+                setTimeout(() => {
+                    window.location.href = 'home.html';
+                }, 1500);
+            } else {
+                isSuccess = false;
+                icon.className = 'fas fa-times-circle';
+                icon.style.color = 'var(--accent-red)';
+                titleEl.style.color = 'var(--accent-red)';
+                content.style.borderColor = 'var(--accent-red)';
+                btn.style.background = 'var(--accent-red)';
+                btn.innerText = "TEKRAR DENE";
+            }
+        }
+
+        function closeNotificationModal() {
+            document.getElementById('notificationModal').style.display = 'none';
+            if(isSuccess) {
+                window.location.href = 'home.html';
+            }
+        }
+
         async function handleLogin(e) {
             e.preventDefault();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-            const errorMsg = document.getElementById('errorMsg');
 
             try {
                 const response = await fetch('/api/login', {
@@ -272,15 +324,23 @@
                 if (response.ok) {
                     // Başarılı giriş
                     localStorage.setItem('simWorldUser', JSON.stringify(data.user));
-                    window.location.href = 'home.html'; // Ana sayfaya yönlendir
+                    showNotification('success', 'Giriş Başarılı', 'Hoşgeldiniz! Oyuna yönlendiriliyorsunuz...');
                 } else {
-                    errorMsg.innerText = data.message || 'Giriş başarısız.';
-                    errorMsg.style.display = 'block';
+                    // Hata mesajlarını özelleştir
+                    let errorTitle = 'Giriş Başarısız';
+                    let errorText = data.message || 'Kullanıcı adı veya şifre hatalı.';
+                    
+                    if (data.message && data.message.includes('Kullanıcı')) {
+                        errorText = 'Bu kullanıcı adı ile kayıtlı bir hesap bulunamadı.';
+                    } else if (data.message && data.message.includes('şifre')) { // Backend genellikle "Kullanıcı adı veya şifre hatalı" döner, ama ayrıma izin veriyorsa.
+                        errorText = 'Şifreniz hatalı. Lütfen tekrar deneyin.';
+                    }
+
+                    showNotification('error', errorTitle, errorText);
                 }
             } catch (err) {
                 console.error(err);
-                errorMsg.innerText = 'Sunucu hatası!';
-                errorMsg.style.display = 'block';
+                showNotification('error', 'Bağlantı Hatası', 'Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edin.');
             }
         }
     </script>

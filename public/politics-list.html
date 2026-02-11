@@ -47,43 +47,51 @@
         /* MAIN */
         main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
 
-        .header-badge {
-            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(20,20,20,0.95) 100%);
-            padding: 20px;
-            border-radius: 0 0 20px 20px;
-            margin: 0 0 25px 0;
-            border-top: 3px solid var(--accent);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            position: relative;
-            overflow: hidden;
-            text-align: center;
+        /* Custom Header */
+        .custom-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #222;
         }
-        .header-badge::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: radial-gradient(circle, var(--accent) 0%, transparent 100%);
-            opacity: 0.7;
-        }
-        .header-badge h1 {
-            font-size: 1.8rem;
-            color: #fff;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 5px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+
+        .back-btn {
+            width: 42px;
+            height: 42px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #333;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            color: var(--text-white);
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .header-badge h1 i { color: var(--accent); }
-        .header-badge p {
+        .back-btn:hover {
+            background: rgba(155, 89, 182, 0.2);
+            border-color: var(--accent);
+            transform: translateX(-3px);
+            color: var(--accent);
+        }
+
+        .header-info h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin: 0;
+            line-height: 1.2;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .header-info p {
             font-size: 0.9rem;
-            color: #aaa;
+            color: #888;
+            margin: 3px 0 0 0;
             font-weight: 500;
         }
 
@@ -167,9 +175,35 @@
         .party-icon img { width: 100%; height: 100%; object-fit: cover; }
         .party-icon div { font-weight: 800; font-size: 1rem; color: #fff; }
 
-        .party-info { flex: 1; }
-        .party-name { font-size: 1rem; font-weight: bold; color: #fff; }
-        .party-stats { font-size: 0.75rem; color: #ccc; margin-top: 3px; display: flex; gap: 10px; align-items: center; }
+        .party-info { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            gap: 2px;
+            overflow: hidden;
+            min-width: 0;
+        }
+        
+        .party-name { 
+            font-size: 1rem; 
+            font-weight: bold; 
+            color: #fff; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis;
+        }
+        .party-stats { 
+            font-size: 0.75rem; 
+            color: #ccc; 
+            margin-top: 2px;
+            display: flex; 
+            gap: 5px; 
+            align-items: center; 
+            flex-shrink: 0;
+            white-space: nowrap;
+            overflow-x: auto;
+        }
 
         .stat-badge {
             display: inline-flex;
@@ -183,24 +217,45 @@
             color: #ddd;
         }
 
+        .upgrade-cost-status {
+            width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; margin-left: 15px; flex-shrink: 0;
+        }
+        .upgrade-cost-status.ok {
+            background: rgba(46, 204, 113, 0.2); color: var(--accent-green);
+        }
+        .upgrade-cost-status.fail {
+            background: rgba(231, 76, 60, 0.2); color: var(--accent-red);
+        }
+
         .right-arrow {
             color: #444;
             font-size: 1.2rem;
             margin-left: auto;
             transition: color 0.2s;
         }
-        .party-card:hover .right-arrow { color: #fff; }
+        .party-card.red-border { border-color: #555; }
+        .party-card.red-border::before { background: var(--accent-red) !important; }
+        .party-card.green-border::before { background: var(--accent-green) !important; }
 
-        /* TAB 2: PARTİ KURMA */
-        .create-hero {
-            background: linear-gradient(135deg, rgba(155, 89, 182, 0.15), rgba(20,20,20,0.95));
-            border: 1px solid var(--accent); border-radius: 12px; padding: 20px; text-align: center;
-            box-shadow: 0 0 20px rgba(155, 89, 182, 0.1); margin-bottom: 20px;
+        /* Create specific override */
+        .create-hero-card {
+            display: flex;
+            flex-direction: column;
+            background: rgba(30,30,30,0.95);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 0;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s;
         }
-        .ch-icon { font-size: 3rem; color: var(--accent); margin-bottom: 10px; }
-        .ch-price { font-size: 1.8rem; font-weight: 800; color: var(--accent-gold); margin: 10px 0; }
-
-        .form-group { margin-bottom: 15px; }
+        .create-hero-card:hover { transform: translateY(-3px); }
+        .create-hero-card::before {
+            content: ''; position: absolute; left: 0; top: 0; height: 100%; width: 5px;
+            background: #555;
+        }
         .form-label { display: block; font-size: 0.8rem; color: #aaa; margin-bottom: 5px; text-transform: uppercase; font-weight: bold; }
         .modern-input, .modern-select, .modern-textarea { 
             width: 100%; background: var(--bg-input); border: 1px solid var(--border-color); color: #fff; 
@@ -222,17 +277,114 @@
         }
 
         /* MODAL */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; display: none; justify-content: center; align-items: center; animation: fadeIn 0.3s; }
-        .modal-content { background: #181818; width: 85%; padding: 25px; border-radius: 12px; border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent); }
-        .m-title { font-size: 1.3rem; margin-bottom: 10px; color: #fff; font-weight: bold; }
-        .m-desc { color: #aaa; font-size: 0.9rem; margin-bottom: 20px; }
-        .m-btns { display: flex; gap: 10px; }
-        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 1rem; }
-        .btn-confirm { background: var(--accent-green); color: #000; }
-        .btn-cancel { background: #333; color: #fff; }
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 2000;
+            backdrop-filter: blur(5px);
+            display: none; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        .modal-overlay.active { display: flex; }
 
-        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-content {
+            background: linear-gradient(145deg, #181818, #111);
+            width: 90%; max-width: 420px; padding: 30px; 
+            border-radius: 16px;
+            border: 1px solid #333;
+            border-top: 4px solid var(--accent);
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+            text-align: center;
+        }
+
+        .m-title {
+            font-size: 1.5rem;
+            margin: 15px 0 10px;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 800;
+        }
+
+        .m-desc {
+            color: #aaa;
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 25px;
+        }
+
+        .modal-btns { display: flex; gap: 15px; margin-top: 20px; }
+        .m-btn { 
+            flex: 1; padding: 14px; border: none; border-radius: 8px; 
+            font-weight: 800; cursor: pointer; font-family: 'Rajdhani'; 
+            font-size: 1rem; transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn-confirm { 
+            background: var(--accent-green); color: #000; 
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.2);
+        }
+        .btn-confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(46, 204, 113, 0.4);
+        }
+
+        .btn-cancel { 
+            background: rgba(255, 255, 255, 0.05); color: #ccc; border: 1px solid #333;
+        }
+        .btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.1); color: #fff;
+        }
+
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Requirement List */
+        .req-list { 
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            margin: 15px 0;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .req-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 8px 0; 
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: transparent;
+            border-radius: 0;
+            border-left: none; border-right: none; border-top: none;
+        }
+        .req-item:last-child { border-bottom: none; }
+
+        .req-left { display: flex; align-items: center; gap: 10px; color: #ccc; font-size: 0.9rem; }
+        .req-right { 
+            font-weight: bold; 
+            font-family: 'Rajdhani'; 
+            color: #fff; 
+            font-size: 0.9rem; 
+            display: flex; 
+            align-items: center; 
+        }
+        .req-icon { width: 24px; text-align: center; font-size: 1rem; }
+
+        /* Input Style */
+        .modal-input-group { margin-bottom: 15px; }
+        .modal-input-label { display: block; color: #888; margin-bottom: 5px; font-size: 0.9rem; font-weight: bold; }
+        .modal-input { 
+            width: 100%; background: #222; border: 1px solid #444; color: #fff; 
+            padding: 10px; border-radius: 5px; font-family: 'Rajdhani'; font-size: 1rem; outline: none;
+        }
+        .modal-select { 
+            width: 100%; background: #222; border: 1px solid #444; color: #fff; 
+            padding: 10px; border-radius: 5px; font-family: 'Rajdhani'; font-size: 1rem; outline: none; appearance: none;
+        }
+        .modal-input:focus, .modal-select:focus { border-color: var(--accent); }
+        .btn-confirm:disabled { background: #444; color: #888; cursor: not-allowed; }
 
     </style>
 </head>
@@ -242,9 +394,14 @@
         <!-- HEADER removed -->
 
         <main>
-        <div class="header-badge">
-            <h1><i class="fas fa-landmark"></i> Siyasi Partiler</h1>
-            <p>Bir partiye katıl veya kendi hareketini başlat</p>
+        <div class="custom-header">
+            <div class="back-btn" onclick="window.history.back()">
+                <i class="fas fa-arrow-left"></i>
+            </div>
+            <div class="header-info">
+                <h1>SİYASİ PARTİLER</h1>
+                <p>Bir partiye katıl veya kendi hareketini başlat</p>
+            </div>
         </div>
 
             <!-- SEKMELER -->
@@ -270,35 +427,39 @@
                 <div id="my-party-container" class="party-list"></div>
             </div>
 
-            <!-- TAB 2: PARTİ KURMA -->
+            <!-- TAB 2: PARTİ KURMA / YÖNETİM -->
             <div id="tab-create" style="display:none;">
-                <div class="create-hero">
-                    <i class="fas fa-landmark ch-icon"></i>
-                    <h2 style="color:#fff; margin:0;">YENİ PARTİ KURULUMU</h2>
-                    <p style="color:#aaa; font-size:0.9rem; margin-top:5px;">Kendi ideolojini yay ve seçimlere katıl.</p>
-                    <div class="ch-price" style="font-size: 1.2rem;">
-                        <span style="color:var(--accent-green)">10.000.000 ₺</span> + 
-                        <span style="color:var(--accent-gold)">500 Altın</span> + 
-                        <span style="color:var(--accent-cyan)">50 Elmas</span>
+                <div id="create-party-container">
+                    <!-- JS Updated Content -->
+                </div>
+            </div>
+
+        </main>
+
+        <!-- CREATE PARTY INPUT MODAL -->
+        <div class="modal-overlay" id="createPartyInputModal">
+            <div class="modal-content">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="width: 60px; height: 60px; background: #222; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; border: 1px solid #444; color: var(--accent);">
+                        <i class="fas fa-landmark" style="font-size: 1.5rem;"></i>
                     </div>
-                    <div id="licenseStatus" style="margin-top: 10px; font-size: 0.9rem; font-weight: bold;">
-                        <!-- JS will fill this -->
-                    </div>
+                    <h3 style="color:#fff; margin-bottom:5px; font-size: 1.4rem;">Siyasi Parti Kur</h3>
+                    <p style="color:#888; font-size:0.9rem;">Kendi ideolojini yay ve seçimlere katıl.</p>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Parti Adı</label>
-                    <input type="text" id="pName" class="modern-input" placeholder="Örn: Milli Birlik Partisi">
+                <div class="modal-input-group">
+                    <label class="modal-input-label">Parti Adı</label>
+                    <input type="text" id="pName" class="modal-input" placeholder="Örn: Milli Birlik Partisi">
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Kısaltma (Max 4 Karakter)</label>
-                    <input type="text" id="pAbbr" class="modern-input" maxlength="4" placeholder="Örn: MBP" style="text-transform:uppercase;">
+                <div class="modal-input-group">
+                    <label class="modal-input-label">Kısaltma (Max 4 Karakter)</label>
+                    <input type="text" id="pAbbr" class="modal-input" maxlength="4" placeholder="Örn: MBP" style="text-transform:uppercase;">
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">İdeoloji</label>
-                    <select id="pIdeology" class="modern-select">
+                <div class="modal-input-group">
+                    <label class="modal-input-label">İdeoloji</label>
+                    <select id="pIdeology" class="modal-select">
                         <option value="Demokrat">Demokrat</option>
                         <option value="Liberal">Liberal</option>
                         <option value="Sosyalist">Sosyalist</option>
@@ -317,20 +478,67 @@
                     </select>
                 </div>
 
-                <button class="btn-create" onclick="openCreateModal()">PARTİYİ KUR</button>
-            </div>
+                <div class="req-list">
+                    <div class="req-item">
+                        <div class="req-left"><img src="icons/inventory-icon/money.png" class="req-icon" style="object-fit:contain;"> Para</div>
+                        <div class="req-right" id="reqMoney">500.000 ₺</div>
+                    </div>
+                    <div class="req-item">
+                        <div class="req-left"><img src="icons/inventory-icon/gold.png" class="req-icon" style="object-fit:contain;"> Altın</div>
+                        <div class="req-right" id="reqGold">500</div>
+                    </div>
+                    <div class="req-item">
+                        <div class="req-left"><img src="icons/inventory-icon/diamond.png" class="req-icon" style="object-fit:contain;"> Elmas</div>
+                        <div class="req-right" id="reqDiamond">50</div>
+                    </div>
+                    <div class="req-item">
+                        <div class="req-left"><img src="icons/licence-icon/licence.png" class="req-icon" style="object-fit:contain;"> 1. Seviye Siyasi Parti Lisansı</div>
+                        <div class="req-right" id="modalLicenseCheck">Kontrol Ediliyor...</div>
+                    </div>
+                </div>
 
-        </main>
+                <div class="modal-btns">
+                    <button class="m-btn btn-cancel" onclick="closeInputModal()">İPTAL</button>
+                    <button class="m-btn btn-confirm" onclick="createParty()">KUR</button>
+                </div>
+            </div>
+        </div>
 
         <!-- ONAY MODALI -->
         <div class="modal-overlay" id="confirmModal">
             <div class="modal-content">
-                <i class="fas fa-file-signature" style="font-size:3rem; color:var(--accent); margin-bottom:10px;"></i>
+                <div id="modalTopIcon" style="width: 80px; height: 80px; margin: 0 auto 15px; background: rgba(155, 89, 182, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(155, 89, 182, 0.3);">
+                    <i class="fas fa-file-signature" style="font-size:2rem; color:var(--accent);"></i>
+                </div>
                 <h3 class="m-title" id="modalTitle">ONAYLA</h3>
                 <p class="m-desc" id="modalDesc">İşlemi onaylıyor musunuz?</p>
-                <div class="m-btns">
-                    <button class="m-btn btn-cancel" onclick="closeModal()">İPTAL</button>
+                <div class="modal-btns">
+                    <button class="m-btn btn-cancel" onclick="closeModal()">VAZGEÇ</button>
                     <button class="m-btn btn-confirm" id="modalConfirmBtn">ONAYLA</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SUCCESS MODAL -->
+        <div class="modal-overlay" id="successModal">
+            <div class="modal-content" style="border-top: 3px solid var(--accent-green);">
+                <div style="text-align:center;">
+                    <i class="fas fa-check-circle" style="font-size:3rem; color:var(--accent-green); margin-bottom:15px;"></i>
+                    <h3 class="m-title">BAŞARILI!</h3>
+                    <p class="m-desc" id="successMsg" style="color:#ccc; margin-bottom:20px;">Parti başarıyla kuruldu.</p>
+                    <button class="m-btn btn-confirm" onclick="closeSuccessModal()" style="width:100%">TAMAM</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ERROR MODAL -->
+        <div class="modal-overlay" id="errorModal">
+            <div class="modal-content" style="border-top: 3px solid var(--accent-red);">
+                <div style="text-align:center;">
+                    <i class="fas fa-exclamation-circle" style="font-size:3rem; color:var(--accent-red); margin-bottom:15px;"></i>
+                    <h3 class="m-title">BAŞARISIZ!</h3>
+                    <p class="m-desc" id="errorMsg" style="color:#ccc; margin-bottom:20px;">Bir hata oluştu.</p>
+                    <button class="m-btn btn-cancel" onclick="closeErrorModal()" style="width:100%; background:#333;">KAPAT</button>
                 </div>
             </div>
         </div>
@@ -343,6 +551,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script src="js/header-manager.js"></script>
     <script src="js/menu-manager.js"></script>
+    <script src="js/loader-manager.js"></script>
     <script>
         // Toastr Config
         toastr.options = {
@@ -373,6 +582,8 @@
                 if (userRes.ok) {
                     const userData = await userRes.json();
                     user.money = userData.money;
+                    user.gold = userData.gold;
+                    user.diamond = userData.diamond;
                     user.party_id = userData.party_id; // Update party_id from server
                     user.hasParty = !!userData.party_id; 
                     user.hasPartyLicense = userData.hasPartyLicense;
@@ -394,14 +605,7 @@
         };
 
         function updateLicenseStatus() {
-            const el = document.getElementById('licenseStatus');
-            if(!el) return;
-            
-            if (user.hasPartyLicense) {
-                el.innerHTML = '<span style="display:inline-block; padding:6px 12px; border-radius:6px; background:rgba(46, 204, 113, 0.15); color:var(--accent-green); border:1px solid var(--accent-green); font-weight:bold; font-size:0.85rem;"><i class="fas fa-check-circle"></i> PARTİ KURMA LİSANSI MEVCUT</span>';
-            } else {
-                el.innerHTML = '<span style="display:inline-block; padding:6px 12px; border-radius:6px; background:rgba(231, 76, 60, 0.15); color:var(--accent-red); border:1px solid var(--accent-red); font-weight:bold; font-size:0.85rem;"><i class="fas fa-times-circle"></i> PARTİ KURMA LİSANSI YOK</span>';
-            }
+            // Removed
         }
 
         async function fetchParties() {
@@ -418,46 +622,97 @@
         }
 
         function setupTabs() {
-            const isLeader = parties.some(p => Number(p.leader_id) === Number(user.id));
+            // "Partim" görünümü için: lider ise veya sadece üye ise kontrol
+            // Ancak "Party Management" genellikle liderler içindir. 
+            // İsteğe göre "oyuncunun partisi varsa" denildiği için hem lider hem üye kapsanmalı.
+            const hasParty = user.party_id && user.party_id > 0;
             const btn = document.getElementById('second-tab-btn');
             
-            if (isLeader) {
+            if (hasParty) {
                 btn.innerText = 'PARTİM';
                 btn.onclick = function(e) { switchTab('myparty', e.target); };
                 renderMyParty();
             } else {
                 btn.innerText = 'PARTİ KUR';
-                btn.onclick = function(e) { switchTab('create', e.target); };
+                btn.onclick = function(e) { switchTab('create', e.target); renderCreateTabContent(); };
             }
         }
 
+        function renderCreateTabContent() {
+             const container = document.getElementById('create-party-container');
+             if(!container) return;
+             
+             const isLeader = parties.some(p => Number(p.leader_id) === Number(user.id));
+             
+             let cardHtml = '';
+             let clickAction = '';
+             let borderClass = '';
+             let iconColor = '';
+             let title = '';
+             let desc = '';
+             
+             if (isLeader) {
+                 borderClass = 'green-border';
+                 clickAction = `manageParty(${user.party_id})`;
+                 iconColor = 'var(--accent-green)';
+                 title = "Parti Sahipliği";
+                 desc = "Parti yönetimine gitmek için tıklayın.";
+             } else {
+                 borderClass = 'red-border';
+                 clickAction = "openInputModal()";
+                 iconColor = 'var(--accent-red)';
+                 title = "Siyasi Parti Kurulumu";
+                 desc = "Yeni bir parti kurmak istiyorsanız tıklayın.";
+             }
+             
+             container.innerHTML = `
+                <div class="party-card ${borderClass}" onclick="${clickAction}">
+                    <div class="party-card-header">
+                        <div class="party-icon" style="color:${iconColor}; border-color:${iconColor};">
+                             <i class="fas fa-landmark"></i>
+                        </div>
+                        <div class="party-info" style="flex-direction: column; align-items: flex-start; justify-content: center;">
+                            <div class="party-name">${title}</div>
+                            <div class="party-stats" style="color:#aaa; margin-top:2px;">${desc}</div>
+                        </div>
+                        <div class="right-arrow"><i class="fas fa-chevron-right"></i></div>
+                    </div>
+                </div>
+             `;
+        }
+        
+        function closeModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+        }
+
         function renderMyParty() {
-            const p = parties.find(p => Number(p.leader_id) === Number(user.id));
-            if(!p) return;
+            // Find party by user's party_id (Member or Leader)
+            const p = parties.find(p => Number(p.id) === Number(user.party_id));
+            if (!p) return;
 
             const container = document.getElementById('my-party-container');
             
             let logoHtml = p.abbr;
-            if(p.logo && p.logo !== 'uploads/avatars/default.png') {
+            if (p.logo && p.logo !== 'uploads/avatars/default.png') {
                 logoHtml = `<img src="${p.logo}" style="width:100%; height:100%; object-fit:cover;">`;
             }
 
+            // Çizgi yeşil olsun (#2ecc71) ve party yönetimine gitsin
+            // Lider değilse bile buraya girmesini sağladık.
+            // İsteğe göre "karta tıklayınca parti yönetimine" yönlendirme eklendi.
+            const borderColor = '#2ecc71'; 
+
             container.innerHTML = `
-                <div class="party-card" style="border-color:${p.color}">
-                    <div class="party-stripe" style="background:${p.color}"></div>
-                    <div class="pc-logo" style="color:${p.color}; border-color:${p.color}50; overflow:hidden; padding:0;">${logoHtml}</div>
-                    <div class="pc-info">
-                        <div class="pc-head">
-                            <span class="pc-name">${p.name}</span>
+                <div class="party-card" style="--party-color:${borderColor};" onclick="manageParty(${p.id})">
+                    <div class="party-card-header">
+                        <div class="party-icon" style="color:${borderColor}; border-color:${borderColor};">
+                            ${logoHtml}
                         </div>
-                        <span class="pc-leader"><i class="fas fa-crown"></i> ${p.leader_name || 'Siz'}</span>
-                        <div class="pc-meta">
-                            <span class="pc-badge"><i class="fas fa-users"></i> ${p.members_count}</span>
-                            <span class="pc-badge"><i class="fas fa-book"></i> ${p.ideology}</span>
+                        <div class="party-info">
+                            <div class="party-name">${p.name}</div>
+                            <div class="party-stats" style="color:#aaa;">Parti Yönetim Paneli</div>
                         </div>
-                    </div>
-                    <div style="display:flex;">
-                        <button class="btn-join" style="border-color:${p.color}; color:${p.color}" onclick="manageParty(${p.id})">YÖNET</button>
+                        <div class="right-arrow"><i class="fas fa-chevron-right"></i></div>
                     </div>
                 </div>
             `;
@@ -488,7 +743,20 @@
             const container = document.getElementById('partyListContainer');
             container.innerHTML = '';
 
-            const filtered = parties.filter(p => p.name.toLowerCase().includes(filter.toLowerCase()));
+            let filtered = parties.filter(p => p.name.toLowerCase().includes(filter.toLowerCase()));
+
+            // Sıralama: Önce kendi partimiz, sonra seviye (Yüksekten düşüğe)
+            filtered.sort((a, b) => {
+                const isMyPartyA = Number(user.party_id) === Number(a.id);
+                const isMyPartyB = Number(user.party_id) === Number(b.id);
+
+                if (isMyPartyA && !isMyPartyB) return -1;
+                if (!isMyPartyA && isMyPartyB) return 1;
+
+                const levelA = a.level || 1;
+                const levelB = b.level || 1;
+                return levelB - levelA;
+            });
 
             filtered.forEach(p => {
                 const isLeader = Number(user.id) === Number(p.leader_id);
@@ -513,7 +781,7 @@
                         statusText = "BAŞVURULDU";
                         statusColor = "var(--accent-gold)";
                     } else {
-                        clickAction = `enterParty(${p.id})`;
+                        clickAction = `applyToParty(${p.id}, '${p.name.replace(/'/g, "\\'")}')`;
                         statusText = "";
                         statusColor = "transparent";
                     }
@@ -531,9 +799,40 @@
                 const leaderName = p.leader_name || 'Bilinmiyor';
                 const leaderId = p.leader_id || '?';
 
+                // Stars Generation
+                let starsHtml = '';
+                const partyLevel = p.level || 1;
+                for (let i = 1; i <= 10; i++) {
+                    const color = i <= partyLevel ? 'var(--accent-gold)' : '#333';
+                    starsHtml += `<i class="fas fa-star" style="color:${color}; font-size:0.75rem; margin-left:2px;"></i>`;
+                }
+
+                // İdeoloji Renkleri
+                const ideologyColors = {
+                    'Demokrat': '#3498db',     // Mavi
+                    'Liberal': '#f1c40f',      // Sarı
+                    'Sosyalist': '#e74c3c',    // Kırmızı
+                    'Milliyetçi': '#95a5a6',   // Gri
+                    'Teknokrat': '#00e5ff',    // Cyan
+                    'Muhafazakar': '#5d6d7e',  // Koyu Mavi Gri
+                    'Komünist': '#ff5252',     // Açık Kırmızı
+                    'Faşist': '#636e72',       // Koyu Gri
+                    'Anarşist': '#ffffff',     // Beyaz
+                    'Yeşiller': '#2ecc71',     // Yeşil
+                    'Merkezci': '#9b59b6',     // Mor
+                    'Liberteryen': '#f39c12',  // Turuncu
+                    'Monarşist': '#8e44ad',    // Koyu Mor
+                    'Teokrat': '#d35400',      // Koyu Turuncu
+                    'Popülist': '#e67e22'      // Turuncu
+                };
+                const ideologyColor = ideologyColors[p.ideology] || 'var(--accent)';
+
                 const card = document.createElement('div');
                 card.className = 'party-card';
-                card.style.setProperty('--party-color', p.color);
+                
+                // Üye olunan partinin sol çizgisi yeşil olsun
+                const stripColor = isMember ? '#2ecc71' : p.color;
+                card.style.setProperty('--party-color', stripColor);
                 
                 card.innerHTML = `
                     <div class="party-card-header" onclick="${clickAction}">
@@ -544,7 +843,7 @@
                             <div class="party-name">${p.name} <span style="font-size:0.8em; color:#888;">(${p.abbr})</span></div>
                             <div class="party-stats">
                                 <span class="stat-badge"><i class="fas fa-users" style="color: var(--accent-cyan);"></i> ${p.members_count || 0} Üye</span>
-                                <span class="stat-badge"><i class="fas fa-book" style="color: var(--accent-purple);"></i> ${p.ideology}</span>
+                                <span class="stat-badge"><i class="fas fa-book" style="color: ${ideologyColor};"></i> ${p.ideology}</span>
                                 ${statusText ? `<span class="stat-badge" style="border-color:${statusColor}40; background:${statusColor}10; color:${statusColor};">${statusText}</span>` : ''}
                             </div>
                         </div>
@@ -556,6 +855,9 @@
                         <div class="owner-info" style="display:flex; align-items:center; gap:8px; color:#ccc; font-size:0.85rem;">
                             <i class="fas fa-crown" style="color:var(--accent-gold);"></i>
                             <span style="color:#ddd;">${leaderName}</span>
+                        </div>
+                        <div class="party-level-stars" style="display:flex; align-items:center;">
+                            ${starsHtml}
                         </div>
                     </div>
                 `;
@@ -572,8 +874,34 @@
         }
 
         function applyToParty(partyId, partyName) {
-            document.getElementById('modalTitle').innerText = "BAŞVURU YAP";
-            document.getElementById('modalDesc').innerText = `${partyName} partisine katılmak için başvuru yapmak istiyor musunuz?`;
+            const p = parties.find(x => x.id == partyId);
+            
+            // Hide default elements
+            document.getElementById('modalTopIcon').style.display = 'none';
+            document.getElementById('modalTitle').style.display = 'none';
+            
+            let content = '';
+            if (p) {
+                const logoSrc = (p.logo && p.logo !== 'uploads/avatars/default.png') ? p.logo : null;
+                const imgHtml = logoSrc 
+                    ? `<img src="${logoSrc}" style="width:100px; height:100px; border-radius:12px; object-fit:cover; border:2px solid #333; box-shadow:0 0 15px rgba(0,0,0,0.5);">` 
+                    : `<div style="width:100px; height:100px; border-radius:12px; background:#222; display:flex; align-items:center; justify-content:center; border:2px solid #333; font-weight:800; font-size:2rem; color:${p.color}; box-shadow:0 0 15px rgba(0,0,0,0.5);">${p.abbr}</div>`;
+
+                content = `
+                    <div style="display:flex; flex-direction:column; align-items:center; text-align:center; margin-bottom:20px;">
+                        <div style="margin-bottom:15px;">
+                            ${imgHtml}
+                        </div>
+                        <div style="font-size:1.5rem; font-weight:800; color:#fff; text-transform:uppercase; line-height:1.2; margin-bottom:5px;">${p.name}</div>
+                        <div style="font-size:1.1rem; color:${p.color || '#888'}; font-weight:bold;">(${p.abbr})</div>
+                    </div>
+                    <div style="color:#ccc; font-size:1rem; text-align:center; border-top:1px solid #333; padding-top:15px;">Bu partiye katılmak için başvuru yapmak istiyor musunuz?</div>
+                `;
+            } else {
+                content = `<div style="padding:20px;"><span style="color:var(--accent); font-weight:800; font-size:1.1rem;">${partyName}</span><br>partisine katılmak için başvuru yapmak üzeresiniz.</div>`;
+            }
+
+            document.getElementById('modalDesc').innerHTML = content;
             document.getElementById('modalConfirmBtn').onclick = function() { confirmApplication(partyId); };
             document.getElementById('confirmModal').style.display = 'flex';
         }
@@ -588,19 +916,26 @@
                 });
                 const data = await res.json();
                 if(data.success) {
-                    toastr.success(data.message || "Başvuru gönderildi.");
+                    document.getElementById('successMsg').innerText = data.message || "Başvuru gönderildi.";
+                    document.getElementById('successModal').style.display = 'flex';
                     myApplications.push(partyId);
                     renderParties(document.getElementById('searchInput').value);
                 } else {
-                    toastr.error(data.message || "Başvuru başarısız.");
+                    document.getElementById('errorMsg').innerText = data.message || "Başvuru başarısız.";
+                    document.getElementById('errorModal').style.display = 'flex';
                 }
             } catch(e) {
                 console.error(e);
-                toastr.error("Hata oluştu.");
+                document.getElementById('errorMsg').innerText = "Hata oluştu.";
+                document.getElementById('errorModal').style.display = 'flex';
             }
         }
 
         function cancelApplication(partyId, partyName) {
+            // Restore defaults
+            document.getElementById('modalTopIcon').style.display = 'flex';
+            document.getElementById('modalTitle').style.display = 'block';
+
             document.getElementById('modalTitle').innerText = "BAŞVURU İPTALİ";
             document.getElementById('modalDesc').innerText = `${partyName} partisine yaptığınız başvuruyu iptal etmek istiyor musunuz?`;
             document.getElementById('modalConfirmBtn').onclick = function() { confirmCancelApplication(partyId); };
@@ -617,15 +952,18 @@
                 });
                 const data = await res.json();
                 if(data.success) {
-                    toastr.success(data.message);
+                    document.getElementById('successMsg').innerText = data.message;
+                    document.getElementById('successModal').style.display = 'flex';
                     myApplications = myApplications.filter(id => id !== partyId);
                     renderParties(document.getElementById('searchInput').value);
                 } else {
-                    toastr.error(data.message);
+                    document.getElementById('errorMsg').innerText = data.message;
+                    document.getElementById('errorModal').style.display = 'flex';
                 }
             } catch(e) {
                 console.error(e);
-                toastr.error("Hata oluştu.");
+                document.getElementById('errorMsg').innerText = "Hata oluştu.";
+                document.getElementById('errorModal').style.display = 'flex';
             }
         }
 
@@ -636,32 +974,71 @@
 
         // --- PARTİ KURMA ---
 
-        function openCreateModal() {
-            if(user.hasParty) return toastr.warning("Zaten bir partin var veya üyesin!");
-            if(!user.hasPartyLicense) return toastr.warning("Parti kurmak için lisansınız yok!");
-            if(user.money < 10000000) return toastr.warning("Yetersiz Bakiye!");
-            // Gold and Diamond check should ideally be here too, but server will check it.
-            
-            const name = document.getElementById('pName').value;
-            const abbr = document.getElementById('pAbbr').value;
-            if(name.length < 3 || abbr.length < 2) return toastr.warning("Lütfen geçerli isim ve kısaltma girin.");
+        async function openInputModal() {
+             // Verileri güncelle (Para verisini çek)
+             try {
+                const res = await fetch(`/api/user-stats/${user.id}`);
+                if(res.ok) {
+                    const data = await res.json();
+                    user.money = data.money;
+                    user.gold = data.gold;
+                    user.diamond = data.diamond;
+                    user.hasPartyLicense = data.hasPartyLicense;
+                    localStorage.setItem('simWorldUser', JSON.stringify(user));
+                }
+             } catch(e) { console.error("Veri çekme hatası:", e); }
 
-            document.getElementById('modalTitle').innerText = "PARTİ KUR";
-            document.getElementById('modalDesc').innerText = "10.000.000 ₺, 500 Altın ve 50 Elmas karşılığında yeni bir siyasi parti kurmak istiyor musunuz?";
-            document.getElementById('modalConfirmBtn').onclick = createParty;
-            document.getElementById('confirmModal').style.display = 'flex';
+             const costMoney = 500000;
+             const costGold = 500;
+             const costDiamond = 50;
+             
+             // Helper logic for badge
+             const getBadge = (hasEnough) => {
+                 if(hasEnough) return `<div class="upgrade-cost-status ok"><i class="fas fa-check"></i></div>`;
+                 return `<div class="upgrade-cost-status fail"><i class="fas fa-times"></i></div>`;
+             };
+
+             // Money
+             const elMoney = document.getElementById('reqMoney');
+             if(elMoney) elMoney.innerHTML = `500.000 ₺ ${getBadge(user.money >= costMoney)}`;
+
+             // Gold
+             const userGold = user.gold || 0;
+             const elGold = document.getElementById('reqGold');
+             if(elGold) elGold.innerHTML = `500 ${getBadge(userGold >= costGold)}`;
+
+             // Diamond
+             const userDiamond = user.diamond || 0;
+             const elDiamond = document.getElementById('reqDiamond');
+             if(elDiamond) elDiamond.innerHTML = `50 ${getBadge(userDiamond >= costDiamond)}`;
+
+             // License
+             const elLicense = document.getElementById('modalLicenseCheck');
+             if(user.hasPartyLicense) {
+                 elLicense.innerHTML = `<div class="upgrade-cost-status ok"><i class="fas fa-check"></i></div>`;
+             } else {
+                 elLicense.innerHTML = `<div class="upgrade-cost-status fail"><i class="fas fa-times"></i></div>`;
+             }
+             
+            document.getElementById('createPartyInputModal').style.display = 'flex';
         }
 
-        function closeModal() {
-            document.getElementById('confirmModal').style.display = 'none';
+        function closeInputModal() {
+            document.getElementById('createPartyInputModal').style.display = 'none';
         }
 
         async function createParty() {
             const name = document.getElementById('pName').value;
             const abbr = document.getElementById('pAbbr').value.toUpperCase();
             const ideology = document.getElementById('pIdeology').value;
+            
+            if(!user.hasPartyLicense) { toastr.warning("Parti kurma lisansınız yok!"); return; }
+            if(user.money < 500000) { toastr.warning("Yetersiz bakiye (Para)!"); return; }
+            // Server checks gold/diamond too
 
-            // Random color assignment since selection is removed
+            if(name.length < 3 || abbr.length < 2) { toastr.warning("Lütfen geçerli parti adı ve kısaltma girin."); return; }
+
+            // Random color assignment
             // const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#ffffff'];
             // const randomColor = colors[Math.floor(Math.random() * colors.length)];
             const randomColor = '#e74c3c'; // Always Red
@@ -682,20 +1059,36 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    toastr.success(result.message, "Başarılı!");
-                    user.money -= 10000000;
+                    // Success Modal
+                    closeInputModal();
+                    document.getElementById('successMsg').innerText = result.message;
+                    document.getElementById('successModal').style.display = 'flex';
+                    
+                    // Update Local data
+                    user.money -= 500000;
                     user.hasParty = true;
-                    closeModal();
-                    updateUI();
-                    switchTab('list');
-                    fetchParties();
+                    // Note: Ideally refresh via server, but this works for immediate feedback
+                    setTimeout(() => {
+                        window.location.reload(); 
+                    }, 2000); 
                 } else {
-                    toastr.error(result.message, "Hata!");
+                    // Error Modal
+                    document.getElementById('errorMsg').innerText = result.message;
+                    document.getElementById('errorModal').style.display = 'flex';
                 }
             } catch (error) {
                 console.error(error);
-                toastr.error('Sunucu hatası.', "Hata!");
+                document.getElementById('errorMsg').innerText = 'Sunucu hatası.';
+                document.getElementById('errorModal').style.display = 'flex';
             }
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('successModal').style.display = 'none';
+        }
+
+        function closeErrorModal() {
+            document.getElementById('errorModal').style.display = 'none';
         }
 
     </script>

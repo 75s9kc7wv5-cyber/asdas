@@ -214,7 +214,9 @@ app.post('/api/login', (req, res) => {
 app.post('/api/register', (req, res) => {
     const { username, password } = req.body;
     const defaultAvatar = 'uploads/avatars/default.png';
-    const query = 'INSERT INTO users (username, password, money, energy, health, avatar) VALUES (?, ?, 1000, 100, 100, ?)';
+    // Initialize license cols to 0
+    const query = 'INSERT INTO users (username, password, money, energy, health, avatar, license_hospital_level, license_farm_level, license_ranch_level, license_property_level) VALUES (?, ?, 1000, 100, 100, ?, 0, 0, 0, 0)';
+    
     db.query(query, [username, password, defaultAvatar], (err, result) => {
         if (err) {
             console.error("Register Error:", err);
@@ -223,7 +225,33 @@ app.post('/api/register', (req, res) => {
             }
             return res.status(500).json({ message: 'Kayıt hatası.' });
         }
-        res.json({ success: true, message: 'Kayıt başarılı!' });
+
+        const userId = result.insertId;
+
+        // Initialize other licenses in 'licenses' table
+        const licenseTypes = [
+            // Mines
+            'wood', 'stone', 'iron', 'coal', 'sand', 'oil', 'diamond', 'uranium', 'copper', 'gold',
+            // Factories
+            'lumber', 'brick', 'glass', 'concrete', 'steel', 'agricultural', 'animal', 'bakery', 'ready_food', 
+            'olive_oil', 'sweets', 'gold_factory', 'weapon', 'silicon', 'wind_turbine', 'solar_plant', 
+            'coal_plant', 'nuclear_plant', 'chip_factory', 'electronic_card_factory', 'gpu_factory', 
+            'plastic_factory', 'tyre_factory', 'engine_factory', 'car_factory', 'cable_factory',
+            // Business
+            'bank', 'political_party', 'rent_a_car', 'real_estate'
+        ];
+
+        const licValues = licenseTypes.map(type => [userId, type, 0]);
+
+        if (licValues.length > 0) {
+            db.query('INSERT INTO licenses (user_id, mine_type, level) VALUES ?', [licValues], (licErr) => {
+                if(licErr) console.error("License Init Error:", licErr);
+                // Even if licenses fail, user is created.
+                res.json({ success: true, message: 'Kayıt başarılı!' });
+            });
+        } else {
+            res.json({ success: true, message: 'Kayıt başarılı!' });
+        }
     });
 });
 
@@ -1510,11 +1538,16 @@ app.post('/api/parties/create', (req, res) => {
         const user = users[0];
         if (user.party_id) return res.json({ success: false, message: 'Zaten bir partiniz var veya üyesiniz.' });
         
-        const costMoney = 10000000;
+        const costMoney = 500000;
         const costGold = 500;
         const costDiamond = 50;
 
-        if (user.money < costMoney) return res.json({ success: false, message: 'Yetersiz bakiye (Para).' });
+        console.log(`[Party Create Debug] User: ${user.username} (ID: ${userId}) | Money: ${user.money} vs ${costMoney}`);
+
+        if (user.money < costMoney) {
+            console.log("Not enough money");
+            return res.json({ success: false, message: `Yetersiz bakiye (Para). Mevcut: ${user.money.toLocaleString('tr-TR')} ₺. Lütfen paranızın bankada değil, üzerinizde (nakit) olduğundan emin olun.` });
+        }
         if (user.gold < costGold) return res.json({ success: false, message: 'Yetersiz bakiye (Altın).' });
         if ((user.diamond || 0) < costDiamond) return res.json({ success: false, message: 'Yetersiz bakiye (Elmas).' });
 
@@ -4255,12 +4288,16 @@ app.get('/api/daily-jobs', (req, res) => {
 app.get('/api/daily-jobs/status/:userId', (req, res) => {
     const { userId } = req.params;
     
-    // 1. Get Completed Jobs for Today
-    const today = new Date().toISOString().split('T')[0];
-    db.query('SELECT job_id FROM completed_daily_jobs WHERE user_id = ? AND completed_at = ?', [userId, today], (err, completed) => {
+    // 1. Get Completed Jobs (Cooldown Check - 24 Hours)
+    const cooldownQuery = 'SELECT job_id, completed_at FROM completed_daily_jobs WHERE user_id = ? AND completed_at > NOW() - INTERVAL 24 HOUR';
+    db.query(cooldownQuery, [userId], (err, completed) => {
         if (err) return res.status(500).json({ success: false, error: err });
         
         const completedIds = completed.map(c => c.job_id);
+        const cooldowns = completed.map(c => ({
+            jobId: c.job_id,
+            completedAt: c.completed_at
+        }));
 
         // 2. Get Active Job
         db.query('SELECT * FROM active_daily_jobs WHERE user_id = ?', [userId], (err, active) => {
@@ -4283,10 +4320,10 @@ app.get('/api/daily-jobs/status/:userId', (req, res) => {
                             remainingTime: remaining
                         };
                     }
-                    res.json({ success: true, completedJobs: completedIds, activeJob: activeJobData });
+                    res.json({ success: true, completedJobs: completedIds, cooldowns: cooldowns, activeJob: activeJobData });
                 });
             } else {
-                res.json({ success: true, completedJobs: completedIds, activeJob: null });
+                res.json({ success: true, completedJobs: completedIds, cooldowns: cooldowns, activeJob: null });
             }
         });
     });
@@ -4320,7 +4357,7 @@ app.post('/api/daily-jobs/start', (req, res) => {
                         const user = users[0];
 
                         // Checks
-                        if (user.level < job.minLevel) return db.rollback(() => res.json({ success: false, message: 'Seviyen yetersiz.' }));
+                        // if (user.level < job.minLevel) return db.rollback(() => res.json({ success: false, message: 'Seviyen yetersiz.' }));
                         if (user.health < job.costH) return db.rollback(() => res.json({ success: false, message: 'Sağlığın yetersiz.' }));
                         if (user.energy < job.costE) return db.rollback(() => res.json({ success: false, message: 'Enerjin yetersiz.' }));
 
@@ -4381,13 +4418,12 @@ app.post('/api/daily-jobs/complete', (req, res) => {
                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Delete active error' }));
 
                         // 5. Add to Completed
-                        const today = new Date().toISOString().split('T')[0];
                         const insertLogQuery = `
                             INSERT INTO completed_daily_jobs (user_id, job_id, completed_at) 
-                            VALUES (?, ?, ?) 
-                            ON DUPLICATE KEY UPDATE completed_at=completed_at
+                            VALUES (?, ?, NOW()) 
+                            ON DUPLICATE KEY UPDATE completed_at=NOW()
                         `;
-                        db.query(insertLogQuery, [userId, jobId, today], (err) => {
+                        db.query(insertLogQuery, [userId, jobId], (err) => {
                             if (err) {
                                 console.error('Complete Job Log Error:', err);
                                 return db.rollback(() => res.status(500).json({ success: false, message: 'Log completed error: ' + err.message }));
