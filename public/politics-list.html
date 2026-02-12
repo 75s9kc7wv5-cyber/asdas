@@ -499,7 +499,7 @@
 
                 <div class="modal-btns">
                     <button class="m-btn btn-cancel" onclick="closeInputModal()">İPTAL</button>
-                    <button class="m-btn btn-confirm" onclick="createParty()">KUR</button>
+                    <button class="m-btn btn-confirm" id="btnCreatePartyConfirm" onclick="createParty()">KUR</button>
                 </div>
             </div>
         </div>
@@ -703,19 +703,48 @@
             const borderColor = '#2ecc71'; 
 
             container.innerHTML = `
-                <div class="party-card" style="--party-color:${borderColor};" onclick="manageParty(${p.id})">
+                <div class="party-card" style="--party-color:${borderColor}; margin-bottom:10px;" onclick="manageParty(${p.id})">
                     <div class="party-card-header">
                         <div class="party-icon" style="color:${borderColor}; border-color:${borderColor};">
                             ${logoHtml}
                         </div>
                         <div class="party-info">
                             <div class="party-name">${p.name}</div>
-                            <div class="party-stats" style="color:#aaa;">Parti Yönetim Paneli</div>
+                            <div class="party-stats" style="color:#aaa;">Parti Paneline Git</div>
                         </div>
                         <div class="right-arrow"><i class="fas fa-chevron-right"></i></div>
                     </div>
                 </div>
             `;
+        }
+
+        function resignParty() {
+            // Confirm Modal Use
+            document.getElementById('modalTopIcon').style.display = 'flex';
+            document.getElementById('modalTitle').style.display = 'block';
+            document.getElementById('modalTitle').innerText = "İSTİFA";
+            document.getElementById('modalDesc').innerText = "Mevcut partinizden ayrılmak istediğinize emin misiniz? Bu işlem geri alınamaz.";
+            
+            document.getElementById('modalConfirmBtn').onclick = async function() {
+                closeModal();
+                try {
+                    const res = await fetch('/api/parties/resign', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: user.id })
+                    });
+                    const data = await res.json();
+                    if(data.success) {
+                        toastr.success(data.message);
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        toastr.error(data.message);
+                    }
+                } catch(e) {
+                    toastr.error("Bağlantı hatası.");
+                }
+            };
+            document.getElementById('confirmModal').style.display = 'flex';
         }
 
         function updateUI() {
@@ -998,18 +1027,23 @@
                  return `<div class="upgrade-cost-status fail"><i class="fas fa-times"></i></div>`;
              };
 
+             let canCreate = true;
+
              // Money
              const elMoney = document.getElementById('reqMoney');
+             if(user.money < costMoney) canCreate = false;
              if(elMoney) elMoney.innerHTML = `500.000 ₺ ${getBadge(user.money >= costMoney)}`;
 
              // Gold
              const userGold = user.gold || 0;
              const elGold = document.getElementById('reqGold');
+             if(userGold < costGold) canCreate = false;
              if(elGold) elGold.innerHTML = `500 ${getBadge(userGold >= costGold)}`;
 
              // Diamond
              const userDiamond = user.diamond || 0;
              const elDiamond = document.getElementById('reqDiamond');
+             if(userDiamond < costDiamond) canCreate = false;
              if(elDiamond) elDiamond.innerHTML = `50 ${getBadge(userDiamond >= costDiamond)}`;
 
              // License
@@ -1017,9 +1051,15 @@
              if(user.hasPartyLicense) {
                  elLicense.innerHTML = `<div class="upgrade-cost-status ok"><i class="fas fa-check"></i></div>`;
              } else {
+                 canCreate = false;
                  elLicense.innerHTML = `<div class="upgrade-cost-status fail"><i class="fas fa-times"></i></div>`;
              }
              
+             const btnConfirm = document.getElementById('btnCreatePartyConfirm');
+             if(btnConfirm) {
+                 btnConfirm.disabled = !canCreate;
+             }
+
             document.getElementById('createPartyInputModal').style.display = 'flex';
         }
 

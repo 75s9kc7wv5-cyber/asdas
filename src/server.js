@@ -151,6 +151,20 @@ db.connect((err) => {
             if (err) console.error('Error creating profile_visits table:', err);
             else console.log('Profile Visits table ready');
         });
+
+        const createPartyAppsTable = `CREATE TABLE IF NOT EXISTS party_applications (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            party_id INT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (party_id) REFERENCES parties(id) ON DELETE CASCADE
+        )`;
+        
+        db.query(createPartyAppsTable, (err) => {
+            if (err) console.error("Error creating party_applications:", err);
+            else console.log("Party Applications table ready");
+        });
     }
 });
 
@@ -1571,13 +1585,98 @@ app.post('/api/parties/create', (req, res) => {
                     db.query(updateUser, [costMoney, costGold, costDiamond, partyId, userId], (err) => {
                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kullanıcı güncellenemedi.' }));
                         
-                        db.commit(err => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                            res.json({ success: true, message: 'Parti başarıyla kuruldu!', partyId });
+                        // DELETE ALL EXISTING APPLICATIONS
+                        db.query('DELETE FROM party_applications WHERE user_id = ?', [userId], (err) => {
+                            if (err) console.error("Could not clear applications", err); // Not critical enough to rollback? Maybe it is. Let's stick to safe rollback or just log. The request says "must be deleted".
+                            // If it fails, maybe we should rollback to ensure consistency.
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Başvurular temizlenemedi.' }));
+
+                            db.commit(err => {
+                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                                res.json({ success: true, message: 'Parti başarıyla kuruldu!', partyId });
+                            });
                         });
                     });
                 });
             });
+        });
+    });
+});
+
+// --- NEW PARTY APPLICATION ENDPOINTS ---
+
+// Get My Applications
+app.get('/api/my-applications/:userId', (req, res) => {
+    const userId = req.params.userId;
+    db.query('SELECT party_id FROM party_applications WHERE user_id = ?', [userId], (err, results) => {
+        if(err) return res.send([]);
+        res.json(results.map(r => r.party_id));
+    });
+});
+
+// Apply to Party
+app.post('/api/parties/apply', (req, res) => {
+    const { userId, partyId } = req.body;
+    
+    // Check if user is already in a party
+    db.query('SELECT party_id FROM users WHERE id = ?', [userId], (err, users) => {
+        if(err || users.length === 0) return res.json({ success: false, message: 'Kullanıcı hatası' });
+        if(users[0].party_id) return res.json({ success: false, message: 'Zaten bir partiye üyesiniz. Önce istifa etmelisiniz.' });
+        
+        // Check if already has active application for this party
+        db.query('SELECT id FROM party_applications WHERE user_id = ? AND party_id = ?', [userId, partyId], (err, apps) => {
+            if(apps.length > 0) return res.json({ success: false, message: 'Zaten bu partiye başvurunuz var.' });
+            
+            db.query('INSERT INTO party_applications(user_id, party_id) VALUES(?, ?)', [userId, partyId], (err) => {
+                if(err) return res.json({ success: false, message: 'Başvuru alınamadı.' });
+                res.json({ success: true, message: 'Başvuru başarıyla gönderildi.' });
+            });
+        });
+    });
+});
+
+// Cancel Application
+app.post('/api/parties/application/cancel', (req, res) => { // Updated path to match frontend or change frontend? Frontend calls /api/parties/application/cancel
+    const { userId, partyId } = req.body;
+    db.query('DELETE FROM party_applications WHERE user_id = ? AND party_id = ?', [userId, partyId], (err) => {
+        if(err) return res.json({ success: false, message: 'İptal başarısız.' });
+        res.json({ success: true, message: 'Başvuru iptal edildi.' });
+    });
+});
+
+// Resign from Party
+app.post('/api/parties/resign', (req, res) => {
+    const { userId } = req.body;
+    
+    db.query('SELECT party_id, id FROM users WHERE id=?', [userId], (err, users) => {
+        if(err || users.length === 0) return res.json({ success: false, message: 'Kullanıcı bulunamadı' });
+        const user = users[0];
+        
+        if(!user.party_id) return res.json({ success: false, message: 'Zaten bir partiniz yok.' });
+        
+        // Cannot resign if Leader? 
+        db.query('SELECT leader_id FROM parties WHERE id = ?', [user.party_id], (err, parties) => {
+             if(parties.length > 0 && parties[0].leader_id == userId) {
+                 return res.json({ success: false, message: 'Lidersiniz, istifa edemezsiniz. Partiyi kapatmanız veya liderliği devretmeniz gerekir.' });
+             }
+
+             const oldPartyId = user.party_id;
+             
+             db.beginTransaction(err => {
+                 // Remove user party_id
+                 db.query('UPDATE users SET party_id = NULL, party_role = NULL WHERE id = ?', [userId], (err) => {
+                     if(err) return db.rollback(() => res.status(500).json({ success: false }));
+                     
+                     // Decrease members_count
+                     db.query('UPDATE parties SET members_count = GREATEST(members_count - 1, 0) WHERE id = ?', [oldPartyId], (err) => {
+                         if(err) return db.rollback(() => res.status(500).json({ success: false }));
+                         
+                         db.commit(err => {
+                             res.json({ success: true, message: 'Partiden ayrıldınız.' });
+                         });
+                     });
+                 });
+             });
         });
     });
 });
@@ -8293,33 +8392,56 @@ app.post('/api/party/kick', (req, res) => {
 app.post('/api/party/application/accept', (req, res) => {
     const { partyId, applicationId } = req.body;
     
-    db.query('SELECT user_id FROM party_applications WHERE id = ?', [applicationId], (err, apps) => {
-        if(err || apps.length === 0) return res.status(404).json({ success: false });
-        const userId = apps[0].user_id;
+    // Check Party Capacity
+    db.query('SELECT members_count, level FROM parties WHERE id = ?', [partyId], (err, pRes) => {
+        if(err) return res.status(500).json({ success: false, message: 'DB Error' });
+        if(pRes.length === 0) return res.status(404).json({ success: false, message: 'Parti bulunamadı.' });
         
-        db.beginTransaction(err => {
-            db.query('UPDATE users SET party_id = ?, role = "Üye", party_role = "Üye" WHERE id = ?', [partyId, userId], (err) => {
-                if(err) return db.rollback(() => res.status(500).json({ success: false }));
-                
-                db.query('DELETE FROM party_applications WHERE id = ?', [applicationId], (err) => {
+        const party = pRes[0];
+        const capacity = (party.level || 1) * 50;
+        
+        if((party.members_count || 0) >= capacity) {
+            return res.json({ success: false, message: `Parti kapasitesi dolu! (${party.members_count}/${capacity}). Seviye atlayarak kapasiteyi artırabilirsiniz.` });
+        }
+
+        db.query('SELECT user_id FROM party_applications WHERE id = ?', [applicationId], (err, apps) => {
+            if(err || apps.length === 0) return res.status(404).json({ success: false });
+            const userId = apps[0].user_id;
+
+            // Check if user is already in a party
+            db.query('SELECT party_id FROM users WHERE id = ?', [userId], (err, users) => {
+                if(err) return res.status(500).json({ success: false });
+                if(users.length > 0 && users[0].party_id) {
+                    // User already in a party - delete application and notify?
+                    db.query('DELETE FROM party_applications WHERE user_id = ?', [userId]);
+                    return res.json({ success: false, message: 'Kullanıcı zaten başka bir partiye üye.' });
+                }
+            
+                db.beginTransaction(err => {
+                db.query('UPDATE users SET party_id = ?, role = "Üye", party_role = "Üye" WHERE id = ?', [partyId, userId], (err) => {
                     if(err) return db.rollback(() => res.status(500).json({ success: false }));
                     
-                    db.query('UPDATE parties SET members_count = members_count + 1 WHERE id = ?', [partyId], (err) => {
+                    // DELETE ALL APPLICATIONS OF THIS USER
+                    db.query('DELETE FROM party_applications WHERE user_id = ?', [userId], (err) => {
                         if(err) return db.rollback(() => res.status(500).json({ success: false }));
+                        
+                        db.query('UPDATE parties SET members_count = members_count + 1 WHERE id = ?', [partyId], (err) => {
+                            if(err) return db.rollback(() => res.status(500).json({ success: false }));
 
-                        // Get Party Name for Notification
-                        db.query('SELECT name FROM parties WHERE id = ?', [partyId], (err, parties) => {
-                            const partyName = (parties && parties.length > 0) ? parties[0].name : 'Parti';
-                            
-                            // Send Notification
-                            const notifTitle = 'Parti Başvurusu Kabul Edildi';
-                            const notifMsg = `${partyName} partisine yaptığınız başvuru kabul edildi. Tebrikler!`;
-                            db.query('INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)', 
-                                [userId, notifTitle, notifMsg, 'party_action'], (err) => {
+                            // Get Party Name for Notification
+                            db.query('SELECT name FROM parties WHERE id = ?', [partyId], (err, parties) => {
+                                const partyName = (parties && parties.length > 0) ? parties[0].name : 'Parti';
                                 
-                                db.commit(err => {
-                                    if(err) return db.rollback(() => res.status(500).json({ success: false }));
-                                    res.json({ success: true });
+                                // Send Notification
+                                const notifTitle = 'Parti Başvurusu Kabul Edildi';
+                                const notifMsg = `${partyName} partisine yaptığınız başvuru kabul edildi. Tebrikler!`;
+                                db.query('INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)', 
+                                    [userId, notifTitle, notifMsg, 'party_action'], (err) => {
+                                    
+                                    db.commit(err => {
+                                        if(err) return db.rollback(() => res.status(500).json({ success: false }));
+                                        res.json({ success: true });
+                                    });
                                 });
                             });
                         });
@@ -8327,6 +8449,7 @@ app.post('/api/party/application/accept', (req, res) => {
                 });
             });
         });
+    });
     });
 });
 

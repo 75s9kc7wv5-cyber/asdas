@@ -32,9 +32,13 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden;
             color: var(--text-white);
         }
+
+        /* Scrollbar Gizleme */
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
 
         .game-container {
             width: 100%; max-width: 450px; background-color: var(--bg-dark);
@@ -53,8 +57,12 @@
         /* MAIN */
         main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
 
-        .page-header { text-align: center; margin-bottom: 20px; animation: fadeInDown 0.5s; }
-        .page-title { font-size: 1.4rem; letter-spacing: 1px; color: #fff; text-transform: uppercase; font-weight: 800; }
+        .page-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #222; animation: fadeInDown 0.5s; }
+        .btn-back { background: transparent; border: 1px solid #333; color: #aaa; width: 40px; height: 40px; border-radius: 8px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+        .btn-back:hover { border-color: var(--accent); color: var(--accent); background: rgba(155, 89, 182, 0.1); }
+        .header-text { display: flex; flex-direction: column; }
+        .page-title { font-size: 1.6rem; font-weight: 800; color: #fff; letter-spacing: 1px; line-height: 1; margin-bottom: 4px; text-transform: uppercase; }
+        .page-desc { font-size: 0.85rem; color: #888; font-weight: 500; margin: 0; }
 
         /* HERO SECTION (Parti Özeti) */
         .party-hero {
@@ -197,14 +205,36 @@
         #confirmModal .btn-confirm { background: var(--accent); }
 
         /* TABS */
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
-        .tab { 
-            flex: 1; text-align: center; padding: 10px; background: var(--bg-input); 
-            border-radius: 8px; cursor: pointer; font-weight: bold; color: #888; transition: 0.2s;
-            border: 1px solid transparent;
+        .tabs { 
+            display: flex; 
+            gap: 10px; 
+            margin-bottom: 20px; 
+            background: #111; 
+            padding: 5px; 
+            border-radius: 8px; 
+            border: 1px solid #333; 
         }
-        .tab:hover { background: #222; color: #fff; }
-        .tab.active { background: rgba(155, 89, 182, 0.2); color: var(--accent); border-color: var(--accent); }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            color: #777;
+            font-family: 'Rajdhani';
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+        .tab-btn:hover { background: #222; color: #fff; }
+        .tab-btn.active {
+            background: #222;
+            color: var(--accent-cyan);
+            border: 1px solid var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.1);
+        }
 
         /* KASA YÖNETİMİ (NEW) */
         .treasury-card {
@@ -236,99 +266,267 @@
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+        /* LOADER TASARIMI */
+        #game-loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg-dark); z-index: 99999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        #game-loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+        .loader-logo { font-size: 2.5rem; font-weight: 900; letter-spacing: 2px; margin-bottom: 40px; animation: pulseLogo 2s infinite ease-in-out; }
+        .loader-logo span { color: var(--accent); } /* Party sayfasına uygun accent rengi */
+
+        .spinner-container { position: relative; width: 80px; height: 80px; margin-bottom: 30px; }
+        .spinner-ring {
+            position: absolute; width: 100%; height: 100%; border-radius: 50%;
+            border: 3px solid transparent; border-top-color: var(--accent);
+            animation: spin 1s linear infinite;
+            box-shadow: 0 0 15px rgba(155, 89, 182, 0.5); /* Accent shadow */
+        }
+        .spinner-ring::before {
+            content: ""; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px;
+            border-radius: 50%; border: 3px solid transparent; border-top-color: rgba(255, 255, 255, 0.5);
+            animation: spinReverse 2s linear infinite;
+        }
+        .spinner-ring::after {
+            content: ""; position: absolute; top: 15px; left: 15px; right: 15px; bottom: 15px;
+            border-radius: 50%; border: 3px solid transparent; border-top-color: var(--accent);
+            animation: spin 3s linear infinite;
+        }
+
+        .loading-text { font-size: 1.2rem; font-weight: bold; letter-spacing: 2px; color: var(--accent); margin-bottom: 10px; text-transform: uppercase; }
+        .loading-tip { font-size: 0.9rem; color: #888; font-style: italic; animation: fadeIn 0.5s; min-height: 20px; }
+
+        @keyframes pulseLogo { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.8; } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes spinReverse { 0% { transform: rotate(0deg); } 100% { transform: rotate(-360deg); } }
+
+        /* ACCORDION */
+        .accordion-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .accordion-header {
+            padding: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.02);
+            transition: background 0.2s;
+        }
+        .accordion-header:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .accordion-header.active {
+             border-bottom: 1px solid var(--border-color);
+             background: rgba(255, 255, 255, 0.05);
+        }
+        .accordion-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .accordion-icon {
+            color: #666;
+            transition: transform 0.3s ease;
+        }
+        .accordion-header.active .accordion-icon {
+            transform: rotate(180deg);
+            color: var(--accent);
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .accordion-body {
+            padding: 15px;
+        }
+
+        /* BİLGİ LİSTESİ */
+        .info-list { padding: 0px; margin-bottom: 0px; }
+        .info-list-header { font-size: 0.85rem; color: var(--accent-cyan); font-weight: 700; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .info-item { display: flex; align-items: center; padding: 6px 0; }
+        .info-item:last-child { border-bottom: none; }
+        .info-item i { font-size: 1.1rem; width: 28px; }
+        .info-item .info-label { flex: 1; font-size: 0.85rem; color: #aaa; }
+        .info-item .info-value { font-size: 0.95rem; font-weight: bold; color: #fff; text-align: right; }
     </style>
 </head>
 <body>
+    <div id="game-loader">
+        <div class="loader-logo">SIM <span>OF WORLD</span></div>
+        <div class="spinner-container">
+            <div class="spinner-ring"></div>
+        </div>
+        <div class="loading-text">YÜKLENİYOR...</div>
+        <div class="loading-tip" id="loadingTip">Veriler işleniyor...</div>
+    </div>
 
     <div class="game-container">
         <!-- HEADER removed, handled by header-manager.js -->
 
         <main>
             <div class="page-header">
-                <h1 class="page-title">PARTİ YÖNETİMİ</h1>
+                <button class="btn-back" onclick="window.history.back()"><i class="fas fa-chevron-left"></i></button>
+                <div class="header-text">
+                    <h1 class="page-title">PARTİ YÖNETİMİ</h1>
+                    <p class="page-desc">Partinizi yönetin, bütçe planlaması yapın ve üyeleri düzenleyin.</p>
+                </div>
             </div>
 
             <!-- PARTİ KARTI -->
-            <div class="party-hero">
-                <div class="party-logo-lg" id="pLogoContainer" style="overflow: hidden; padding: 0;">
-                    <span id="pAbbr">MBP</span>
+            <div class="party-hero" style="display: flex; align-items: center; gap: 15px; text-align: left; padding: 15px;">
+                <div id="pLogoContainer" style="width: 60px; height: 60px; background: #222; border-radius: 12px; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; overflow: hidden; font-size: 1.5rem; color: var(--accent); flex-shrink: 0; padding: 0; filter: drop-shadow(0 0 10px rgba(231, 76, 60, 0.5));">
+                     <span id="pAbbr">MBP</span>
                 </div>
-                <div class="ph-name" id="pName">Milli Birlik Partisi</div>
-                <div class="ph-leader" id="pLeader" style="font-size: 0.9rem; color: var(--accent-gold); margin-bottom: 5px; font-weight: 600;"></div>
-                <div class="ph-ideology" id="pIdea">TEKNOKRAT</div>
                 
-                <div class="ph-stats">
-                    <div class="phs-item">
-                        <span class="phs-val" id="pMembers">0</span>
-                        <span class="phs-lbl">ÜYE</span>
-                    </div>
-                    <div class="phs-item">
-                        <span class="phs-val" id="pRank">#-</span>
-                        <span class="phs-lbl">SIRALAMA</span>
-                    </div>
+                <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                    <div class="ph-name" id="pName" style="font-size: 1.2rem; line-height: 1; margin: 0;">Milli Birlik Partisi</div>
                 </div>
             </div>
 
             <!-- TABS -->
             <div class="tabs">
-                <div class="tab active" onclick="switchTab('management', this)">YÖNETİM</div>
-                <div class="tab" onclick="switchTab('members', this)">ÜYELER</div>
-                <div class="tab" onclick="switchTab('vault', this)">KASA</div>
+                <div class="tab-btn active" onclick="switchTab('bilgiler', this)">BİLGİLER</div>
+                <div class="tab-btn" onclick="switchTab('management', this)">YÖNETİM</div>
+                <div class="tab-btn" onclick="switchTab('members', this)">ÜYELER</div>
+                <div class="tab-btn" onclick="switchTab('vault', this)">KASA</div>
+            </div>
+
+            <!-- TAB: BİLGİLER (YENİ) -->
+            <div id="tab-bilgiler" class="tab-content">
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <div class="accordion-title"><i class="fas fa-info-circle"></i> PARTİ BİLGİLERİ</div>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
+                    </div>
+                    <div class="accordion-content" style="max-height: 2000px;">
+                        <div class="accordion-body">
+                            <div class="info-list">
+                                <div class="info-item">
+                                    <i class="fas fa-crown" style="color: var(--accent-gold);"></i> <span class="info-label">Genel Başkan</span>
+                                    <span class="info-value" id="info-leader">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-user-tie" style="color: var(--accent-cyan);"></i> <span class="info-label">Genel Başkan Yrd.</span>
+                                    <span class="info-value" id="info-vice">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-bullhorn" style="color: var(--accent-green);"></i> <span class="info-label">Teşkilat Sorumlusu</span>
+                                    <span class="info-value" id="info-org">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-scroll" style="color: #e67e22;"></i> <span class="info-label">İdeoloji</span>
+                                    <span class="info-value" id="info-ideology">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-tag" style="color: #9b59b6;"></i> <span class="info-label">Kısaltma</span>
+                                    <span class="info-value" id="info-abbr">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-star" style="color: #f1c40f;"></i> <span class="info-label">Parti Seviyesi</span>
+                                    <span class="info-value" id="info-level">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-users" style="color: #e74c3c;"></i> <span class="info-label">Üye Durumu</span>
+                                    <span class="info-value" id="info-members">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-coins" style="color: var(--accent-gold);"></i> <span class="info-label">Parti Kasası</span>
+                                    <span class="info-value" id="info-vault">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-landmark" style="color: #7f8c8d;"></i> <span class="info-label">Milletvekili Sayısı</span>
+                                    <span class="info-value" id="info-mps">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-calendar-alt" style="color: #3498db;"></i> <span class="info-label">Kuruluş Tarihi</span>
+                                    <span class="info-value" id="info-created">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- TAB: YÖNETİM -->
-            <div id="tab-management" class="tab-content">
+            <div id="tab-management" class="tab-content" style="display:none;">
                 <!-- GENEL AYARLAR -->
-                <div class="settings-card">
-                    <div class="card-header"><i class="fas fa-sliders-h"></i> GENEL AYARLAR</div>
-                    <div class="form-group">
-                        <label class="form-label">Parti Adı</label>
-                        <input type="text" id="pNameInput" class="form-input" value="">
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <div class="accordion-title"><i class="fas fa-sliders-h"></i> GENEL AYARLAR</div>
+                         <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Kısaltma</label>
-                        <input type="text" id="pAbbrInput" class="form-input" value="" maxlength="4">
+                    <div class="accordion-content" style="max-height: 2000px;">
+                        <div class="accordion-body">
+                            <div class="form-group">
+                                <label class="form-label" style="color: #fff;">Parti Adı (3-40 Karakter)</label>
+                                <input type="text" id="pNameInput" class="form-input" value="" minlength="3" maxlength="40">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" style="color: #fff;">Kısaltma (3-5 Karakter)</label>
+                                <input type="text" id="pAbbrInput" class="form-input" value="" minlength="3" maxlength="5">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" style="color: #fff;">Parti Logosu (Max 2MB - JPG, PNG)</label>
+                                <input type="file" id="pLogoInput" class="form-input" accept=".jpg, .jpeg, .png">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" style="color: #fff;">İdeoloji</label>
+                                <select id="pIdeology" class="form-select">
+                                    <option value="Teknokrat">Teknokrat</option>
+                                    <option value="Demokrat">Demokrat</option>
+                                    <option value="Liberal">Liberal</option>
+                                    <option value="Milliyetçi">Milliyetçi</option>
+                                    <option value="Sosyalist">Sosyalist</option>
+                                    <option value="Muhafazakar">Muhafazakar</option>
+                                    <option value="Komünist">Komünist</option>
+                                    <option value="Faşist">Faşist</option>
+                                    <option value="Anarşist">Anarşist</option>
+                                    <option value="Yeşiller">Yeşiller</option>
+                                    <option value="Merkezci">Merkezci</option>
+                                    <option value="Liberteryen">Liberteryen</option>
+                                    <option value="Monarşist">Monarşist</option>
+                                    <option value="Teokrat">Teokrat</option>
+                                    <option value="Popülist">Popülist</option>
+                                </select>
+                            </div>
+                            <button class="btn-save" style="background: var(--accent-green); color: #000; border-color: var(--accent-green);" onclick="saveSettings()">GÜNCELLE (100.000 ₺)</button>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Parti Logosu (Max 2MB - JPG, PNG)</label>
-                        <input type="file" id="pLogoInput" class="form-input" accept=".jpg, .jpeg, .png">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">İdeoloji</label>
-                        <select id="pIdeology" class="form-select">
-                            <option value="Teknokrat">Teknokrat</option>
-                            <option value="Demokrat">Demokrat</option>
-                            <option value="Liberal">Liberal</option>
-                            <option value="Milliyetçi">Milliyetçi</option>
-                            <option value="Sosyalist">Sosyalist</option>
-                            <option value="Muhafazakar">Muhafazakar</option>
-                            <option value="Komünist">Komünist</option>
-                            <option value="Faşist">Faşist</option>
-                            <option value="Anarşist">Anarşist</option>
-                            <option value="Yeşiller">Yeşiller</option>
-                            <option value="Merkezci">Merkezci</option>
-                            <option value="Liberteryen">Liberteryen</option>
-                            <option value="Monarşist">Monarşist</option>
-                            <option value="Teokrat">Teokrat</option>
-                            <option value="Popülist">Popülist</option>
-                        </select>
-                    </div>
-                    <button class="btn-save" onclick="saveSettings()">GÜNCELLE</button>
                 </div>
 
                 <!-- PARTİ MESAJI YAYINLA -->
-                <div class="settings-card">
-                    <div class="card-header"><i class="fas fa-bullhorn"></i> PARTİ MESAJI YAYINLA</div>
-                    <div class="form-group">
-                        <p style="color:#ccc; font-size:0.9rem; margin-bottom:10px;">
-                            Parti detay sayfasında görünecek bir mesaj yayınlayın. Sadece Genel Başkan yayınlayabilir.
-                        </p>
-                        <textarea id="pAnnouncementInput" class="form-input" rows="3" maxlength="255" placeholder="Mesajınız (Max 255 karakter)..."></textarea>
-                        <div style="text-align:right; font-size:0.8rem; color:#666; margin-top:5px;">
-                            <span id="charCount">0</span>/255
+                <div class="accordion-card">
+                    <div id="acc-publish" class="accordion-header" onclick="toggleAccordion(this)">
+                        <div class="accordion-title"><i class="fas fa-bullhorn"></i> PARTİ MESAJI YAYINLA</div>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <div class="form-group">
+                                <p style="color:#ccc; font-size:0.9rem; margin-bottom:10px;">
+                                    Parti detay sayfasında görünecek bir mesaj yayınlayın. Sadece Genel Başkan yayınlayabilir.
+                                </p>
+                                <textarea id="pAnnouncementInput" class="form-input" rows="3" maxlength="255" placeholder="Mesajınız (Max 255 karakter)..."></textarea>
+                                <div style="text-align:right; font-size:0.8rem; color:#666; margin-top:5px;">
+                                    <span id="charCount">0</span>/255
+                                </div>
+                            </div>
+                            <button class="btn-save" onclick="publishMessage()">YAYINLA (50.000 ₺)</button>
                         </div>
                     </div>
-                    <button class="btn-save" onclick="publishMessage()">YAYINLA (50.000 ₺)</button>
                 </div>
 
                 <!-- PARTİYİ FESHET -->
@@ -418,7 +616,7 @@
         <!-- CONFIRM MODAL -->
         <div id="confirmModal" class="modal-overlay">
             <div class="modal-content">
-                <div class="m-title">ONAYLA</div>
+                <div id="confirmTitle" class="m-title">ONAYLA</div>
                 <p id="confirmDesc" style="color:#ccc; font-size:0.9rem; margin-bottom:20px;">Bu işlemi yapmak istediğine emin misin?</p>
                 <div class="m-btns">
                     <button class="m-btn btn-cancel" onclick="closeModal('confirmModal')">İPTAL</button>
@@ -446,8 +644,42 @@
         const fmt = (n) => (n || 0).toLocaleString('tr-TR');
 
         window.onload = async () => {
-            await loadUserData();
-            await loadPartyData();
+            // Loader handling
+            const loader = document.getElementById('game-loader');
+            const tipEl = document.getElementById('loadingTip');
+            const tips = ["Parti verileri yükleniyor...", "Üyeler kontrol ediliyor...", "Kasa bilgileri alınıyor...", "Bağış geçmişi inceleniyor..."];
+            let tipInterval;
+
+            if(loader) {
+                loader.classList.remove('hidden');
+                if(tipEl) {
+                    tipInterval = setInterval(() => {
+                        tipEl.innerText = tips[Math.floor(Math.random() * tips.length)];
+                    }, 800);
+                }
+            }
+
+            try {
+                await loadUserData();
+                await loadPartyData();
+            } catch (err) {
+                console.error("Yükleme sırasında hata oluştu:", err);
+            } finally {
+                if(loader) {
+                    loader.classList.add('hidden');
+                    if(tipInterval) clearInterval(tipInterval);
+                }
+            }
+            
+            // Explicitly expose switchTab to window to fix ReferenceError
+            window.switchTab = switchTab;
+            
+            // Open Publish Message Accordion by default
+            setTimeout(() => {
+                const accPublish = document.getElementById('acc-publish');
+                if(accPublish) toggleAccordion(accPublish);
+            }, 500);
+
             // MenuManager.init(); // Handled by header-manager.js -> menu-manager.js
         };
 
@@ -470,6 +702,16 @@
                 }
             } catch (e) {
                 console.error("User load error", e);
+            }
+        }
+
+        function toggleAccordion(element) {
+            element.classList.toggle("active");
+            var content = element.nextElementSibling;
+            if (content.style.maxHeight) {
+                content.style.maxHeight = null;
+            } else {
+                content.style.maxHeight = content.scrollHeight + "px";
             }
         }
 
@@ -567,18 +809,39 @@
             setVal('pIdeology', party.ideology);
             setVal('pAnnouncementInput', party.announcement || '');
             setVal('pName', party.name);
-            setVal('pIdea', party.ideology);
-            setVal('pMembers', party.members_count || 0);
-            setVal('pRank', '#' + (party.rank || '-'));
 
-            const pLeader = document.getElementById('pLeader');
-            if(pLeader) pLeader.innerHTML = '<i class="fas fa-crown"></i> ' + (party.leader_name || 'Bilinmiyor');
+            // Accordion Info Populate
+            setVal('info-leader', party.leader_name || '-');
+            setVal('info-ideology', party.ideology || '-');
+            setVal('info-abbr', party.abbr || '-');
+            setVal('info-created', party.created_at ? new Date(party.created_at).toLocaleDateString('tr-TR') : '-');
+            
+            // Capacity Calculation
+            const level = party.level || 1;
+            const capacity = level * 50;
+            const memberCount = party.members_count || 0;
+            setVal('info-level', level);
+            setVal('info-members', `${memberCount} / ${capacity}`);
+
+            setVal('info-vault', fmt(party.vault) + " ₺");
+            setVal('info-mps', party.mp_count || 0);
+
+            if(party.members) {
+                 const vice = party.members.find(m => m.party_role === 'Başkan Yardımcısı');
+                 setVal('info-vice', vice ? vice.username : '-');
+
+                 const org = party.members.find(m => m.party_role === 'Teşkilat Sorumlusu');
+                 setVal('info-org', org ? org.username : '-');
+            }
+
+            // setVal('pMembers', party.members_count || 0);
+            // setVal('pRank', '#' + (party.rank || '-'));
 
             // Logo Handling
             const logoContainer = document.getElementById('pLogoContainer');
             if (logoContainer) {
                 if (party.logo && party.logo !== 'uploads/avatars/default.png') {
-                    logoContainer.innerHTML = `<img src="${party.logo}" style="width:100%; height:100%; object-fit:cover;">`;
+                    logoContainer.innerHTML = `<img src="${party.logo}" style="width:100%; height:100%; object-fit:contain;">`;
                 } else {
                     logoContainer.innerHTML = `<span id="pAbbr">${party.abbr}</span>`;
                 }
@@ -587,7 +850,9 @@
                 if (party.color) {
                     logoContainer.style.color = party.color;
                     logoContainer.style.borderColor = party.color;
-                    logoContainer.style.boxShadow = `0 0 15px ${party.color}40`;
+                    // logoContainer.style.boxShadow = `0 0 15px ${party.color}40`;
+                    // Use dynamic drop shadow if preferred, or keep the static red one from HTML
+                    logoContainer.style.filter = `drop-shadow(0 0 10px ${party.color}80)`;
                 }
             }
 
@@ -653,27 +918,18 @@
             if(pendingAction.type === 'settings') {
                 const { name, abbr, ideology, logoFile } = pendingAction.data;
                 
-                let body;
-                let headers = {};
-
+                const formData = new FormData();
+                formData.append('partyId', party.id);
+                formData.append('name', name);
+                formData.append('abbr', abbr);
+                formData.append('ideology', ideology);
                 if (logoFile) {
-                    const formData = new FormData();
-                    formData.append('partyId', party.id);
-                    formData.append('name', name);
-                    formData.append('abbr', abbr);
-                    formData.append('ideology', ideology);
                     formData.append('logo', logoFile);
-                    body = formData;
-                    // Content-Type header is automatically set by browser for FormData
-                } else {
-                    body = JSON.stringify({ partyId: party.id, name, abbr, ideology });
-                    headers['Content-Type'] = 'application/json';
                 }
 
                 fetch('/api/party/settings', {
                     method: 'POST',
-                    headers: headers,
-                    body: body
+                    body: formData
                 })
                 .then(res => res.json())
                 .then(data => {
@@ -819,7 +1075,13 @@
             });
         }
 
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function closeModal(id) { 
+            document.getElementById(id).style.display = 'none'; 
+            if(id === 'confirmModal') {
+               const t = document.getElementById('confirmTitle');
+               if(t) t.innerText = 'ONAYLA';
+            }
+        }
 
         // --- AYARLAR ---
         function saveSettings() {
@@ -847,6 +1109,7 @@
                 data: { name, abbr, ideology, logoFile } 
             };
             
+            if(document.getElementById('confirmTitle')) document.getElementById('confirmTitle').innerText = "AYARLARI GÜNCELLE";
             document.getElementById('confirmDesc').innerText = "Parti bilgilerini güncellemek için kasadan 100.000 ₺ tahsil edilecektir. Onaylıyor musunuz?";
             document.getElementById('btnConfirmAction').onclick = executeAction;
             document.getElementById('confirmModal').style.display = 'flex';
@@ -1256,7 +1519,7 @@
             document.getElementById('tab-' + tabName).style.display = 'block';
             
             // Update tab classes
-            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             if(element) {
                 element.classList.add('active');
             }
