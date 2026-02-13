@@ -8541,3 +8541,45 @@ app.post('/api/admin/bugs/update', (req, res) => {
     });
 });
 
+
+// SOCIAL MEDIA REWARD ENDPOINT
+app.post('/api/social/reward', (req, res) => {
+    const { userId, platform } = req.body;
+    const allowed = ['instagram', 'telegram', 'youtube', 'x'];
+    
+    if(!userId || !platform || !allowed.includes(platform)) {
+        return res.json({ success: false, message: 'Geçersiz istek.' });
+    }
+
+    const colName = 'social_' + platform;
+
+    // 1. Check if already claimed
+    db.query(`SELECT ${colName} FROM users WHERE id = ?`, [userId], (err, results) => {
+        if(err) {
+            console.error(err);
+            return res.json({ success: false, message: 'Veritabanı hatası.' });
+        }
+        if(results.length === 0) return res.json({ success: false, message: 'Kullanıcı bulunamadı.' });
+
+        if(results[0][colName]) {
+            return res.json({ success: false, message: 'Bu ödülü zaten aldınız.' });
+        }
+
+        // 2. Give Reward and Mark as Claimed
+        // Reward: 50,000 Money + 10 Gold
+        const rewardMoney = 50000;
+        const rewardGold = 10;
+        
+        const qUpdate = `UPDATE users SET ${colName} = 1, money = money + ?, gold = gold + ? WHERE id = ?`;
+        
+        db.query(qUpdate, [rewardMoney, rewardGold, userId], (err2) => {
+            if(err2) return res.json({ success: false, message: 'Ödül verilemedi.' });
+            
+            res.json({ 
+                success: true, 
+                message: 'Tebrikler! Ödül hesabına tanımlandı.',
+                rewards: { money: rewardMoney, gold: rewardGold }
+            });
+        });
+    });
+});
