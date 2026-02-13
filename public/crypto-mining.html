@@ -443,6 +443,19 @@
     </div>
 
 
+
+    <!-- RESULT MODAL -->
+    <div id="resultModal" class="modal-overlay" style="z-index: 201;">
+        <div class="modal-content" style="text-align: center;">
+            <div style="margin-bottom: 15px;" id="resultIcon">
+                <!-- Icon injected via JS -->
+            </div>
+            <h3 id="resultTitle" style="color:#fff; margin-bottom: 10px;">İşlem Sonucu</h3>
+            <p id="resultMessage" style="color:#aaa; font-size: 0.95rem; margin-bottom: 20px;">...</p>
+            <button class="btn-confirm" onclick="closeResultModal()" style="width:100%;">TAMAM</button>
+        </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script src="js/header-manager.js"></script>
@@ -474,6 +487,14 @@
             'gx_500': { hashrate: 200, daily: 0.050 },
             'gx_800': { hashrate: 400, daily: 0.100 },
             'gx_titan': { hashrate: 2500, daily: 0.625 }
+        };
+
+        const GPU_COLORS = {
+            'gx_100': '#ecf0f1', // Gümüş (En Açık)
+            'gx_300': '#2ecc71', // Zümrüt Yeşili
+            'gx_500': '#3498db', // Mavi
+            'gx_800': '#9b59b6', // Mor
+            'gx_titan': '#c0392b' // Koyu Kırmızı (En Koyu)
         };
 
         function getGpuIcon(key) {
@@ -657,9 +678,10 @@
                     const name = GPU_NAMES[key] || key.toUpperCase();
                     const count = inv[key];
                     const info = GPU_INFO[key] || { hashrate: '?', daily: '?' };
+                    const color = GPU_COLORS[key] || '#444'; // Border Color logic
                     
                     const item = `
-                        <div class="gpu-item" onclick="installGpu('${key}')">
+                        <div class="gpu-item" onclick="installGpu('${key}')" style="border-left: 4px solid ${color};">
                             <div class="gpu-item-icon">
                                 <img src="${getGpuIcon(key)}" style="width: 40px; height: 40px; object-fit: contain;">
                             </div>
@@ -724,13 +746,26 @@
         $(window).click(function(e) {
             if (e.target.id === 'installModal') closeModal();
             if (e.target.id === 'buySlotModal') closeBuyModal();
+            if (e.target.id === 'resultModal') closeResultModal();
         });
+
+        function showResultModal(success, title, message) {
+             const iconHtml = success 
+                ? '<div style="width:60px; height:60px; border-radius:50%; background:rgba(46, 204, 113, 0.2); color:#2ecc71; display:flex; align-items:center; justify-content:center; margin:0 auto;"><i class="fas fa-check" style="font-size:30px;"></i></div>'
+                : '<div style="width:60px; height:60px; border-radius:50%; background:rgba(231, 76, 60, 0.2); color:#e74c3c; display:flex; align-items:center; justify-content:center; margin:0 auto;"><i class="fas fa-times" style="font-size:30px;"></i></div>';
+            
+            $('#resultIcon').html(iconHtml);
+            $('#resultTitle').text(title);
+            $('#resultMessage').text(message);
+            $('#resultModal').css('display', 'flex');
+        }
+
+        function closeResultModal() {
+            $('#resultModal').hide();
+        }
 
         function installGpu(gpuKey) {
             if (selectedSlot === null) return;
-            
-            // Optimistic Update UI
-            // ...
             
             $.ajax({
                 url: '/api/crypto/install',
@@ -743,15 +778,15 @@
                 }),
                 success: function(res) {
                     if(res.success) {
-                        toastr.success(res.message);
-                        closeModal();
+                        closeModal(); // Close selection modal
+                        showResultModal(true, 'Başarılı', res.message);
                         loadMiningData(); // Refresh UI
                     } else {
-                        toastr.error(res.message);
+                        showResultModal(false, 'Başarısız', res.message);
                     }
                 },
                 error: function(err) {
-                    toastr.error("Bağlantı hatası");
+                    showResultModal(false, 'Hata', "Bağlantı hatası oluştu.");
                 }
             });
         }

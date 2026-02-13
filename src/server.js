@@ -18,79 +18,13 @@ const upload = multer({
     fileFilter: (req, file, cb) => {
         const filetypes = /jpeg|jpg|png|gif/;
         const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
         if (mimetype && extname) {
             return cb(null, true);
         }
-        cb(new Error('Only images are allowed!'));
+        cb(new Error('Sadece resim dosyaları (jpeg, jpg, png, gif) yüklenebilir!'));
     }
 });
-
-// --- CRYPTO STATE MANAGEMENT ---
-const CRYPTO_STATE_FILE = path.join(__dirname, 'data', 'crypto_state.json');
-let cryptoState = { totalMined: 0, floatingBTC: 0 };
-
-// Load State
-function loadCryptoState() {
-    try {
-        if (fs.existsSync(CRYPTO_STATE_FILE)) {
-            const data = fs.readFileSync(CRYPTO_STATE_FILE, 'utf8');
-            cryptoState = JSON.parse(data);
-            console.log('Crypto State loaded:', cryptoState);
-        } else {
-             // Init defaults or sync with DB if needed
-             // For now start fresh or 0
-             saveCryptoState();
-        }
-    } catch (e) {
-        console.error('Error loading crypto state:', e);
-    }
-}
-
-// Save State
-function saveCryptoState() {
-    try {
-        fs.writeFileSync(CRYPTO_STATE_FILE, JSON.stringify(cryptoState, null, 4));
-    } catch (e) {
-        console.error('Error saving crypto state:', e);
-    }
-}
-
-// Initial Load
-loadCryptoState();
-
-// Sync Check (Optional: Run once to set TotalMined from DB if 0)
-// We'll leave it 0 and let it grow or manual set.
-
-function calculateCryptoPrice() {
-    // Formula: Price = (TotalMined * 0.1) * ScarcityFactor
-    // ScarcityFactor = 1 + (1 - Floating/TotalMined)
-    // If Floating == TotalMined (Low Demand), Factor = 1. Price = 0.1 * Mined
-    // If Floating == 0 (High Demand), Factor = 2. Price = 0.2 * Mined
-    
-    // Safety for 0
-    if (cryptoState.totalMined <= 0) return 1000.00; // Base Price
-    
-    // Eski çarpan 0.05 idi (Eşik 20.000 BTC).
-    // Yeni çarpan 2.0 (Eşik 500 BTC). Fiyatın 1000$ üzerine çıkması kolaylaştı.
-    const basePrice = cryptoState.totalMined * 2.0; 
-    
-    let floatRatio = 0;
-    if (cryptoState.totalMined > 0) {
-        floatRatio = cryptoState.floatingBTC / cryptoState.totalMined;
-    }
-    if (floatRatio > 1) floatRatio = 1; // Should not happen but safety
-    
-    // Scarcity varies from 1.0 (All Floating) to 2.0 (None Floating)
-    const scarcity = 1 + (1 - floatRatio);
-    
-    // Minimum price 1000
-    let price = Math.max(1000, basePrice * scarcity);
-    return price;
-}
-
-// --- END CRYPTO STATE ---
-
-
 
 const db = mysql.createConnection({
     host: 'localhost',
@@ -151,20 +85,6 @@ db.connect((err) => {
             if (err) console.error('Error creating profile_visits table:', err);
             else console.log('Profile Visits table ready');
         });
-
-        const createPartyAppsTable = `CREATE TABLE IF NOT EXISTS party_applications (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT NOT NULL,
-            party_id INT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-            FOREIGN KEY (party_id) REFERENCES parties(id) ON DELETE CASCADE
-        )`;
-        
-        db.query(createPartyAppsTable, (err) => {
-            if (err) console.error("Error creating party_applications:", err);
-            else console.log("Party Applications table ready");
-        });
     }
 });
 
@@ -174,7 +94,7 @@ app.use(bodyParser.json());
 // Security Headers Middleware - Dış enjeksiyonları engelle
 app.use((req, res, next) => {
     // Content Security Policy - Strict mode, dış scriptleri engelle
-    res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'self' 'unsafe-inline' https://code.jquery.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://www.gravatar.com https://upload.wikimedia.org https://images.unsplash.com https://flagcdn.com; connect-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; frame-ancestors 'none'; base-uri 'self'; form-action 'self';");
+    res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'self' 'unsafe-inline' https://code.jquery.com/jquery-3.6.0.min.js https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' data: https://*.googleapis.com https://*.gstatic.com https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://upload.wikimedia.org https://images.unsplash.com; connect-src 'self' https://cdnjs.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';" );
     
     // X-Content-Type-Options - MIME sniffing engelle
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -228,9 +148,7 @@ app.post('/api/login', (req, res) => {
 app.post('/api/register', (req, res) => {
     const { username, password } = req.body;
     const defaultAvatar = 'uploads/avatars/default.png';
-    // Initialize license cols to 0
-    const query = 'INSERT INTO users (username, password, money, energy, health, avatar, license_hospital_level, license_farm_level, license_ranch_level, license_property_level) VALUES (?, ?, 1000, 100, 100, ?, 0, 0, 0, 0)';
-    
+    const query = 'INSERT INTO users (username, password, money, energy, health, avatar) VALUES (?, ?, 1000, 100, 100, ?)';
     db.query(query, [username, password, defaultAvatar], (err, result) => {
         if (err) {
             console.error("Register Error:", err);
@@ -239,33 +157,7 @@ app.post('/api/register', (req, res) => {
             }
             return res.status(500).json({ message: 'Kayıt hatası.' });
         }
-
-        const userId = result.insertId;
-
-        // Initialize other licenses in 'licenses' table
-        const licenseTypes = [
-            // Mines
-            'wood', 'stone', 'iron', 'coal', 'sand', 'oil', 'diamond', 'uranium', 'copper', 'gold',
-            // Factories
-            'lumber', 'brick', 'glass', 'concrete', 'steel', 'agricultural', 'animal', 'bakery', 'ready_food', 
-            'olive_oil', 'sweets', 'gold_factory', 'weapon', 'silicon', 'wind_turbine', 'solar_plant', 
-            'coal_plant', 'nuclear_plant', 'chip_factory', 'electronic_card_factory', 'gpu_factory', 
-            'plastic_factory', 'tyre_factory', 'engine_factory', 'car_factory', 'cable_factory',
-            // Business
-            'bank', 'political_party', 'rent_a_car', 'real_estate'
-        ];
-
-        const licValues = licenseTypes.map(type => [userId, type, 0]);
-
-        if (licValues.length > 0) {
-            db.query('INSERT INTO licenses (user_id, mine_type, level) VALUES ?', [licValues], (licErr) => {
-                if(licErr) console.error("License Init Error:", licErr);
-                // Even if licenses fail, user is created.
-                res.json({ success: true, message: 'Kayıt başarılı!' });
-            });
-        } else {
-            res.json({ success: true, message: 'Kayıt başarılı!' });
-        }
+        res.json({ success: true, message: 'Kayıt başarılı!' });
     });
 });
 
@@ -1207,7 +1099,7 @@ app.get('/api/user-stats/:userId', (req, res) => {
         db.query(activeTreatmentQuery, [userId], (err, activeTreatments) => {
             const hasActiveTreatment = (!err && activeTreatments.length > 0);
 
-            const query = 'SELECT money, gold, diamond, health, energy, level, license_hospital_level, license_farm_level, license_property_level, education_skill, avatar, username, party_id FROM users WHERE id = ?';
+            const query = 'SELECT money, gold, diamond, health, energy, level, license_hospital_level, license_farm_level, license_property_level, education_skill, avatar, username, party_id, role, party_role FROM users WHERE id = ?';
             db.query(query, [userId], (err, results) => {
                 if (err) return res.status(500).json({ error: err });
                 if (results.length === 0) return res.status(404).json({ error: 'User not found' });
@@ -1319,7 +1211,7 @@ app.get('/api/licenses/:userId', (req, res) => {
         });
         
         // Fetch special licenses from users table
-        const userQuery = 'SELECT license_hospital_level, license_farm_level, license_ranch_level, license_property_level FROM users WHERE id = ?';
+        const userQuery = 'SELECT license_hospital_level, license_farm_level, license_ranch_level FROM users WHERE id = ?';
         db.query(userQuery, [userId], (err, userRes) => {
             if (!err && userRes.length > 0) {
                 if (userRes[0].license_hospital_level > 0) {
@@ -1330,9 +1222,6 @@ app.get('/api/licenses/:userId', (req, res) => {
                 }
                 if (userRes[0].license_ranch_level > 0) {
                     licenses['ranch'] = userRes[0].license_ranch_level;
-                }
-                if (userRes[0].license_property_level > 0) {
-                    licenses['property_license'] = userRes[0].license_property_level;
                 }
             }
             res.json(licenses);
@@ -1552,16 +1441,11 @@ app.post('/api/parties/create', (req, res) => {
         const user = users[0];
         if (user.party_id) return res.json({ success: false, message: 'Zaten bir partiniz var veya üyesiniz.' });
         
-        const costMoney = 500000;
+        const costMoney = 10000000;
         const costGold = 500;
         const costDiamond = 50;
 
-        console.log(`[Party Create Debug] User: ${user.username} (ID: ${userId}) | Money: ${user.money} vs ${costMoney}`);
-
-        if (user.money < costMoney) {
-            console.log("Not enough money");
-            return res.json({ success: false, message: `Yetersiz bakiye (Para). Mevcut: ${user.money.toLocaleString('tr-TR')} ₺. Lütfen paranızın bankada değil, üzerinizde (nakit) olduğundan emin olun.` });
-        }
+        if (user.money < costMoney) return res.json({ success: false, message: 'Yetersiz bakiye (Para).' });
         if (user.gold < costGold) return res.json({ success: false, message: 'Yetersiz bakiye (Altın).' });
         if ((user.diamond || 0) < costDiamond) return res.json({ success: false, message: 'Yetersiz bakiye (Elmas).' });
 
@@ -1585,98 +1469,13 @@ app.post('/api/parties/create', (req, res) => {
                     db.query(updateUser, [costMoney, costGold, costDiamond, partyId, userId], (err) => {
                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kullanıcı güncellenemedi.' }));
                         
-                        // DELETE ALL EXISTING APPLICATIONS
-                        db.query('DELETE FROM party_applications WHERE user_id = ?', [userId], (err) => {
-                            if (err) console.error("Could not clear applications", err); // Not critical enough to rollback? Maybe it is. Let's stick to safe rollback or just log. The request says "must be deleted".
-                            // If it fails, maybe we should rollback to ensure consistency.
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Başvurular temizlenemedi.' }));
-
-                            db.commit(err => {
-                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                                res.json({ success: true, message: 'Parti başarıyla kuruldu!', partyId });
-                            });
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                            res.json({ success: true, message: 'Parti başarıyla kuruldu!', partyId });
                         });
                     });
                 });
             });
-        });
-    });
-});
-
-// --- NEW PARTY APPLICATION ENDPOINTS ---
-
-// Get My Applications
-app.get('/api/my-applications/:userId', (req, res) => {
-    const userId = req.params.userId;
-    db.query('SELECT party_id FROM party_applications WHERE user_id = ?', [userId], (err, results) => {
-        if(err) return res.send([]);
-        res.json(results.map(r => r.party_id));
-    });
-});
-
-// Apply to Party
-app.post('/api/parties/apply', (req, res) => {
-    const { userId, partyId } = req.body;
-    
-    // Check if user is already in a party
-    db.query('SELECT party_id FROM users WHERE id = ?', [userId], (err, users) => {
-        if(err || users.length === 0) return res.json({ success: false, message: 'Kullanıcı hatası' });
-        if(users[0].party_id) return res.json({ success: false, message: 'Zaten bir partiye üyesiniz. Önce istifa etmelisiniz.' });
-        
-        // Check if already has active application for this party
-        db.query('SELECT id FROM party_applications WHERE user_id = ? AND party_id = ?', [userId, partyId], (err, apps) => {
-            if(apps.length > 0) return res.json({ success: false, message: 'Zaten bu partiye başvurunuz var.' });
-            
-            db.query('INSERT INTO party_applications(user_id, party_id) VALUES(?, ?)', [userId, partyId], (err) => {
-                if(err) return res.json({ success: false, message: 'Başvuru alınamadı.' });
-                res.json({ success: true, message: 'Başvuru başarıyla gönderildi.' });
-            });
-        });
-    });
-});
-
-// Cancel Application
-app.post('/api/parties/application/cancel', (req, res) => { // Updated path to match frontend or change frontend? Frontend calls /api/parties/application/cancel
-    const { userId, partyId } = req.body;
-    db.query('DELETE FROM party_applications WHERE user_id = ? AND party_id = ?', [userId, partyId], (err) => {
-        if(err) return res.json({ success: false, message: 'İptal başarısız.' });
-        res.json({ success: true, message: 'Başvuru iptal edildi.' });
-    });
-});
-
-// Resign from Party
-app.post('/api/parties/resign', (req, res) => {
-    const { userId } = req.body;
-    
-    db.query('SELECT party_id, id FROM users WHERE id=?', [userId], (err, users) => {
-        if(err || users.length === 0) return res.json({ success: false, message: 'Kullanıcı bulunamadı' });
-        const user = users[0];
-        
-        if(!user.party_id) return res.json({ success: false, message: 'Zaten bir partiniz yok.' });
-        
-        // Cannot resign if Leader? 
-        db.query('SELECT leader_id FROM parties WHERE id = ?', [user.party_id], (err, parties) => {
-             if(parties.length > 0 && parties[0].leader_id == userId) {
-                 return res.json({ success: false, message: 'Lidersiniz, istifa edemezsiniz. Partiyi kapatmanız veya liderliği devretmeniz gerekir.' });
-             }
-
-             const oldPartyId = user.party_id;
-             
-             db.beginTransaction(err => {
-                 // Remove user party_id
-                 db.query('UPDATE users SET party_id = NULL, party_role = NULL WHERE id = ?', [userId], (err) => {
-                     if(err) return db.rollback(() => res.status(500).json({ success: false }));
-                     
-                     // Decrease members_count
-                     db.query('UPDATE parties SET members_count = GREATEST(members_count - 1, 0) WHERE id = ?', [oldPartyId], (err) => {
-                         if(err) return db.rollback(() => res.status(500).json({ success: false }));
-                         
-                         db.commit(err => {
-                             res.json({ success: true, message: 'Partiden ayrıldınız.' });
-                         });
-                     });
-                 });
-             });
         });
     });
 });
@@ -1709,19 +1508,6 @@ const FACTORY_RECIPES = {
     ],
     'nuclear_plant': [
         { id: 'nuclear_energy', name: 'Nükleer Enerji', inputs: { uranium: 1 }, output: { energy: 3 } }
-    ],
-    'tyre_factory': [
-        { id: 'tyre', name: 'Lastik', inputs: { oil: 3, energy: 1 }, output: { tire: 1 } }
-    ],
-    'engine_factory': [
-        { id: 'engine', name: 'Motor', inputs: { steel: 3, chip: 1, electronic_card: 1, gold_cable: 3, copper_cable: 3, energy: 1 }, output: { engine: 1 } }
-    ],
-    'car_factory': [
-        { id: 'noventis', name: 'Noventis', inputs: { steel: 2, glass: 4, engine: 1, tire: 4, energy: 1 }, output: { noventis: 1 } },
-        { id: 'stradeo', name: 'Stradeo', inputs: { steel: 4, glass: 4, engine: 1, tire: 4, energy: 2 }, output: { stradeo: 1 } },
-        { id: 'rugnar', name: 'Rugnar', inputs: { steel: 6, glass: 4, engine: 1, tire: 4, energy: 3 }, output: { rugnar: 1 } },
-        { id: 'veltrano', name: 'Veltrano', inputs: { steel: 8, glass: 2, engine: 2, tire: 4, energy: 4 }, output: { veltrano: 1 } },
-        { id: 'zentaro', name: 'Zentaro', inputs: { steel: 10, glass: 2, engine: 2, tire: 4, energy: 5 }, output: { zentaro: 1 } }
     ]
 };
 
@@ -1737,16 +1523,7 @@ const FACTORY_INPUTS = {
     'brick': ['stone', 'energy'],
     'glass': ['sand', 'energy'],
     'concrete': ['sand', 'stone', 'energy'],
-    'steel': ['iron', 'coal', 'energy'],
-    // New Factories
-    'tyre_factory': ['oil', 'energy'],
-    'engine_factory': ['steel', 'chip', 'electronic_card', 'gold_cable', 'copper_cable', 'energy'],
-    'car_factory': ['steel', 'glass', 'engine', 'tire', 'energy'],
-    'cable_factory': ['copper', 'gold', 'plastic', 'energy'],
-    'chip_factory': ['silicon', 'gold', 'energy'],
-    'plastic_factory': ['oil', 'energy'],
-    'electronic_card_factory': ['copper_cable', 'gold_cable', 'plastic', 'silicon', 'energy'],
-    'gpu_factory': ['chip', 'electronic_card', 'plastic', 'copper_cable', 'gold_cable', 'silicon', 'energy']
+    'steel': ['iron', 'coal', 'energy']
 };
 
 const MINE_TYPES = [
@@ -1773,15 +1550,6 @@ const MINE_TYPES = [
     { id: 'sweets', name: 'Tatlı & Şekerleme Üretim Tesisi', reqLevel: 12, costMoney: 12000, costGold: 5, costDiamond: 0 },
     { id: 'weapon', name: 'Silah Fabrikası', reqLevel: 30, costMoney: 50000, costGold: 50, costDiamond: 10 },
     { id: 'gold_factory', name: 'Altın Külçe Fabrikası', reqLevel: 20, costMoney: 40000, costGold: 0, costDiamond: 5 },
-    { id: 'silicon', name: 'Silikon Fabrikası', reqLevel: 25, costMoney: 30000, costGold: 25, costDiamond: 5 },
-    { id: 'plastic_factory', name: 'Plastik Fabrikası', reqLevel: 15, costMoney: 15000, costGold: 10, costDiamond: 0 },
-    { id: 'tyre_factory', name: 'Lastik Fabrikası', reqLevel: 17, costMoney: 20000, costGold: 12, costDiamond: 0 },
-    { id: 'engine_factory', name: 'Motor Fabrikası', reqLevel: 19, costMoney: 25000, costGold: 15, costDiamond: 2 },
-    { id: 'car_factory', name: 'Otomotiv Fabrikası', reqLevel: 24, costMoney: 50000, costGold: 20, costDiamond: 5 },
-    { id: 'cable_factory', name: 'Kablo Fabrikası', reqLevel: 18, costMoney: 18000, costGold: 12, costDiamond: 0 },
-    { id: 'electronic_card_factory', name: 'Elektronik Kart Fabrikası', reqLevel: 22, costMoney: 22000, costGold: 18, costDiamond: 2 },
-    { id: 'chip_factory', name: 'Çip Fabrikası', reqLevel: 35, costMoney: 45000, costGold: 40, costDiamond: 10 },
-    { id: 'gpu_factory', name: 'GPU Fabrikası', reqLevel: 40, costMoney: 60000, costGold: 60, costDiamond: 15 },
     { id: 'solar', name: 'Güneş Santrali', reqLevel: 50, costMoney: 100000, costGold: 100, costDiamond: 20 },
     // Energy Plants
     { id: 'wind_turbine', name: 'Rüzgar Türbini', reqLevel: 10, costMoney: 15000, costGold: 5, costDiamond: 0 },
@@ -1980,40 +1748,6 @@ app.get('/api/mines/detail/:id', (req, res) => {
                     });
                 });
             });
-        });
-    });
-});
-
-// Set Active Recipe
-app.post('/api/mines/set-recipe', (req, res) => {
-    const { userId, mineId, recipeId } = req.body;
-    console.log('Set Recipe Request:', { userId, mineId, recipeId });
-
-    if (!userId || !mineId || !recipeId) {
-        return res.status(400).json({ success: false, message: 'Eksik parametre.' });
-    }
-
-    // Verify ownership
-    db.query('SELECT user_id FROM player_mines WHERE id = ?', [mineId], (err, results) => {
-        if (err) {
-            console.error('DB Error verify owner:', err);
-            return res.status(500).json({ success: false, message: 'DB Error' });
-        }
-        
-        if (results.length === 0) return res.status(404).json({ success: false, message: 'Fabrika bulunamadı.' });
-        
-        // Ensure userId checks out (check if string/int mismatch issues)
-        if (results[0].user_id != userId) {
-             return res.status(403).json({ success: false, message: 'Bu fabrika size ait değil.' });
-        }
-
-        db.query('UPDATE player_mines SET active_recipe_id = ? WHERE id = ?', [recipeId, mineId], (err) => {
-            if (err) {
-                console.error('DB Error update recipe:', err);
-                return res.status(500).json({ success: false, message: 'Tarif güncellenemedi.' });
-            }
-            console.log('Recipe updated successfully for mine:', mineId);
-            res.json({ success: true, message: 'Üretim hattı güncellendi.' });
         });
     });
 });
@@ -4366,10 +4100,8 @@ app.get('/api/daily-jobs', (req, res) => {
             id: job.id,
             name: job.name,
             icon: job.icon,
-            color: job.color,
             time: job.time,
             minLevel: job.minLevel,
-            reqEducation: job.reqEducation,
             costH: job.costH,
             costE: job.costE,
             reward: {
@@ -4387,16 +4119,12 @@ app.get('/api/daily-jobs', (req, res) => {
 app.get('/api/daily-jobs/status/:userId', (req, res) => {
     const { userId } = req.params;
     
-    // 1. Get Completed Jobs (Cooldown Check - 24 Hours)
-    const cooldownQuery = 'SELECT job_id, completed_at FROM completed_daily_jobs WHERE user_id = ? AND completed_at > NOW() - INTERVAL 24 HOUR';
-    db.query(cooldownQuery, [userId], (err, completed) => {
+    // 1. Get Completed Jobs for Today
+    const today = new Date().toISOString().split('T')[0];
+    db.query('SELECT job_id FROM completed_daily_jobs WHERE user_id = ? AND completed_at = ?', [userId, today], (err, completed) => {
         if (err) return res.status(500).json({ success: false, error: err });
         
         const completedIds = completed.map(c => c.job_id);
-        const cooldowns = completed.map(c => ({
-            jobId: c.job_id,
-            completedAt: c.completed_at
-        }));
 
         // 2. Get Active Job
         db.query('SELECT * FROM active_daily_jobs WHERE user_id = ?', [userId], (err, active) => {
@@ -4419,10 +4147,10 @@ app.get('/api/daily-jobs/status/:userId', (req, res) => {
                             remainingTime: remaining
                         };
                     }
-                    res.json({ success: true, completedJobs: completedIds, cooldowns: cooldowns, activeJob: activeJobData });
+                    res.json({ success: true, completedJobs: completedIds, activeJob: activeJobData });
                 });
             } else {
-                res.json({ success: true, completedJobs: completedIds, cooldowns: cooldowns, activeJob: null });
+                res.json({ success: true, completedJobs: completedIds, activeJob: null });
             }
         });
     });
@@ -4456,7 +4184,7 @@ app.post('/api/daily-jobs/start', (req, res) => {
                         const user = users[0];
 
                         // Checks
-                        // if (user.level < job.minLevel) return db.rollback(() => res.json({ success: false, message: 'Seviyen yetersiz.' }));
+                        if (user.level < job.minLevel) return db.rollback(() => res.json({ success: false, message: 'Seviyen yetersiz.' }));
                         if (user.health < job.costH) return db.rollback(() => res.json({ success: false, message: 'Sağlığın yetersiz.' }));
                         if (user.energy < job.costE) return db.rollback(() => res.json({ success: false, message: 'Enerjin yetersiz.' }));
 
@@ -4517,16 +4245,9 @@ app.post('/api/daily-jobs/complete', (req, res) => {
                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Delete active error' }));
 
                         // 5. Add to Completed
-                        const insertLogQuery = `
-                            INSERT INTO completed_daily_jobs (user_id, job_id, completed_at) 
-                            VALUES (?, ?, NOW()) 
-                            ON DUPLICATE KEY UPDATE completed_at=NOW()
-                        `;
-                        db.query(insertLogQuery, [userId, jobId], (err) => {
-                            if (err) {
-                                console.error('Complete Job Log Error:', err);
-                                return db.rollback(() => res.status(500).json({ success: false, message: 'Log completed error: ' + err.message }));
-                            }
+                        const today = new Date().toISOString().split('T')[0];
+                        db.query('INSERT INTO completed_daily_jobs (user_id, job_id, completed_at) VALUES (?, ?, ?)', [userId, jobId, today], (err) => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log completed error' }));
 
                             // Notification
                             const notifTitle = 'Günlük İş Tamamlandı';
@@ -4558,14 +4279,6 @@ app.post('/api/daily-jobs/complete', (req, res) => {
 // Get All Users
 app.get('/api/admin/users', (req, res) => {
     db.query('SELECT * FROM users', (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json(results);
-    });
-});
-
-// Get Crypto Holders
-app.get('/api/admin/crypto-holders', (req, res) => {
-    db.query('SELECT id, username, btc FROM users WHERE btc > 0 ORDER BY btc DESC LIMIT 50', (err, results) => {
         if (err) return res.status(500).json({ error: err });
         res.json(results);
     });
@@ -4706,7 +4419,7 @@ app.post('/api/mines/start', (req, res) => {
         // 1. Get User & Mine Data
         // Only count workers whose end_time is in the future
         const query = `
-            SELECT u.energy, u.health, u.education_skill, m.id as mine_id, m.max_workers, m.reserve, m.salary, m.vault, m.mine_type, m.stock, m.level, m.user_id as owner_id, m.active_recipe_id,
+            SELECT u.energy, u.health, u.education_skill, m.id as mine_id, m.max_workers, m.reserve, m.salary, m.vault, m.mine_type, m.stock, m.level, m.user_id as owner_id,
             (SELECT level FROM arge_levels WHERE user_id = m.user_id AND mine_type = m.mine_type) as arge_level,
             (SELECT production_time FROM mine_settings WHERE mine_type = m.mine_type) as production_time,
             (SELECT COUNT(*) FROM mine_active_workers WHERE mine_id = m.id AND end_time > NOW()) as current_workers,
@@ -4770,12 +4483,7 @@ app.post('/api/mines/start', (req, res) => {
                          const baseProduction = mineLevel;
                          const educationBonus = Math.floor(ownerSkill / 10);
                          const argeBonus = (arge_level || 0) * 2;
-                         let productionAmount = baseProduction + educationBonus + argeBonus;
-
-                         // Override for Car Factory (Single Unit Production)
-                         if (data.mine_type === 'car_factory') {
-                             productionAmount = 1;
-                         }
+                         const productionAmount = baseProduction + educationBonus + argeBonus;
                          
                          console.log(`[Mining Start] User: ${userId}, Mine: ${mineId}, OwnerSkill: ${ownerSkill}, Level: ${mineLevel}, EduBonus: ${educationBonus}, ArgeBonus: ${argeBonus}, Final: ${productionAmount}`);
 
@@ -4856,9 +4564,9 @@ app.post('/api/mines/start', (req, res) => {
                          proceedWithProduction(legacyInputs, null, productionAmount, true); // true = use factory_inventory
                          return;
                      }
-                     // Check if it's a new factory type
-                     const recipes = FACTORY_RECIPES[data.mine_type];
                      
+                     proceedWithProduction(null, null, productionAmount, false);
+
                      function proceedWithProduction(inputs, pKey, amount, isNewFactory) {
                          // Vault Check
                          const estimatedCost = amount * salary;
@@ -4911,17 +4619,10 @@ app.post('/api/mines/start', (req, res) => {
                          });
                      } // End proceedWithProduction function
 
+                     // Check if it's a new factory type
+                     const recipes = FACTORY_RECIPES[data.mine_type];
                      if (recipes) {
-                         let recipeId = req.body.recipeId;
-
-                         // Enforce active_recipe_id for Car Factories
-                         if (data.mine_type === 'car_factory') {
-                             if (!data.active_recipe_id) {
-                                  return db.rollback(() => res.json({ success: false, message: 'Bu fabrikanın üretim hattı henüz ayarlanmamış.' }));
-                             }
-                             recipeId = data.active_recipe_id;
-                         }
-
+                         const recipeId = req.body.recipeId;
                          const recipe = recipes.find(r => r.id === recipeId) || recipes[0];
                          
                          if (!recipe) return db.rollback(() => res.json({ success: false, message: 'Geçersiz reçete.' }));
@@ -4934,10 +4635,7 @@ app.post('/api/mines/start', (req, res) => {
                              meat: 'Et', olive_oil: 'Zeytinyağı', rice: 'Pirinç', potato: 'Patates',
                              olive: 'Zeytin', honey: 'Bal', energy: 'Elektrik',
                              wood: 'Odun', stone: 'Taş', iron: 'Demir', coal: 'Kömür',
-                             sand: 'Kum', copper: 'Bakır', uranium: 'Uranyum', gold_nugget: 'Altın Parçası',
-                             steel: 'Çelik', glass: 'Cam', engine: 'Motor', tyre: 'Lastik',
-                             oil: 'Petrol', chip: 'Çip', electronic_card: 'Elektronik Kart',
-                             gold_cable: 'Altın Kablo', copper_cable: 'Bakır Kablo'
+                             sand: 'Kum', copper: 'Bakır', uranium: 'Uranyum', gold_nugget: 'Altın Parçası'
                          };
 
                          for (const [key, val] of Object.entries(recipeInputs)) {
@@ -4952,7 +4650,7 @@ app.post('/api/mines/start', (req, res) => {
                          return;
                      }
 
-                     // Fallback for non-factory mines (gold, iron, etc.) that are NOT legacy
+                     // Legacy Factories
                      proceedWithProduction({}, null, productionAmount, false);
                      }); // Close owner query callback
                  });
@@ -7273,518 +6971,6 @@ app.post('/api/properties/collect-tax', (req, res) => {
     });
 });
 
-
-/* ================= DAILY REWARD SYSTEM ================= */
-function getDailyRewards() {
-    const rewards = [];
-    for (let i = 1; i <= 30; i++) {
-        let reward = { day: i, type: 'money', value: i * 500, label: (i * 500) + ' TL', icon: 'icons/inventory-icon/money.png' };
-        
-        if (i % 5 === 3) { // Interspersed Diamonds
-            let val = (Math.floor(i / 5) + 1) * 5;
-            if (val > 25) val = 25;
-            reward.type = 'diamond';
-            reward.value = val;
-            reward.label = val + ' Elmas';
-            reward.icon = 'icons/inventory-icon/diamond.png';
-        }
-
-        if (i % 5 === 0) { // Every 5 days -> Gold
-            reward.type = 'gold';
-            reward.value = i;
-            reward.label = i + ' Altın';
-            reward.icon = 'icons/inventory-icon/gold.png';
-        }
-        
-        if (i === 30) {
-            reward.type = 'gold';
-            reward.value = 500;
-            reward.label = '500 Altın';
-            // icon remains gold.png from % 5 block
-        }
-        rewards.push(reward);
-    }
-    return rewards;
-}
-
-app.get('/api/daily-reward/status/:userId', (req, res) => {
-    const userId = req.params.userId;
-    const rewards = getDailyRewards();
-
-    db.query('SELECT * FROM user_daily_rewards WHERE user_id = ?', [userId], (err, results) => {
-        if (err) return res.status(500).json({ success: false, message: 'DB Error' });
-
-        let currentStreak = 0;
-        let lastClaimDate = null;
-
-        if (results.length > 0) {
-            currentStreak = results[0].current_streak;
-            lastClaimDate = results[0].last_claim_date ? new Date(results[0].last_claim_date) : null;
-        }
-
-        const now = new Date();
-        let canClaim = false;
-        let remainingMs = 0;
-        let nextDay = currentStreak + 1;
-
-        if (!lastClaimDate) {
-            canClaim = true;
-        } else {
-            const today = new Date();
-            today.setHours(0,0,0,0);
-            
-            const lastClaimDay = new Date(lastClaimDate);
-            lastClaimDay.setHours(0,0,0,0);
-            
-            const diffTime = Math.abs(today - lastClaimDay);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-
-            if (diffDays === 0) {
-                canClaim = false;
-                const tomorrow = new Date(today);
-                tomorrow.setDate(tomorrow.getDate() + 1);
-                remainingMs = tomorrow - now;
-            } else if (diffDays === 1) {
-                canClaim = true;
-            } else {
-                currentStreak = 0;
-                nextDay = 1;
-                canClaim = true;
-            }
-        }
-        
-        if (currentStreak >= 30) {
-            if(canClaim) { // If I finished 30 days and missed a day (or came back next day), start over
-               // But wait, if I just finished day 30 yesterday, today is day 1?
-               // Yes.
-               nextDay = 1;
-            }
-        }
-        // Safegaurd
-        if (nextDay > 30) nextDay = 1;
-
-        res.json({
-            success: true,
-            rewards,
-            currentStreak,
-            canClaim,
-            nextDay,
-            remainingMs
-        });
-    });
-});
-
-app.post('/api/daily-reward/claim', (req, res) => {
-    const { userId } = req.body;
-    
-    db.query('SELECT * FROM user_daily_rewards WHERE user_id = ?', [userId], (err, results) => {
-        if (err) return res.status(500).json({ success: false, message: 'DB Error' });
-
-        let currentStreak = 0;
-        let lastClaimDate = null;
-        let recordExists = false;
-
-        if (results.length > 0) {
-            recordExists = true;
-            currentStreak = results[0].current_streak;
-            lastClaimDate = results[0].last_claim_date ? new Date(results[0].last_claim_date) : null;
-        }
-
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        
-        if (lastClaimDate) {
-            const lastClaimDay = new Date(lastClaimDate);
-            lastClaimDay.setHours(0,0,0,0);
-            const diffTime = Math.abs(today - lastClaimDay);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-            if (diffDays === 0) {
-                return res.json({ success: false, message: 'Bugün zaten ödül aldın.' });
-            }
-            if (diffDays > 1) {
-                currentStreak = 0;
-            }
-        }
-
-        let dayToClaim = currentStreak + 1;
-        if (dayToClaim > 30) {
-             currentStreak = 0;
-             dayToClaim = 1; 
-        }
-
-        const allRewards = getDailyRewards();
-        const reward = allRewards.find(r => r.day === dayToClaim);
-
-        if (!reward) return res.json({ success: false, message: 'Ödül bulunamadı.' });
-
-        let updateSql = '';
-        let params = [];
-
-        if (reward.type === 'money') {
-            updateSql = 'UPDATE users SET money = money + ? WHERE id = ?';
-            params = [reward.value, userId];
-        } else if (reward.type === 'gold') {
-            updateSql = 'UPDATE users SET gold = gold + ? WHERE id = ?';
-            params = [reward.value, userId];
-        } else if (reward.type === 'diamond') {
-            updateSql = 'UPDATE users SET diamond = diamond + ? WHERE id = ?';
-            params = [reward.value, userId];
-        }
-
-        db.beginTransaction(err => {
-            if (err) return res.json({ success: false, message: 'Transaction Error' });
-
-            db.query(updateSql, params, (err) => {
-                if (err) return db.rollback(() => res.json({ success: false, message: 'Ödül verilemedi.' }));
-
-                const newStreak = dayToClaim; 
-                
-                let trackerSql = '';
-                let trackerParams = [];
-                
-                if (recordExists) {
-                    trackerSql = 'UPDATE user_daily_rewards SET last_claim_date = NOW(), current_streak = ? WHERE user_id = ?';
-                    trackerParams = [newStreak, userId];
-                } else {
-                    trackerSql = 'INSERT INTO user_daily_rewards (user_id, last_claim_date, current_streak) VALUES (?, NOW(), ?)';
-                    trackerParams = [userId, newStreak];
-                }
-
-                db.query(trackerSql, trackerParams, (err) => {
-                    if (err) return db.rollback(() => res.json({ success: false, message: 'Kayıt güncellenemedi.' }));
-
-                    db.commit(err => {
-                        if (err) return db.rollback(() => res.json({ success: false, message: 'Commit hatası.' }));
-                        res.json({ success: true, message: `${reward.label} kazandın!` });
-                    });
-                });
-            });
-        });
-    });
-});
-
-
-/* ================= REFERRAL SYSTEM ================= */
-const REFERRAL_REWARDS = [
-    { tier: 1, required: 1, reward: { label: '5 Elmas' }, money: 0, gold: 0, diamond: 5, items: [] },
-    { tier: 2, required: 5, reward: { label: '25 Elmas' }, money: 0, gold: 0, diamond: 25, items: [] },
-    { tier: 3, required: 10, reward: { label: '50 Elmas' }, money: 0, gold: 0, diamond: 50, items: [] },
-    { tier: 4, required: 25, reward: { label: '150 Elmas' }, money: 0, gold: 0, diamond: 150, items: [] },
-    { tier: 5, required: 50, reward: { label: '500 Elmas' }, money: 0, gold: 0, diamond: 500, items: [] }
-];
-
-app.get('/api/referral/status/:userId', (req, res) => {
-    const userId = req.params.userId;
-    db.query('SELECT referral_count, referral_tier FROM users WHERE id = ?', [userId], (err, results) => {
-        if (err || results.length === 0) return res.status(500).json({ success: false });
-        
-        res.json({
-            success: true,
-            count: results[0].referral_count || 0,
-            tier: results[0].referral_tier || 0,
-            rewards: REFERRAL_REWARDS
-        });
-    });
-});
-
-app.post('/api/referral/claim', (req, res) => {
-    const { userId, tierId } = req.body;
-    
-    db.query('SELECT referral_count, referral_tier FROM users WHERE id = ?', [userId], (err, results) => {
-        if (err || !results.length) return res.json({ success: false, message: 'Kullanıcı bulunamadı' });
-        
-        const count = results[0].referral_count || 0;
-        const currentTier = results[0].referral_tier || 0;
-        
-        if (tierId !== currentTier + 1) return res.json({ success: false, message: 'Önceki ödülleri almalısınız.' });
-        
-        const reward = REFERRAL_REWARDS.find(r => r.tier === tierId);
-        if(!reward) return res.json({ success: false, message: 'Ödül bulunamadı.' });
-        
-        if (count < reward.required) return res.json({ success: false, message: 'Yeterli referans yok.' });
-        
-        // Give Reward (Only Diamonds)
-        db.query('UPDATE users SET diamond = diamond + ?, referral_tier = ? WHERE id = ?', 
-            [reward.diamond, tierId, userId], (err) => {
-                if(err) return res.json({ success: false, message: 'Hata oluştu' });
-                res.json({ success: true, message: `${reward.diamond} Elmas Eklendi!` });
-        });
-    });
-});
-
-
-/* ================= CRYPTO MINING SYSTEM ================= */
-const GPU_STATS = {
-    'gx_100': { hashrate: 25, power: 0.5, damage: 0.0001 },      // Günlük: 0.006 BTC
-    'gx_300': { hashrate: 80, power: 1.2, damage: 0.00015 },     // Günlük: 0.020 BTC
-    'gx_500': { hashrate: 200, power: 2.5, damage: 0.0002 },     // Günlük: 0.050 BTC
-    'gx_800': { hashrate: 400, power: 4.0, damage: 0.0003 },     // Günlük: 0.100 BTC
-    'gx_titan': { hashrate: 2500, power: 8.5, damage: 0.0005 }   // Günlük: 0.625 BTC
-};
-
-// REVISED BALANCED ECONOMY
-// 1 TH/s = 0.00025 BTC / Gün
-const BTC_PER_TH_DAILY = 0.00025000;
-
-app.get('/api/crypto/summary/:userId', (req, res) => {
-    const userId = req.params.userId;
-    
-    // Get User for slots and balance
-    db.query('SELECT btc, crypto_slots FROM users WHERE id = ?', [userId], (err, uRes) => {
-        if(err || !uRes.length) return res.status(500).json({success:false, message: 'User Error'});
-        const user = uRes[0];
-
-        // Get Rigs
-        db.query('SELECT * FROM player_rigs WHERE user_id = ? ORDER BY slot_index ASC', [userId], (err, rRes) => {
-            if(err) return res.status(500).json({success:false, message: 'Rig Error'});
-            
-            // const BTC_PER_TH_DAILY = 0.00000500;  <-- REMOVED (Now using global constant)
-            const BTC_PER_TH_SECOND = BTC_PER_TH_DAILY / 86400;
-
-            let totalHashrate = 0;
-            let totalPower = 0;
-            let activeRigs = 0;
-            let totalMined = 0;
-            let needsInit = false;
-            
-            const now = new Date();
-
-            const rigs = rRes.map(r => {
-                const stats = GPU_STATS[r.gpu_key] || { hashrate: 0, power: 0, damage: 0 };
-                
-                if(r.active && r.health > 0) {
-                    totalHashrate += stats.hashrate;
-                    totalPower += stats.power;
-                    activeRigs++;
-
-                    if (!r.last_collection) {
-                        // First Init for new rigs
-                        db.query('UPDATE player_rigs SET last_collection = NOW() WHERE id = ?', [r.id]);
-                        r.last_collection = now;
-                    } else {
-                        // Mining Calculation (Offline Progress)
-                        const lastCollection = new Date(r.last_collection);
-                        const diffSeconds = (now - lastCollection) / 1000;
-                        
-                        if(diffSeconds > 1) { // Min 1 second
-                            const minedAmount = stats.hashrate * BTC_PER_TH_SECOND * diffSeconds;
-                            totalMined += minedAmount;
-
-                            // Health Degradation System
-                            const damage = (stats.damage || 0.00005) * diffSeconds;
-                            r.health = Math.max(0, r.health - damage);
-
-                            if (r.health <= 0) {
-                                // Auto-Delete Broken Rig
-                                db.query('DELETE FROM player_rigs WHERE id = ?', [r.id]);
-                            } else {
-                                // Update Rig Health & Collection Time Individually
-                                db.query('UPDATE player_rigs SET health = ?, last_collection = NOW() WHERE id = ?', [r.health, r.id]);
-                            }
-                        }
-                    }
-                }
-
-                return {
-                    slot: r.slot_index,
-                    gpu: r.gpu_key,
-                    name: r.gpu_key.toUpperCase(),
-                    active: r.active,
-                    health: r.health,
-                    stats: stats
-                };
-            });
-            
-            // Process Earnings
-            if(totalMined > 0) {
-                db.query('UPDATE users SET btc = btc + ? WHERE id = ?', [totalMined, userId]);
-                
-                // --- UPDATE GLOBAL STATE ---
-                cryptoState.totalMined += totalMined;
-                saveCryptoState();
-                // ---------------------------
-
-                // Reflect in response
-                user.btc = (parseFloat(user.btc) || 0) + totalMined;
-            }
-            
-            // Calc Estimate
-            const estimatedEarnings = totalHashrate * BTC_PER_TH_DAILY;
-
-            res.json({
-                success: true,
-                btc_balance: user.btc,
-                crypto_slots: user.crypto_slots || 1,
-                total_hashrate: totalHashrate,
-                total_power: totalPower,
-                active_rigs: activeRigs,
-                estimated_earnings: estimatedEarnings,
-                rigs: rigs
-            });
-        });
-    });
-});
-
-app.post('/api/crypto/install', (req, res) => {
-    const { userId, slotIndex, gpuKey } = req.body;
-    
-    db.query('SELECT crypto_slots FROM users WHERE id = ?', [userId], (err, uRes) => {
-        if(err || !uRes.length) return res.status(500).json({success:false, message:'User Error'});
-        const maxSlots = uRes[0].crypto_slots;
-        
-        if (slotIndex >= maxSlots) return res.json({success:false, message:'Bu slot kilitli!'});
-
-        // Check Inventory
-        db.query('SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?', [userId, gpuKey], (err, iRes) => {
-            if(err) return res.status(500).json({success:false, message:'Inv Error'});
-            if(!iRes.length || iRes[0].quantity < 1) return res.json({success:false, message:'Ekran kartı yok!'});
-            
-            // Check Slot Empty
-            db.query('SELECT id FROM player_rigs WHERE user_id = ? AND slot_index = ?', [userId, slotIndex], (err, sRes) => {
-                if(sRes.length > 0) return res.json({success:false, message:'Slot dolu!'});
-
-                // Transaction: Remove from Inv -> Add to Rigs
-                db.beginTransaction(err => {
-                    if(err) return res.status(500).json({success:false});
-
-                    db.query('UPDATE inventory SET quantity = quantity - 1 WHERE user_id = ? AND item_key = ?', [userId, gpuKey], (err) => {
-                        if(err) return db.rollback(()=>res.json({success:false, message:'Stok düşülemedi'}));
-                        
-                        db.query('INSERT INTO player_rigs (user_id, slot_index, gpu_key, health, last_collection) VALUES (?, ?, ?, 100, NOW())', [userId, slotIndex, gpuKey], (err) => {
-                            if(err) return db.rollback(()=>res.json({success:false, message:'Takılamadı'}));
-                            
-                            db.commit(err => {
-                                if(err) return db.rollback(()=>res.json({success:false, message:'Commit Error'}));
-                                res.json({success:true, message:'GPU Başarıyla takıldı!'});
-                            });
-                        });
-                    });
-                });
-            });
-        });
-    });
-});
-
-app.post('/api/crypto/buy-slot', (req, res) => {
-    const { userId } = req.body;
-    
-    db.query('SELECT crypto_slots, money FROM users WHERE id = ?', [userId], (err, uRes) => {
-        if(err) return res.status(500).json({success:false});
-        const user = uRes[0];
-        
-        if(user.crypto_slots >= 10) return res.json({success:false, message:'Maksimum slot sayısına ulaştın!'});
-        
-        const price = 10000 * Math.pow(2, user.crypto_slots - 1);
-        
-        if(user.money < price) return res.json({success:false, message:'Yetersiz bakiye!'});
-        
-        db.query('UPDATE users SET money = money - ?, crypto_slots = crypto_slots + 1 WHERE id = ?', [price, userId], (err) => {
-            if(err) return res.status(500).json({success:false, message:'DB Error'});
-            res.json({success:true, message:'Yeni slot açıldı!'});
-        });
-    });
-});
-
-app.post('/api/crypto/remove-rig', (req, res) => {
-    const { userId, slotIndex } = req.body;
-    // Note: User logic says "trash it", so we delete it. Not return to inventory.
-    // Logic: Only allow removing if health <= 0 or user specifically requested trash.
-    // For now simple delete.
-    
-    db.query('DELETE FROM player_rigs WHERE user_id = ? AND slot_index = ?', [userId, slotIndex], (err) => {
-        if(err) return res.status(500).json({success:false});
-        res.json({success:true, message:'Rig söküldü ve atıldı.'});
-    });
-});
-
-/* ================= LOOTBOX SYSTEM ================= */
-app.get('/api/lootbox/keys/:userId', (req, res) => {
-    const userId = req.params.userId;
-    db.query("SELECT item_key, quantity FROM inventory WHERE user_id = ? AND item_key IN ('key_common','key_rare','key_epic','key_mystic')", [userId], (err, results) => {
-        if(err) return res.status(500).json({success:false});
-        
-        // Transform to object key:qty (frontend format)
-        const keys = { common: 0, rare: 0, mystic: 0, epic: 0 };
-        results.forEach(r => {
-            const k = r.item_key.replace('key_', '');
-            if(keys[k] !== undefined) keys[k] = r.quantity;
-        });
-        
-        res.json({ success: true, keys });
-    });
-});
-
-app.post('/api/lootbox/open', (req, res) => {
-    const { userId, boxType } = req.body; 
-    const keyItem = 'key_' + boxType;
-    
-    db.query('SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?', [userId, keyItem], (err, curr) => {
-        if(err) return res.json({ success: false, message: 'Veritabanı hatası' });
-        if(!curr.length || curr[0].quantity < 1) return res.json({ success: false, message: 'Yetersiz Anahtar!' });
-
-        // Decrease Key (Consume)
-        db.query('UPDATE inventory SET quantity = quantity - 1 WHERE user_id = ? AND item_key = ?', [userId, keyItem], (err) => {
-            if(err) return res.json({ success: false, message: 'İşlem hatası' });
-            
-            // --- Generate Rewards ---
-            const rewards = [];
-            const r = Math.random();
-            
-            // LOGIC
-            if (boxType === 'common') {
-                if (r < 0.1) {
-                    rewards.push({ type: 'item', key: 'gold', amount: 5 + Math.floor(Math.random()*5), name: 'Altın' });
-                } else {
-                    const mon = 2000 + Math.floor(Math.random() * 3000);
-                    rewards.push({ type: 'money', amount: mon, key: 'money' });
-                }
-            } 
-            else if (boxType === 'rare') {
-                if (r < 0.3) {
-                    rewards.push({ type: 'item', key: 'gold', amount: 15 + Math.floor(Math.random()*15), name: 'Altın' });
-                } else {
-                    const mon = 10000 + Math.floor(Math.random() * 5000);
-                    rewards.push({ type: 'money', amount: mon, key: 'money' });
-                }
-            }
-            else if (boxType === 'epic') {
-                 if (r < 0.4) {
-                     rewards.push({ type: 'item', key: 'gold', amount: 50 + Math.floor(Math.random()*30), name: 'Altın' });
-                 } else {
-                     const mon = 25000 + Math.floor(Math.random() * 15000);
-                     rewards.push({ type: 'money', amount: mon, key: 'money' });
-                 }
-            }
-            else if (boxType === 'mystic') {
-                 if (r < 0.5) {
-                     rewards.push({ type: 'item', key: 'gold', amount: 100 + Math.floor(Math.random()*50), name: 'Altın' });
-                 } else {
-                      const mon = 50000 + Math.floor(Math.random() * 25000);
-                      rewards.push({ type: 'money', amount: mon, key: 'money' });
-                 }
-            } else {
-                 // Fallback
-                 rewards.push({ type: 'money', amount: 500, key: 'money' });
-            }
-            
-            // Distribute (Simplified for Money/Gold)
-            const rw = rewards[0];
-            if (rw && rw.type === 'money') {
-                db.query('UPDATE users SET money = money + ? WHERE id = ?', [rw.amount, userId], () => {
-                    res.json({ success: true, rewards });
-                });
-            } else if (rw && rw.key === 'gold') {
-                db.query('UPDATE users SET gold = gold + ? WHERE id = ?', [rw.amount, userId], () => {
-                    res.json({ success: true, rewards });
-                });
-            } else {
-                res.json({ success: true, rewards });
-            }
-        });
-    });
-});
-
 const PORT = 3000;
 console.log('Attempting to start server on port ' + PORT);
 app.listen(PORT, () => {
@@ -7828,14 +7014,15 @@ app.get('/api/parties/:id', (req, res) => {
             // Get Members with Total Donations
             const membersQuery = `
                 SELECT u.id, u.username, u.avatar, u.role, u.party_role, u.level,
-                       COALESCE(SUM(pl.amount), 0) as total_donated 
+                       COALESCE(SUM(pl.amount), 0) as total_donated,
+                       (SELECT created_at FROM party_logs WHERE user_id = u.id AND party_id = ? AND action_type = 'join' ORDER BY id DESC LIMIT 1) as joined_at
                 FROM users u 
                 LEFT JOIN party_logs pl ON u.id = pl.user_id AND pl.party_id = ? AND pl.action_type = "deposit"
                 WHERE u.party_id = ? 
                 GROUP BY u.id
             `;
             
-            db.query(membersQuery, [partyId, partyId], (err, members) => {
+            db.query(membersQuery, [partyId, partyId, partyId], (err, members) => {
                 party.members = members || [];
                 
                 // Assign Roles
@@ -7903,7 +7090,7 @@ app.get('/api/party/my-party', (req, res) => {
 
 // Update Party Settings
 app.post('/api/party/settings', upload.single('logo'), (req, res) => {
-    const { partyId, name, abbr, ideology } = req.body;
+    const { partyId, userId, name, abbr, ideology } = req.body;
     const COST = 100000;
 
     if (!partyId) {
@@ -7911,11 +7098,12 @@ app.post('/api/party/settings', upload.single('logo'), (req, res) => {
     }
 
     // Check balance first
-    db.query('SELECT vault FROM parties WHERE id = ?', [partyId], (err, results) => {
+    db.query('SELECT vault, name, abbr, ideology, leader_id FROM parties WHERE id = ?', [partyId], (err, results) => {
         if (err) return res.status(500).json({ success: false, message: 'DB Error' });
         if (results.length === 0) return res.status(404).json({ success: false, message: 'Parti bulunamadı.' });
 
-        const currentVault = results[0].vault;
+        const currentData = results[0];
+        const currentVault = currentData.vault;
         if (currentVault < COST) {
             return res.json({ success: false, message: `Yetersiz bakiye. Güncelleme ücreti: ${COST.toLocaleString()} ₺` });
         }
@@ -7970,9 +7158,27 @@ app.post('/api/party/settings', upload.single('logo'), (req, res) => {
                     db.query(query, params, (err) => {
                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Settings Update Error' }));
 
-                        db.commit(err => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                            res.json({ success: true, message: 'Ayarlar güncellendi.', image_path: logoPath });
+                        // Fetch User to determine Rank
+                        db.query('SELECT role, party_role FROM users WHERE id = ?', [userId], (err, uRes) => {
+                            let roleDisplay = 'Üye';
+                            if(!err && uRes.length > 0) {
+                                const u = uRes[0];
+                                if(Number(userId) === Number(currentData.leader_id)) roleDisplay = 'Genel Başkan';
+                                else if(u.party_role) roleDisplay = u.party_role;
+                                else if(u.role && u.role !== 'user') roleDisplay = u.role;
+                            }
+
+                            // Log Format: "<bold>Rank</bold> Ayar Güncelleme işlemi yaptı. Parti Kasasından 100.000 TL harcadı."
+                            const logMsg = `<span style="font-weight:bold;">${roleDisplay}</span> Ayar Güncelleme işlemi yaptı. Parti Kasasından ${COST.toLocaleString('tr-TR')} TL harcadı.`;
+                            
+                            db.query('INSERT INTO party_logs (party_id, user_id, action_type, message, amount) VALUES (?, ?, "settings_update", ?, ?)', [partyId, userId || 0, logMsg, COST], (err) => {  
+                                if(err) console.error("Log error", err);
+                                
+                                db.commit(err => {
+                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                                    res.json({ success: true, message: 'Ayarlar güncellendi.', image_path: logoPath });
+                                });
+                            });
                         });
                     });
                 });
@@ -8019,6 +7225,9 @@ app.post('/api/party/publish-message', (req, res) => {
                     // Update Announcement
                     db.query('UPDATE parties SET announcement = ?, announcement_date = NOW() WHERE id = ?', [message, partyId], (err) => {
                         if (err) return db.rollback(() => res.status(500).json({ success: false }));
+
+                        // LOG
+                        db.query('INSERT INTO party_logs (party_id, user_id, action_type, message, amount) VALUES (?, ?, "announcement", "Parti duyurusu yayınlandı.", ?)', [partyId, userId, COST], (err) => {});
 
                         db.commit(err => {
                             if (err) return db.rollback(() => res.status(500).json({ success: false }));
@@ -8072,6 +7281,24 @@ app.get('/api/party/member-logs/:partyId/:userId', (req, res) => {
     });
 });
 
+// Get All Party Logs (For Log Tab)
+app.get('/api/party/logs/:partyId', (req, res) => {
+    const { partyId } = req.params;
+    const query = `
+        SELECT pl.*, u.username, u.avatar 
+        FROM party_logs pl 
+        LEFT JOIN users u ON pl.user_id = u.id 
+        WHERE pl.party_id = ? 
+        ORDER BY pl.created_at DESC 
+        LIMIT 100
+    `;
+    db.query(query, [partyId], (err, logs) => {
+        if (err) return res.status(500).json({ success: false });
+        res.json({ success: true, logs });
+    });
+});
+
+
 // Withdraw Money
 app.post('/api/party/withdraw', (req, res) => {
     const { partyId, userId, amount } = req.body;
@@ -8089,6 +7316,9 @@ app.post('/api/party/withdraw', (req, res) => {
                 db.query('UPDATE users SET money = money + ? WHERE id = ?', [amount, userId], (err) => {
                     if(err) return db.rollback(() => res.status(500).json({ success: false }));
                     
+                    // LOG
+                    db.query('INSERT INTO party_logs (party_id, user_id, action_type, message, amount) VALUES (?, ?, "withdraw", "Kasadan para çekildi.", ?)', [partyId, userId, amount], (err) => {});
+
                     db.commit(err => {
                         if(err) return db.rollback(() => res.status(500).json({ success: false }));
                         res.json({ success: true, message: 'Para çekildi.' });
@@ -8101,7 +7331,7 @@ app.post('/api/party/withdraw', (req, res) => {
 
 // Promote/Demote Member (Sequential)
 app.post('/api/party/promote', (req, res) => {
-    const { partyId, userId, type } = req.body; // type: 'promote' or 'demote'
+    const { partyId, userId, type, leaderId } = req.body; // type: 'promote' or 'demote'
     const COST = 50000;
 
     const roles = ['Üye', 'Teşkilat Sorumlusu', 'Başkan Yardımcısı', 'Genel Başkan'];
@@ -8140,6 +7370,10 @@ app.post('/api/party/promote', (req, res) => {
                         db.query('UPDATE users SET role = ? WHERE id = ?', [newRole, userId], (err) => {
                             if(err) return db.rollback(() => res.status(500).json({ success: false }));
                             
+                            // LOG
+                            db.query('INSERT INTO party_logs (party_id, user_id, action_type, message, amount) VALUES (?, ?, "promote", ?, ?)', 
+                                [partyId, leaderId || userId, `Üye ${newRole} görevine atandı.`, COST], (err) => {});
+
                             db.commit(err => {
                                 if(err) return db.rollback(() => res.status(500).json({ success: false }));
                                 res.json({ success: true, message: `Kullanıcı ${newRole} oldu.` });
@@ -8183,24 +7417,38 @@ app.post('/api/party/set-role', (req, res) => {
 
         // Handle Leadership Transfer
         if(newRole === 'Genel Başkan') {
-            db.beginTransaction(err => {
-                if(err) return res.status(500).json({ success: false });
+            db.query('SELECT username FROM users WHERE id = ?', [targetUserId], (uErr, uRes) => {
+                const targetName = (uRes && uRes.length) ? uRes[0].username : 'Bilinmeyen';
 
-                // 1. Demote current leader to 'Üye'
-                db.query('UPDATE users SET role = "Üye", party_role = "Üye" WHERE id = ?', [leaderId], (err) => {
-                    if(err) return db.rollback(() => res.status(500).json({ success: false }));
+                db.beginTransaction(err => {
+                    if(err) return res.status(500).json({ success: false });
 
-                    // 2. Promote target to 'Genel Başkan'
-                    db.query('UPDATE users SET role = "Genel Başkan", party_role = "Genel Başkan" WHERE id = ?', [targetUserId], (err) => {
+                    // 1. Demote current leader to 'Üye'
+                    db.query('UPDATE users SET role = "Üye", party_role = "Üye" WHERE id = ?', [leaderId], (err) => {
                         if(err) return db.rollback(() => res.status(500).json({ success: false }));
 
-                        // 3. Update Party Leader ID
-                        db.query('UPDATE parties SET leader_id = ? WHERE id = ?', [targetUserId, partyId], (err) => {
+                        // 2. Promote target to 'Genel Başkan'
+                        db.query('UPDATE users SET role = "Genel Başkan", party_role = "Genel Başkan" WHERE id = ?', [targetUserId], (err) => {
                             if(err) return db.rollback(() => res.status(500).json({ success: false }));
 
-                            db.commit(err => {
+                            // 3. Update Party Leader ID
+                            db.query('UPDATE parties SET leader_id = ? WHERE id = ?', [targetUserId, partyId], (err) => {
                                 if(err) return db.rollback(() => res.status(500).json({ success: false }));
-                                res.json({ success: true, message: 'Başkanlık devredildi.' });
+
+                                // LOG
+                                const logMsg = `Genel Başkanlık <span style="font-weight:bold; color:#fff;">${targetUserId} - ${targetName}</span> Adlı Oyuncuya devredildi.`;
+                                db.query('INSERT INTO party_logs (party_id, user_id, action_type, message) VALUES (?, ?, "role_change", ?)', [partyId, targetUserId, logMsg], (err) => {});
+
+                                db.commit(err => {
+                                    if(err) return db.rollback(() => res.status(500).json({ success: false }));
+
+                                    // Notify new leader
+                                    const notifTitle = "Parti Başkanlığı";
+                                    const notifMsg = "Tebrikler! Parti Genel Başkanlığı görevi size devredildi.";
+                                    db.query('INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)', [targetUserId, notifTitle, notifMsg, 'party']);
+
+                                    res.json({ success: true, message: 'Başkanlık devredildi.' });
+                                });
                             });
                         });
                     });
@@ -8225,9 +7473,27 @@ app.post('/api/party/set-role', (req, res) => {
             }
 
             function updateRole() {
-                db.query('UPDATE users SET role = ?, party_role = ? WHERE id = ?', [newRole, newRole, targetUserId], (err) => {
-                    if(err) return res.status(500).json({ success: false, message: 'DB Error' });
-                    res.json({ success: true, message: 'Rol güncellendi.' });
+                // Get target username first for logging
+                db.query('SELECT username FROM users WHERE id = ?', [targetUserId], (uErr, uRes) => {
+                    const targetName = (uRes && uRes.length) ? uRes[0].username : 'Bilinmeyen';
+
+                    db.query('UPDATE users SET role = ?, party_role = ? WHERE id = ?', [newRole, newRole, targetUserId], (err) => {
+                        if(err) return res.status(500).json({ success: false, message: 'DB Error' });
+
+                        // Log Format: "targetId targetName Adlı oyuncu Genel Başkan Tarafından Role Görevine Atandı"
+                        const logMsg = `<span style="font-weight:bold; color:#fff;">${targetUserId} - ${targetName}</span> Adlı oyuncu <span style="font-weight:bold;">Genel Başkan</span> Tarafından <span style="font-weight:bold;">${newRole}</span> Görevine Atandı`;
+
+                        // LOG
+                        db.query('INSERT INTO party_logs (party_id, user_id, action_type, message) VALUES (?, ?, "role_change", ?)', 
+                            [partyId, targetUserId, logMsg], (err) => {});
+
+                        // Notify member
+                        const notifTitle = "Görev Ataması";
+                        const notifMsg = `Parti içi göreviniz '${newRole}' olarak güncellendi.`;
+                        db.query('INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)', [targetUserId, notifTitle, notifMsg, 'party']);
+
+                        res.json({ success: true, message: 'Rol güncellendi.' });
+                    });
                 });
             }
         }
@@ -8350,6 +7616,8 @@ app.post('/api/party/leave', (req, res) => {
                 
                 if (partyRes.length > 0) {
                     db.query('UPDATE parties SET members_count = members_count - 1 WHERE id = ?', [user.party_id]);
+                    // LOG
+                    db.query('INSERT INTO party_logs (party_id, user_id, action_type, message) VALUES (?, ?, "leave", "Partiden ayrıldı.")', [user.party_id, userId], (err) => {});
                 }
                 
                 res.json({ success: true, message: 'Partiden ayrıldınız.' });
@@ -8359,31 +7627,59 @@ app.post('/api/party/leave', (req, res) => {
 });
 
 app.post('/api/party/kick', (req, res) => {
-    const { partyId, userId } = req.body;
+    const { partyId, userId, kickerId } = req.body;
 
-    // 1. Get Party Name
-    db.query('SELECT name FROM parties WHERE id = ?', [partyId], (err, parties) => {
+    // 1. Get Party Name and Leader (to determine rank correctly)
+    db.query('SELECT name, leader_id FROM parties WHERE id = ?', [partyId], (err, parties) => {
         if (err) return res.status(500).json({ success: false });
-        const partyName = (parties && parties.length > 0) ? parties[0].name : 'Parti';
+        const partyData = (parties && parties.length > 0) ? parties[0] : { name: 'Parti', leader_id: 0 };
+        const partyName = partyData.name;
+        const leaderId = partyData.leader_id;
 
-        // 2. Remove User from Party
-        db.query('UPDATE users SET party_id = NULL, role = NULL, party_role = NULL WHERE id = ? AND party_id = ?', [userId, partyId], (err) => {
-            if(err) return res.status(500).json({ success: false });
+        // Get Kicker Info
+        db.query('SELECT username, role, party_role FROM users WHERE id = ?', [kickerId], (err, kickers) => {
+            if(err || !kickers.length) return res.status(500).json({ success: false });
+            const kicker = kickers[0];
             
-            // 3. Update Member Count
-            db.query('UPDATE parties SET members_count = members_count - 1 WHERE id = ?', [partyId]);
+            // Determine Role Display
+            let kickerRoleDisplay = kicker.party_role;
+            if(!kickerRoleDisplay) {
+                if(Number(kickerId) === Number(leaderId)) kickerRoleDisplay = 'Genel Başkan';
+                else if(kicker.role && kicker.role !== 'user') kickerRoleDisplay = kicker.role;
+                else kickerRoleDisplay = 'Üye';
+            }
 
-            // 4. Send Notification
-            const notifTitle = 'Partiden Çıkarıldınız';
-            const notifMsg = `${partyName} partisinden çıkarıldınız.`;
+            // Get Kicked User Info
+            db.query('SELECT username FROM users WHERE id = ?', [userId], (err, kickedUsers) => {
+                if(err || !kickedUsers.length) return res.status(500).json({ success: false });
+                const kickedUser = kickedUsers[0];
+
+                // 2. Remove User from Party
+                db.query('UPDATE users SET party_id = NULL, role = NULL, party_role = NULL WHERE id = ? AND party_id = ?', [userId, partyId], (err) => {
+                    if(err) return res.status(500).json({ success: false });
             
-            db.query('INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)', 
-                [userId, notifTitle, notifMsg, 'party_kick'], 
-                (err) => {
-                    if (err) console.error('Notification error:', err);
-                    res.json({ success: true });
-                }
-            );
+                    // 3. Update Member Count
+                    db.query('UPDATE parties SET members_count = members_count - 1 WHERE id = ?', [partyId]);
+
+                    // LOG
+                    // Log Format: "<bold>Rank</bold> tarafından <bold>targetId - targetName</bold>..."
+                    // We use HTML tags here because the frontend renders with innerHTML
+                    const logMsg = `<span style="color:#fff; font-weight:bold;">${kickerRoleDisplay}</span> tarafından <span style="color:#fff; font-weight:bold;">${userId} - ${kickedUser.username}</span> adlı oyuncu partiden ihraç edildi`;
+                    db.query('INSERT INTO party_logs (party_id, user_id, action_type, message) VALUES (?, ?, "kick", ?)', [partyId, kickerId, logMsg], (err) => {});
+
+                    // 4. Send Notification
+                    const notifTitle = 'Partiden Çıkarıldınız';
+                    const notifMsg = `${partyName} partisinden çıkarıldınız.`;
+            
+                    db.query('INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)', 
+                        [userId, notifTitle, notifMsg, 'party_kick'], 
+                        (err) => {
+                            if (err) console.error('Notification error:', err);
+                            res.json({ success: true, message: 'Üye partiden atıldı.' });
+                        }
+                    );
+                });
+            });
         });
     });
 });
@@ -8392,56 +7688,40 @@ app.post('/api/party/kick', (req, res) => {
 app.post('/api/party/application/accept', (req, res) => {
     const { partyId, applicationId } = req.body;
     
-    // Check Party Capacity
-    db.query('SELECT members_count, level FROM parties WHERE id = ?', [partyId], (err, pRes) => {
-        if(err) return res.status(500).json({ success: false, message: 'DB Error' });
-        if(pRes.length === 0) return res.status(404).json({ success: false, message: 'Parti bulunamadı.' });
+    db.query('SELECT user_id FROM party_applications WHERE id = ?', [applicationId], (err, apps) => {
+        if(err || apps.length === 0) return res.status(404).json({ success: false });
+        const userId = apps[0].user_id;
         
-        const party = pRes[0];
-        const capacity = (party.level || 1) * 50;
-        
-        if((party.members_count || 0) >= capacity) {
-            return res.json({ success: false, message: `Parti kapasitesi dolu! (${party.members_count}/${capacity}). Seviye atlayarak kapasiteyi artırabilirsiniz.` });
-        }
+        db.beginTransaction(err => {
+            if(err) return res.status(500).json({ success: false });
 
-        db.query('SELECT user_id FROM party_applications WHERE id = ?', [applicationId], (err, apps) => {
-            if(err || apps.length === 0) return res.status(404).json({ success: false });
-            const userId = apps[0].user_id;
+            // 1. Update User
+            db.query('UPDATE users SET party_id = ?, role = "Üye", party_role = "Üye" WHERE id = ?', [partyId, userId], (err) => {
+                if(err) return db.rollback(() => res.status(500).json({ success: false }));
+                
+                // LOG
+                db.query('INSERT INTO party_logs (party_id, user_id, action_type, message) VALUES (?, ?, "join", "Partiye katıldı.")', [partyId, userId], (err) => {});
 
-            // Check if user is already in a party
-            db.query('SELECT party_id FROM users WHERE id = ?', [userId], (err, users) => {
-                if(err) return res.status(500).json({ success: false });
-                if(users.length > 0 && users[0].party_id) {
-                    // User already in a party - delete application and notify?
-                    db.query('DELETE FROM party_applications WHERE user_id = ?', [userId]);
-                    return res.json({ success: false, message: 'Kullanıcı zaten başka bir partiye üye.' });
-                }
-            
-                db.beginTransaction(err => {
-                db.query('UPDATE users SET party_id = ?, role = "Üye", party_role = "Üye" WHERE id = ?', [partyId, userId], (err) => {
+                // Delete ALL applications for this user (including the current one)
+                db.query('DELETE FROM party_applications WHERE user_id = ?', [userId], (err) => {
                     if(err) return db.rollback(() => res.status(500).json({ success: false }));
                     
-                    // DELETE ALL APPLICATIONS OF THIS USER
-                    db.query('DELETE FROM party_applications WHERE user_id = ?', [userId], (err) => {
+                    db.query('UPDATE parties SET members_count = members_count + 1 WHERE id = ?', [partyId], (err) => {
                         if(err) return db.rollback(() => res.status(500).json({ success: false }));
-                        
-                        db.query('UPDATE parties SET members_count = members_count + 1 WHERE id = ?', [partyId], (err) => {
-                            if(err) return db.rollback(() => res.status(500).json({ success: false }));
 
-                            // Get Party Name for Notification
-                            db.query('SELECT name FROM parties WHERE id = ?', [partyId], (err, parties) => {
-                                const partyName = (parties && parties.length > 0) ? parties[0].name : 'Parti';
+                        // Get Party Name for Notification
+                        db.query('SELECT name FROM parties WHERE id = ?', [partyId], (err, parties) => {
+                            const partyName = (parties && parties.length > 0) ? parties[0].name : 'Parti';
+                            
+                            // Send Notification
+                            const notifTitle = 'Parti Başvurusu Kabul Edildi';
+                            const notifMsg = `${partyName} partisine yaptığınız başvuru kabul edildi. Tebrikler!`;
+                            db.query('INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)', 
+                                [userId, notifTitle, notifMsg, 'party_action'], (err) => {
                                 
-                                // Send Notification
-                                const notifTitle = 'Parti Başvurusu Kabul Edildi';
-                                const notifMsg = `${partyName} partisine yaptığınız başvuru kabul edildi. Tebrikler!`;
-                                db.query('INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)', 
-                                    [userId, notifTitle, notifMsg, 'party_action'], (err) => {
-                                    
-                                    db.commit(err => {
-                                        if(err) return db.rollback(() => res.status(500).json({ success: false }));
-                                        res.json({ success: true });
-                                    });
+                                db.commit(err => {
+                                    if(err) return db.rollback(() => res.status(500).json({ success: false }));
+                                    res.json({ success: true });
                                 });
                             });
                         });
@@ -8449,7 +7729,6 @@ app.post('/api/party/application/accept', (req, res) => {
                 });
             });
         });
-    });
     });
 });
 
@@ -8971,7 +8250,6 @@ app.post('/api/crypto/trade', (req, res) => {
         const user = users[0];
         const now = new Date();
         
-        /* Rate Limit Removed
         if (user.last_crypto_trade) {
             const diff = (now - new Date(user.last_crypto_trade)) / 1000;
             if (diff < 60) { // 60s LIMIT
@@ -8979,7 +8257,6 @@ app.post('/api/crypto/trade', (req, res) => {
                 return res.json({ success: false, message: `İşlem sınırı: ${waitTime} saniye bekleyin.` });
             }
         }
-        */
 
         // Get Price
         db.query('SELECT price FROM market_history ORDER BY id DESC LIMIT 1', (err, prices) => {
@@ -8989,17 +8266,10 @@ app.post('/api/crypto/trade', (req, res) => {
             if (type === 'buy') {
                 if (user.money < totalCost) return res.json({ success: false, message: 'Yetersiz Bakiye' });
                 
-                // --- CHECK FLOATING SUPPLY ---
-                if (val > cryptoState.floatingBTC) {
-                    return res.json({ success: false, message: `Piyasada yeterli arz yok! (Stok: ${cryptoState.floatingBTC.toFixed(5)} BTC)` });
-                }
-                // -----------------------------
-
                 db.beginTransaction(err => {
                     // Update User (Money, BTC, Timestamp)
-                    // USE JS DATE for Consistency to avoid Timezone Skews (170s bug)
-                    db.query('UPDATE users SET money = money - ?, btc = btc + ?, last_crypto_trade = ? WHERE id = ?', 
-                        [totalCost, val, new Date(), userId], (err) => {
+                    db.query('UPDATE users SET money = money - ?, btc = btc + ?, last_crypto_trade = NOW() WHERE id = ?', 
+                        [totalCost, val, userId], (err) => {
                         if(err) return db.rollback(() => res.json({ success: false, message: 'DB Error 1' }));
                         
                         // Log Trade
@@ -9008,12 +8278,6 @@ app.post('/api/crypto/trade', (req, res) => {
                             
                             db.commit(err => {
                                 if(err) return db.rollback(() => res.json({ success: false, message: 'Commit Error' }));
-                                
-                                // --- UPDATE FLOATING ---
-                                cryptoState.floatingBTC = Math.max(0, cryptoState.floatingBTC - val);
-                                saveCryptoState();
-                                // -----------------------
-
                                 res.json({ success: true, message: `Alım Başarılı: ${val} BTC` });
                             });
                         });
@@ -9025,9 +8289,8 @@ app.post('/api/crypto/trade', (req, res) => {
 
                  db.beginTransaction(err => {
                     // Update User (Money, BTC, Timestamp)
-                    // USE JS DATE for Consistency
-                    db.query('UPDATE users SET money = money + ?, btc = btc - ?, last_crypto_trade = ? WHERE id = ?', 
-                        [totalCost, val, new Date(), userId], (err) => {
+                    db.query('UPDATE users SET money = money + ?, btc = btc - ?, last_crypto_trade = NOW() WHERE id = ?', 
+                        [totalCost, val, userId], (err) => {
                         if(err) return db.rollback(() => res.json({ success: false, message: 'DB Error 1' }));
                         
                         // Log Trade
@@ -9036,12 +8299,6 @@ app.post('/api/crypto/trade', (req, res) => {
                             
                             db.commit(err => {
                                 if(err) return db.rollback(() => res.json({ success: false, message: 'Commit Error' }));
-                                
-                                // --- UPDATE FLOATING ---
-                                cryptoState.floatingBTC += val;
-                                saveCryptoState();
-                                // -----------------------
-
                                 res.json({ success: true, message: `Satış Başarılı: +$${totalCost.toFixed(2)}` });
                             });
                         });
@@ -9054,790 +8311,233 @@ app.post('/api/crypto/trade', (req, res) => {
 
 // 3. Price Simulation
 setInterval(() => {
-    // New Price Logic based on Total Mined and Floating Supply
-    const newPrice = calculateCryptoPrice();
-    
-    // Slight jitter to make it look alive (±0.5%)
-    const jitter = (Math.random() - 0.5) * 0.01;
-    const finalPrice = newPrice * (1 + jitter);
-
-    db.query('INSERT INTO market_history (price, volume) VALUES (?, ?)', [finalPrice, Math.random() * 5], (err) => {
-        if(err) console.error(err);
-    });
-}, 30000); // Every 30 seconds update price
-
-// --- ADMIN STATS ---
-app.get('/api/admin/crypto-stats', (req, res) => {
-    db.query('SELECT SUM(amount) as volume, SUM(total_price) as fiat_volume FROM market_trades', (err, results) => {
-        const volume = (results && results[0] && results[0].volume) || 0;
-        const fiatVolume = (results && results[0] && results[0].fiat_volume) || 0;
+    // Get last price
+    db.query('SELECT price FROM market_history ORDER BY id DESC LIMIT 1', (err, results) => {
+        if(err) return;
+        let currentPrice = results.length ? parseFloat(results[0].price) : 100.00;
         
-        res.json({
-            totalMined: cryptoState.totalMined,
-            floatingBTC: cryptoState.floatingBTC,
-            price: calculateCryptoPrice(),
-            volumeBTC: volume,
-            volumeMoney: fiatVolume
+        // Random Walk
+        // Volatility between -2% and +2%
+        const changePercent = (Math.random() - 0.5) * 0.04; 
+        let newPrice = currentPrice * (1 + changePercent);
+        
+        // Bias towards 1000 if it drifts too far? 
+        // Or just hard limits
+        if(newPrice < 100) newPrice = 100;
+        
+        db.query('INSERT INTO market_history (price, volume) VALUES (?, ?)', [newPrice, Math.random() * 5], (err) => {
+            if(err) console.error(err);
         });
     });
-});
+}, 30000);
 
+// --- CRYPTO MINING SYSTEM ---
 
-
-// ---------------------------------------------------------------------
-// USER BUSINESSES API
-// ---------------------------------------------------------------------
-
-// Get User Businesses
-app.get('/api/user-businesses', (req, res) => {
-    const userId = req.query.user_id;
-    if (!userId) return res.status(400).json({ success: false, message: 'User ID required' });
-
-    db.query('SELECT * FROM user_businesses WHERE user_id = ?', [userId], (err, results) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).json({ success: false, message: 'Database error' });
-        }
-        res.json({ success: true, businesses: results });
-    });
-});
-
-// Buy Business
-app.post('/api/business/buy', (req, res) => {
-    const { user_id, business_type } = req.body;
-    
-    // Config Prices
-    const BUSINESS_PRICES = {
-        'rent_a_car': 1000000, // 1 Million
-        'real_estate': 5000000 // 5 Million
-    };
-
-    if (!BUSINESS_PRICES[business_type]) {
-        return res.status(400).json({ success: false, message: 'Geçersiz işletme türü' });
-    }
-
-    const cost = BUSINESS_PRICES[business_type];
-
-    // Check user money and ownership
-    db.query('SELECT money FROM users WHERE id = ?', [user_id], (err, users) => {
-        if (err || users.length === 0) return res.status(500).json({ success: false, message: 'Kullanıcı hatası' });
-        
-        const userMoney = users[0].money;
-
-        // Check if already owned
-        db.query('SELECT * FROM user_businesses WHERE user_id = ? AND business_type = ?', [user_id, business_type], (err, businesses) => {
-            if (businesses.length > 0) {
-                return res.status(400).json({ success: false, message: 'Bu işletmeye zaten sahipsiniz.' });
-            }
-
-            if (userMoney < cost) {
-                return res.status(400).json({ success: false, message: 'Yetersiz bakiye (Gereken: ' + cost.toLocaleString() + ')' });
-            }
-
-            // Execute Transaction
-            db.beginTransaction(err => {
-                if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
-
-                // Deduct Money
-                db.query('UPDATE users SET money = money - ? WHERE id = ?', [cost, user_id], (err) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Para düşülemedi' }));
-
-                    // Add Business
-                    db.query('INSERT INTO user_businesses (user_id, business_type) VALUES (?, ?)', [user_id, business_type], (err) => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'İşletme eklenemedi' }));
-
-                        db.commit(err => {
-                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
-                            res.json({ success: true, message: 'İşletme başarıyla satın alındı!' });
-                        });
-                    });
-                });
-            });
-        });
-    });
-});
-
-
-
-// ==========================================
-// RENT A CAR BUSINESS LOGIC
-// ==========================================
-
-const RENT_ACAR_CONFIG = {
-    'noventis': { income: 500, damage: 2, duration: 1 },
-    'stradeo': { income: 750, damage: 1.5, duration: 2 },
-    'rugnar': { income: 1200, damage: 1.2, duration: 3 },
-    'veltrano': { income: 2500, damage: 1, duration: 4 },
-    'zentaro': { income: 5000, damage: 0.5, duration: 5 }
+const GPU_STATS = {
+    'gx_100': { hashrate: 25, daily: 0.006, power: 100 },
+    'gx_300': { hashrate: 80, daily: 0.020, power: 250 },
+    'gx_500': { hashrate: 200, daily: 0.050, power: 500 },
+    'gx_800': { hashrate: 400, daily: 0.100, power: 850 },
+    'gx_titan': { hashrate: 2500, daily: 0.625, power: 2000 }
 };
 
-// Get Garage & Business State
-app.get('/api/business/rent-a-car/:userId', (req, res) => {
+// 1. Get Mining Summary
+app.get('/api/crypto/summary/:userId', (req, res) => {
     const userId = req.params.userId;
     
-    // Ensure business record exists
-    db.query('INSERT IGNORE INTO user_business (user_id) VALUES (?)', [userId], (err) => {
-        if (err) console.error('Biz init error:', err);
+    // Get User Info (BTC, Slots)
+    db.query('SELECT btc, crypto_slots FROM users WHERE id = ?', [userId], (err, users) => {
+        if(err || !users.length) return res.json({ success: false, message: 'User not found' });
+        const user = users[0];
         
-        const sql = `
-            SELECT b.rent_a_car_balance, b.level, b.upgrade_end_time,
-                   g.id as slot_record_id, g.slot_id, g.car_type, g.durability, g.last_collection_time
-            FROM user_business b
-            LEFT JOIN user_garage g ON b.user_id = g.user_id
-            WHERE b.user_id = ?
-        `;
-        
-        db.query(sql, [userId], (err, results) => {
-            if (err) return res.status(500).json({ error: err.message });
+        // Get Rigs
+        db.query('SELECT * FROM player_rigs WHERE user_id = ? ORDER BY slot_index ASC', [userId], (err, rigs) => {
+            if(err) return res.json({ success: false, message: 'DB Error' });
             
-            let balance = 0;
-            let level = 1;
-            let upgradeEndTime = null;
-            let slots = [];
+            const activeRigs = rigs || [];
+            let totalHashrate = 0;
+            let dailyEarnings = 0;
+            let totalPower = 0;
             
-            if (results.length > 0) {
-                balance = results[0].rent_a_car_balance;
-                level = results[0].level || 1;
-                upgradeEndTime = results[0].upgrade_end_time;
-                
-                results.forEach(row => {
-                    if (row.slot_record_id) {
-                        const config = RENT_ACAR_CONFIG[row.car_type] || { income: 0, damage: 0, duration: 1 };
-                        
-                        // Calculate Pending Income
-                        const now = new Date();
-                        const last = new Date(row.last_collection_time);
-                        const diffMs = now - last;
-                        const minutes = Math.floor(diffMs / (1000 * 60));
-                        
-                        // Cap at duration (No passive income after rental ends)
-                        const duration = config.duration || 1;
-                        const effectiveMinutes = Math.min(minutes, duration);
-                        
-                        const pending = Math.floor(effectiveMinutes * (config.income / duration));
-
-                        // Calculate Remaining MS for next collection
-                        const durationMs = (config.duration || 1) * 60 * 1000;
-                        let remainingMs = 0;
-                        
-                        if (diffMs < durationMs) {
-                             remainingMs = durationMs - diffMs;
-                        }
-                        
-                        slots.push({
-                            id: row.slot_record_id,
-                            slot_id: row.slot_id,
-                            car_type: row.car_type,
-                            durability: row.durability,
-                            pending_income: pending > 0 ? pending : 0,
-                            hours_passed: minutes, // Keeping key for frontend compatibility
-                            remaining_ms: remainingMs,
-                            last_collection_time: row.last_collection_time,
-                            duration: config.duration || 1
-                        });
-                    }
-                });
-            }
-            
-            res.json({ balance, level, slots, upgradeEndTime });
-        });
-    });
-});
-
-// Upgrade Business Start
-app.post('/api/business/rent-a-car/start-upgrade', (req, res) => {
-    const { userId } = req.body;
-    db.query('SELECT level, upgrade_end_time FROM user_business WHERE user_id = ?', [userId], (err, results) => {
-        if (err || !results.length) return res.status(500).json({ success: false, message: 'İşletme bulunamadı.' });
-        
-        // If already upgrading
-        if (results[0].upgrade_end_time && new Date(results[0].upgrade_end_time) > new Date()) {
-             return res.json({ success: true, message: 'Geliştirme zaten devam ediyor', endTime: results[0].upgrade_end_time });
-        }
-
-        const currentLevel = results[0].level || 1;
-        const costs = {
-            money: currentLevel * 500000,
-            gold: currentLevel * 10,
-            inventory: {
-                'lumber': currentLevel * 50,
-                'brick': currentLevel * 50,
-                'glass': currentLevel * 20,
-                'concrete': currentLevel * 20,
-                'steel': currentLevel * 10
-            }
-        };
-        
-        // Check User Money/Gold
-        db.query('SELECT money, gold FROM users WHERE id = ?', [userId], (err, users) => {
-            if (err) return res.status(500).json({ success: false, message: 'DB Hatası' });
-            const user = users[0];
-            if (user.money < costs.money) return res.json({ success: false, message: 'Yetersiz Para' });
-            if (user.gold < costs.gold) return res.json({ success: false, message: 'Yetersiz Altın' });
-
-            // Check Inventory
-            const itemKeys = Object.keys(costs.inventory);
-            db.query('SELECT item_key, quantity FROM inventory WHERE user_id = ? AND item_key IN (?)', [userId, itemKeys], (err, invRows) => {
-                if (err) return res.status(500).json({ success: false, message: 'Envanter Hatası' });
-                
-                const invMap = {};
-                invRows.forEach(r => invMap[r.item_key] = r.quantity);
-                
-                for (const k of itemKeys) {
-                    if ((invMap[k] || 0) < costs.inventory[k]) {
-                        return res.json({ success: false, message: `Yetersiz Malzeme: ${k}` });
-                    }
-                }
-                
-                // Deduct & Start
-                const durationSecs = currentLevel * 10;
-                
-                // 1. Deduct Money/Gold
-                db.query('UPDATE users SET money = money - ?, gold = gold - ? WHERE id = ?', [costs.money, costs.gold, userId], (err) => {
-                    if (err) return res.status(500).json({ success: false, message: 'Para düşülemedi' });
-
-                    // 2. Deduct Inventory
-                    let completed = 0;
-                    itemKeys.forEach(k => {
-                        db.query('UPDATE inventory SET quantity = quantity - ? WHERE user_id = ? AND item_key = ?', [costs.inventory[k], userId, k], () => {
-                            completed++;
-                            if(completed === itemKeys.length) {
-                                // 3. Set End Time
-                                const sqlTime = `UPDATE user_business SET upgrade_end_time = DATE_ADD(NOW(), INTERVAL ${durationSecs} SECOND) WHERE user_id = ?`;
-                                db.query(sqlTime, [userId], (err) => {
-                                    if(err) return res.status(500).json({ success: false, message: 'Start error' });
-                                    // Get it back
-                                    db.query('SELECT upgrade_end_time FROM user_business WHERE user_id = ?', [userId], (err, finalRes) => {
-                                        res.json({ success: true, message: 'Geliştirme Başladı', endTime: finalRes[0].upgrade_end_time, duration: durationSecs });
-                                    });
-                                });
-                            }
-                        });
-                    });
-                });
+            const rigData = activeRigs.map(r => {
+                const stats = GPU_STATS[r.gpu_key] || { hashrate: 0, daily: 0, power: 0 };
+                totalHashrate += stats.hashrate;
+                dailyEarnings += stats.daily;
+                totalPower += stats.power; // Watts
+                return {
+                    id: r.id,
+                    slot: r.slot_index,
+                    gpu: r.gpu_key,
+                    installed_at: r.installed_at,
+                    stats: stats,
+                    active: r.active,
+                    health: 100
+                };
             });
-        });
-    });
-});
-
-// Complete Upgrade
-app.post('/api/business/rent-a-car/complete-upgrade', (req, res) => {
-    const { userId } = req.body;
-    db.query('SELECT level, upgrade_end_time FROM user_business WHERE user_id = ?', [userId], (err, results) => {
-         if (err || !results.length) return res.status(500).json({ success: false });
-         
-         const endTime = results[0].upgrade_end_time ? new Date(results[0].upgrade_end_time) : new Date();
-         if (endTime <= new Date()) {
-             db.query('UPDATE user_business SET level = level + 1, upgrade_end_time = NULL WHERE user_id = ?', [userId], (err) => {
-                 res.json({ success: true, message: 'Geliştirme Tamamlandı!', newLevel: results[0].level + 1 });
-             });
-         } else {
-             res.json({ success: false, message: 'Henüz bitmedi' });
-         }
-    });
-});
-
-// Add Car (Inventory -> Garage)
-app.post('/api/business/rent-a-car/add', (req, res) => {
-    const { userId, slotId, carType } = req.body;
-    
-    // 1. Check Slot
-    db.query('SELECT id FROM user_garage WHERE user_id = ? AND slot_id = ?', [userId, slotId], (err, slots) => {
-        if (err) return res.status(500).json({ message: 'DB Error' });
-        if (slots.length > 0) return res.status(400).json({ message: 'Bu slot zaten dolu!' });
-        
-        // 2. Check Inventory
-        db.query('SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?', [userId, carType], (err, inv) => {
-            if (err) return res.status(500).json({ message: 'DB Error' });
-            if (!inv.length || inv[0].quantity < 1) return res.status(400).json({ message: 'Envanterde bu araç yok!' });
-            
-            // 3. Decrease Inventory
-            db.query('UPDATE inventory SET quantity = quantity - 1 WHERE user_id = ? AND item_key = ?', [userId, carType], (err) => {
-                if (err) return res.status(500).json({ message: 'Stok düşülemedi' });
-                
-                // 4. Add to Garage
-                const sqlInsert = 'INSERT INTO user_garage (user_id, slot_id, car_type, durability, last_collection_time) VALUES (?, ?, ?, 100, NOW())';
-                db.query(sqlInsert, [userId, slotId, carType], (err) => {
-                    if (err) return res.status(500).json({ message: 'Garaja eklenemedi' });
-                    res.json({ success: true, message: 'Araç garaja eklendi ve kiralamaya başladı!' });
-                });
-            });
-        });
-    });
-});
-
-// Collect Income
-app.post('/api/business/rent-a-car/collect', (req, res) => {
-    const { userId, slotId } = req.body;
-    
-    // Get Slot Data
-    db.query('SELECT * FROM user_garage WHERE user_id = ? AND slot_id = ?', [userId, slotId], (err, rows) => {
-        if (err) return res.status(500).json({ message: 'DB Error' });
-        if (!rows.length) return res.status(404).json({ message: 'Slot boş!' });
-        
-        const car = rows[0];
-        const config = RENT_ACAR_CONFIG[car.car_type];
-        if (!config) return res.status(400).json({ message: 'Araç yapılandırması hatalı' });
-        
-        const now = new Date();
-        const last = new Date(car.last_collection_time);
-        const diffMs = now - last;
-        const minutes = Math.floor(diffMs / (1000 * 60));
-        
-        const minDuration = config.duration || 1;
-        if (minutes < minDuration) return res.status(400).json({ message: `Henüz ${minDuration} dakika dolmadı.` });
-        
-        // Fixed Income (Capped at duration)
-        const income = config.income;
-        const damage = minDuration * config.damage;
-        
-        let newDurability = car.durability - damage;
-        
-        // 1. Add to Wallet (Directly to User Inventory/Money)
-        db.query('UPDATE users SET money = money + ? WHERE id = ?', [income, userId], (err) => {
-            if (err) return res.status(500).json({ message: 'Bakiye güncellenemedi' });
-            
-            // 2. Update Car
-            if (newDurability <= 0) {
-                // Car dead
-                db.query('DELETE FROM user_garage WHERE id = ?', [car.id], (err) => {
-                    res.json({ success: true, message: `Toplam <span class="money-highlight">${income} TL</span> toplandı. Araç ömrünü tamamladı.`, removed: true });
-                });
-            } else {
-                db.query('UPDATE user_garage SET durability = ?, last_collection_time = NOW() WHERE id = ?', [newDurability, car.id], (err) => {
-                    res.json({ success: true, message: `Toplam <span class="money-highlight">${income} TL</span> toplandı ve hesabınıza eklendi.`, removed: false, newDurability });
-                });
-            }
-        });
-    });
-});
-
-// Collect All Income
-app.post('/api/business/rent-a-car/collect-all', (req, res) => {
-    const { userId } = req.body;
-    
-    db.query('SELECT * FROM user_garage WHERE user_id = ?', [userId], (err, cars) => {
-        if (err) {
-            console.error('CollectAll DB Error:', err);
-            return res.status(500).json({ message: 'Veritabanı hatası' });
-        }
-        if (!cars || cars.length === 0) return res.json({ success: false, message: 'Garajda araç yok.' });
-
-        let totalIncome = 0;
-        let collectedCount = 0;
-        
-        const processCar = (index) => {
-            if (index >= cars.length) {
-                // Done iterating
-                if (totalIncome > 0) {
-                     db.query('UPDATE users SET money = money + ? WHERE id = ?', [totalIncome, userId], (err) => {
-                         if (err) return res.status(500).json({ message: 'Bakiye güncellenemedi' });
-                         res.json({ success: true, message: `${collectedCount} araçtan toplam <span class="money-highlight">${totalIncome} TL</span> toplandı ve hesabınıza eklendi.` });
-                     });
-                } else {
-                    res.json({ success: false, message: 'Toplanacak gelir yok.' });
-                }
-                return;
-            }
-
-            const car = cars[index];
-            const config = RENT_ACAR_CONFIG[car.car_type];
-            if (!config) {
-                return processCar(index + 1);
-            }
-
-            const now = new Date();
-            const last = new Date(car.last_collection_time);
-            const diffMs = now - last;
-            const minutes = Math.floor(diffMs / (1000 * 60));
-            
-            const minDuration = config.duration || 1;
-
-            if (minutes >= minDuration) {
-                // Fixed Income
-                const income = config.income;
-                const damage = minDuration * config.damage;
-                let newDurability = car.durability - damage;
-                
-                totalIncome += income;
-                collectedCount++;
-
-                if (newDurability <= 0) {
-                    db.query('DELETE FROM user_garage WHERE id = ?', [car.id], (err) => {
-                        if(err) console.error("Del Err", err);
-                        processCar(index + 1);
-                    });
-                } else {
-                    db.query('UPDATE user_garage SET durability = ?, last_collection_time = NOW() WHERE id = ?', [newDurability, car.id], (err) => {
-                        if(err) console.error("Upd Err", err);
-                        processCar(index + 1);
-                    });
-                }
-            } else {
-                processCar(index + 1);
-            }
-        };
-
-        try {
-            processCar(0);
-        } catch (e) {
-            console.error("Process loop error", e);
-            res.status(500).json({message: "İşlem hatası"});
-        }
-    });
-});
-
-// Withdraw Safe Logic
-app.post('/api/business/rent-a-car/withdraw', (req, res) => {
-    const { userId } = req.body;
-    
-    db.query('SELECT rent_a_car_balance FROM user_business WHERE user_id = ?', [userId], (err, rows) => {
-        if (err || !rows.length) return res.status(400).json({ message: 'Kasa bilgisi alınamadı' });
-        
-        let amount = parseFloat(rows[0].rent_a_car_balance) || 0;
-        if (amount <= 0) return res.json({ success: false, message: 'Çekilecek bakiye yok.' });
-        
-        // Reset Safe
-        db.query('UPDATE user_business SET rent_a_car_balance = 0 WHERE user_id = ?', [userId], (err) => {
-            if (err) return res.status(500).json({ message: 'İşlem başarısız' });
-            
-            // Add to User Money (Cash)
-            db.query('UPDATE users SET money = money + ? WHERE id = ?', [amount, userId], (err) => {
-                res.json({ success: true, message: `${amount.toFixed(2)} TL ana kasanıza aktarıldı.` });
-            });
-        });
-    });
-});
-
-
-// ==========================================
-// REAL ESTATE BUSINESS ENDPOINTS
-// ==========================================
-
-// Get Property Types
-app.get('/api/property-types', (req, res) => {
-    db.query('SELECT * FROM property_types', (err, rows) => {
-        if (err) return res.status(500).json({error: err});
-        res.json(rows);
-    });
-});
-
-// Get Real Estate State
-app.get('/api/business/real-estate/:userId', (req, res) => {
-    const userId = req.params.userId;
-    
-    // Ensure business record exists
-    db.query('INSERT IGNORE INTO user_business (user_id) VALUES (?)', [userId], (err) => {
-        if (err) console.error('Biz init error:', err);
-        
-        const sql = `
-            SELECT b.real_estate_balance, b.real_estate_level, b.real_estate_upgrade_end_time,
-                   p.id as prop_record_id, p.property_type_id, p.last_collection_time, p.purchase_date,
-                   pt.name, pt.image, pt.income, pt.duration_hours, pt.price,
-                   u.money as wallet_money, u.gold as wallet_gold
-            FROM user_business b
-            JOIN users u ON b.user_id = u.id
-            LEFT JOIN user_properties p ON b.user_id = p.user_id
-            LEFT JOIN property_types pt ON p.property_type_id = pt.id
-            WHERE b.user_id = ?
-        `;
-        
-        db.query(sql, [userId], (err, results) => {
-            if (err) return res.status(500).json({ error: err.message });
-            
-            let balance = 0;
-            let level = 1;
-            let walletMoney = 0;
-            let walletGold = 0;
-            let upgradeEndTime = null;
-            let slots = [];
-            
-            if (results.length > 0) {
-                balance = results[0].real_estate_balance || 0;
-                level = results[0].real_estate_level || 1;
-                walletMoney = parseFloat(results[0].wallet_money || 0);
-                walletGold = parseInt(results[0].wallet_gold || 0);
-                upgradeEndTime = results[0].real_estate_upgrade_end_time;
-                
-                results.forEach(row => {
-                    if (row.prop_record_id) {
-                        // Calculate Pending Income
-                        const now = new Date();
-                        const last = new Date(row.last_collection_time);
-                        const diffMs = now - last;
-                        const durationMs = 3600000; // 1 hour fixed for simplicity per unit? No, use duration.
-                        // property_types.duration_hours is confusing. Is it "validity" or "period"?
-                        // Rent a car duration was LEASE duration.
-                        // Properties are owned forever. 
-                        // Let's assume INCOME is HOURLY.
-                        
-                        // Let's assume income generation is continuous.
-                        const hoursPassed = diffMs / (1000 * 60 * 60);
-                        let pending = Math.floor(row.income * hoursPassed);
-                        if(hoursPassed < 0) pending = 0;
-
-                        // LIFETIME CHECK (30 Days)
-                        const LIFETIME_DAYS = 30;
-                        const purchaseDate = new Date(row.purchase_date);
-                        const ageMs = now - purchaseDate;
-                        const ageDays = ageMs / (1000 * 60 * 60 * 24);
-                        
-                        if (ageDays >= LIFETIME_DAYS) {
-                           // Expired - Delete it (DISABLED FOR SAFETY)
-                           // db.query('DELETE FROM user_properties WHERE id = ?', [row.prop_record_id]);
-                           // continue; // Skip adding to slots
-                        }
-
-                        slots.push({
-                            id: row.prop_record_id,
-                            type_id: row.property_type_id,
-                            name: row.name,
-                            image: row.image,
-                            income: row.income,
-                            pending_income: pending,
-                            last_collection_time: row.last_collection_time,
-                            purchase_date: row.purchase_date,
-                            duration: row.duration_hours,
-                            price: row.price
-                        });
-                    }
-                });
-            }
             
             res.json({
-                balance: balance,
-                level: level,
-                wallet: { money: walletMoney, gold: walletGold },
-                upgradeEndTime: upgradeEndTime,
-                slots: slots
+                success: true,
+                btc_balance: user.btc,
+                crypto_slots: user.crypto_slots || 1,
+                active_rigs: activeRigs.length,
+                total_hashrate: totalHashrate,
+                estimated_earnings: dailyEarnings,
+                total_power: totalPower / 1000, // kW
+                rigs: rigData
             });
         });
     });
 });
 
-// Buy Property (Construct)
-app.post('/api/business/real-estate/add', (req, res) => {
-    const { userId, typeId } = req.body; 
-
-    db.query('SELECT * FROM property_types WHERE id = ?', [typeId], (err, props) => {
-        if (err || props.length === 0) return res.status(404).json({ success: false, message: 'Mülk bulunamadı' });
-        
-        const prop = props[0];
-        const costMoney = parseFloat(prop.cost_money || 0);
-        const costGold = parseInt(prop.cost_gold || 0);
-        
-        let reqMaterials = {};
-        try {
-            if(typeof prop.req_materials === 'string') reqMaterials = JSON.parse(prop.req_materials);
-            else reqMaterials = prop.req_materials || {};
-        } catch(e) {}
-        
-        // 1. Check User Money & Gold
-        db.query('SELECT money, gold FROM users WHERE id = ?', [userId], (err, users) => {
-            if (err || users.length === 0) return res.status(500).json({ success: false, message: 'Kullanıcı hatası' });
-            
-            const u = users[0];
-            if (u.money < costMoney) return res.json({ success: false, message: 'Yetersiz Para.' });
-            if (u.gold < costGold) return res.json({ success: false, message: 'Yetersiz Altın.' });
-            
-            // 2. Check Inventory (Materials)
-            const matKeys = Object.keys(reqMaterials);
-            if (matKeys.length === 0) {
-                // No materials needed, just deduct money/gold
-                completeConstruction(userId, typeId, costMoney, costGold, {}, prop.name, res);
-            } else {
-                db.query('SELECT item_key, quantity FROM inventory WHERE user_id = ? AND item_key IN (?)', [userId, matKeys], (err, invRows) => {
-                    if (err) return res.status(500).json({ success: false, message: 'Envanter hatası' });
-                    
-                    const userInv = {};
-                    invRows.forEach(r => userInv[r.item_key] = r.quantity);
-                    
-                    for (const key of matKeys) {
-                        const needed = reqMaterials[key];
-                        const have = userInv[key] || 0;
-                        if (have < needed) return res.json({ success: false, message: `Yetersiz malzeme: ${key}` });
-                    }
-                    
-                    // All OK
-                    completeConstruction(userId, typeId, costMoney, costGold, reqMaterials, prop.name, res);
-                });
-            }
-        });
-    });
-});
-
-function completeConstruction(userId, typeId, money, gold, materials, propName, res) {
-    // Deduct Money & Gold
-    db.query('UPDATE users SET money = money - ?, gold = gold - ? WHERE id = ?', [money, gold, userId], (err) => {
-        if (err) return res.status(500).json({ success: false });
-
-        // Deduct Materials
-        const matKeys = Object.keys(materials);
-        if (matKeys.length > 0) {
-            // Processing deductions sequentially or constructing a case query
-            // Simple sequential for safety
-            matKeys.forEach(k => {
-                db.query('UPDATE inventory SET quantity = quantity - ? WHERE user_id = ? AND item_key = ?', [materials[k], userId, k]);
-            });
-        }
-        
-        // Insert Property
-        db.query('INSERT INTO user_properties (user_id, property_type_id, purchase_date, last_collection_time) VALUES (?, ?, NOW(), NOW())', [userId, typeId], (err, result) => {
-            if (err) return res.status(500).json({ success: false });
-            
-            // Return updated slots data ? Or just success
-            // Optionally we can give XP here
-            res.json({ success: true, message: propName + ' inşa edildi.' });
-        });
-    });
-}
-
-// Collect Single Real Estate Income
-app.post('/api/business/real-estate/collect', (req, res) => {
-    const { userId, slotId } = req.body; // slotId = user_properties.id
-    
-    db.query('SELECT p.id, p.last_collection_time, pt.income FROM user_properties p JOIN property_types pt ON p.property_type_id = pt.id WHERE p.id = ? AND p.user_id = ?', [slotId, userId], (err, props) => {
-        if (err || props.length === 0) return res.status(500).json({ success: false, message: 'Mülk hatası' });
-        
-        const p = props[0];
-        const now = new Date();
-        const last = new Date(p.last_collection_time);
-        const diffMs = now - last;
-        const hours = diffMs / (1000 * 60 * 60);
-        
-        const pending = Math.floor(p.income * hours);
-        
-        if (pending <= 0) return res.json({ success: false, message: 'Henüz gelir yok.' });
-        
-        db.query('UPDATE users SET money = money + ? WHERE id = ?', [pending, userId], (err) => {
-            if (err) return res.status(500).json({ success: false });
-            
-            db.query('UPDATE user_properties SET last_collection_time = NOW() WHERE id = ?', [slotId], (err) => {
-                if(err) return res.status(500).json({ success: false });
-                res.json({ success: true, amount: pending });
-            });
-        });
-    });
-});
-
-// Collect ALL Real Estate Income
-app.post('/api/business/real-estate/collect-all', (req, res) => {
+// 2. Buy Slot
+app.post('/api/crypto/buy-slot', (req, res) => {
     const { userId } = req.body;
     
-    const sql = `
-        SELECT p.id, p.last_collection_time, pt.income 
-        FROM user_properties p
-        JOIN property_types pt ON p.property_type_id = pt.id
-        WHERE p.user_id = ?
-    `;
-    
-    db.query(sql, [userId], (err, props) => {
-        if (err) return res.status(500).json({ error: err });
+    db.query('SELECT money, crypto_slots FROM users WHERE id = ?', [userId], (err, users) => {
+        if(err || !users.length) return res.json({ success: false, message: 'User not found' });
+        const user = users[0];
         
-        let totalCollected = 0;
-        let updateIds = [];
+        const currentSlots = user.crypto_slots || 1;
+        if(currentSlots >= 10) return res.json({ success: false, message: 'Maksimum slot sayısına ulaşıldı.' });
         
-        const now = new Date();
+        // Pricing Formula: Base 50k * (1.5 ^ (currentSlots - 1))
+        const cost = Math.floor(50000 * Math.pow(1.5, currentSlots - 1));
         
-        props.forEach(p => {
-             const last = new Date(p.last_collection_time);
-             const diffMs = now - last;
-             const hours = diffMs / (1000 * 60 * 60);
-             
-             if (hours >= 0.01) { // Min 0.6 mins (36 sn)
-                 let pending = Math.floor(p.income * hours);
-                 if (pending > 0) {
-                     totalCollected += pending;
-                     updateIds.push(p.id);
-                 }
-             }
+        if(user.money < cost) return res.json({ success: false, message: `Yetersiz bakiye. (${cost.toLocaleString()} ₺ gerekli)` });
+        
+        db.beginTransaction(err => {
+             db.query('UPDATE users SET money = money - ?, crypto_slots = crypto_slots + 1 WHERE id = ?', [cost, userId], (err) => {
+                 if(err) return db.rollback(() => res.json({ success: false, message: 'Slot alınamadı' }));
+                 
+                 db.commit(() => res.json({ success: true, message: 'Yeni slot açıldı!' }));
+             });
         });
-        
-        if (totalCollected > 0) {
-            db.query('UPDATE user_business SET real_estate_balance = real_estate_balance + ? WHERE user_id = ?', [totalCollected, userId], (err) => {
-                if (err) return res.status(500).json({ success: false });
-                
-                db.query(`UPDATE user_properties SET last_collection_time = NOW() WHERE id IN (${updateIds.join(',')})`);
-                
-                res.json({ success: true, message: `${totalCollected} TL toplandı.`, amount: totalCollected });
-            });
-        } else {
-            res.json({ success: false, message: 'Toplanacak gelir yok.' });
-        }
     });
 });
 
-// Withdraw Real Estate Safe
-app.post('/api/business/real-estate/withdraw', (req, res) => {
-    const { userId } = req.body;
+// 3. Install GPU
+app.post('/api/crypto/install', (req, res) => {
+    // Frontend sends slotIndex, so let's accept that or slotId
+    const { userId, gpuKey } = req.body;
+    const slotId = (req.body.slotId !== undefined) ? req.body.slotId : req.body.slotIndex;
     
-    db.query('SELECT real_estate_balance FROM user_business WHERE user_id = ?', [userId], (err, rows) => {
-        if (err || !rows.length) return res.status(400).json({ message: 'Kasa bilgisi alınamadı' });
+    if (slotId === undefined || slotId === null) return res.json({ success: false, message: 'Slot ID eksik.' });
+    
+    // Check Inventory
+    db.query('SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?', [userId, gpuKey], (err, items) => {
+        if(err || !items.length || items[0].quantity < 1) return res.json({ success: false, message: 'Envanterde bu kart yok.' });
         
-        let amount = parseFloat(rows[0].real_estate_balance) || 0;
-        if (amount <= 0) return res.json({ success: false, message: 'Çekilecek bakiye yok.' });
-        
-        db.query('UPDATE user_business SET real_estate_balance = 0 WHERE user_id = ?', [userId], (err) => {
-            if (err) return res.status(500).json({ message: 'İşlem başarısız' });
+        // Check Slot
+        db.query('SELECT * FROM player_rigs WHERE user_id = ? AND slot_index = ?', [userId, slotId], (err, rows) => {
+            if(rows.length > 0) return res.json({ success: false, message: 'Slot dolu.' });
             
-            db.query('UPDATE users SET money = money + ? WHERE id = ?', [amount, userId], (err) => {
-                res.json({ success: true, message: `${amount.toFixed(2)} TL ana kasanıza aktarıldı.` });
-            });
-        });
-    });
-});
+            // Check Max Slots
+             db.query('SELECT crypto_slots FROM users WHERE id = ?', [userId], (err, users) => {
+                 const maxSlots = users[0].crypto_slots || 1;
+                 if(slotId >= maxSlots) return res.json({ success: false, message: 'Slot kilitli.' });
 
-// Upgrade (Start)
-app.post('/api/business/real-estate/start-upgrade', (req, res) => {
-    const { userId } = req.body;
-    
-    db.query('SELECT real_estate_level, real_estate_upgrade_end_time FROM user_business WHERE user_id = ?', [userId], (err, rows) => {
-        if(err) return res.json({success:false, message:'Veri hatası'});
-        
-        const currentLevel = rows[0].real_estate_level || 1;
-        const nextLevel = currentLevel + 1;
-        const costMoney = 500000 * nextLevel;
-        
-        // Already upgrading?
-        if(rows[0].real_estate_upgrade_end_time && new Date(rows[0].real_estate_upgrade_end_time) > new Date()) {
-             return res.json({success: false, message: 'Zaten geliştirme sürüyor.'});
-        }
-        
-        db.query('SELECT money FROM users WHERE id = ?', [userId], (err, uRows) => {
-             if(uRows[0].money < costMoney) return res.json({success: false, message: 'Yetersiz Para'});
-             
-             // Duration: 10 minutes * Level (Example)
-             const durationMinutes = 10 * currentLevel;
-             const endTime = new Date(Date.now() + durationMinutes * 60000);
-             
-             db.query('UPDATE users SET money = money - ? WHERE id = ?', [costMoney, userId], () => {
-                 db.query('UPDATE user_business SET real_estate_upgrade_end_time = ? WHERE user_id = ?', [endTime, userId], () => {
-                     res.json({ success: true, message: 'Geliştirme başlatıldı.', endTime: endTime });
+                 db.beginTransaction(err => {
+                     // Remove from Inventory
+                     db.query('UPDATE inventory SET quantity = quantity - 1 WHERE user_id = ? AND item_key = ?', [userId, gpuKey], (err) => {
+                         if(err) return db.rollback(() => res.json({ success: false, message: 'Envanter hatası' }));
+                         
+                         // Add to Rigs
+                         db.query('INSERT INTO player_rigs (user_id, slot_index, gpu_key) VALUES (?, ?, ?)', [userId, slotId, gpuKey], (err) => {
+                             if(err) return db.rollback(() => res.json({ success: false, message: 'Rig kurulamadı' }));
+                             
+                             db.commit(() => res.json({ success: true, message: 'GPU kuruldu!' }));
+                         });
+                     });
                  });
              });
         });
     });
 });
 
-// Complete Upgrade
-app.post('/api/business/real-estate/complete-upgrade', (req, res) => {
-    const { userId } = req.body;
+// 4. Remove GPU (Uninstall)
+app.post('/api/crypto/remove-rig', (req, res) => {
+    const { userId, slotId } = req.body;
     
-    db.query('SELECT real_estate_level, real_estate_upgrade_end_time FROM user_business WHERE user_id = ?', [userId], (err, rows) => {
-        if(err || !rows.length) return res.json({success:false, message:'Kullanıcı bulunamadı'});
+    db.query('SELECT * FROM player_rigs WHERE user_id = ? AND slot_index = ?', [userId, slotId], (err, rows) => {
+        if(err || !rows.length) return res.json({ success: false, message: 'Rig bulunamadı.' });
         
-        const endTime = rows[0].real_estate_upgrade_end_time;
-        if(!endTime) return res.json({success:false, message:'Aktif geliştirme yok.'});
+        const rig = rows[0];
         
-        if(new Date() < new Date(endTime)) {
-            return res.json({success:false, message:'Süre henüz dolmadı.'});
-        }
-        
-        const nextLevel = (rows[0].real_estate_level || 1) + 1;
-        
-        db.query('UPDATE user_business SET real_estate_level = ?, real_estate_upgrade_end_time = NULL WHERE user_id = ?', [nextLevel, userId], (err) => {
-            if(err) return res.json({success:false, message:'Hata'});
-            res.json({ success: true, message: 'İşletme seviyesi yükseltildi!' });
+        db.beginTransaction(err => {
+            // Delete Rig
+            db.query('DELETE FROM player_rigs WHERE id = ?', [rig.id], (err) => {
+                if(err) return db.rollback(() => res.json({ success: false, message: 'Silme hatası' }));
+                
+                // Add to Inventory
+                // Check if item exists in inventory first to update or insert
+                db.query('SELECT * FROM inventory WHERE user_id = ? AND item_key = ?', [userId, rig.gpu_key], (err, items) => {
+                    let invQuery = '';
+                    let params = [];
+                    
+                    if(items.length > 0) {
+                        invQuery = 'UPDATE inventory SET quantity = quantity + 1 WHERE id = ?';
+                        params = [items[0].id];
+                    } else {
+                        invQuery = 'INSERT INTO inventory (user_id, item_key, quantity) VALUES (?, ?, 1)';
+                        params = [userId, rig.gpu_key];
+                    }
+                    
+                    db.query(invQuery, params, (err) => {
+                        if(err) return db.rollback(() => res.json({ success: false, message: 'Envanter iade hatası' }));
+                        
+                        db.commit(() => res.json({ success: true, message: 'GPU söküldü ve envantere eklendi.' }));
+                    });
+                });
+            });
         });
     });
 });
+
+// BUG REPORTING ENDPOINTS
+
+// 1. Submit Bug
+app.post('/api/bugs', (req, res) => {
+    const { userId, username, subject, description } = req.body;
+    if(!userId || !subject || !description) return res.json({ success: false, message: 'Eksik bilgi' });
+
+    const sql = 'INSERT INTO bug_reports (user_id, username, subject, description) VALUES (?, ?, ?, ?)';
+    db.query(sql, [userId, username, subject, description], (err, result) => {
+        if(err) {
+            console.error(err);
+            return res.json({ success: false, message: 'Veritabanı hatası' });
+        }
+        res.json({ success: true, message: 'Bildirim alındı.' });
+    });
+});
+
+// 2. Get My Bugs
+app.get('/api/bugs/my', (req, res) => {
+    const userId = req.query.userId;
+    if(!userId) return res.json({ success: false, message: 'User ID required' });
+
+    db.query('SELECT * FROM bug_reports WHERE user_id = ? ORDER BY created_at DESC', [userId], (err, results) => {
+        if(err) return res.json({ success: false, message: 'DB Error' });
+        res.json({ success: true, reports: results });
+    });
+});
+
+// 3. Admin: Get Pending Bugs
+app.get('/api/admin/bugs', (req, res) => {
+    const status = req.query.status || 'pending';
+    db.query('SELECT * FROM bug_reports WHERE status = ? ORDER BY created_at ASC', [status], (err, results) => {
+        if(err) return res.json({ success: false, message: 'DB Error' });
+        res.json({ success: true, reports: results });
+    });
+});
+
+// 4. Admin: Update Bug Status
+app.post('/api/admin/bugs/update', (req, res) => {
+    const { reportId, status, reply } = req.body;
+    // status: approved, rejected
+    
+    db.query('UPDATE bug_reports SET status = ?, admin_reply = ? WHERE id = ?', [status, reply, reportId], (err, result) => {
+        if(err) return res.json({ success: false, message: 'Update failed' });
+        res.json({ success: true, message: 'Status updated' });
+    });
+});
+

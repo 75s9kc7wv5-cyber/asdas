@@ -528,7 +528,11 @@
             </button>
             <button onclick="showTab('reports')" class="tab-btn" id="btn-reports">
                 <i class="fas fa-flag"></i>
-                <span>Raporlar</span>
+                <span>Mesaj Rapor</span>
+            </button>
+            <button onclick="showTab('bugs')" class="tab-btn" id="btn-bugs">
+                <i class="fas fa-bug"></i>
+                <span>Bug Rapor</span>
             </button>
             <button onclick="showTab('inventory')" class="tab-btn" id="btn-inventory">
                 <i class="fas fa-box"></i>
@@ -823,6 +827,36 @@
             </div>
         </div>
     </div>
+
+        <!-- BUGS TAB -->
+        <div id="tab-bugs" class="tab-content" style="display: none;">
+            <div class="section-header">
+                <i class="fas fa-bug" style="color: var(--accent-red);"></i>
+                <h2 style="color: var(--accent-red);">Hata Bildirimleri</h2>
+            </div>
+            <div class="tab-navigation" style="margin-bottom:20px; padding:10px; grid-template-columns: repeat(3, 1fr);">
+                <button onclick="loadBugs('pending')" class="tab-btn active" id="btn-bug-pending" style="padding:10px;">Bekleyen</button>
+                <button onclick="loadBugs('approved')" class="tab-btn" id="btn-bug-approved" style="padding:10px;">Onaylanan</button>
+                <button onclick="loadBugs('rejected')" class="tab-btn" id="btn-bug-rejected" style="padding:10px;">Reddedilen</button>
+            </div>
+            <div class="table-container">
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>Kullanıcı</th>
+                            <th>Konu</th>
+                            <th>Açıklama</th>
+                            <th>Tarih</th>
+                            <th>Durum</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bugList">
+                        <!-- Bugs will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
     <!-- MUTE MODAL -->
     <div class="modal-overlay" id="muteModal">
@@ -1166,6 +1200,7 @@
             document.getElementById('tab-users').style.display = 'none';
             document.getElementById('tab-toxic').style.display = 'none';
             document.getElementById('tab-reports').style.display = 'none';
+            document.getElementById('tab-bugs').style.display = 'none';
             document.getElementById('tab-settings').style.display = 'none';
             document.getElementById('tab-inventory').style.display = 'none';
             document.getElementById('tab-properties').style.display = 'none';
@@ -1174,14 +1209,17 @@
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             
             // Show selected tab
-            document.getElementById('tab-' + tabName).style.display = 'block';
+            const tabEl = document.getElementById('tab-' + tabName);
+            if(tabEl) tabEl.style.display = 'block';
             
             // Add active class to clicked button
-            document.getElementById('btn-' + tabName).classList.add('active');
+            const btnEl = document.getElementById('btn-' + tabName);
+             if(btnEl) btnEl.classList.add('active');
             
             // Load data for specific tabs
             if (tabName === 'toxic') loadToxicLogs();
             if (tabName === 'reports') loadReports();
+            if (tabName === 'bugs') loadBugs('pending');
             if (tabName === 'properties') loadProperties();
             if (tabName === 'crypto') loadCryptoHolders();
             if (tabName === 'settings') {
@@ -1189,6 +1227,78 @@
                 loadRanchSettings();
                 loadFarmSettings();
             }
+        }
+
+        async function loadBugs(status) {
+            // Set active class on sub-tab buttons
+            document.getElementById('btn-bug-pending').classList.remove('active');
+            document.getElementById('btn-bug-approved').classList.remove('active');
+            document.getElementById('btn-bug-rejected').classList.remove('active');
+            document.getElementById('btn-bug-' + status).classList.add('active');
+
+            const tbody = document.getElementById('bugList');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Yükleniyor...</td></tr>';
+
+            try {
+                const res = await fetch('/api/admin/bugs?status=' + status);
+                const data = await res.json();
+                
+                if(data.success && data.reports.length > 0) {
+                    tbody.innerHTML = '';
+                    data.reports.forEach(bug => {
+                        let actions = '';
+                        if(status === 'pending') {
+                            actions = `
+                                <button onclick="updateBugStatus(${bug.id}, 'approved')" class="btn-edit" style="background:#2ecc71; color:#fff; margin-right:5px;">Onayla</button>
+                                <button onclick="updateBugStatus(${bug.id}, 'rejected')" class="btn-edit" style="background:#e74c3c; color:#fff;">Reddet</button>
+                            `;
+                        } else {
+                            actions = `<span style="font-size:0.8rem; color:#aaa;">${bug.admin_reply || '-'}</span>`;
+                        }
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${bug.username} <small>(${bug.user_id})</small></td>
+                            <td>${bug.subject}</td>
+                            <td>${bug.description}</td>
+                            <td>${new Date(bug.created_at).toLocaleString()}</td>
+                            <td><span class="stat-badge">${bug.status.toUpperCase()}</span></td>
+                            <td>${actions}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Kayıt bulunamadı.</td></tr>';
+                }
+            } catch(e) {
+                console.error(e);
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Hata oluştu.</td></tr>';
+            }
+        }
+
+        async function updateBugStatus(id, status) {
+            let reply = '';
+            if(status === 'rejected') {
+                reply = prompt("Reddetme sebebi:");
+                if(reply === null) return; // Cancelled
+            } else {
+                reply = "Teşekkürler, bildiriminiz onaylandı.";
+            }
+
+            try {
+                const res = await fetch('/api/admin/bugs/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reportId: id, status: status, reply: reply })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    toastr.success('Durum güncellendi.');
+                    loadBugs('pending');
+                } else {
+                    toastr.error('Hata oluştu.');
+                }
+            } catch(e) { console.error(e); }
         }
 
         async function loadProperties() {

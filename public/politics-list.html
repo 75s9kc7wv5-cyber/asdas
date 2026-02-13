@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sim of World - Siyaset</title>
+    <!-- Hata Bastırma (Extension Kaynaklı Hatalar İçin) -->
+    <script>
+        window.addEventListener('error', function(e) {
+            if (e.filename && e.filename.includes('webpage_content_reporter.js')) {
+                e.stopImmediatePropagation();
+                e.preventDefault();
+                console.warn("Harici eklenti hatası gizlendi: webpage_content_reporter.js");
+            }
+        });
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
@@ -213,7 +223,7 @@
             border-radius: 4px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid #444;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: #ddd;
         }
 
@@ -585,6 +595,8 @@
                     user.gold = userData.gold;
                     user.diamond = userData.diamond;
                     user.party_id = userData.party_id; // Update party_id from server
+                    user.party_role = userData.party_role; // Update party_role
+                    user.role = userData.role; // Update general role
                     user.hasParty = !!userData.party_id; 
                     user.hasPartyLicense = userData.hasPartyLicense;
                     localStorage.setItem('simWorldUser', JSON.stringify(user)); // Update local storage
@@ -691,32 +703,82 @@
             if (!p) return;
 
             const container = document.getElementById('my-party-container');
+            container.innerHTML = '';
             
-            let logoHtml = p.abbr;
-            if (p.logo && p.logo !== 'uploads/avatars/default.png') {
-                logoHtml = `<img src="${p.logo}" style="width:100%; height:100%; object-fit:cover;">`;
+            const isLeader = Number(p.leader_id) === Number(user.id);
+
+            // Sadece Lider ise Parti Yönetim kartını göster
+            if (isLeader) {
+                let logoHtml = p.abbr;
+                if (p.logo && p.logo !== 'uploads/avatars/default.png') {
+                    logoHtml = `<img src="${p.logo}" style="width:100%; height:100%; object-fit:cover;">`;
+                }
+                const borderColor = '#2ecc71'; 
+
+                container.innerHTML = `
+                    <div class="party-card" style="--party-color:${borderColor}; margin-bottom:10px;" onclick="manageParty(${p.id})">
+                        <div class="party-card-header">
+                            <div class="party-icon" style="color:${borderColor}; border-color:${borderColor};">
+                                ${logoHtml}
+                            </div>
+                            <div class="party-info">
+                                <div class="party-name">${p.name}</div>
+                                <div class="party-stats" style="color:#aaa;">Parti Paneline Git</div>
+                            </div>
+                            <div class="right-arrow"><i class="fas fa-chevron-right"></i></div>
+                        </div>
+                    </div>
+                `;
             }
 
-            // Çizgi yeşil olsun (#2ecc71) ve party yönetimine gitsin
-            // Lider değilse bile buraya girmesini sağladık.
-            // İsteğe göre "karta tıklayınca parti yönetimine" yönlendirme eklendi.
-            const borderColor = '#2ecc71'; 
-
-            container.innerHTML = `
-                <div class="party-card" style="--party-color:${borderColor}; margin-bottom:10px;" onclick="manageParty(${p.id})">
+            // Eğer oyuncu lider değilse "Parti Kur" butonunu ekle (Bastığında uyarı verecek)
+            if (!isLeader) {
+                container.innerHTML += `
+                <div class="create-hero-card red-border" onclick="showResignWarningModal()">
                     <div class="party-card-header">
-                        <div class="party-icon" style="color:${borderColor}; border-color:${borderColor};">
-                            ${logoHtml}
+                        <div class="party-icon" style="color:var(--accent-red); border-color:var(--accent-red);">
+                             <i class="fas fa-landmark"></i>
                         </div>
-                        <div class="party-info">
-                            <div class="party-name">${p.name}</div>
-                            <div class="party-stats" style="color:#aaa;">Parti Paneline Git</div>
+                        <div class="party-info" style="flex-direction: column; align-items: flex-start; justify-content: center;">
+                            <div class="party-name">Siyasi Parti Kurulumu</div>
+                            <div class="party-stats" style="color:#aaa; margin-top:2px;">Yeni bir parti kurmak istiyorsanız tıklayın.</div>
                         </div>
                         <div class="right-arrow"><i class="fas fa-chevron-right"></i></div>
                     </div>
                 </div>
-            `;
+                `;
+            }
         }
+
+        function showResignWarningModal() {
+            document.getElementById('modalTopIcon').style.display = 'flex';
+            document.getElementById('modalTopIcon').innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: var(--accent-red);"></i>';
+            document.getElementById('modalTitle').style.display = 'block';
+            document.getElementById('modalTitle').innerText = "İŞLEM BAŞARISIZ";
+            
+            document.getElementById('modalDesc').innerHTML = `Parti kurmak için mevcut partinizden istifa etmeniz gerekmektedir.`;
+            
+            // Hide confirm button, show only cancel (as 'Tamam')
+            const btnConfirm = document.getElementById('modalConfirmBtn');
+            btnConfirm.style.display = 'none';
+            
+            const btnCancel = document.querySelector('#confirmModal .btn-cancel');
+            const oldCancelText = btnCancel.innerText;
+            const oldCancelClick = btnCancel.onclick;
+            
+            btnCancel.innerText = "TAMAM";
+            btnCancel.onclick = function() {
+               document.getElementById('confirmModal').style.display = 'none';
+               // Restore
+               btnConfirm.style.display = 'block';
+               btnCancel.innerText = "VAZGEÇ"; // restore default text hardcoded in HTML usually or just assume 'VAZGEÇ'
+               btnCancel.onclick = function() { closeModal(); }; // restore default close
+               document.getElementById('modalTopIcon').innerHTML = ''; 
+            };
+
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+
 
         function resignParty() {
             // Confirm Modal Use
@@ -795,20 +857,41 @@
                 let clickAction = '';
                 let statusText = '';
                 let statusColor = '#aaa';
+                let statusIcon = '';
 
                 if (isLeader) {
-                    clickAction = `manageParty(${p.id})`;
-                    statusText = "BAŞKAN";
-                    statusColor = "var(--accent-gold)";
+                    clickAction = `enterParty(${p.id})`;
+                    statusText = "GENEL BAŞKAN";
+                    statusColor = "var(--accent-green)";
+                    statusIcon = '<i class="fas fa-crown"></i>';
                 } else if (isMember) {
                     clickAction = `enterParty(${p.id})`;
-                    statusText = "ÜYE";
-                    statusColor = "var(--accent-cyan)";
+                    
+                    // Priority: party_role > role > 'Üye'
+                    let currentRole = user.party_role;
+                    if (!currentRole || currentRole === 'null' || currentRole === 'undefined') {
+                        currentRole = user.role;
+                    }
+                    if (!currentRole || currentRole === 'user' || currentRole === 'null') {
+                        currentRole = 'Üye';
+                    }
+
+                    statusText = currentRole.toUpperCase();
+                    
+                    // Normalize for check (Case Insensitive)
+                    const roleCheck = String(currentRole || '').trim().toLocaleLowerCase('tr-TR');
+                    
+                    if(roleCheck === 'genel başkan' || roleCheck === 'genel baskan') { statusColor = 'var(--accent-green)'; statusIcon = '<i class="fas fa-crown"></i>'; }
+                    else if(roleCheck === 'başkan yardımcısı' || roleCheck === 'baskan yardimcisi') { statusColor = 'var(--accent-gold)'; statusIcon = '<i class="fas fa-user-tie"></i>'; }
+                    else if(roleCheck === 'teşkilat sorumlusu' || roleCheck === 'teskilat sorumlusu') { statusColor = '#3498db'; statusIcon = '<i class="fas fa-bullhorn"></i>'; }
+                    else { statusColor = "var(--accent-cyan)"; statusIcon = '<i class="fas fa-user"></i>'; } // Default to ÜYE if unknown
+
                 } else if (hasNoParty) {
                     if (myApplications.includes(p.id)) {
                         clickAction = `cancelApplication(${p.id}, '${p.name.replace(/'/g, "\\'")}')`;
                         statusText = "BAŞVURULDU";
                         statusColor = "var(--accent-gold)";
+                        statusIcon = '<i class="fas fa-clock"></i>';
                     } else {
                         clickAction = `applyToParty(${p.id}, '${p.name.replace(/'/g, "\\'")}')`;
                         statusText = "";
@@ -873,7 +956,7 @@
                             <div class="party-stats">
                                 <span class="stat-badge"><i class="fas fa-users" style="color: var(--accent-cyan);"></i> ${p.members_count || 0} Üye</span>
                                 <span class="stat-badge"><i class="fas fa-book" style="color: ${ideologyColor};"></i> ${p.ideology}</span>
-                                ${statusText ? `<span class="stat-badge" style="border-color:${statusColor}40; background:${statusColor}10; color:${statusColor};">${statusText}</span>` : ''}
+                                ${statusText ? `<span class="stat-badge" style="border-color:${statusColor}40; background:${statusColor}10; color:${statusColor};">${statusIcon} ${statusText}</span>` : ''}
                             </div>
                         </div>
                         <div class="right-arrow">
@@ -903,6 +986,39 @@
         }
 
         function applyToParty(partyId, partyName) {
+            // Check if user is already in a party
+            if(user.party_id && user.party_id > 0) {
+                // Restore defaults for error usage
+                document.getElementById('modalTopIcon').style.display = 'flex';
+                document.getElementById('modalTopIcon').innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: var(--accent-red);"></i>';
+                document.getElementById('modalTitle').style.display = 'block';
+                document.getElementById('modalTitle').innerText = "BAŞVURU HATASI";
+                
+                document.getElementById('modalDesc').innerHTML = `zaten bir partiye üyesiniz! Başka bir partiye başvurmadan önce mevcut partinizden istifa etmelisiniz.`;
+                
+                // Hide confirm button, show only cancel (as 'Kapat')
+                const btnConfirm = document.getElementById('modalConfirmBtn');
+                btnConfirm.style.display = 'none';
+                
+                const btnCancel = document.querySelector('#confirmModal .btn-cancel');
+                const oldCancelText = btnCancel.innerText;
+                btnCancel.innerText = "KAPAT";
+                
+                // Reset on close
+                const originalClose = closeModal;
+                window.closeModal = function() {
+                   document.getElementById('confirmModal').style.display = 'none';
+                   // Restore
+                   btnConfirm.style.display = 'block';
+                   btnCancel.innerText = oldCancelText;
+                   document.getElementById('modalTopIcon').innerHTML = ''; // or default icon
+                   window.closeModal = originalClose; // Restore function
+                };
+
+                document.getElementById('confirmModal').style.display = 'flex';
+                return;
+            }
+
             const p = parties.find(x => x.id == partyId);
             
             // Hide default elements

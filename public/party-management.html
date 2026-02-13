@@ -66,11 +66,12 @@
 
         /* HERO SECTION (Parti Özeti) */
         .party-hero {
-            background: linear-gradient(135deg, rgba(155, 89, 182, 0.15), var(--bg-card));
-            border: 1px solid var(--accent); border-radius: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--accent-gold);
+            border-radius: 16px;
             padding: 20px; margin-bottom: 20px; position: relative;
             text-align: center; overflow: hidden;
-            box-shadow: 0 0 20px rgba(155, 89, 182, 0.1);
         }
         .party-logo-lg {
             width: 80px; height: 80px; background: #222; border-radius: 50%; 
@@ -136,12 +137,12 @@
             display: flex; align-items: center; justify-content: space-between;
         }
         .mc-left { display: flex; align-items: center; gap: 10px; flex: 1; }
-        .mc-avatar { width: 35px; height: 35px; border-radius: 50%; background: #333; border: 1px solid #555; }
+        .mc-avatar { width: 30px; height: 30px; border-radius: 50%; background: #333; border: 1px solid #555; }
         .mc-name { font-size: 0.95rem; font-weight: 700; color: #fff; }
         .mc-role { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: #222; color: #aaa; text-transform: uppercase; }
-        .role-leader { color: var(--accent-gold); border: 1px solid var(--accent-gold); background: rgba(255, 215, 0, 0.1); }
-        .role-vice { color: var(--accent-cyan); border: 1px solid var(--accent-cyan); background: rgba(0, 229, 255, 0.1); }
-        .role-org { color: var(--accent-green); border: 1px solid var(--accent-green); background: rgba(46, 204, 113, 0.1); }
+        .role-leader { color: var(--accent-green); border: 1px solid var(--accent-green); background: rgba(46, 204, 113, 0.1); }
+        .role-vice { color: var(--accent-gold); border: 1px solid var(--accent-gold); background: rgba(255, 215, 0, 0.1); }
+        .role-org { color: #3498db; border: 1px solid #3498db; background: rgba(52, 152, 219, 0.1); }
         .role-member { color: #aaa; border: 1px solid #444; background: #222; }
         
         .mc-actions { display: flex; gap: 5px; }
@@ -190,8 +191,8 @@
         .btn-reject { background: rgba(231, 76, 60, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); }
 
         /* MODAL */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; display: none; justify-content: center; align-items: center; animation: fadeIn 0.3s; }
-        .modal-content { background: #181818; width: 85%; padding: 25px; border-radius: 12px; border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-gold); }
+        .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; display: none; justify-content: center; align-items: center; animation: fadeIn 0.3s; }
+        .modal-content { background: #181818; width: 90%; max-width: 400px; padding: 25px; border-radius: 12px; border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-gold); box-sizing: border-box; }
         .m-title { font-size: 1.3rem; margin-bottom: 10px; color: #fff; font-weight: bold; }
         .m-price { font-size: 1.5rem; color: var(--accent-gold); font-weight: bold; margin: 15px 0; display: block; }
         
@@ -361,6 +362,95 @@
         .info-item i { font-size: 1.1rem; width: 28px; }
         .info-item .info-label { flex: 1; font-size: 0.85rem; color: #aaa; }
         .info-item .info-value { font-size: 0.95rem; font-weight: bold; color: #fff; text-align: right; }
+
+        /* KASA YENİ TASARIM */
+        .vault-balance-amount { font-size: 2.2rem; font-weight: 800; letter-spacing: 1px; text-shadow: 0 0 15px rgba(255, 215, 0, 0.2); }
+        .vault-btn { 
+            width: 100%; border: none; padding: 12px; border-radius: 6px; 
+            font-weight: 800; font-family: 'Rajdhani'; font-size: 0.95rem; 
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; 
+            transition: all 0.2s; 
+        }
+        .vault-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+
+
+        /* NEW VAULT DESIGN */
+        .vault-overview {
+            background: linear-gradient(135deg, rgba(30,30,30,0.8), #1a1a1a);
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .vault-overview::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+            background: var(--accent-green);
+        }
+        .vault-icon-circle {
+            width: 60px; height: 60px; border-radius: 50%;
+            background: rgba(46, 204, 113, 0.1);
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem;
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.2);
+            flex-shrink: 0;
+        }
+        .vault-info { flex: 1; }
+        .vault-label { font-size: 0.8rem; color: #888; letter-spacing: 1px; font-weight: 700; margin-bottom: 5px; }
+        .vault-amount { font-size: 2rem; color: #fff; font-weight: 800; letter-spacing: 0.5px; text-shadow: 0 0 10px rgba(255,255,255,0.1); }
+        
+        .donation-input-container {
+            display: flex; gap: 10px; align-items: center;
+        }
+        .btn-donate-action {
+            padding: 0 20px;
+            height: 42px; /* same as input padding usually */
+            background: var(--accent-green);
+            color: #000; font-weight: 800;
+            border: none; border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Rajdhani';
+            display: flex; align-items: center; gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-donate-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+        }
+
+        .donation-section { margin-top: 25px; }
+        .section-title {
+            font-size: 0.95rem; color: #fff; font-weight: 700;
+            border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .count-badge { font-size: 0.8rem; color: #666; font-weight: normal; margin-left: auto; }
+        
+        .history-list { display: flex; flex-direction: column; gap: 8px; }
+        .history-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid transparent;
+            border-left: 3px solid var(--accent-green);
+            border-radius: 8px;
+            padding: 10px 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 0.9rem;
+        }
+        .history-item:hover { 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid #333;
+            border-left: 3px solid var(--accent-green);
+        }
+        .h-user { font-weight: bold; color: #ddd; display: flex; align-items: center; gap: 8px; }
+        .h-amount { color: var(--accent-green); font-weight: 800; }
+        
     </style>
 </head>
 <body>
@@ -387,28 +477,30 @@
 
             <!-- PARTİ KARTI -->
             <div class="party-hero" style="display: flex; align-items: center; gap: 15px; text-align: left; padding: 15px;">
-                <div id="pLogoContainer" style="width: 60px; height: 60px; background: #222; border-radius: 12px; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; overflow: hidden; font-size: 1.5rem; color: var(--accent); flex-shrink: 0; padding: 0; filter: drop-shadow(0 0 10px rgba(231, 76, 60, 0.5));">
+                <div id="pLogoContainer" style="width: 60px; height: 60px; background: #222; border-radius: 12px; border: 1px solid #444; display: flex; align-items: center; justify-content: center; overflow: hidden; font-size: 1.5rem; color: var(--accent); flex-shrink: 0; padding: 0;">
                      <span id="pAbbr">MBP</span>
                 </div>
                 
                 <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
                     <div class="ph-name" id="pName" style="font-size: 1.2rem; line-height: 1; margin: 0;">Milli Birlik Partisi</div>
+                    <div id="pHeroIdeology" style="font-size: 0.9rem; color: #ccc; margin-top: 4px;">-</div>
                 </div>
             </div>
 
             <!-- TABS -->
             <div class="tabs">
-                <div class="tab-btn active" onclick="switchTab('bilgiler', this)">BİLGİLER</div>
-                <div class="tab-btn" onclick="switchTab('management', this)">YÖNETİM</div>
+                <div class="tab-btn" onclick="switchTab('bilgiler', this)">BİLGİLER</div>
+                <div class="tab-btn active" onclick="switchTab('management', this)">YÖNETİM</div>
                 <div class="tab-btn" onclick="switchTab('members', this)">ÜYELER</div>
                 <div class="tab-btn" onclick="switchTab('vault', this)">KASA</div>
+                <div class="tab-btn" onclick="switchTab('logs', this)">LOG</div>
             </div>
 
             <!-- TAB: BİLGİLER (YENİ) -->
-            <div id="tab-bilgiler" class="tab-content">
+            <div id="tab-bilgiler" class="tab-content" style="display:none;">
                 <div class="accordion-card">
                     <div class="accordion-header active" onclick="toggleAccordion(this)">
-                        <div class="accordion-title"><i class="fas fa-info-circle"></i> PARTİ BİLGİLERİ</div>
+                        <div class="accordion-title" style="color:var(--accent-gold);"><i class="fas fa-info-circle"></i> PARTİ BİLGİLERİ</div>
                         <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
                     <div class="accordion-content" style="max-height: 2000px;">
@@ -461,11 +553,11 @@
             </div>
 
             <!-- TAB: YÖNETİM -->
-            <div id="tab-management" class="tab-content" style="display:none;">
+            <div id="tab-management" class="tab-content">
                 <!-- GENEL AYARLAR -->
                 <div class="accordion-card">
                     <div class="accordion-header active" onclick="toggleAccordion(this)">
-                        <div class="accordion-title"><i class="fas fa-sliders-h"></i> GENEL AYARLAR</div>
+                        <div class="accordion-title" style="color:var(--accent-gold);"><i class="fas fa-sliders-h"></i> GENEL AYARLAR</div>
                          <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
                     <div class="accordion-content" style="max-height: 2000px;">
@@ -510,7 +602,7 @@
                 <!-- PARTİ MESAJI YAYINLA -->
                 <div class="accordion-card">
                     <div id="acc-publish" class="accordion-header" onclick="toggleAccordion(this)">
-                        <div class="accordion-title"><i class="fas fa-bullhorn"></i> PARTİ MESAJI YAYINLA</div>
+                        <div class="accordion-title" style="color:var(--accent-gold);"><i class="fas fa-bullhorn"></i> PARTİ MESAJI YAYINLA</div>
                         <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
                     <div class="accordion-content">
@@ -524,14 +616,14 @@
                                     <span id="charCount">0</span>/255
                                 </div>
                             </div>
-                            <button class="btn-save" onclick="publishMessage()">YAYINLA (50.000 ₺)</button>
+                            <button class="btn-save" style="background: var(--accent-green); color: #000; border: none; font-weight: bold;" onclick="publishMessage()">YAYINLA (50.000 ₺)</button>
                         </div>
                     </div>
                 </div>
 
                 <!-- PARTİYİ FESHET -->
                 <div class="settings-card" style="border-color: var(--accent-red);">
-                    <div class="card-header" style="color: var(--accent-red); border-color: var(--accent-red);"><i class="fas fa-skull-crossbones"></i> PARTİYİ FESHET</div>
+                    <div class="card-header" style="color: var(--accent-gold); border-color: var(--accent-red);"><i class="fas fa-skull-crossbones"></i> PARTİYİ FESHET</div>
                     <p style="color:#ccc; font-size:0.9rem; margin-bottom:15px;">
                         Partiyi kalıcı olarak siler. Tüm üyeler ihraç edilir. Kasa bakiyesi (fesih bedeli düşüldükten sonra) Genel Başkan'a aktarılır.
                         <br><br>
@@ -544,69 +636,159 @@
             <!-- TAB: ÜYELER -->
             <div id="tab-members" class="tab-content" style="display:none;">
                 <!-- GÖREV ATAMA (Sadece Başkan) -->
-                <div class="settings-card" id="roleAssignmentCard" style="display:none; border-color:var(--accent-gold);">
-                    <div class="card-header" style="color:var(--accent-gold);"><i class="fas fa-user-tag"></i> GÖREV ATAMA</div>
-                    <div class="form-group">
-                        <label class="form-label">Üye Seçin</label>
-                        <select id="selectMember" class="form-select"></select>
+                <div class="accordion-card" id="roleAssignmentCard" style="display:none;">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <div class="accordion-title" style="color:var(--accent-gold);"><i class="fas fa-user-tag"></i> GÖREV ATAMA</div>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Yeni Görev</label>
-                        <select id="selectRole" class="form-select">
-                            <option value="Üye">Üye</option>
-                            <option value="Teşkilat Sorumlusu">Teşkilat Sorumlusu</option>
-                            <option value="Başkan Yardımcısı">Başkan Yardımcısı</option>
-                            <option value="Genel Başkan">Genel Başkan (Devret)</option>
-                        </select>
+                    <div class="accordion-content" style="max-height: 2000px;">
+                        <div class="accordion-body">
+                            <div class="form-group">
+                                <label class="form-label">Üye Seçin</label>
+                                <select id="selectMember" class="form-select"></select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Yeni Görev</label>
+                                <select id="selectRole" class="form-select">
+                                    <option value="Üye">Üye</option>
+                                    <option value="Teşkilat Sorumlusu">Teşkilat Sorumlusu</option>
+                                    <option value="Başkan Yardımcısı">Başkan Yardımcısı</option>
+                                    <option value="Genel Başkan">Genel Başkan (Devret)</option>
+                                </select>
+                            </div>
+                            <button class="btn-save" onclick="assignRole()" style="background:var(--accent-green); color:#000;">GÖREVİ GÜNCELLE (50.000 ₺)</button>
+                        </div>
                     </div>
-                    <button class="btn-save" onclick="assignRole()" style="background:var(--accent-gold); color:#000;">GÖREVİ GÜNCELLE (50.000 ₺)</button>
                 </div>
 
                 <!-- ÜYE LİSTESİ -->
-                <div class="settings-card">
-                    <div class="card-header"><i class="fas fa-users"></i> ÜYE LİSTESİ <span id="totalMembersBadge" style="color:#888; font-size:0.8em; margin-left:5px;">(0)</span></div>
-                    <div class="member-list" id="memberList">
-                        <!-- JS Dolduracak -->
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <div class="accordion-title" style="color:var(--accent-gold);"><i class="fas fa-users"></i> ÜYE LİSTESİ <span id="totalMembersBadge" style="color:#888; font-size:0.8em; margin-left:5px;">(0)</span></div>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
+                    </div>
+                    <div class="accordion-content" style="max-height: 2000px;">
+                        <div class="accordion-body">
+                            <div class="member-list" id="memberList">
+                                <!-- JS Dolduracak -->
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- BAŞVURULAR -->
-                <div class="settings-card" id="applicationsCard" style="display:none;">
-                    <div class="card-header"><i class="fas fa-user-plus"></i> BAŞVURULAR</div>
-                    <div class="application-list" id="applicationList">
-                        <!-- JS Dolduracak -->
+                <div class="accordion-card" id="applicationsCard" style="display:none;">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <div class="accordion-title" style="color:var(--accent-gold);"><i class="fas fa-user-plus"></i> BAŞVURULAR</div>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
+                    </div>
+                    <div class="accordion-content" style="max-height: 2000px;">
+                        <div class="accordion-body">
+                            <div class="application-list" id="applicationList">
+                                <!-- JS Dolduracak -->
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- TAB: KASA -->
             <div id="tab-vault" class="tab-content" style="display:none;">
-                <div class="treasury-card">
-                    <div style="font-size:0.8rem; color:#aaa; margin-bottom:5px;">TOPLAM VARLIK</div>
-                    <div class="tr-val" id="partyVault">0 ₺</div>
-                    <div class="tr-action">
-                        <input type="number" id="input_vault" class="modern-input" placeholder="Miktar">
+
+                <!-- KASA YÖNETİMİ ACCORDION (FACTORY STYLE) -->
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <div class="accordion-title" style="color:var(--accent-gold);"><i class="fas fa-coins"></i> KASA YÖNETİMİ</div>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
-                    <button class="btn-donate" onclick="confirmAction('vault', 'add', 'vault', 'Para')" style="margin-top:10px;">KASAYA EKLE</button>
+                    <div class="accordion-content" style="max-height: 1000px;">
+                        <div class="accordion-body">
+                            
+                            <!-- Bakiye Kısmı -->
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                <div style="font-size: 0.9rem; color: #888; margin-bottom: 5px;">MEVCUT BAKİYE</div>
+                                <div class="vault-balance-amount" id="partyVault" style="color: var(--accent-gold);">0 ₺</div>
+                                
+                                <!-- No capacity for parties normally, but keeping structure if needed or just removing text -->
+                                <!-- <div class="vault-balance-capacity" id="vaultCapacityText" style="color: #666; font-size: 0.85rem;"></div> -->
+                                
+                                <!-- Progress Bar (Always 100% or just visual) -->
+                                <div style="width: 100%; height: 6px; background: #222; border-radius: 3px; margin: 10px 0; overflow: hidden; border: 1px solid #333;">
+                                    <div id="vaultProgressBar" style="width: 100%; height: 100%; background: var(--accent-gold); transition: width 0.5s;"></div>
+                                </div>
+                            </div>
+
+                            <!-- İşlem Kısmı -->
+                            <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border: 1px solid #333;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                    <div style="font-size: 0.85rem; color: #aaa;">İşlem Miktarı:</div>
+                                    <div style="text-align: right; font-size: 0.75rem; color: #888;">
+                                        <span style="margin-right: 10px;">Cüzdan: <span id="maxVaultDeposit" style="color:var(--accent-green); cursor:pointer; font-weight:bold;" onclick="setVaultAmount('wallet')">0</span> ₺</span>
+                                        <!-- Only showing wallet as typical action is deposit -->
+                                    </div>
+                                </div>
+                                
+                                <div style="position: relative; margin-bottom: 15px;">
+                                    <input type="number" id="input_vault" class="form-input" placeholder="0" style="text-align: center; font-size: 1.5rem; color: var(--accent-gold); font-weight: bold; padding-right: 40px; border-color: #444;">
+                                    <span style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #666; font-weight: bold;">₺</span>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
+                                    <button class="vault-btn" onclick="confirmAction('vault', 'add', 'vault', 'Para')" style="background: var(--accent-green); color: #000;">
+                                        <i class="fas fa-arrow-down"></i> BAĞIŞLA
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
                 </div>
 
-                <!-- BAĞIŞ SIRALAMASI -->
-                <div class="donation-ranking" style="margin-top:20px;">
-                    <h4 style="color:var(--accent-gold); margin-bottom:10px; border-bottom:1px solid #333; padding-bottom:5px;">
-                        <i class="fas fa-trophy"></i> EN ÇOK BAĞIŞ YAPANLAR
-                    </h4>
-                    <div id="donationRankingList" class="ranking-grid">
-                        <!-- JS will fill this -->
+                <!-- SON BAĞIŞLAR (Accordion) -->
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <div class="accordion-title" style="color:var(--accent-gold);"><i class="fas fa-history"></i> SON BAĞIŞLAR <span id="totalDonationCount" class="count-badge" style="margin-left:8px;">(0)</span></div>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
+                    </div>
+                    <div class="accordion-content" style="max-height: 2000px;">
+                        <div class="accordion-body">
+                            <div id="donationList" class="history-list">
+                                <!-- JS will fill this -->
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- SON BAĞIŞLAR -->
-                <div class="donation-history" style="margin-top:20px;">
-                    <h4 style="color:var(--accent-gold); margin-bottom:10px; border-bottom:1px solid #333; padding-bottom:5px;">
-                        SON BAĞIŞLAR <span id="totalDonationCount" style="color:#666; font-size:0.8em; margin-left:5px;">(0)</span>
-                    </h4>
-                    <div id="donationList" style="display:flex; flex-direction:column; gap:10px;">
-                        <!-- JS will fill this -->
+                <!-- EN ÇOK BAĞIŞ YAPANLAR (Accordion) -->
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <div class="accordion-title" style="color:var(--accent-gold);"><i class="fas fa-trophy"></i> EN ÇOK BAĞIŞ YAPANLAR</div>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
+                    </div>
+                    <div class="accordion-content" style="max-height: 2000px;">
+                        <div class="accordion-body">
+                            <div id="donationRankingList" class="ranking-grid">
+                                <!-- JS will fill this -->
+                                <div style="text-align:center; padding:10px; color:#666;">Veri yok</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: LOG (YENİ) -->
+            <div id="tab-logs" class="tab-content" style="display:none;">
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="if(window.toggleAccordion) toggleAccordion(this)">
+                        <div class="accordion-title" style="color:var(--accent-gold);"><i class="fas fa-history"></i> PARTİ LOGLARI</div>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
+                    </div>
+                    <div class="accordion-content" style="max-height: 2000px;">
+                        <div class="accordion-body">
+                            <div id="partyLogs" style="display:flex; flex-direction:column; gap:10px;">
+                                <div style="color:#aaa; font-style:italic; text-align:center; padding:20px;">Henüz kayıt bulunmuyor.</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -621,6 +803,35 @@
                 <div class="m-btns">
                     <button class="m-btn btn-cancel" onclick="closeModal('confirmModal')">İPTAL</button>
                     <button class="m-btn btn-confirm" id="btnConfirmAction">ONAYLA</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- APPLICATION ACTION MODAL -->
+        <div id="appActionModal" class="modal-overlay">
+            <div class="modal-content" style="border-top-color: var(--accent-cyan); position: relative;">
+                <i class="fas fa-times" onclick="closeModal('appActionModal')" style="position: absolute; top: 15px; right: 15px; color: #666; cursor: pointer; font-size: 1.2rem;"></i>
+                <div class="m-title">BAŞVURU İŞLEMİ</div>
+                <div style="text-align:center; margin-bottom:15px;">
+                    <img id="appActionAvatar" src="" style="width:60px; height:60px; border-radius:50%; border:2px solid #333; margin-bottom:10px;">
+                    <div id="appActionName" style="font-size:1.1rem; font-weight:bold; color:#fff;"></div>
+                    <div style="font-size:0.8rem; color:#888;">Başvuru Tarihi: <span id="appActionDate" style="color:#ccc;"></span></div>
+                </div>
+                <div class="m-btns">
+                    <button class="m-btn" id="btnAppReject" style="background:var(--accent-red); color:#fff;">REDDET</button>
+                    <button class="m-btn" id="btnAppAccept" style="background:var(--accent-green); color:#000;">KABUL ET</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESULT MODAL -->
+        <div id="resultModal" class="modal-overlay" style="z-index: 201;">
+            <div class="modal-content">
+                <div id="resultIcon" style="font-size: 3rem; margin-bottom: 15px;"></div>
+                <div id="resultTitle" class="m-title"></div>
+                <p id="resultDesc" style="color:#ccc; font-size:0.9rem; margin-bottom:20px;"></p>
+                <div class="m-btns">
+                    <button class="m-btn btn-confirm" onclick="closeModal('resultModal')">TAMAM</button>
                 </div>
             </div>
         </div>
@@ -641,7 +852,7 @@
             applications: []
         };
 
-        const fmt = (n) => (n || 0).toLocaleString('tr-TR');
+        const fmt = (n) => Number(n || 0).toLocaleString('tr-TR');
 
         window.onload = async () => {
             // Loader handling
@@ -803,15 +1014,42 @@
                 }
             };
 
-            setVal('partyVault', fmt(party.vault) + " ₺");
+            setVal('partyVault', fmt(party.vault));
+            const maxDepositEl = document.getElementById('maxVaultDeposit');
+            if(maxDepositEl) {
+                maxDepositEl.innerText = fmt(user.money || 0);
+            }
             setVal('pNameInput', party.name);
             setVal('pAbbrInput', party.abbr);
             setVal('pIdeology', party.ideology);
             setVal('pAnnouncementInput', party.announcement || '');
             setVal('pName', party.name);
+            setVal('pHeroIdeology', party.ideology);
+
+            // Determine User Role for Hero Section
+            let myRoleText = 'Üye';
+            if (party.members) {
+                 const selfMember = party.members.find(m => Number(m.id) === Number(user.id));
+                 if (selfMember) {
+                     myRoleText = selfMember.role || selfMember.party_role || 'Üye';
+                 }
+            }
+            // Override for actual leader
+            if (Number(party.leader_id) === Number(user.id)) {
+                myRoleText = 'Genel Başkan';
+            }
+            
+            setVal('pMyRole', myRoleText);
+            const myRoleEl = document.getElementById('pMyRole');
+            if(myRoleEl) {
+                if(myRoleText === 'Genel Başkan') myRoleEl.style.color = 'var(--accent-green)';
+                else if(myRoleText === 'Başkan Yardımcısı') myRoleEl.style.color = 'var(--accent-gold)';
+                else if(myRoleText === 'Teşkilat Sorumlusu') myRoleEl.style.color = '#3498db';
+                else myRoleEl.style.color = '#ccc';
+            }
 
             // Accordion Info Populate
-            setVal('info-leader', party.leader_name || '-');
+            setVal('info-leader', (party.leader_id && party.leader_name) ? `${party.leader_id} - ${party.leader_name}` : '-');
             setVal('info-ideology', party.ideology || '-');
             setVal('info-abbr', party.abbr || '-');
             setVal('info-created', party.created_at ? new Date(party.created_at).toLocaleDateString('tr-TR') : '-');
@@ -828,10 +1066,10 @@
 
             if(party.members) {
                  const vice = party.members.find(m => m.party_role === 'Başkan Yardımcısı');
-                 setVal('info-vice', vice ? vice.username : '-');
+                 setVal('info-vice', vice ? `${vice.id} - ${vice.username}` : '-');
 
                  const org = party.members.find(m => m.party_role === 'Teşkilat Sorumlusu');
-                 setVal('info-org', org ? org.username : '-');
+                 setVal('info-org', org ? `${org.id} - ${org.username}` : '-');
             }
 
             // setVal('pMembers', party.members_count || 0);
@@ -849,10 +1087,10 @@
                 // Color styling
                 if (party.color) {
                     logoContainer.style.color = party.color;
-                    logoContainer.style.borderColor = party.color;
+                    // logoContainer.style.borderColor = party.color;
                     // logoContainer.style.boxShadow = `0 0 15px ${party.color}40`;
                     // Use dynamic drop shadow if preferred, or keep the static red one from HTML
-                    logoContainer.style.filter = `drop-shadow(0 0 10px ${party.color}80)`;
+                    // logoContainer.style.filter = `drop-shadow(0 0 10px ${party.color}80)`;
                 }
             }
 
@@ -892,6 +1130,13 @@
         // --- KASA ---
         let pendingAction = null;
 
+        function setVaultAmount(type) {
+            const input = document.getElementById('input_vault');
+            if(type === 'wallet') {
+                input.value = user.money;
+            }
+        }
+        
         function confirmAction(type, action, itemKey, itemName) {
             const inputId = `input_${itemKey}`;
             const amount = parseInt(document.getElementById(inputId).value);
@@ -920,6 +1165,7 @@
                 
                 const formData = new FormData();
                 formData.append('partyId', party.id);
+                formData.append('userId', user.id);
                 formData.append('name', name);
                 formData.append('abbr', abbr);
                 formData.append('ideology', ideology);
@@ -931,18 +1177,25 @@
                     method: 'POST',
                     body: formData
                 })
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) throw new Error('Sunucu hatası: ' + res.status);
+                    return res.json();
+                })
                 .then(data => {
                     if(data.success) {
-                        toastr.success("Ayarlar güncellendi ve ücret tahsil edildi.");
+                        showResultModal(true, "BAŞARILI", "Ayarlar güncellendi ve ücret tahsil edildi.");
                         party.name = name;
                         party.abbr = abbr;
                         party.ideology = ideology;
                         if(data.image_path) party.logo = data.image_path;
                         loadPartyData(); // Reload for vault update
                     } else {
-                        toastr.error(data.message);
+                        showResultModal(false, "BAŞARISIZ", data.message || "İşlem başarısız.");
                     }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showResultModal(false, "HATA", "Bir hata oluştu: " + err.message);
                 });
                 return;
             }
@@ -954,15 +1207,22 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ partyId: party.id, userId: user.id, message: pendingAction.message })
                 })
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) throw new Error('Sunucu hatası: ' + res.status);
+                    return res.json();
+                })
                 .then(data => {
                     if(data.success) {
-                        toastr.success("Mesaj yayınlandı.");
+                        showResultModal(true, "MESAJ YAYINLANDI", "Mesajınız başarıyla yayınlandı ve ücret tahsil edildi.");
                         party.announcement = pendingAction.message;
                         loadPartyData();
                     } else {
-                        toastr.error(data.message);
+                        showResultModal(false, "YAYINLAMA BAŞARISIZ", data.message || "İşlem başarısız.");
                     }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showResultModal(false, "HATA", "Bir hata oluştu: " + err.message);
                 });
                 return;
             }
@@ -999,7 +1259,7 @@
                 .then(res => res.json())
                 .then(data => {
                     if(data.success) {
-                        toastr.success(data.message);
+                        showResultModal(true, "BAŞARILI", data.message);
                         if (newRole === 'Genel Başkan') {
                             toastr.info("Başkanlık devredildi, yönlendiriliyorsunuz...");
                             setTimeout(() => {
@@ -1009,12 +1269,12 @@
                             loadPartyData();
                         }
                     } else {
-                        toastr.error(data.message);
+                        showResultModal(false, "HATA", data.message);
                     }
                 })
                 .catch(err => {
                     console.error(err);
-                    toastr.error("Bir hata oluştu.");
+                    showResultModal(false, "HATA", "Bir hata oluştu.");
                 });
                 return;
             }
@@ -1063,15 +1323,19 @@
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    toastr.success(data.message);
+                    showResultModal(true, "BAŞARILI", data.message);
                     if (document.getElementById(inputId)) {
                         document.getElementById(inputId).value = "";
                     }
                     loadPartyData(); // Reload to get fresh data
                     loadUserData(); // Reload user money
                 } else {
-                    toastr.error(data.message);
+                    showResultModal(false, "BAŞARISIZ", data.message);
                 }
+            })
+            .catch(err => {
+                console.error(err);
+                showResultModal(false, "HATA", "Sunucu hatası oluştu.");
             });
         }
 
@@ -1081,6 +1345,31 @@
                const t = document.getElementById('confirmTitle');
                if(t) t.innerText = 'ONAYLA';
             }
+        }
+
+        function showResultModal(success, title, message) {
+            const modal = document.getElementById('resultModal');
+            const icon = document.getElementById('resultIcon');
+            const titleEl = document.getElementById('resultTitle');
+            const desc = document.getElementById('resultDesc');
+            const btn = modal.querySelector('.btn-confirm');
+
+            if(success) {
+                icon.innerHTML = '<i class="fas fa-check-circle" style="color: var(--accent-green);"></i>';
+                titleEl.innerText = title;
+                titleEl.style.color = 'var(--accent-green)';
+                btn.style.background = 'var(--accent-green)';
+                btn.style.color = '#000';
+            } else {
+                icon.innerHTML = '<i class="fas fa-times-circle" style="color: var(--accent-red);"></i>';
+                titleEl.innerText = title;
+                titleEl.style.color = 'var(--accent-red)';
+                btn.style.background = 'var(--accent-red)';
+                btn.style.color = '#fff';
+            }
+
+            desc.innerText = message;
+            modal.style.display = 'flex';
         }
 
         // --- AYARLAR ---
@@ -1207,37 +1496,59 @@
                 
                 let roleClass = 'role-member';
                 let roleText = m.role || 'Üye';
+                let borderColor = 'transparent';
                 
                 // Fix for Leader Role Display
                 if (m.id == party.leader_id) {
                     roleText = 'Genel Başkan';
                 }
 
-                if(roleText === 'Genel Başkan') roleClass = 'role-leader';
-                else if(roleText === 'Başkan Yardımcısı') roleClass = 'role-vice';
-                else if(roleText === 'Teşkilat Sorumlusu') roleClass = 'role-org';
+                // Ensure specific roles act correctly
+                if(roleText === 'Genel Başkan') { roleClass = 'role-leader'; borderColor = 'var(--accent-green)'; }
+                else if(roleText === 'Başkan Yardımcısı') { roleClass = 'role-vice'; borderColor = 'var(--accent-gold)'; }
+                else if(roleText === 'Teşkilat Sorumlusu') { roleClass = 'role-org'; borderColor = '#3498db'; }
+                else { roleClass = 'role-member'; borderColor = 'transparent'; }
+
+                if(borderColor !== 'transparent') {
+                    div.style.borderLeft = `4px solid ${borderColor}`;
+                }
 
                 const isMe = (user.id === m.id);
                 const isLeader = (roleText === 'Genel Başkan');
                 
-                // Reputation Calculation
-                const reputation = Math.floor(Number(m.total_donated || 0) / 5000);
+                // Date Formatting
+                let joinDate = '-';
+                if (m.joined_at) {
+                    const d = new Date(m.joined_at);
+                    const day = d.getDate();
+                    const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+                    const month = months[d.getMonth()];
+                    const year = d.getFullYear();
+                    const hours = String(d.getHours()).padStart(2, '0');
+                    const minutes = String(d.getMinutes()).padStart(2, '0');
+                    
+                    joinDate = `${day} ${month} ${year} - ${hours}.${minutes}`;
+                }
 
                 div.innerHTML = `
                     <div class="mc-left">
-                        <img src="${m.avatar || 'uploads/avatars/default.png'}" class="mc-avatar" style="width: 40px; height: 40px; object-fit: cover;">
-                        <div>
-                            <div class="mc-name">#${m.id} - ${m.username} <span style="color:#888; font-size:0.8em;">(Lvl ${m.level || 1})</span></div>
-                            <div style="display:flex; gap:10px; align-items:center; margin-top:2px;">
-                                <div class="mc-role ${roleClass}">${roleText}</div>
-                                <div style="font-size:0.75rem; color:#aaa;"><i class="fas fa-star" style="color:gold;"></i> İtibar: ${reputation}</div>
+                        <img src="${m.avatar || 'uploads/avatars/default.png'}" class="mc-avatar" style="width: 30px; height: 30px; object-fit: cover; border-radius:50%;">
+                        <div style="margin-left:8px; display:flex; flex-direction:column; justify-content:center;">
+                            <div class="mc-name" style="font-size:0.75rem;">
+                                ${m.id} - ${m.username} <span style="color:#9b59b6; font-size:0.7rem;">(lvl ${m.level || 1})</span>
+                            </div>
+                            <div style="font-size:0.65rem; color:#888; font-weight:500;">
+                                <i class="fas fa-calendar-alt" style="color:#aaa; font-size:0.65rem; margin-right:2px;"></i> Katılım: <span style="color:#ddd;">${joinDate}</span>
                             </div>
                         </div>
                     </div>
-                    <div class="mc-actions">
-                        ${!isLeader ? `
-                        <button class="btn-icon btn-kick" onclick="confirmMemberAction('kick', ${m.id}, '${m.username}')" title="At"><i class="fas fa-times"></i></button>
-                        ` : '<span class="role-badge badge-leader">LİDER</span>'}
+                    <div class="mc-right" style="display:flex; align-items:center; gap:8px;">
+                        <span class="mc-role ${roleClass}" style="font-size:0.65rem;">${roleText}</span>
+                        ${ (m.id !== party.leader_id) ? `
+                        <button class="btn-icon btn-kick" onclick="confirmMemberAction('kick', ${m.id}, '${m.username}')" title="Üyeyi Çıkar" style="width:24px; height:24px; font-size:0.8rem;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        ` : ''}
                     </div>
                 `;
                 list.appendChild(div);
@@ -1248,16 +1559,19 @@
             fetch('/api/party/promote', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ partyId: party.id, userId, type })
+                body: JSON.stringify({ partyId: party.id, userId, type, leaderId: user.id })
             })
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    toastr.success(data.message);
+                    showResultModal(true, 'BAŞARILI', data.message);
                     loadPartyData();
                 } else {
-                    toastr.error(data.message);
+                    showResultModal(false, 'HATA', data.message);
                 }
+            })
+            .catch(err => {
+                showResultModal(false, 'HATA', 'İşlem sırasında bir hata oluştu');
             });
         }
 
@@ -1302,7 +1616,7 @@
             fetch('/api/party/kick', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ partyId: party.id, userId })
+                body: JSON.stringify({ partyId: party.id, userId, kickerId: user.id })
             })
             .then(res => res.json())
             .then(data => {
@@ -1321,7 +1635,7 @@
             list.innerHTML = '';
             
             if(!party.applications || party.applications.length === 0) {
-                list.innerHTML = '<div style="text-align:center; color:#888; padding:10px;">Başvuru bulunmamaktadır.</div>';
+                list.innerHTML = '<div style="text-align:center; color:#888; padding:10px; font-size:0.75rem;">Başvuru bulunmamaktadır.</div>';
                 return;
             }
 
@@ -1329,48 +1643,41 @@
 
             party.applications.forEach(app => {
                 const div = document.createElement('div');
-                div.className = 'member-card'; // Use member-card style for consistency
-
-                let actionBtns = '';
-                if(isLeader) {
-                    actionBtns = `
-                        <button class="btn-icon btn-accept" onclick="confirmAppAction('accept', ${app.id}, '${app.username}')" title="Kabul Et" style="color: var(--accent-green); border-color: var(--accent-green); margin-right: 5px;"><i class="fas fa-check"></i></button>
-                        <button class="btn-icon btn-reject" onclick="confirmAppAction('reject', ${app.id}, '${app.username}')" title="Reddet" style="color: var(--accent-red); border-color: var(--accent-red);"><i class="fas fa-times"></i></button>
-                    `;
+                div.className = 'member-card'; // Reuse member card style
+                div.style.cursor = isLeader ? 'pointer' : 'default';
+                div.style.padding = '8px';
+                div.style.borderLeft = '4px solid #ff9f43';
+                
+                if (isLeader) {
+                    div.onclick = () => openAppActionModal(app);
                 }
 
                 div.innerHTML = `
                     <div class="mc-left">
-                        <img src="${app.avatar || 'uploads/avatars/default.png'}" class="mc-avatar" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%;">
-                        <div>
-                            <div class="mc-name">#${app.user_id} - ${app.username} <span style="color:#888; font-size:0.8em;">(Lvl ${app.level || 1})</span></div>
-                            <div style="font-size: 0.75rem; color: #aaa;">${new Date(app.created_at).toLocaleString('tr-TR')}</div>
+                        <img src="${app.avatar || 'uploads/avatars/default.png'}" class="mc-avatar" style="width: 30px; height: 30px; object-fit: cover; border-radius: 50%;">
+                        <div style="margin-left: 8px;">
+                            <div class="mc-name" style="font-size: 0.75rem;">${app.user_id} - ${app.username} <span style="color:#666; font-size:0.75rem;">(Lvl ${app.level || 1})</span></div>
+                            <div style="font-size: 0.65rem; color: #aaa;">Başvuru Tarihi: ${new Date(app.created_at).toLocaleDateString('tr-TR')} - ${new Date(app.created_at).toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'})}</div>
                         </div>
                     </div>
-                    <div class="mc-actions">
-                        ${actionBtns}
+                    <div class="mc-right" style="display: flex; align-items: center;">
+                        ${isLeader ? '<i class="fas fa-chevron-right" style="font-size: 0.9rem; color: #666;"></i>' : ''}
                     </div>
                 `;
                 list.appendChild(div);
             });
         }
 
-        function confirmAppAction(type, appId, appName) {
-            const isLeader = (Number(user.id) === Number(party.leader_id));
-            if(!isLeader) return toastr.error("Bu işlem için yetkiniz yok.");
-
-            pendingAction = { type: 'application', action: type, appId: appId };
+        function openAppActionModal(app) {
+            document.getElementById('appActionAvatar').src = app.avatar || 'uploads/avatars/default.png';
+            document.getElementById('appActionName').innerText = app.username;
+            document.getElementById('appActionDate').innerText = new Date(app.created_at).toLocaleDateString('tr-TR');
             
-            let desc = "";
-            if(type === 'accept') {
-                desc = `${appName} isimli kullanıcının başvurusunu onaylamak istiyor musunuz?`;
-            } else {
-                desc = `${appName} isimli kullanıcının başvurusunu reddetmek istiyor musunuz?`;
-            }
+            // Set actions
+            document.getElementById('btnAppAccept').onclick = () => { closeModal('appActionModal'); acceptApp(app.id); };
+            document.getElementById('btnAppReject').onclick = () => { closeModal('appActionModal'); rejectApp(app.id); };
             
-            document.getElementById('confirmDesc').innerText = desc;
-            document.getElementById('btnConfirmAction').onclick = executeAction;
-            document.getElementById('confirmModal').style.display = 'flex';
+            document.getElementById('appActionModal').style.display = 'flex';
         }
 
         function acceptApp(applicationId) {
@@ -1382,12 +1689,13 @@
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    toastr.success("Başvuru kabul edildi.");
+                    showResultModal(true, 'BAŞARILI', 'Başvuru kabul edildi.');
                     loadPartyData();
                 } else {
-                    toastr.error(data.message);
+                    showResultModal(false, 'HATA', data.message);
                 }
-            });
+            })
+            .catch(err => showResultModal(false, 'HATA', 'Bir hata oluştu.'));
         }
 
         function rejectApp(applicationId) {
@@ -1399,12 +1707,17 @@
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    toastr.success("Başvuru reddedildi.");
+                    showResultModal(true, 'BAŞARILI', 'Başvuru reddedildi.');
                     loadPartyData();
                 } else {
-                    toastr.error(data.message);
+                    showResultModal(false, 'HATA', data.message);
                 }
-            });
+            })
+            .catch(err => showResultModal(false, 'HATA', 'Bir hata oluştu.'));
+        }
+
+        function legacy_confirmAppAction(type, appId, appName) {
+            // Deprecated but kept to prevent breaking if referenced elsewhere strictly
         }
 
         function renderDonationRanking() {
@@ -1423,6 +1736,9 @@
                 const rank = index + 1;
                 const card = document.createElement('div');
                 card.className = `rank-card rank-${rank}`;
+                card.style.display = 'flex';
+                card.style.alignItems = 'center';
+                card.style.padding = '10px';
                 
                 let avatarUrl = 'uploads/avatars/default.png';
                 if (m.avatar && m.avatar !== 'uploads/avatars/default.png') {
@@ -1431,18 +1747,17 @@
 
                 card.innerHTML = `
                     <div class="rank-badge rb-${rank}">${rank}</div>
-                    <img src="${avatarUrl}" style="width:30px; height:30px; border-radius:50%; margin-right:10px; border:1px solid #555;">
+                    <img src="${avatarUrl}" style="width:36px; height:36px; border-radius:50%; margin-right:12px; border:2px solid #333;">
                     <div style="flex:1;">
-                        <div style="font-size:0.9rem; font-weight:bold; color:#fff;">${m.username}</div>
-                        <div style="font-size:0.75rem; color:#aaa;">Toplam: <span style="color:var(--accent-gold);">${fmt(m.total_donated)} ₺</span></div>
+                        <div style="font-size:0.75rem; font-weight:bold; color:#fff;">${m.id} - ${m.username} <span style="color:#aaa; font-size:0.75rem;">(Lvl ${m.level})</span></div>
+                        <div style="font-size:0.75rem; color:#aaa;">Toplam: <span style="color:var(--accent-gold); font-weight:bold;">${fmt(m.total_donated)} ₺</span></div>
                     </div>
-                    <i class="fas fa-crown" style="color:${rank === 1 ? '#ffd700' : (rank === 2 ? '#c0c0c0' : '#cd7f32')}; font-size:1.2rem;"></i>
                 `;
                 container.appendChild(card);
             });
             
             if (container.innerHTML === '') {
-                container.innerHTML = '<div style="text-align:center; color:#666; font-size:0.8rem;">Henüz bağış yapılmamış.</div>';
+                container.innerHTML = '<div style="text-align:center; color:#666; font-size:0.85rem; padding:10px;">Henüz bağış yapılmamış.</div>';
             }
         }
 
@@ -1479,32 +1794,19 @@
                     avatarUrl = log.avatar;
                 }
                 
-                const reputation = Math.floor(log.amount / 5000);
-                const dateStr = new Date(log.created_at).toLocaleString('tr-TR');
+                const dateStr = new Date(log.created_at).toLocaleString('tr-TR', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'});
                 
-                let roleClass = '';
-                if(log.role === 'Genel Başkan') roleClass = 'role-leader';
-                else if(log.role === 'Genel Başkan Yardımcısı') roleClass = 'role-minister';
-
                 const item = document.createElement('div');
-                item.className = 'member-card';
-                item.style.padding = '8px';
+                item.className = 'history-item';
                 item.innerHTML = `
-                    <div class="mc-left">
-                        <img src="${avatarUrl}" class="mc-avatar" style="width:30px; height:30px;">
-                        <div style="flex: 1;">
-                            <div class="mc-name" style="font-size:0.9rem;">
-                                #${log.user_id} - ${log.username} 
-                                <span style="color:#aaa; font-weight:normal;">(Lv.${log.level || 1})</span>
-                                <span class="mc-role ${roleClass}" style="font-size:0.65em; padding:1px 4px; margin-left:5px; vertical-align: middle;">${log.role || 'Üye'}</span>
+                    <div class="h-user" style="align-items:flex-start;">
+                        <img src="${avatarUrl}" style="width:32px; height:32px; border-radius:50%; object-fit:cover; margin-top:2px;">
+                        <div>
+                            <div style="line-height:1.2; font-size:0.75rem; color:#ccc;">
+                                <span style="font-weight:bold; color:var(--accent-red);">${log.user_id} - ${log.username}</span> 
+                                Parti Kasasına <span style="font-weight:bold; color:var(--accent-green);">${fmt(log.amount)} ₺</span> Bağışladı
                             </div>
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px; font-size:0.75rem; color:#ccc;">
-                                <span>
-                                    <span style="color:var(--accent-green); font-weight:bold;">+${fmt(log.amount)} ₺</span> 
-                                    <span style="color:var(--accent-gold); margin-left:5px;">(+${reputation} İtibar)</span>
-                                </span>
-                                <span style="font-size:0.7rem; color:#666;">${dateStr}</span>
-                            </div>
+                            <div style="font-size:0.75rem; color:#666; margin-top:3px;">${dateStr}</div>
                         </div>
                     </div>
                 `;
@@ -1523,6 +1825,105 @@
             if(element) {
                 element.classList.add('active');
             }
+
+            if(tabName === 'logs') {
+                loadPartyLogs();
+            }
+        }
+
+        // --- LOGLAR ---
+        async function loadPartyLogs() {
+            try {
+                const res = await fetch(`/api/party/logs/${party.id}`);
+                const data = await res.json();
+                
+                if (data.success) {
+                    renderPartyLogs(data.logs.slice(0, 25));
+                }
+            } catch (error) {
+                
+            }
+        }
+
+        function renderPartyLogs(logs) {
+            const list = document.getElementById('partyLogs');
+            list.innerHTML = '';
+            
+            if(!logs || logs.length === 0) {
+                list.innerHTML = '<div style="color:#aaa; font-style:italic; text-align:center; padding:20px;">Henüz kayıt bulunmuyor.</div>';
+                return;
+            }
+
+            // İşlem Renkleri
+            const typeColors = {
+                'deposit': '#2ecc71',          // Yeşil
+                'withdraw': '#e74c3c',         // Kırmızı
+                'settings_update': '#3498db',  // Mavi
+                'announcement': '#e67e22',     // Turuncu
+                'promote': '#f1c40f',          // Sarı
+                'kick': '#c0392b',             // Koyu Kırmızı
+                'join': '#1abc9c',             // Turkuaz
+                'leave': '#95a5a6',            // Gri
+                'role_change': '#9b59b6',      // Mor
+                'default': '#7f8c8d'           // Varsayılan
+            };
+
+            logs.forEach(log => {
+                let icon = 'fa-circle';
+                let color = typeColors[log.action_type] || typeColors['default'];
+                let content = '';
+                const amountStr = log.amount ? fmt(log.amount) : '0';
+
+                // Format: "id - username adlı oyuncu Parti Kasına ... TL bağışladı"
+                if(log.action_type === 'deposit') {
+                    icon = 'fa-arrow-up'; 
+                    content = `<span style="color:#fff; font-weight:bold;">${log.user_id} - ${log.username || 'Bilinmeyen'}</span> adlı oyuncu Parti Kasasına <span style="color:${color}; font-weight:bold;">${amountStr} TL</span> bağışladı.`;
+                } 
+                // Format: "id - username Parti Başkanı ... işlemi yaptı ... tl harcadı"
+                else if (['withdraw', 'announcement', 'promote'].includes(log.action_type)) {
+                    let actionName = 'İşlem';
+                    if(log.action_type === 'withdraw') { actionName = 'Para Çekme'; icon = 'fa-arrow-down'; }
+                    else if(log.action_type === 'announcement') { actionName = 'Duyuru Yayınlama'; icon = 'fa-bullhorn'; }
+                    else if(log.action_type === 'promote') { actionName = 'Terfi'; icon = 'fa-chevron-up'; }
+
+                    content = `<span style="color:#fff; font-weight:bold;">${log.user_id} - ${log.username || 'Bilinmeyen'}</span> Parti Başkanı ${actionName} işlemi yaptı <span style="color:#e74c3c; font-weight:bold;">${amountStr} TL</span> harcadı.`;
+                }
+                else if(log.action_type === 'kick' || log.action_type === 'settings_update' || log.action_type === 'role_change') {
+                    // Kick, Settings ve Role Change işlemi için backend'den gelen mesajı direkt göster
+                    if(log.action_type === 'settings_update') icon = 'fa-cog';
+                    if(log.action_type === 'role_change') icon = 'fa-user-tag';
+                    content = `<span style="color:#fff;">${log.message}</span>`;
+                } 
+                else {
+                    // Diğer işlemler
+                    if(log.action_type === 'join') { icon = 'fa-user-plus'; }
+                    else if(log.action_type === 'leave') { icon = 'fa-sign-out-alt'; }
+                    else if(log.action_type === 'kick') { icon = 'fa-user-times'; }
+                    else if(log.action_type === 'role_change') { icon = 'fa-user-tag'; }
+                    
+                    let msg = log.message || log.action_type;
+                    content = `<span style="color:#fff; font-weight:bold;">${log.user_id} - ${log.username || 'Bilinmeyen'}</span>: ${msg}`;
+                }
+
+                // Tarih
+                const dateStr = new Date(log.created_at).toLocaleString('tr-TR', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'});
+
+                const item = document.createElement('div');
+                item.style.cssText = 'background:rgba(255,255,255,0.03); padding:10px; border-radius:8px; display:flex; align-items:center; gap:12px; border-left:3px solid ' + color;
+                
+                item.innerHTML = `
+                    <div style="width:36px; height:36px; background:#222; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <i class="fas ${icon}" style="color:${color};"></i>
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-size:0.75rem; color:#aaa; line-height:1.4;">
+                            ${content}
+                        </div>
+                        <div style="font-size:0.70rem; color:#555; margin-top:4px;">${dateStr}</div>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
         }
 
     </script>
