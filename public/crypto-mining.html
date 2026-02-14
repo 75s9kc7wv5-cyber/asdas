@@ -243,6 +243,21 @@
             justify-content: center;
         }
 
+        .rig-slot.buy-slot-container {
+            opacity: 1;
+            background: rgba(247, 147, 26, 0.1);
+            border: 1px dashed var(--accent);
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .rig-slot.buy-slot-container:hover {
+            background: rgba(247, 147, 26, 0.2);
+            box-shadow: 0 0 15px rgba(247, 147, 26, 0.3);
+            transform: translateY(-2px);
+        }
+
         .rig-slot.broken {
              border-color: #e74c3c;
              background: rgba(231, 76, 60, 0.1);
@@ -336,10 +351,13 @@
             <!-- HEAD -->
             <div class="page-header">
                 <a href="home.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
-                <div>
+                <div style="flex:1;">
                     <div class="page-title">KRİPTO MERKEZİ</div>
                     <div class="page-desc">GPU'larınla Bitcoin Madenciliği Yap</div>
                 </div>
+                <button class="back-btn" onclick="openInfoModal()" style="width:auto; padding:0 15px; background:var(--bg-input); color:var(--accent);">
+                    <i class="fas fa-info-circle"></i> <span style="margin-left:5px; font-weight:700; font-size:0.9rem;">Kazanç Tablosu</span>
+                </button>
             </div>
 
             <!-- HERO DASHBOARD -->
@@ -443,6 +461,65 @@
     </div>
 
 
+
+    <!-- INFO MODAL (EARNINGS) -->
+    <div class="modal-overlay" id="infoModal">
+        <div class="modal-content" style="max-width:550px;">
+            <div class="m-header">
+                <div class="m-title" style="display:flex; align-items:center; gap:8px;">
+                    <i class="fas fa-chart-line" style="color:var(--accent);"></i> Madencilik Kazanç Tablosu
+                </div>
+                <div class="m-close" onclick="closeInfoModal()"><i class="fas fa-times"></i></div>
+            </div>
+            <div class="m-body" style="text-align:left;">
+                <p style="margin-bottom:15px; font-size:0.9rem; color:#888;">
+                    <strong>TH/s (Terahash/saniye)</strong> cihazlarınızın işlem gücünü temsil eder. Güç ne kadar yüksekse, BTC (Bitcoin) üretiminiz o kadar hızlı olur.
+                    <br><br>
+                    Aşağıda her GPU modelinin günlük tahmini üretim miktarı listelenmiştir:
+                </p>
+                <div style="background:#111; border:1px solid #333; border-radius:8px; overflow:hidden;">
+                    <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+                        <tr style="background:#1a1a1a; border-bottom:1px solid #333;">
+                            <th style="padding:10px; text-align:left; color:#fff;">GPU Modeli</th>
+                            <th style="padding:10px; text-align:center; color:#fff;">Hash Gücü</th>
+                            <th style="padding:10px; text-align:right; color:var(--accent-green);">Günlük Kazanç</th>
+                        </tr>
+                        <tr style="border-bottom:1px solid #222;">
+                            <td style="padding:10px; color:#aaa;">GX-100</td>
+                            <td style="padding:10px; text-align:center; color:#fff;">25 TH/s</td>
+                            <td style="padding:10px; text-align:right; color:var(--accent);">0.006 BTC</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid #222;">
+                            <td style="padding:10px; color:#aaa;">GX-300</td>
+                            <td style="padding:10px; text-align:center; color:#fff;">80 TH/s</td>
+                            <td style="padding:10px; text-align:right; color:var(--accent);">0.020 BTC</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid #222;">
+                            <td style="padding:10px; color:#aaa;">GX-500</td>
+                            <td style="padding:10px; text-align:center; color:#fff;">200 TH/s</td>
+                            <td style="padding:10px; text-align:right; color:var(--accent);">0.050 BTC</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid #222;">
+                            <td style="padding:10px; color:#aaa;">GX-800</td>
+                            <td style="padding:10px; text-align:center; color:#fff;">400 TH/s</td>
+                            <td style="padding:10px; text-align:right; color:var(--accent);">0.100 BTC</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:10px; color:#aaa; font-weight:700;">GX-Titan</td>
+                            <td style="padding:10px; text-align:center; color:#fff; font-weight:700;">2500 TH/s</td>
+                            <td style="padding:10px; text-align:right; color:var(--accent); font-weight:700;">0.625 BTC</td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="margin-top:15px; font-size:0.8rem; color:#666; font-style:italic;">
+                    * Üretim miktarları şebeke zorluğuna göre değişiklik gösterebilir. Ödemeler dakikalık olarak hesabınıza yansır.
+                </div>
+            </div>
+            <div class="m-actions">
+                <button class="btn-confirm" onclick="closeInfoModal()" style="width:100%;">ANLAŞILDI</button>
+            </div>
+        </div>
+    </div>
 
     <!-- RESULT MODAL -->
     <div id="resultModal" class="modal-overlay" style="z-index: 201;">
@@ -615,15 +692,15 @@
                         `;
                     } else if (desiredType === 'buy') {
                         html = `
-                            <div class="rig-slot locked">
-                                <button class="btn-buy-slot" onclick="openBuyModal()">
-                                    <i class="fas fa-lock"></i> Slot ${slotNum} Satın Al
+                            <div class="rig-slot buy-slot-container" onclick="openBuyModal()">
+                                <button class="btn-buy-slot">
+                                    <i class="fas fa-lock-open"></i> Yeni Slot: ${slotNum}
                                 </button>
                             </div>
                         `;
                     } else {
                          html = `
-                            <div class="rig-slot locked" style="opacity: 0.3;">
+                            <div class="rig-slot locked">
                                 <span style="color: #444; font-weight: 700;">Slot ${slotNum} <i class="fas fa-lock"></i></span>
                             </div>
                         `;
@@ -721,6 +798,15 @@
             $('#buySlotModal').hide();
         }
 
+        // --- INFO MODAL ---
+        function openInfoModal() {
+            $('#infoModal').css('display', 'flex');
+        }
+
+        function closeInfoModal() {
+            $('#infoModal').hide();
+        }
+
         function confirmBuySlot() {
             $.ajax({
                 url: '/api/crypto/buy-slot',
@@ -746,6 +832,7 @@
         $(window).click(function(e) {
             if (e.target.id === 'installModal') closeModal();
             if (e.target.id === 'buySlotModal') closeBuyModal();
+            if (e.target.id === 'infoModal') closeInfoModal();
             if (e.target.id === 'resultModal') closeResultModal();
         });
 

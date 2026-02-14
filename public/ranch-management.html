@@ -48,8 +48,13 @@
         /* MAIN */
         main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
 
-        .page-header { text-align: center; margin-bottom: 20px; animation: fadeInDown 0.5s; }
-        .page-title { font-size: 1.4rem; letter-spacing: 1px; color: #fff; text-transform: uppercase; font-weight: 800; }
+        .page-title {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
 
         /* FABRİKA KARTI */
         .factory-card {
@@ -72,7 +77,7 @@
             background: var(--bg-card); border: 1px solid var(--border-color);
             border-radius: 10px; padding: 15px; margin-bottom: 20px;
         }
-        .card-header { font-size: 1rem; color: var(--accent); font-weight: 700; border-bottom: 1px solid #333; padding-bottom: 5px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+        .card-header { font-size: 0.9rem; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #333; padding-bottom: 5px; margin-bottom: 15px; }
         
         .form-group { margin-bottom: 15px; }
         .form-label { display: block; font-size: 0.8rem; color: #aaa; margin-bottom: 5px; }
@@ -306,8 +311,8 @@
         .info-item { display: flex; align-items: center; padding: 6px 0; }
         .info-item:last-child { border-bottom: none; }
         .info-item i { font-size: 1.1rem; width: 28px; }
-        .info-item .info-label { flex: 1; font-size: 0.85rem; color: #aaa; }
-        .info-item .info-value { font-size: 0.95rem; font-weight: bold; color: #fff; text-align: right; }
+        .info-item .info-label { flex: 1; font-size: 0.8rem; color: #aaa; }
+        .info-item .info-value { font-size: 0.8rem; font-weight: bold; color: #fff; text-align: right; }
 
         .accordion-card {
             background: var(--bg-card);
@@ -368,19 +373,18 @@
         }
         
         .back-btn {
-            background: var(--bg-card);
+            background: var(--bg-input);
             border: 1px solid var(--border-color);
-            color: var(--accent-cyan);
-            width: 45px;
-            height: 45px;
-            border-radius: 10px;
+            color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.2s;
             font-size: 1.2rem;
-            flex-shrink: 0;
         }
         
         .back-btn:hover {
@@ -394,20 +398,18 @@
             flex: 1;
         }
         
-        .page-title { 
-            font-size: 1.5rem; 
-            letter-spacing: 1px; 
-            color: #fff; 
+        .page-title {
+            font-size: 1rem;
             font-weight: 800;
-            margin-bottom: 8px;
-            text-align: left;
+            color: #fff;
+            margin-bottom: 4px;
+            text-transform: uppercase;
         }
         
         .page-description {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             color: var(--text-muted);
-            margin-bottom: 6px;
-            text-align: left;
+            line-height: 1.3;
         }
 
         /* BUSINESS CARD */
@@ -585,24 +587,24 @@
                                     <span class="info-value" id="info-owner">-</span>
                                 </div>
                                 <div class="info-item">
-                                    <i class="fas fa-layer-group" style="color: var(--accent-gold);"></i>
+                                    <i class="fas fa-layer-group" ></i>
                                     <span class="info-label">İşletme Seviyesi</span>
                                     <span class="info-value" id="info-level">-</span>
                                 </div>
                                 <div class="info-item">
                                     <i class="fas fa-paw" style="color: var(--accent);"></i>
                                     <span class="info-label">İşletme Kategorisi</span>
+                                    <span class="info-value" id="info-category">Çiftlik</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-box" ></i>
+                                    <span class="info-label">Üretilen Ürün</span>
                                     <span class="info-value" id="info-product">-</span>
                                 </div>
                                 <div class="info-item">
                                     <i class="fas fa-users" style="color: #3498db;"></i>
                                     <span class="info-label">İşçi Kapasitesi</span>
                                     <span class="info-value" id="info-worker">-</span>
-                                </div>
-                                <div class="info-item">
-                                    <i class="fas fa-vault" style="color: var(--accent-green);"></i>
-                                    <span class="info-label">Kasa Kapasitesi</span>
-                                    <span class="info-value" id="info-vault-capacity">-</span>
                                 </div>
                                 <div class="info-item">
                                     <i class="fas fa-flask" style="color: #e91e63;"></i>
@@ -639,7 +641,7 @@
                         <div class="accordion-body">
                             <div class="info-list" style="border:none; padding:0; background:transparent; box-shadow:none; margin:0;">
                                 <div class="info-item">
-                                    <i class="fas fa-hammer" style="color: var(--accent-gold);"></i>
+                                    <img id="icon-total-production" src="icons/ranch-icon/egg.png" style="width:20px; height:20px; object-fit:contain; margin-right:8px;">
                                     <span class="info-label">Toplam Üretim Miktarı</span>
                                     <span class="info-value" id="info-total-production">-</span>
                                 </div>
@@ -656,9 +658,7 @@
                     </div>
                     <div class="accordion-content" style="max-height: 500px;">
                         <div class="accordion-body">
-                            <div class="log-list" id="logList">
-                                <!-- JS ile doldurulacak -->
-                            </div>
+                            <div class="log-list" id="logList"><div style="text-align:center; color:#555; font-size:0.8rem;">Henüz kayıt yok.</div></div>
                         </div>
                     </div>
                 </div>
@@ -690,7 +690,7 @@
             <!-- GELİŞTİRME -->
             <div class="accordion-card">
                 <div class="accordion-header active" onclick="toggleAccordion(this)">
-                    <div class="accordion-title" style="color: var(--accent-gold);"><i class="fas fa-arrow-up"></i> GELİŞTİRME</div>
+                    <div class="accordion-title" ><i class="fas fa-arrow-up"></i> GELİŞTİRME</div>
                     <i class="fas fa-chevron-down accordion-icon"></i>
                 </div>
                 <div class="accordion-content" style="max-height: 2000px;">
@@ -757,7 +757,7 @@
                             <!-- Bakiye Kısmı -->
                             <div style="text-align: center; margin-bottom: 20px;">
                                 <div style="font-size: 0.9rem; color: #888; margin-bottom: 5px;">MEVCUT BAKİYE</div>
-                                <div class="vault-balance-amount" id="fVault" style="color: var(--accent-gold);">0</div>
+                                <div class="vault-balance-amount" id="fVault" >0</div>
                                 <div class="vault-balance-capacity" id="vaultCapacityText" style="color: #666; font-size: 0.85rem;">Kapasite: 0 / 0 ₺</div>
                                 <!-- Progress Bar -->
                                 <div style="width: 100%; height: 6px; background: #222; border-radius: 3px; margin: 10px 0; overflow: hidden; border: 1px solid #333;">
@@ -827,19 +827,7 @@
             </div>
         </div>
 
-        <!-- SETTINGS MODAL -->
-        <div class="modal-overlay" id="settingsModal">
-            <div class="modal-content">
-                <i class="fas fa-cogs" style="font-size:3rem; color:var(--accent-gold); margin-bottom:10px;"></i>
-                <h3 class="m-title">Ayarları Kaydet</h3>
-                <p class="m-desc">Değişiklikleri kaydetmek istediğinize emin misiniz?</p>
-                
-                <div class="m-btns">
-                    <button class="m-btn btn-confirm" onclick="confirmSettings()">KAYDET</button>
-                    <button class="m-btn btn-cancel" onclick="closeModal('settingsModal')">İPTAL</button>
-                </div>
-            </div>
-        </div>
+
 
         <!-- CONFIRM MODAL -->
         <div class="modal-overlay" id="confirmModal">
@@ -865,6 +853,32 @@
                 <div class="m-btns">
                     <button class="m-btn btn-cancel" onclick="closeModal('speedUpModal')">İPTAL</button>
                     <button class="m-btn btn-confirm" style="background: var(--accent-cyan);" onclick="confirmSpeedUp()">HIZLANDIR</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SETTINGS CONFIRM MODAL -->
+        <div class="modal-overlay" id="settingsModal">
+            <div class="modal-content" style="border-top-color: var(--accent-gold); max-width: 420px;">
+                <i class="fas fa-question-circle" style="font-size:3rem; color:var(--accent-gold); margin-bottom:10px;"></i>
+                <h3 class="m-title">AYARLARI KAYDET</h3>
+                <p class="m-desc">İşletme ayarlarınız güncellenecektir. Onaylıyor musunuz?</p>
+                
+                <div class="m-btns">
+                    <button class="m-btn btn-cancel" onclick="closeModal('settingsModal')">VAZGEÇ</button>
+                    <button class="m-btn btn-confirm" style="background: var(--accent-green); color: #000;" onclick="confirmSettings()">KAYDET</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATUS MODAL -->
+        <div class="modal-overlay" id="statusModal">
+            <div class="modal-content" id="statusModalContent">
+                <i class="fas" id="statusIcon" style="font-size:3rem; margin-bottom:10px;"></i>
+                <h3 class="m-title" id="statusTitle"></h3>
+                <p class="m-desc" id="statusMessage" style="color:#ccc; margin-bottom:20px;"></p>
+                <div class="m-btns">
+                     <button class="m-btn" id="statusBtn" onclick="document.getElementById('statusModal').style.display='none'">TAMAM</button>
                 </div>
             </div>
         </div>
@@ -935,8 +949,15 @@
         let upgradeInfo = null;
         let upgradeTimerInterval = null;
         let userLicenses = {};
+        let userArgeData = {};
 
         function loadFactoryData() {
+            // Fetch AR-GE Data
+            fetch(`/api/arge/status/${user.id}`)
+                .then(res => res.json())
+                .then(data => { userArgeData = data || {}; })
+                .catch(e => console.error('AR-GE fetch error:', e));
+
             // Fetch Licenses
             fetch(`/api/licenses/${user.id}`)
                 .then(res => res.json())
@@ -1185,17 +1206,24 @@
             document.getElementById('info-owner').innerText = `${factory.owner_id} - ${factory.owner_name || 'Bilinmiyor'}`;
             document.getElementById('info-level').innerText = factory.level + '. Seviye';
             
-            // İşletme Kategorisi formatı: "(işletme adı) İşletmesi"
+            // İşletme Kategorisi ve Üretilen Ürün
             const categoryName = factory.ranch_type ? resourceMap[factory.ranch_type]?.prod.name : '-';
-            document.getElementById('info-product').innerText = categoryName !== '-' ? `${categoryName} İşletmesi` : '-';
+            document.getElementById('info-category').innerText = 'Çiftlik';
+            document.getElementById('info-product').innerText = categoryName;
             
             document.getElementById('info-worker').innerText = `${factory.workers}/${factory.maxWorkers}`;
             
             // Kasa Kapasitesi
             const vaultCapacity = factory.level * 100000;
-            document.getElementById('info-vault-capacity').innerText = `${fmt(factory.vault)}/${fmt(vaultCapacity)}`;
+            const vaultEl = document.getElementById('info-vault-capacity');
+            if (vaultEl) vaultEl.innerText = `${fmt(factory.vault)}/${fmt(vaultCapacity)}`;
             
-            document.getElementById('info-efficiency').innerText = '%' + factory.efficiency;
+            // AR-GE Seviyesi
+            const ranchType = factory.ranch_type || 'chicken';
+            const userArge = userArgeData[ranchType] || { level: 0 };
+            const argeLevel = userArge.level || 0;
+            const argeBonus = argeLevel * 10;
+            document.getElementById('info-efficiency').innerText = `${argeLevel}. Seviye (+%${argeBonus})`;
             
             let t = factory.productionTime;
             let tStr = t < 60 ? `${t} saniye` : (t % 60 === 0 ? `${t/60} dakika` : `${Math.floor(t/60)}dk ${t%60}sn`);
@@ -1368,6 +1396,11 @@
             }
             const elProd = document.getElementById('info-total-production');
             if(elProd) elProd.innerText = fmt(totalProd) + ' Adet';
+
+            const elProdIcon = document.getElementById('icon-total-production');
+            if(elProdIcon && factory.ranch_type && resourceMap[factory.ranch_type]) {
+                elProdIcon.src = resourceMap[factory.ranch_type].prod.icon;
+            }
 
             const list = document.getElementById('logList');
             list.innerHTML = '';
@@ -1563,9 +1596,9 @@
             const name = document.getElementById('fNameInput').value.trim();
             const wage = parseInt(document.getElementById('fWageInput').value);
             
-            if(name.length < 3) return toastr.warning("İşletme adı en az 3 karakter olmalıdır.");
-            if(name.length > 40) return toastr.warning("İşletme adı en fazla 40 karakter olabilir.");
-            if(isNaN(wage) || wage < 0 || wage > 1000) return toastr.warning("Birim maaş 0 ile 1000 arasında olmalıdır.");
+            if(name.length < 3) return showStatusModal(false, "İşletme adı en az 3 karakter olmalıdır.");
+            if(name.length > 40) return showStatusModal(false, "İşletme adı en fazla 40 karakter olabilir.");
+            if(isNaN(wage) || wage < 0 || wage > 1000) return showStatusModal(false, "Birim maaş 0 ile 1000 arasında olmalıdır.");
 
             pendingSettings = { name, wage };
             
@@ -1586,19 +1619,19 @@
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    toastr.success(data.message);
+                    showStatusModal(true, data.message);
                     factory.name = name;
                     factory.wage = wage;
                     // Update business card
                     document.getElementById('businessName').innerText = name;
                     updateUI();
                 } else {
-                    toastr.error(data.message);
+                    showStatusModal(false, data.message);
                 }
                 pendingSettings = null;
             })
             .catch(err => {
-                toastr.error('Bir hata oluştu!');
+                showStatusModal(false, 'Bir hata oluştu!');
                 console.error(err);
                 pendingSettings = null;
             });
@@ -1745,7 +1778,7 @@
             costsHTML += `
                 <div class="upgrade-cost-item">
                     <div class="upgrade-cost-icon">
-                        <i class="fas fa-certificate" style="color: var(--accent-gold);"></i>
+                        <i class="fas fa-certificate" ></i>
                     </div>
                     <div class="upgrade-cost-name">Lisans</div>
                     <div class="upgrade-cost-value">
@@ -1867,7 +1900,7 @@
                         Bu işletmeyi geliştirmek istediğinizden emin misiniz?
                     </div>
                     <div style="font-size: 0.9rem; color: #666;">
-                        Geliştirme süresi: <strong style="color: var(--accent-gold);">${Math.ceil(next.duration / 60)} dakika</strong>
+                        Geliştirme süresi: <strong >${Math.ceil(next.duration / 60)} dakika</strong>
                     </div>
                 </div>
             `;
@@ -1917,6 +1950,34 @@
             if (modal) {
                 modal.style.display = 'none';
             }
+        }
+
+        function showStatusModal(success, message) {
+            const modal = document.getElementById('statusModal');
+            const content = document.getElementById('statusModalContent');
+            const icon = document.getElementById('statusIcon');
+            const title = document.getElementById('statusTitle');
+            const msg = document.getElementById('statusMessage');
+            const btn = document.getElementById('statusBtn');
+
+            if (success) {
+                content.style.borderTopColor = 'var(--accent-green)';
+                icon.className = 'fas fa-check-circle';
+                icon.style.color = 'var(--accent-green)';
+                title.innerText = 'BAŞARILI';
+                btn.style.background = 'var(--accent-green)';
+                btn.style.color = '#000';
+            } else {
+                content.style.borderTopColor = 'var(--accent)';
+                icon.className = 'fas fa-times-circle';
+                icon.style.color = 'var(--accent)';
+                title.innerText = 'HATA';
+                btn.style.background = 'var(--accent)';
+                btn.style.color = '#fff';
+            }
+
+            msg.innerText = message;
+            modal.style.display = 'flex';
         }
 
     </script>

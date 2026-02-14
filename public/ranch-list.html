@@ -10,7 +10,9 @@
     <style>
         :root {
             --bg-dark: #0d0d0d;
+            --bg-input: #1a1a1a;
             --bg-card: #161616;
+            --text-muted: #999;
             --accent-cyan: #00e5ff;
             --accent-green: #2ecc71;
             --accent-gold: #ffd700;
@@ -38,7 +40,7 @@
             flex-direction: column;
             position: relative;
             box-shadow: 0 0 30px rgba(0,0,0,0.5);
-            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/World_map_blank_without_borders.svg/2000px-World_map_blank_without_borders.svg.png');
+            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('img/world-map.png');
             background-size: cover;
             background-position: center;
         }
@@ -89,27 +91,26 @@
         }
 
         .page-header {
+            margin-bottom: 25px;
+            animation: fadeInDown 0.5s;
+            position: relative;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 15px;
-            padding: 15px 0;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #333;
         }
         .back-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: #fff;
             width: 40px;
             height: 40px;
-            background: #222;
-            border: 1px solid #444;
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--accent-cyan);
-            font-size: 1.2rem;
             cursor: pointer;
-            transition: all 0.3s;
-            flex-shrink: 0;
+            transition: all 0.2s;
+            font-size: 1.2rem;
         }
         .back-btn:hover {
             background: #2a2a2a;
@@ -121,17 +122,16 @@
             text-align: left;
         }
         .page-title {
-            font-size: 1.3rem;
+            font-size: 1rem;
             font-weight: 800;
-            letter-spacing: 2px;
             color: #fff;
+            margin-bottom: 4px;
             text-transform: uppercase;
-            margin-bottom: 5px;
         }
         .page-subtitle {
-            font-size: 0.85rem;
-            color: #999;
-            font-weight: 500;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.3;
         }
 
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
@@ -193,6 +193,10 @@
              background: var(--accent-green);
         }
         .farm-list-card.city-card::before {
+             background: var(--accent-gold);
+        }
+        
+        .farm-list-card.city-card.owned::before {
              background: var(--accent-green);
         }
         
@@ -386,6 +390,11 @@
             margin-top: 4px;
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
         /* Anti-FOUC (Flash of Unstyled Content) Prevention */
         html.loading-state body { visibility: hidden !important; background-color: #000 !important; }
@@ -590,8 +599,14 @@
             // Hata ayıklama için dönen veriyi konsola yaz
             console.log('Şehirdeki çiftlikler API yanıtı:', ranches);
 
-            // Sort by level descending
-            ranches.sort((a, b) => (b.level || 1) - (a.level || 1));
+            // Sort: Owned first, then level
+            ranches.sort((a, b) => {
+                const aOwned = (String(a.user_id) === String(userData.id));
+                const bOwned = (String(b.user_id) === String(userData.id));
+                if (aOwned && !bOwned) return -1;
+                if (!aOwned && bOwned) return 1;
+                return (b.level || 1) - (a.level || 1);
+            });
 
             let foundAny = false;
             const filterType = new URLSearchParams(window.location.search).get('type');
@@ -617,6 +632,12 @@
                 
                 const card = document.createElement('div');
                 card.className = 'farm-list-card city-card';
+                // Oyuncun kendisine aitse owned class'ı ekle
+                const isOwned = String(ranch.user_id) === String(userData.id);
+                if (isOwned) {
+                    card.classList.add('owned');
+                }
+                
                 card.onclick = () => location.href = `ranch-work.html?id=${ranch.ranch_id}`;
                 
                 let iconHTML = '';
@@ -641,10 +662,13 @@
                     <div class="city-card-top">
                         ${iconHTML}
                         <div style="flex:1;">
-                            <div class="mine-name" style="font-size:1rem;">${ranch.name || type.name}</div>
-                            <div style="display:flex; margin-top:3px;">
+                            <div class="mine-name" style="font-size:1rem;">
+                                ${ranch.name || type.name}
+                            </div>
+                            <div style="display:flex; margin-top:3px; align-items: center; flex-wrap: wrap; gap: 5px;">
+                                ${isOwned ? '<span class="stat-badge" style="border-color:var(--accent-green); color:var(--accent-green); background:rgba(46, 204, 113, 0.1);"><i class="fas fa-check-circle" style="color:var(--accent-green);"></i> İşletmem</span>' : ''}
                                 <span class="stat-badge"><i class="fas fa-users" style="color: var(--accent-cyan);"></i> ${ranch.current_workers || 0}/${ranch.max_workers || 5}</span>
-                                <span class="stat-badge"><i class="fas fa-money-bill-wave" style="color: var(--accent-green);"></i> ${ranch.salary || 0} ₺</span>
+                                <span class="stat-badge"><img src="icons/inventory-icon/money.png" style="width:14px; height:14px; margin-right:2px; vertical-align:middle;"> ${ranch.salary || 0} ₺</span>
                             </div>
                         </div>
                         <i class="fas fa-chevron-right right-arrow"></i>

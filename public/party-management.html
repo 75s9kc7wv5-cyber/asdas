@@ -114,7 +114,7 @@
             background: var(--bg-card); border: 1px solid var(--border-color);
             border-radius: 10px; padding: 15px; margin-bottom: 20px;
         }
-        .card-header { font-size: 1rem; color: var(--accent-gold); font-weight: 700; border-bottom: 1px solid #333; padding-bottom: 5px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+        .card-header { font-size: 0.9rem; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #333; padding-bottom: 5px; margin-bottom: 15px; }
         
         .form-group { margin-bottom: 15px; }
         .form-label { display: block; font-size: 0.8rem; color: #aaa; margin-bottom: 5px; }
@@ -500,14 +500,14 @@
             <div id="tab-bilgiler" class="tab-content" style="display:none;">
                 <div class="accordion-card">
                     <div class="accordion-header active" onclick="toggleAccordion(this)">
-                        <div class="accordion-title" style="color:var(--accent-gold);"><i class="fas fa-info-circle"></i> PARTİ BİLGİLERİ</div>
+                        <div class="accordion-title" ><i class="fas fa-info-circle"></i> PARTİ BİLGİLERİ</div>
                         <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
                     <div class="accordion-content" style="max-height: 2000px;">
                         <div class="accordion-body">
                             <div class="info-list">
                                 <div class="info-item">
-                                    <i class="fas fa-crown" style="color: var(--accent-gold);"></i> <span class="info-label">Genel Başkan</span>
+                                    <i class="fas fa-crown" ></i> <span class="info-label">Genel Başkan</span>
                                     <span class="info-value" id="info-leader">-</span>
                                 </div>
                                 <div class="info-item">
@@ -535,7 +535,7 @@
                                     <span class="info-value" id="info-members">-</span>
                                 </div>
                                 <div class="info-item">
-                                    <i class="fas fa-coins" style="color: var(--accent-gold);"></i> <span class="info-label">Parti Kasası</span>
+                                    <i class="fas fa-coins" ></i> <span class="info-label">Parti Kasası</span>
                                     <span class="info-value" id="info-vault">-</span>
                                 </div>
                                 <div class="info-item">
@@ -557,7 +557,7 @@
                 <!-- GENEL AYARLAR -->
                 <div class="accordion-card">
                     <div class="accordion-header active" onclick="toggleAccordion(this)">
-                        <div class="accordion-title" style="color:var(--accent-gold);"><i class="fas fa-sliders-h"></i> GENEL AYARLAR</div>
+                        <div class="accordion-title" ><i class="fas fa-sliders-h"></i> GENEL AYARLAR</div>
                          <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
                     <div class="accordion-content" style="max-height: 2000px;">
@@ -602,7 +602,7 @@
                 <!-- PARTİ MESAJI YAYINLA -->
                 <div class="accordion-card">
                     <div id="acc-publish" class="accordion-header" onclick="toggleAccordion(this)">
-                        <div class="accordion-title" style="color:var(--accent-gold);"><i class="fas fa-bullhorn"></i> PARTİ MESAJI YAYINLA</div>
+                        <div class="accordion-title" ><i class="fas fa-bullhorn"></i> PARTİ MESAJI YAYINLA</div>
                         <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
                     <div class="accordion-content">
@@ -638,7 +638,7 @@
                 <!-- GÖREV ATAMA (Sadece Başkan) -->
                 <div class="accordion-card" id="roleAssignmentCard" style="display:none;">
                     <div class="accordion-header active" onclick="toggleAccordion(this)">
-                        <div class="accordion-title" style="color:var(--accent-gold);"><i class="fas fa-user-tag"></i> GÖREV ATAMA</div>
+                        <div class="accordion-title" ><i class="fas fa-user-tag"></i> GÖREV ATAMA</div>
                         <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
                     <div class="accordion-content" style="max-height: 2000px;">
@@ -664,7 +664,7 @@
                 <!-- ÜYE LİSTESİ -->
                 <div class="accordion-card">
                     <div class="accordion-header active" onclick="toggleAccordion(this)">
-                        <div class="accordion-title" style="color:var(--accent-gold);"><i class="fas fa-users"></i> ÜYE LİSTESİ <span id="totalMembersBadge" style="color:#888; font-size:0.8em; margin-left:5px;">(0)</span></div>
+                        <div class="accordion-title" ><i class="fas fa-users"></i> ÜYE LİSTESİ <span id="totalMembersBadge" style="color:#888; font-size:0.8em; margin-left:5px;">(0)</span></div>
                         <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
                     <div class="accordion-content" style="max-height: 2000px;">
@@ -679,7 +679,7 @@
                 <!-- BAŞVURULAR -->
                 <div class="accordion-card" id="applicationsCard" style="display:none;">
                     <div class="accordion-header active" onclick="toggleAccordion(this)">
-                        <div class="accordion-title" style="color:var(--accent-gold);"><i class="fas fa-user-plus"></i> BAŞVURULAR</div>
+                        <div class="accordion-title" ><i class="fas fa-user-plus"></i> BAŞVURULAR</div>
                         <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
                     <div class="accordion-content" style="max-height: 2000px;">
@@ -698,7 +698,7 @@
                 <!-- KASA YÖNETİMİ ACCORDION (FACTORY STYLE) -->
                 <div class="accordion-card">
                     <div class="accordion-header active" onclick="toggleAccordion(this)">
-                        <div class="accordion-title" style="color:var(--accent-gold);"><i class="fas fa-coins"></i> KASA YÖNETİMİ</div>
+                        <div class="accordion-title" ><i class="fas fa-coins"></i> KASA YÖNETİMİ</div>
                         <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
                     <div class="accordion-content" style="max-height: 1000px;">
@@ -707,7 +707,7 @@
                             <!-- Bakiye Kısmı -->
                             <div style="text-align: center; margin-bottom: 20px;">
                                 <div style="font-size: 0.9rem; color: #888; margin-bottom: 5px;">MEVCUT BAKİYE</div>
-                                <div class="vault-balance-amount" id="partyVault" style="color: var(--accent-gold);">0 ₺</div>
+                                <div class="vault-balance-amount" id="partyVault" >0 ₺</div>
                                 
                                 <!-- No capacity for parties normally, but keeping structure if needed or just removing text -->
                                 <!-- <div class="vault-balance-capacity" id="vaultCapacityText" style="color: #666; font-size: 0.85rem;"></div> -->
@@ -747,7 +747,7 @@
                 <!-- SON BAĞIŞLAR (Accordion) -->
                 <div class="accordion-card">
                     <div class="accordion-header active" onclick="toggleAccordion(this)">
-                        <div class="accordion-title" style="color:var(--accent-gold);"><i class="fas fa-history"></i> SON BAĞIŞLAR <span id="totalDonationCount" class="count-badge" style="margin-left:8px;">(0)</span></div>
+                        <div class="accordion-title" ><i class="fas fa-history"></i> SON BAĞIŞLAR <span id="totalDonationCount" class="count-badge" style="margin-left:8px;">(0)</span></div>
                         <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
                     <div class="accordion-content" style="max-height: 2000px;">
@@ -762,7 +762,7 @@
                 <!-- EN ÇOK BAĞIŞ YAPANLAR (Accordion) -->
                 <div class="accordion-card">
                     <div class="accordion-header active" onclick="toggleAccordion(this)">
-                        <div class="accordion-title" style="color:var(--accent-gold);"><i class="fas fa-trophy"></i> EN ÇOK BAĞIŞ YAPANLAR</div>
+                        <div class="accordion-title" ><i class="fas fa-trophy"></i> EN ÇOK BAĞIŞ YAPANLAR</div>
                         <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
                     <div class="accordion-content" style="max-height: 2000px;">
@@ -780,7 +780,7 @@
             <div id="tab-logs" class="tab-content" style="display:none;">
                 <div class="accordion-card">
                     <div class="accordion-header active" onclick="if(window.toggleAccordion) toggleAccordion(this)">
-                        <div class="accordion-title" style="color:var(--accent-gold);"><i class="fas fa-history"></i> PARTİ LOGLARI</div>
+                        <div class="accordion-title" ><i class="fas fa-history"></i> PARTİ LOGLARI</div>
                         <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
                     <div class="accordion-content" style="max-height: 2000px;">

@@ -10,7 +10,9 @@
     <style>
         :root {
             --bg-dark: #0d0d0d;
+            --bg-input: #1a1a1a;
             --bg-card: #161616;
+            --text-muted: #999;
             --accent-cyan: #00e5ff;
             --accent-green: #2ecc71;
             --accent-gold: #ffd700;
@@ -38,7 +40,7 @@
             flex-direction: column;
             position: relative;
             box-shadow: 0 0 30px rgba(0,0,0,0.5);
-            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/World_map_blank_without_borders.svg/2000px-World_map_blank_without_borders.svg.png');
+            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('img/world-map.png');
             background-size: cover;
             background-position: center;
         }
@@ -89,27 +91,26 @@
         }
 
         .page-header {
+            margin-bottom: 25px;
+            animation: fadeInDown 0.5s;
+            position: relative;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 15px;
-            padding: 15px 0;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #333;
         }
         .back-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: #fff;
             width: 40px;
             height: 40px;
-            background: #222;
-            border: 1px solid #444;
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--accent-cyan);
-            font-size: 1.2rem;
             cursor: pointer;
-            transition: all 0.3s;
-            flex-shrink: 0;
+            transition: all 0.2s;
+            font-size: 1.2rem;
         }
         .back-btn:hover {
             background: #2a2a2a;
@@ -121,17 +122,16 @@
             text-align: left;
         }
         .page-title {
-            font-size: 1.3rem;
+            font-size: 1rem;
             font-weight: 800;
-            letter-spacing: 2px;
             color: #fff;
+            margin-bottom: 4px;
             text-transform: uppercase;
-            margin-bottom: 5px;
         }
         .page-subtitle {
-            font-size: 0.85rem;
-            color: #999;
-            font-weight: 500;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.3;
         }
 
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
@@ -204,8 +204,13 @@
         .farm-list-card.owned::before {
              background: var(--accent-green);
         }
-        .farm-list-card.city-card::before {
-             background: var(--accent-gold);
+        .farm-list-card.city-card::before {             background: var(--accent-gold);
+        }
+        .farm-list-card.city-card.owned::before {             background: var(--accent-gold);
+        }
+        .farm-list-card.city-card.owned::before {             background: var(--accent-gold);
+        }
+        .farm-list-card.city-card.owned::before {             background: var(--accent-green);
         }
         
         .farm-list-card.city-card {
@@ -400,6 +405,11 @@
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         /* Anti-FOUC (Flash of Unstyled Content) Prevention */
         html.loading-state body { visibility: hidden !important; background-color: #000 !important; }
         html.loading-state body #game-loader { visibility: visible !important; }
@@ -454,6 +464,18 @@
                     <button class="m-btn btn-cancel" onclick="closeModal()">İPTAL</button>
                     <button class="m-btn btn-confirm" id="btnConfirmBuy" onclick="confirmBuy()">SATIN AL</button>
                 </div>
+            </div>
+        </div>
+        
+        <!-- RESULT MODAL -->
+        <div id="resultModal" class="modal-overlay" style="z-index: 2100;">
+            <div class="modal-content" style="text-align: center;">
+                <div style="margin-bottom: 15px;" id="resultIcon">
+                    <!-- Icon injected via JS -->
+                </div>
+                <h3 id="resultTitle" style="color:#fff; margin-bottom: 10px;">İşlem Sonucu</h3>
+                <p id="resultMessage" style="color:#aaa; font-size: 0.95rem; margin-bottom: 20px;">...</p>
+                <button class="m-btn btn-confirm" onclick="closeResultModal()" style="width:100%;">TAMAM</button>
             </div>
         </div>
     </div>
@@ -551,15 +573,15 @@
                     iconHTML = `<i class="fas fa-tractor"></i>`;
                 }
                 
-                let displayDesc = '';
-                let displayStats = '';
-
+                let btnHTML = '';
                 if (owned) {
                     displayDesc = 'Yönetim ve Üretim Paneli';
-                    displayStats = `Seviye: ${owned.level || 1}`;
+                    displayStats = '';
+                    btnHTML = `<div class="right-arrow"><i class="fas fa-chevron-right"></i></div>`;
                 } else {
-                    displayDesc = 'Satın almak için tıkla';
-                    displayStats = `Gereken Lisans: Lv. ${type.license_req}`;
+                    displayDesc = 'Yeni bir işletme kur';
+                    displayStats = '';
+                    btnHTML = `<div class="right-arrow"><i class="fas fa-chevron-right"></i></div>`;
                 }
                 
                 card.innerHTML = `
@@ -569,8 +591,9 @@
                     <div class="mine-info">
                         <div class="mine-name">${owned && owned.name ? owned.name : type.name}</div>
                         <div class="mine-desc">${displayDesc}</div>
+                        <div class="mine-stats">${displayStats}</div>
                     </div>
-                    <i class="fas fa-chevron-right right-arrow"></i>
+                    ${btnHTML}
                 `;
                 container.appendChild(card);
             });
@@ -581,12 +604,24 @@
             container.innerHTML = '';
             
             if (!Array.isArray(farms) || farms.length === 0) {
-                container.innerHTML = '<div style="text-align:center; color:#888; padding:20px;">Şehirde hiç tarla bulunamadı.</div>';
+                container.innerHTML = `
+                    <div style="text-align:center; padding:40px 20px;">
+                        <i class="fas fa-wind" style="font-size:3rem; color:#333; margin-bottom:15px;"></i>
+                        <h3 style="color:#888; margin-bottom:10px;">Şehirde Hiç Tarla Yok</h3>
+                        <p style="color:#555; font-size:0.9rem;">Şu anda başka oyuncular tarafından işletilen aktif bir tarla bulunmuyor.</p>
+                    </div>
+                `;
                 return;
             }
 
-            // Sort by level descending
-            farms.sort((a, b) => (b.level || 1) - (a.level || 1));
+            // SORT: Owned first, then Level desc
+            farms.sort((a, b) => {
+                const aOwned = (a.user_id == userData.id);
+                const bOwned = (b.user_id == userData.id);
+                if (aOwned && !bOwned) return -1;
+                if (!aOwned && bOwned) return 1;
+                return (b.level || 1) - (a.level || 1);
+            });
 
             let foundAny = false;
             const filterType = new URLSearchParams(window.location.search).get('type');
@@ -595,14 +630,22 @@
                 if (filterType && farm.slug !== filterType) return;
                 
                 foundAny = true;
+                const isMine = (farm.user_id == userData.id);
+                
                 const card = document.createElement('div');
                 card.className = 'farm-list-card city-card';
+                if (isMine) card.classList.add('owned');
                 
                 let iconHTML = '';
                 if (farm.image_path) {
                     iconHTML = `<img src="${farm.image_path}" alt="${farm.name}">`;
                 } else {
                     iconHTML = `<i class="fas fa-tractor"></i>`;
+                }
+                
+                let myBadge = '';
+                if (isMine) {
+                    myBadge = `<span class="stat-badge" style="border-color:var(--accent-green); color:var(--accent-green); background:rgba(46, 204, 113, 0.1);"><i class="fas fa-check-circle" style="color:var(--accent-green);"></i> İşletmem</span>`;
                 }
                 
                 card.innerHTML = `
@@ -612,9 +655,10 @@
                         </div>
                         <div class="mine-info">
                             <div class="mine-name">${farm.name || farm.type_name}</div>
-                            <div class="mine-stats">
+                            <div class="mine-stats" style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
+                                ${myBadge}
                                 <span class="stat-badge"><i class="fas fa-users" style="color: var(--accent-cyan);"></i> ${farm.current_workers || 0}/${farm.max_workers || 5}</span>
-                                <span class="stat-badge"><i class="fas fa-money-bill-wave" style="color: var(--accent-green);"></i> ${farm.salary || 0} ₺</span>
+                                <span class="stat-badge"><img src="icons/inventory-icon/money.png" style="width:14px; height:14px; margin-right:2px; vertical-align:middle;"> ${farm.salary || 0} ₺</span>
                             </div>
                         </div>
                         <i class="fas fa-chevron-right right-arrow"></i>
@@ -654,7 +698,7 @@
             const licenseKey = selectedFarm.slug; 
             const licenseName = selectedFarm.name + ' Lisansı';
             const licenseLevel = userLicenses[licenseKey] || 0;
-            const reqLevel = selectedFarm.license_req || 1;
+            const reqLevel = 1; // Always require Lv. 1 for buying a farm, regardless of type
             const hasLicense = licenseLevel >= reqLevel;
 
             const canBuy = hasMoney && hasGold && hasDiamond && hasLicense;
@@ -729,27 +773,60 @@
         async function confirmBuy() {
             if (!selectedFarm) return;
             const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            
             try {
                 const response = await fetch('/api/buy-farm', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_id: user.id, farm_type_id: selectedFarm.id })
                 });
+
                 const result = await response.json();
+                
+                // Close Buy Modal
+                closeModal();
+                
                 if (result.success) {
-                    toastr.success(result.message);
-                    closeModal();
-                    setTimeout(() => location.reload(), 1000);
+                    showResultModal(true, 'BAŞARILI!', result.message, () => {
+                        window.location.reload();
+                    });
                 } else {
-                    toastr.error(result.message);
+                    showResultModal(false, 'HATA!', result.message);
                 }
             } catch (e) {
                 console.error(e);
-                toastr.error('İşlem başarısız.');
+                closeModal();
+                showResultModal(false, 'HATA!', 'Bağlantı hatası oluştu.');
+            }
+        }
+        
+        let onResultCloseValues = null;
+
+        function showResultModal(success, title, message, onClose) {
+            const iconHtml = success 
+                ? '<div style="width:60px; height:60px; border-radius:50%; background:rgba(46, 204, 113, 0.2); color:#2ecc71; display:flex; align-items:center; justify-content:center; margin:0 auto;"><i class="fas fa-check" style="font-size:30px;"></i></div>'
+                : '<div style="width:60px; height:60px; border-radius:50%; background:rgba(231, 76, 60, 0.2); color:#e74c3c; display:flex; align-items:center; justify-content:center; margin:0 auto;"><i class="fas fa-times" style="font-size:30px;"></i></div>';
+            
+            document.getElementById('resultIcon').innerHTML = iconHtml;
+            document.getElementById('resultTitle').innerText = title;
+            document.getElementById('resultMessage').innerText = message;
+            
+            const modal = document.getElementById('resultModal');
+            modal.style.display = 'flex';
+            
+            onResultCloseValues = onClose;
+        }
+
+        function closeResultModal() {
+            document.getElementById('resultModal').style.display = 'none';
+            if (onResultCloseValues) {
+                onResultCloseValues();
+                onResultCloseValues = null;
             }
         }
 
-        window.addEventListener('load', initPage);
+        // Sayfa yüklendiğinde başlat
+        document.addEventListener('DOMContentLoaded', initPage);
     </script>
 </body>
 </html>

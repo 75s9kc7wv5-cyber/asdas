@@ -54,10 +54,12 @@
 
         /* PAGE HEADER */
         .page-header {
+            margin-bottom: 25px;
+            animation: fadeInDown 0.5s;
+            position: relative;
             display: flex;
             align-items: flex-start;
-            gap: 12px;
-            margin-bottom: 20px;
+            gap: 15px;
         }
         .back-btn {
             background: var(--bg-input);
@@ -82,7 +84,7 @@
             flex: 1;
         }
         .page-title {
-            font-size: 1.3rem;
+            font-size: 1rem;
             font-weight: 800;
             color: #fff;
             margin-bottom: 4px;
@@ -148,6 +150,7 @@
         }
         
         /* Boş Slot */
+        .slot-empty { border-top-color: var(--accent-green); }
         .slot-empty:hover { border-color: var(--accent-green); background: rgba(46, 204, 113, 0.05); }
         .slot-empty .slot-icon { font-size: 1.5rem; color: #333; margin-bottom: 15px; }
         .slot-empty .slot-text { color: var(--accent-green); font-weight: 700; font-size: 0.7rem; line-height: 1.2; }
@@ -159,7 +162,8 @@
 
         /* Çalışıyor (Ben) - Modern */
         .slot-working { 
-            border: 1px solid var(--accent); 
+            border: 1px solid var(--accent);
+            border-top: 3px solid var(--accent-gold); 
             background: linear-gradient(135deg, rgba(52, 152, 219, 0.15) 0%, rgba(20, 20, 20, 0.8) 100%);
             cursor: default; 
             box-shadow: 0 0 15px rgba(52, 152, 219, 0.15), inset 0 0 20px rgba(52, 152, 219, 0.05);
@@ -230,7 +234,7 @@
         }
         .info-value {
             color: #fff;
-            font-size: 0.95rem;
+            font-size: 0.8rem;
             font-weight: 700;
             text-align: right;
         }
@@ -264,8 +268,20 @@
         .log-highlight { color: var(--accent); font-weight: 600; }
 
         /* MODAL */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; display: none; justify-content: center; align-items: center; animation: fadeIn 0.3s; }
+        .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; display: none; justify-content: center; align-items: center; animation: fadeIn 0.3s; }
         .modal-content { background: #181818; width: 85%; padding: 25px; border-radius: 12px; border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent); }
+        
+        /* Result Modal Custom Style */
+        #resultModal .modal-content { 
+            background: var(--bg-card);
+            width: 90%;
+            max-width: 400px;
+            padding: 30px;
+            border-top: 3px solid #e74c3c;
+            border-radius: 12px;
+            border-left: 1px solid #444;
+            border-right: 1px solid #444;
+        }
         .m-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 15px; color: #fff; }
         .m-desc { color: #aaa; font-size: 0.9rem; margin-bottom: 20px; }
         .m-btns { display: flex; gap: 10px; }
@@ -375,7 +391,7 @@
                                 <i class="fas fa-user-tie" style="color: var(--accent-cyan); font-size: 1rem;"></i>
                                 <div class="info-label" style="font-size: 0.8rem;">İşletme Sahibi</div>
                             </div>
-                            <div class="info-value text-cyan" style="font-size: 0.85rem;" id="statOwner">Yükleniyor...</div>
+                            <div class="info-value text-cyan" id="statOwner">Yükleniyor...</div>
                         </div>
                         
                         <div class="info-list-item">
@@ -383,7 +399,7 @@
                                 <i class="fas fa-seedling" style="color: var(--accent-green); font-size: 1rem;"></i>
                                 <div class="info-label" style="font-size: 0.8rem;">Üretilen Ürün</div>
                             </div>
-                            <div class="info-value text-green" style="font-size: 0.85rem;" id="statProduct">Yükleniyor...</div>
+                            <div class="info-value text-green" id="statProduct">Yükleniyor...</div>
                         </div>
                         
                         <div class="info-list-item">
@@ -391,7 +407,7 @@
                                 <i class="fas fa-layer-group" style="color: var(--accent-gold); font-size: 1rem;"></i>
                                 <div class="info-label" style="font-size: 0.8rem;">İşletme Kategorisi</div>
                             </div>
-                            <div class="info-value text-gold" style="font-size: 0.85rem;" id="statCategory">Yükleniyor...</div>
+                            <div class="info-value text-gold" id="statCategory">Yükleniyor...</div>
                         </div>
                         
                         <div class="info-list-item">
@@ -399,7 +415,7 @@
                                 <i class="fas fa-arrow-up" style="color: var(--accent-green); font-size: 1rem;"></i>
                                 <div class="info-label" style="font-size: 0.8rem;">İşletme Seviyesi</div>
                             </div>
-                            <div class="info-value text-green" style="font-size: 0.85rem;" id="statLevel">Seviye 1</div>
+                            <div class="info-value text-green" id="statLevel">Seviye 1</div>
                         </div>
                         
                         <div class="info-list-item">
@@ -407,7 +423,7 @@
                                 <i class="fas fa-users" style="color: var(--accent-green); font-size: 1rem;"></i>
                                 <div class="info-label" style="font-size: 0.8rem;">İşçi Kapasitesi</div>
                             </div>
-                            <div class="info-value text-green" style="font-size: 0.85rem;" id="statWorkers">0 / 5</div>
+                            <div class="info-value text-green" id="statWorkers">0 / 5</div>
                         </div>
                         
                         <div class="info-list-item">
@@ -415,7 +431,7 @@
                                 <i class="fas fa-clock" style="color: var(--accent-cyan); font-size: 1rem;"></i>
                                 <div class="info-label" style="font-size: 0.8rem;">Üretim Hızı</div>
                             </div>
-                            <div class="info-value text-cyan" style="font-size: 0.85rem;" id="statTime">60 Sn</div>
+                            <div class="info-value text-cyan" id="statTime">60 Sn</div>
                         </div>
                         
                         <div class="info-list-item">
@@ -423,7 +439,7 @@
                                 <i class="fas fa-coins" style="color: var(--accent-gold); font-size: 1rem;"></i>
                                 <div class="info-label" style="font-size: 0.8rem;">Birim Maaş</div>
                             </div>
-                            <div class="info-value text-gold" style="font-size: 0.85rem;" id="statSalary">0 ₺/Adet</div>
+                            <div class="info-value text-gold" id="statSalary">0 ₺/Adet</div>
                         </div>
                         
                         <div class="info-list-item">
@@ -431,7 +447,7 @@
                                 <i class="fas fa-flask" style="color: var(--accent-cyan); font-size: 1rem;"></i>
                                 <div class="info-label" style="font-size: 0.8rem;">İşletme AR-GE Seviyesi</div>
                             </div>
-                            <div class="info-value text-cyan" style="font-size: 0.85rem;" id="efficiencyVal">%0</div>
+                            <div class="info-value text-cyan" id="efficiencyVal">%0</div>
                         </div>
                         
                         <div class="info-list-item">
@@ -439,7 +455,7 @@
                                 <i class="fas fa-calendar-plus" style="color: var(--text-muted); font-size: 1rem;"></i>
                                 <div class="info-label" style="font-size: 0.8rem;">Kuruluş Tarihi</div>
                             </div>
-                            <div class="info-value" style="font-size: 0.85rem; color: var(--text-muted);" id="statCreated">-</div>
+                            <div class="info-value" style="color: var(--text-muted);" id="statCreated">-</div>
                         </div>
 
                     </div>
@@ -737,38 +753,38 @@
                 calcContainer.innerHTML = `
                     <div class="info-list-item" style="padding: 6px 0;">
                         <div class="info-left">
-                            <i class="fas fa-cubes" style="color: #666; font-size: 0.9rem;"></i>
+                            <i class="fas fa-cubes" style="color: #666; font-size: 0.8rem;"></i>
                             <div class="info-label" style="font-size: 0.8rem;">Temel Üretim (Seviye ${factoryLevel})</div>
                         </div>
-                        <div style="color: #aaa; font-size: 0.85rem; font-weight: 600;">+${baseProduction} Adet</div>
+                        <div style="color: #aaa; font-size: 0.8rem; font-weight: 800;">+${baseProduction} Adet</div>
                     </div>
                     <div class="info-list-item" style="padding: 6px 0;">
                         <div class="info-left">
-                            <i class="fas fa-graduation-cap" style="color: var(--accent-cyan); font-size: 0.9rem;"></i>
+                            <i class="fas fa-graduation-cap" style="color: var(--accent-cyan); font-size: 0.8rem;"></i>
                             <div class="info-label" style="font-size: 0.8rem;">Eğitim Seviyesi Bonusu</div>
                         </div>
-                        <div style="color: var(--accent-cyan); font-size: 0.85rem; font-weight: 600;">+${educationBonus} Adet</div>
+                        <div style="color: var(--accent-cyan); font-size: 0.8rem; font-weight: 800;">+${educationBonus} Adet</div>
                     </div>
                     <div class="info-list-item" style="padding: 6px 0;">
                         <div class="info-left">
-                            <i class="fas fa-flask" style="color: var(--accent-green); font-size: 0.9rem;"></i>
+                            <i class="fas fa-flask" style="color: var(--accent-green); font-size: 0.8rem;"></i>
                             <div class="info-label" style="font-size: 0.8rem;">AR-GE Bonusu (${argeLevel}. Seviye)</div>
                         </div>
-                        <div style="color: var(--accent-green); font-size: 0.85rem; font-weight: 600;">+${argeBonus} Adet</div>
+                        <div style="color: var(--accent-green); font-size: 0.8rem; font-weight: 800;">+${argeBonus} Adet</div>
                     </div>
                     <div class="info-list-item" style="padding: 6px 0; border-top: 2px solid #333; margin-top: 5px;">
                         <div class="info-left">
-                            <i class="fas fa-check-circle" style="color: var(--accent); font-size: 0.9rem;"></i>
-                            <div class="info-label" style="font-size: 0.85rem; font-weight: 700;">Toplam Üretim</div>
+                            <i class="fas fa-check-circle" style="color: var(--accent); font-size: 0.8rem;"></i>
+                            <div class="info-label" style="font-size: 0.8rem; font-weight: 700;">Toplam Üretim</div>
                         </div>
-                        <div style="color: var(--accent); font-size: 0.9rem; font-weight: 800;">${totalProduction} Adet</div>
+                        <div style="color: var(--accent); font-size: 0.8rem; font-weight: 800;">${totalProduction} Adet</div>
                     </div>
                     <div class="info-list-item" style="padding: 6px 0;">
                         <div class="info-left">
-                            <i class="fas fa-coins" style="color: var(--accent-gold); font-size: 0.9rem;"></i>
-                            <div class="info-label" style="font-size: 0.85rem; font-weight: 700;">Toplam Kazanç</div>
+                            <i class="fas fa-coins" style="color: var(--accent-gold); font-size: 0.8rem;"></i>
+                            <div class="info-label" style="font-size: 0.8rem; font-weight: 700;">Toplam Kazanç</div>
                         </div>
-                        <div style="color: var(--accent-gold); font-size: 0.9rem; font-weight: 800;">${formatMoney(totalEarnings)} ₺</div>
+                        <div style="color: var(--accent-gold); font-size: 0.8rem; font-weight: 800;">${formatMoney(totalEarnings)} ₺</div>
                     </div>
                 `;
             }
@@ -791,8 +807,16 @@
         }
 
         function renderLogs() {
-            // Toplam üretim hesapla
-            const totalProduction = factoryLogs.reduce((acc, log) => acc + (parseInt(log.amount) || 0), 0);
+            // Sadece üretim loglarını topla (istatistik başlığı için)
+            // Mesajın içinde 'Üretim:' geçenleri baz al
+            const productionLogs = factoryLogs.filter(l => l.message && l.message.includes('Üretim:'));
+            const totalProduction = productionLogs.reduce((acc, log) => {
+                // Eğer 'amount' alanı varsa onu kullan, yoksa mesajdan parse et
+                if (log.amount) return acc + parseInt(log.amount);
+                const match = log.message.match(/Üretim: \+(\d+)/);
+                return acc + (match ? parseInt(match[1]) : 0);
+            }, 0);
+
             const titleEl = document.getElementById('logTitle');
             if (titleEl) {
                 titleEl.innerHTML = `Üretim Geçmişi <span style="color:#888; font-weight:normal; font-size:0.8rem; margin-left:5px;">(Toplam: ${totalProduction})</span>`;
@@ -801,8 +825,9 @@
             const logList = document.getElementById('logList');
             logList.innerHTML = '';
             
-            if (factoryLogs.length === 0) {
-                logList.innerHTML = '<div class="log-item" style="justify-content:center;">Kayıt yok</div>';
+            // Eğer hiç ÜRETİM kaydı yoksa
+            if (productionLogs.length === 0) {
+                logList.innerHTML = '<div style="text-align:center; color:#555; font-size:0.8rem;">Henüz üretim kaydı yok.</div>';
                 return;
             }
 
@@ -812,26 +837,34 @@
             };
             const productName = factoryData ? (typeMap[factoryData.farm_type] || 'Ürün') : 'Ürün';
             
-            factoryLogs.forEach(log => {
+            // Sadece ÜRETİM loglarını göster (Son 20)
+            productionLogs.slice(0, 20).forEach(log => {
                 const div = document.createElement('div');
                 div.className = 'log-item';
                 
                 // Format time
                 const date = new Date(log.created_at);
+                const dateStr = date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
                 const timeStr = date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                const fullDateStr = `${dateStr} - ${timeStr}`;
                 
-                const amount = (log.amount !== undefined && log.amount !== null) ? log.amount : '?';
                 const avatarUrl = log.avatar || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
                 
+                // Üretim Logu İçeriği
+                const amount = (log.amount !== undefined && log.amount !== null) ? log.amount : '?';
+                const logContent = `
+                    <span class="log-highlight" style="color: var(--accent-green);">${amount}x ${productName}</span>
+                    <span style="color:#aaa; margin-left: 3px;">üretti</span>
+                `;
+
                 div.innerHTML = `
                     <img src="${avatarUrl}" class="log-avatar" onerror="this.src='uploads/avatars/default.png'">
                     <div class="log-text">
-                        <span class="log-user-link" onclick="window.location.href='profile.html?id=${log.user_id}'" style="cursor:pointer;">${log.user_id} - ${log.username}</span>
+                        <span class="log-user-link" onclick="window.location.href='profile.html?id=${log.user_id}'" style="cursor:pointer;">${log.user_id} - ${log.username || 'Kullanıcı'}</span>
                         <i class="fas fa-long-arrow-alt-right" style="color:#555; margin: 0 5px;"></i>
-                        <span class="log-highlight">${amount}x ${productName}</span>
-                        <span style="color:#666; margin-left: 3px;">üretti</span>
+                        ${logContent}
                     </div>
-                    <span class="log-time">${timeStr}</span>
+                    <span class="log-time">${fullDateStr}</span>
                 `;
                 logList.appendChild(div);
             });
@@ -859,7 +892,7 @@
                     div.classList.add('slot-empty');
                     div.onclick = () => openWorkModal(i);
                     div.innerHTML = `
-                        <i class="fas fa-plus-circle slot-icon"></i>
+                        <i class="fas fa-cog slot-icon"></i>
                         <div class="slot-text">TIKLA ÇALIŞ</div>
                     `;
                     grid.appendChild(div);
@@ -974,7 +1007,7 @@
                 console.log("Collection response:", data);
                 
                 if (data.success) {
-                    toastr.success(data.message);
+                    openResultModal(true, data.message);
                 } else {
                     if (data.message === 'Çalışma henüz bitmedi!') {
                         console.log("Server says not finished, retrying in 1s...");
@@ -983,14 +1016,14 @@
                     }
                     
                     if (data.message === 'Aktif çalışma bulunamadı.') {
-                        toastr.success('Üretim tamamlandı (Otomatik Toplandı).');
+                        openResultModal(true, 'Üretim tamamlandı (Otomatik Toplandı).');
                     } else {
-                        toastr.error(data.message);
+                        openResultModal(false, data.message);
                     }
                 }
             } catch (e) {
                 console.error("Collection error:", e);
-                toastr.error('İşlem sırasında bir hata oluştu.');
+                openResultModal(false, 'İşlem sırasında bir hata oluştu.');
             } finally {
                 loadFactoryData();
                 loadUserData();
@@ -1045,7 +1078,7 @@
             const maxProductionBySeed = Math.floor(currentReserve / seedCostPerUnit);
             
             if (totalProduction > maxProductionBySeed) {
-                toastr.warning(`Yetersiz tohum! Maksimum ${maxProductionBySeed} adet üretim yapabilirsiniz.`);
+                openResultModal(false, `Yetersiz Hammadde!<br><br>Bu tarlada üretim yapmak için gerekli tohum/hammade stoğu yetersiz.<br>Mevcut stokla maksimum <strong>${maxProductionBySeed}</strong> adet üretim yapılabilir.<br><br><span style="font-size:0.8rem; color:#888;">Lütfen tarla sahibinin stok yenilemesini bekleyiniz.</span>`);
                 return;
             }
 
@@ -1099,6 +1132,8 @@
                     body: JSON.stringify({ userId: user.id, farmId: factoryId })
                 });
                 
+                if (!res.ok) throw new Error('Sunucu hatası: ' + res.status);
+                
                 const result = await res.json();
                 
                 if (result.success) {
@@ -1110,7 +1145,8 @@
                 }
             } catch (e) {
                 console.error(e);
-                openResultModal(false, 'Sunucu hatası oluştu.');
+                // JSON parse hatası veya fetch hatası
+                openResultModal(false, 'Sunucu ile bağlantı kuralamadı veya bir hata oluştu.');
             }
         }
 

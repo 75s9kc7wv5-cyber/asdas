@@ -45,7 +45,7 @@
             flex-direction: column;
             position: relative;
             box-shadow: 0 0 30px rgba(0,0,0,0.5);
-            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/World_map_blank_without_borders.svg/2000px-World_map_blank_without_borders.svg.png');
+            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('img/world-map.png');
             background-size: cover;
             background-position: center;
         }
@@ -83,27 +83,26 @@
         .section-desc { font-size: 0.85rem; color: #999; font-weight: 500; }
 
         .page-header {
+            margin-bottom: 25px;
+            animation: fadeInDown 0.5s;
+            position: relative;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 15px;
-            padding: 15px 0;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #333;
         }
         .back-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: #fff;
             width: 40px;
             height: 40px;
-            background: #222;
-            border: 1px solid #444;
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--accent-cyan);
-            font-size: 1.2rem;
             cursor: pointer;
-            transition: all 0.3s;
-            flex-shrink: 0;
+            transition: all 0.2s;
+            font-size: 1.2rem;
         }
         .back-btn:hover {
             background: #2a2a2a;
@@ -114,17 +113,16 @@
             flex: 1;
         }
         .page-title {
-            font-size: 1.3rem;
+            font-size: 1rem;
             font-weight: 800;
-            letter-spacing: 2px;
             color: #fff;
+            margin-bottom: 4px;
             text-transform: uppercase;
-            margin-bottom: 5px;
         }
         .page-subtitle {
-            font-size: 0.85rem;
-            color: #999;
-            font-weight: 500;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.3;
         }
 
         /* MINE GRID */
@@ -153,17 +151,28 @@
         .mine-card:hover { transform: translateY(-3px); border-color: var(--accent-cyan); background: rgba(40,40,40,0.95); }
 
         .m-icon-circle {
-            width: 48px; height: 48px; border-radius: 8px; background: #222;
+            width: 50px; height: 50px; border-radius: 8px; background: #222;
             display: flex; align-items: center; justify-content: center;
-            margin-bottom: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            margin-bottom: 0px; box-shadow: 0 0 10px rgba(0,0,0,0.3);
             font-size: 1.5rem;
         }
 
-        .m-name { font-size: 0.85rem; font-weight: 700; line-height: 1.2; margin-bottom: 0; }
+        .m-name {
+            font-size: 0.85rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 0;
+        }
         .m-count { font-size: 0.7rem; color: #aaa; margin-top: 2px; }
         .count-badge { 
-            background: #222; padding: 2px 6px; border-radius: 4px; border: 1px solid #444;
-            display: inline-block; margin-top: 4px; font-size: 0.7rem; color: #fff;
+            background: #222;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            display: inline-block;
+            margin-top: 4px;
+            font-size: 0.7rem;
+            color: #fff;
         }
 
         /* Kart Stilleri */
@@ -205,8 +214,8 @@
         .mine-list-card:hover { transform: translateX(5px); border-color: var(--accent-cyan); background: rgba(40,40,40,0.95); }
         .mine-list-card .m-icon-circle { width: 50px; height: 50px; margin-bottom: 0; flex-shrink: 0; }
         .mine-list-card .m-info { flex: 1; text-align: left; }
-        .mine-list-card .m-name { font-size: 1rem; margin-bottom: 2px; }
-        .mine-list-card .m-desc { font-size: 0.8rem; color: #aaa; }
+        .mine-list-card .m-name { font-size: 0.85rem; font-weight: 700; line-height: 1.2; margin-bottom: 0; }
+        .mine-list-card .m-desc { font-size: 0.8rem; color: #888; margin-top: 4px; }
         .mine-list-card .action-btn { width: auto; padding: 8px 20px; margin-top: 0; }
 
         /* ÜRETİM MODALI */
@@ -551,7 +560,7 @@
                         <div class="m-icon-circle">${iconHtml}</div>
                         <div class="m-name">${mine.name}</div>
                         <div class="count-badge">
-                            ${count} Adet Kurulu
+                            ${count} Adet İşletme
                         </div>
                     `;
                     grid.appendChild(card);
@@ -570,10 +579,13 @@
 
             // Icon Setup
             let iconHtml = '';
+            // Kare badge stili
+            const badgeStyle = 'display:flex; align-items:center; justify-content:center; width:70px; height:70px; background:#222; border:1px solid #444; border-radius:12px; margin:0 auto 15px;';
+
             if (mine.img) {
-                iconHtml = `<img src="${mine.img}" alt="${mine.name}" style="width: 64px; height: 64px; object-fit: contain;">`;
+                iconHtml = `<div style="${badgeStyle}"><img src="${mine.img}" alt="${mine.name}" style="width: 50px; height: 50px; object-fit: contain;"></div>`;
             } else {
-                iconHtml = `<i class="fas ${mine.icon}" style="font-size: 3rem; color: var(--accent-cyan);"></i>`;
+                iconHtml = `<div style="${badgeStyle}"><i class="fas ${mine.icon}" style="font-size: 30px; color: var(--accent-cyan);"></i></div>`;
             }
             document.getElementById('mIconContainer').innerHTML = iconHtml;
 
@@ -641,7 +653,8 @@
                 `;
             }
 
-            // 4. Education Skill (Level)
+            // 4. Education Skill (Level) - REMOVED
+            /* 
             const userLevel = userData.education_skill || 1;
             const levelOk = userLevel >= mine.reqLevel;
             if (!levelOk) canBuy = false;
@@ -658,6 +671,7 @@
                     </div>
                 </div>
             `;
+            */
 
             // 5. License
             const licLevel = userLicenses[mine.id] || 0;
@@ -821,11 +835,11 @@
                         <div class="m-icon-circle">${iconHtml}</div>
                         <div class="m-info">
                             <div class="m-name">${mine.name}</div>
-                            <div class="m-desc" style="font-size: 0.85rem; color: #aaa; margin-top: 3px;">
+                            <div class="m-desc">
                                 ${owned ? 'Yönetim ve üretim paneli' : 'Satın alıp üretim yapabilirsin'}
                             </div>
                         </div>
-                        <div style="margin-left:auto; color: #555; padding-right: 5px; font-size: 1.2rem;">
+                        <div style="margin-left:auto; color: #fff; padding-right: 5px; font-size: 1.2rem;">
                             <i class="fas fa-chevron-right"></i>
                         </div>
                     `;

@@ -22,6 +22,8 @@
             --text-white: #ffffff;
             --text-muted: #888;
             --card-bg: rgba(30, 30, 30, 0.95);
+            --bg-input: #1a1a1a;
+            --border-color: #333;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -42,7 +44,7 @@
             flex-direction: column;
             position: relative;
             box-shadow: 0 0 30px rgba(0,0,0,0.5);
-            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/World_map_blank_without_borders.svg/2000px-World_map_blank_without_borders.svg.png');
+            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('img/world-map.png');
             background-size: cover;
             background-position: center;
         }
@@ -74,27 +76,26 @@
         .section-desc { font-size: 0.85rem; color: #999; font-weight: 500; }
 
         .page-header {
+            margin-bottom: 25px;
+            animation: fadeInDown 0.5s;
+            position: relative;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 15px;
-            padding: 15px 0;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #333;
         }
         .back-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: #fff;
             width: 40px;
             height: 40px;
-            background: #222;
-            border: 1px solid #444;
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--accent-cyan);
-            font-size: 1.2rem;
             cursor: pointer;
-            transition: all 0.3s;
-            flex-shrink: 0;
+            transition: all 0.2s;
+            font-size: 1.2rem;
         }
         .back-btn:hover {
             background: #2a2a2a;
@@ -105,20 +106,16 @@
             flex: 1;
         }
         .page-title {
-            font-size: 1.3rem;
+            font-size: 1rem;
             font-weight: 800;
-            letter-spacing: 2px;
             color: #fff;
+            margin-bottom: 4px;
             text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 5px;
         }
         .page-subtitle {
-            font-size: 0.85rem;
-            color: #999;
-            font-weight: 500;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.3;
         }
 
         .factory-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; animation: slideUp 0.6s ease; }
@@ -144,54 +141,59 @@
         }
         .factory-card:hover { transform: translateY(-3px); border-color: var(--accent-cyan); background: rgba(40,40,40,0.95); }
         .f-icon-circle {
-            width: 48px; height: 48px; border-radius: 8px; background: #222;
+            width: 50px; height: 50px; border-radius: 8px; background: #222;
             display: flex; align-items: center; justify-content: center;
-            margin-bottom: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            margin-bottom: 0px; box-shadow: 0 0 10px rgba(0,0,0,0.3);
             font-size: 1.5rem;
         }
-        .f-name { font-size: 0.85rem; font-weight: 700; line-height: 1.2; margin-bottom: 0; }
+        .f-name {
+            font-size: 0.85rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 0;
+        }
         .f-count { font-size: 0.7rem; color: #aaa; margin-top: 2px; }
+        .f-desc {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 4px;
+        }
         .count-badge { 
-            background: #222; padding: 2px 6px; border-radius: 4px; border: 1px solid #444;
-            display: inline-block; margin-top: 4px; font-size: 0.7rem; color: #fff;
+            background: #222;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            display: inline-block;
+            margin-top: 4px;
+            font-size: 0.7rem;
+            color: #fff;
         }
 
         /* Farm List Card Styles */
+        .farm-list-view { display: flex; flex-direction: column; gap: 10px; }
         .farm-list-card {
+            background: var(--card-bg);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 10px;
             display: flex;
             align-items: center;
             gap: 15px;
-            background: rgba(30,30,30,0.95);
-            border: 1px solid #333;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 10px;
-            cursor: pointer;
             transition: transform 0.2s, border-color 0.2s;
-            position: relative;
-            overflow: hidden;
             text-decoration: none;
             color: #fff;
+            border-left: 4px solid var(--accent-red);
+        }
+        .farm-list-card.owned {
+             border-left-color: var(--accent-green);
         }
         .farm-list-card:hover {
-            transform: translateY(-2px);
-            border-color: #555;
+            transform: translateX(5px);
+            border-color: var(--accent-cyan);
             background: rgba(40,40,40,0.95);
         }
-        .farm-list-card::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: 4px;
-            background: var(--accent-red); /* Unowned = Red */
-        }
-        .farm-list-card.owned::before {
-             background: var(--accent-green); /* Owned = Green */
-        }
         .right-arrow {
-            color: #444;
+            color: #fff;
             font-size: 1.2rem;
             margin-left: auto;
             transition: color 0.2s;
@@ -362,7 +364,7 @@
             <div class="factory-grid" id="farmGrid"></div>
         </div>
         <div id="tabContentBenim" class="tab-content" style="display:none;">
-            <div id="myFarmList">
+            <div id="myFarmList" class="farm-list-view">
                 <div style="text-align:center; padding:20px; color:#666;">Henüz tarlan yok.</div>
             </div>
         </div>
@@ -487,7 +489,7 @@
                 card.innerHTML = `
                     ${iconHtml}
                     <div class="f-name">${farm.name}</div>
-                    <div class="count-badge">${count} Adet Kurulu</div>
+                    <div class="count-badge">${count} Adet İşletme</div>
                 `;
                 grid.appendChild(card);
             });
@@ -532,7 +534,7 @@
                     ${iconHtml}
                     <div style="flex:1;">
                         <div class="f-name">${type.name}</div>
-                        <div style="font-size: 0.8rem; color: #888; margin-top: 4px;">
+                        <div class="f-desc">
                              ${owned ? 'Yönetim ve Üretim Paneli' : 'Satın alıp üretim yapabilirsin'}
                         </div>
                     </div>
@@ -553,10 +555,13 @@
             // Icon Ekleme (Başlığın üstüne)
             const modalTitle = document.getElementById('buyModalTitle');
             let iconHtml = '';
+            // Kare badge stili
+            const badgeStyle = 'display:flex; align-items:center; justify-content:center; width:70px; height:70px; background:#222; border:1px solid #444; border-radius:12px; margin:0 auto 10px;';
+
             if (type.image_path) {
-                iconHtml = `<div style="display:flex; justify-content:center; margin-bottom:10px;"><img src="${type.image_path}" style="width:50px; height:50px; object-fit:contain;"></div>`;
+                iconHtml = `<div style="${badgeStyle}"><img src="${type.image_path}" style="width:50px; height:50px; object-fit:contain;"></div>`;
             } else {
-                iconHtml = `<div style="display:flex; justify-content:center; margin-bottom:10px; font-size:2rem; color:var(--accent-gold);"><i class="fas fa-tractor"></i></div>`;
+                iconHtml = `<div style="${badgeStyle}"><i class="fas fa-tractor" style="font-size:30px; color:var(--accent-gold);"></i></div>`;
             }
             
             modalTitle.innerHTML = `${iconHtml}${type.name} Satın Al`;

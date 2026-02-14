@@ -11,7 +11,9 @@
     <style>
         :root {
             --bg-dark: #0d0d0d;
+            --bg-input: #1a1a1a;
             --bg-card: #161616;
+            --text-muted: #999;
             --accent-cyan: #00e5ff;
             --accent-green: #2ecc71;
             --accent-gold: #ffd700;
@@ -42,7 +44,7 @@
             flex-direction: column;
             position: relative;
             box-shadow: 0 0 30px rgba(0,0,0,0.5);
-            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/World_map_blank_without_borders.svg/2000px-World_map_blank_without_borders.svg.png');
+            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('img/world-map.png');
             background-size: cover;
             background-position: center;
         }
@@ -95,27 +97,26 @@
         }
 
         .page-header {
+            margin-bottom: 25px;
+            animation: fadeInDown 0.5s;
+            position: relative;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 15px;
-            padding: 15px 0;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #333;
         }
         .back-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: #fff;
             width: 40px;
             height: 40px;
-            background: #222;
-            border: 1px solid #444;
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--accent-cyan);
-            font-size: 1.2rem;
             cursor: pointer;
-            transition: all 0.3s;
-            flex-shrink: 0;
+            transition: all 0.2s;
+            font-size: 1.2rem;
         }
         .back-btn:hover {
             background: #2a2a2a;
@@ -127,17 +128,16 @@
             text-align: left;
         }
         .page-title {
-            font-size: 1.3rem;
+            font-size: 1rem;
             font-weight: 800;
-            letter-spacing: 2px;
             color: #fff;
+            margin-bottom: 4px;
             text-transform: uppercase;
-            margin-bottom: 5px;
         }
         .page-subtitle {
-            font-size: 0.85rem;
-            color: #999;
-            font-weight: 500;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.3;
         }
 
         /* TABS */
@@ -201,6 +201,10 @@
         }
         .mine-card.city-card::before {
              background: var(--accent-gold);
+        }
+        
+        .mine-card.city-card.owned::before {
+             background: var(--accent-green);
         }
         
         .mine-card.city-card {
@@ -422,6 +426,11 @@
         }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
         /* Colors */
         .color-wood { color: #2ecc71; }
@@ -706,11 +715,16 @@
             } else if (category) {
                 const allowedTypes = factoryTypes.filter(t => t.category === category).map(t => t.id);
                 filteredMines = mines.filter(m => allowedTypes.includes(m.mine_type));
-            } else {
-                // If no filter, show only factories (not mines)
-                const allFactoryIds = factoryTypes.map(t => t.id);
-                filteredMines = mines.filter(m => allFactoryIds.includes(m.mine_type));
             }
+
+            // Sort: Owned first, then level
+            filteredMines.sort((a, b) => {
+                const aOwned = (String(a.user_id) === String(userData.id));
+                const bOwned = (String(b.user_id) === String(userData.id));
+                if (aOwned && !bOwned) return -1;
+                if (!aOwned && bOwned) return 1;
+                return (b.level || 1) - (a.level || 1);
+            });
 
             if (filteredMines.length === 0) {
                 container.innerHTML = '<div style="text-align:center; color:#666; padding:20px;">Bu kategoride henüz fabrika yok.</div>';
@@ -718,17 +732,24 @@
             }
 
             filteredMines.forEach(mine => {
-                const type = factoryTypes.find(t => t.id === mine.mine_type);
+                const type = factoryTypes.find(t => t.id == mine.mine_type);
                 if (!type) return;
 
+                const isMine = (String(mine.user_id) === String(userData.id));
                 const card = document.createElement('div');
                 card.className = 'mine-card city-card';
+                if (isMine) card.classList.add('owned');
                 
                 let iconHTML = '';
                 if (type.img) {
                     iconHTML = `<img src="${type.img}" alt="${type.name}">`;
                 } else {
                     iconHTML = `<i class="fas ${type.icon}"></i>`;
+                }
+
+                let myBadge = '';
+                if (isMine) {
+                    myBadge = `<span class="stat-badge" style="border-color:var(--accent-green); color:var(--accent-green); background:rgba(46, 204, 113, 0.1);"><i class="fas fa-check-circle" style="color:var(--accent-green);"></i> İşletmem</span>`;
                 }
 
                 card.innerHTML = `
@@ -738,9 +759,10 @@
                         </div>
                         <div class="mine-info">
                             <div class="mine-name">${mine.name || type.name}</div>
-                            <div class="mine-stats" style="display: flex; gap: 5px;">
+                            <div class="mine-stats" style="display: flex; gap: 5px; flex-wrap: wrap; align-items: center;">
+                                ${myBadge}
                                 <span class="stat-badge"><i class="fas fa-users" style="color: var(--accent-cyan);"></i> ${mine.current_workers || 0}/${mine.max_workers || 5}</span>
-                                <span class="stat-badge"><i class="fas fa-money-bill-wave" style="color: var(--accent-green);"></i> ${mine.salary || 0} ₺</span>
+                                <span class="stat-badge"><img src="icons/inventory-icon/money.png" style="width:14px; height:14px; margin-right:2px; vertical-align:middle;"> ${mine.salary || 0} ₺</span>
                             </div>
                         </div>
                         <i class="fas fa-chevron-right" style="color: #666; margin-left: auto;"></i>

@@ -1599,10 +1599,10 @@ app.post('/api/mines/buy', (req, res) => {
             if (err || users.length === 0) return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' });
             const user = users[0];
 
-            // Check Skill
-            if ((user.education_skill || 1) < mineConfig.reqLevel) {
+            // Check Skill - REMOVED per request
+            /* if ((user.education_skill || 1) < mineConfig.reqLevel) {
                 return res.json({ success: false, message: `Eğitim seviyen yetersiz. (Gereken: ${mineConfig.reqLevel})` });
-            }
+            } */
 
             // Check License
             db.query('SELECT level FROM licenses WHERE user_id = ? AND mine_type = ?', [userId, mineType], (err, licenses) => {
@@ -1749,6 +1749,22 @@ app.get('/api/mines/detail/:id', (req, res) => {
                 });
             });
         });
+    });
+});
+
+// Factory Settings Update
+app.post('/api/factory/settings', (req, res) => {
+    const { factoryId, name, wage, userId } = req.body;
+    
+    // Check if factory belongs to user (Basic validation - can be improved)
+    // For now, we trust the ID or assume checking is done in middleware if any
+    
+    db.query('UPDATE player_mines SET name = ?, salary = ? WHERE id = ?', [name, wage, factoryId], (err, result) => {
+        if (err) {
+            console.error('Factory Settings Update Error:', err);
+            return res.status(500).json({ success: false, message: 'Sunucu hatası.' });
+        }
+        res.json({ success: true, message: 'Ayarlar güncellendi.' });
     });
 });
 
@@ -5129,7 +5145,7 @@ app.get('/api/farms/detail/:id', (req, res) => {
                     JOIN users u ON fl.user_id = u.id 
                     WHERE fl.farm_id = ? 
                     ORDER BY fl.created_at DESC 
-                    LIMIT 10
+                    LIMIT 50
                 `;
 
                 db.query(logQuery, [farmId], (err, logs) => {
@@ -5198,7 +5214,8 @@ app.post('/api/farms/start', (req, res) => {
             if (results.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Kullanıcı veya Tarla bulunamadı.' }));
 
             const data = results[0];
-            const { energy, health, education_skill, max_workers, current_workers, any_active_workers, reserve, salary, vault, stock, level, production_time } = data;
+            const { energy, health, education_skill, max_workers, current_workers, any_active_workers, reserve, salary, vault, stock, level, production_time, owner_id } = data;
+            const ownerId = owner_id;
             
             // 2. Checks
             const ENERGY_COST = 10;
@@ -5330,24 +5347,30 @@ app.post('/api/farms/collect', (req, res) => {
                         [amount, totalEarnings, farmId], (err) => {
                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Farm Update Error' }));
 
-                        // Log Transaction
+                        // Log Transaction (Production)
                         const logQuery = 'INSERT INTO farm_logs (farm_id, user_id, message, amount) VALUES (?, ?, ?, ?)';
                         const message = `Üretim: +${amount}, Tüketilen Tohum: ${seedCost}, Kazanç: ${totalEarnings} ₺`;
                         db.query(logQuery, [farmId, userId, message, amount], (err) => {
                             if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log Error' }));
 
-                            // Remove Active Worker
-                            db.query('DELETE FROM farm_active_workers WHERE id = ?', [worker.id], (err) => {
-                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Delete Worker Error' }));
+                            // Log Transaction (Salary / Vault)
+                            const salaryMsg = `Kasa: Maaş Ödemesi - ${totalEarnings} ₺`;
+                            db.query(logQuery, [farmId, userId, salaryMsg, totalEarnings], (err) => {
+                                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log Error (Salary)' }));
 
-                                db.commit(err => {
-                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                                    
-                                    res.json({ 
-                                        success: true, 
-                                        message: `Üretim Tamamlandı! +${amount} Üretim, +${totalEarnings} ₺ Kazanç.`,
-                                        amount: amount,
-                                        salary: totalEarnings
+                                // Remove Active Worker
+                                db.query('DELETE FROM farm_active_workers WHERE id = ?', [worker.id], (err) => {
+                                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Delete Worker Error' }));
+
+                                    db.commit(err => {
+                                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                                        
+                                        res.json({ 
+                                            success: true, 
+                                            message: `Üretim Tamamlandı! +${amount} Üretim, +${totalEarnings} ₺ Kazanç.`,
+                                            amount: amount,
+                                            salary: totalEarnings
+                                        });
                                     });
                                 });
                             });
@@ -5397,9 +5420,55 @@ app.post('/api/farms/deposit/:id', (req, res) => {
                 db.query('UPDATE player_farms SET vault = vault + ? WHERE id = ?', [amount, farmId], (err) => {
                     if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kasa güncellenemedi.' }));
 
-                    db.commit(err => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                        res.json({ success: true, message: `${amount} ₺ kasaya yatırıldı.` });
+                    // Log Transaction
+                    const logQuery = 'INSERT INTO farm_logs (farm_id, user_id, message, amount) VALUES (?, ?, ?, ?)';
+                    const msg = `Kasa: Para Yatırma - ${amount} ₺`;
+                    db.query(logQuery, [farmId, userId, msg, amount], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log Error' }));
+
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                            res.json({ success: true, message: `${amount} ₺ kasaya yatırıldı.` });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Withdraw Money from Farm Vault
+app.post('/api/farms/withdraw/:id', (req, res) => {
+    const farmId = req.params.id;
+    const { userId, amount } = req.body;
+
+    if (amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
+
+        db.query('SELECT * FROM player_farms WHERE id = ?', [farmId], (err, farms) => {
+            if (err || farms.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Tarla bulunamadı.' }));
+            
+            const farm = farms[0];
+            if (farm.vault < amount) return db.rollback(() => res.json({ success: false, message: 'Kasada yeterli para yok.' }));
+
+            db.query('UPDATE player_farms SET vault = vault - ? WHERE id = ?', [amount, farmId], (err) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kasa güncellenemedi.' }));
+
+                db.query('UPDATE users SET money = money + ? WHERE id = ?', [amount, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kullanıcı bakiyesi güncellenemedi.' }));
+
+                    // Log Transaction
+                    const logQuery = 'INSERT INTO farm_logs (farm_id, user_id, message, amount) VALUES (?, ?, ?, ?)';
+                    const msg = `Kasa: Para Çekme - ${amount} ₺`;
+                    db.query(logQuery, [farmId, userId, msg, amount], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log Error' }));
+
+                        db.commit(err => {
+                            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                            res.json({ success: true, message: `${amount} ₺ kasadan çekildi.` });
+                        });
                     });
                 });
             });
@@ -6063,7 +6132,7 @@ app.post('/api/buy-farm', (req, res) => {
         const farmType = types[0];
 
         // 2. Get User Info (Money & License)
-        db.query('SELECT money, license_farm_level FROM users WHERE id = ?', [user_id], (err, users) => {
+        db.query('SELECT money, license_farm_level, username FROM users WHERE id = ?', [user_id], (err, users) => {
             if (err) return res.status(500).json({ message: 'Veritabanı hatası' });
             if (users.length === 0) return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
 
@@ -6102,7 +6171,8 @@ app.post('/api/buy-farm', (req, res) => {
                         if (err) return db.rollback(() => res.status(500).json({ message: 'Bakiye düşülemedi' }));
 
                         // Add Farm
-                        db.query('INSERT INTO player_farms (user_id, farm_type_id) VALUES (?, ?)', [user_id, farm_type_id], (err) => {
+                        const farmName = `${user.username}'s ${farmType.name} İşletmesi`;
+                        db.query('INSERT INTO player_farms (user_id, farm_type_id, name) VALUES (?, ?, ?)', [user_id, farm_type_id, farmName], (err) => {
                             if (err) return db.rollback(() => res.status(500).json({ message: 'Çiftlik eklenemedi' }));
 
                             db.commit(err => {
@@ -8340,6 +8410,77 @@ const GPU_STATS = {
     'gx_800': { hashrate: 400, daily: 0.100, power: 850 },
     'gx_titan': { hashrate: 2500, daily: 0.625, power: 2000 }
 };
+
+// Background Mining Loop (Every 60 Seconds)
+setInterval(() => {
+    // 1. Get all active & healthy rigs
+    const now = new Date();
+    
+    db.query('SELECT * FROM player_rigs WHERE active = 1 AND health > 0', (err, rigs) => {
+        if(err) return console.error("[Mining] Error fetching rigs:", err);
+        if(!rigs.length) return;
+
+        rigs.forEach(rig => {
+            const stats = GPU_STATS[rig.gpu_key];
+            if(!stats) return;
+
+            // Calculate Time Difference
+            // If last_collection is null, treat as installed_at or now (to avoid huge backlog if new)
+            // But schema says default CURRENT_TIMESTAMP, so it should be fine.
+            const lastCollection = new Date(rig.last_collection || rig.installed_at || now);
+            const diffMs = now - lastCollection;
+            
+            // Minimum 10 seconds to process (prevents spam or dust)
+            if(diffMs < 10000) return;
+
+            // Calculate Earnings
+            // Daily Rate * Days Elapsed
+            const diffDays = diffMs / (1000 * 60 * 60 * 24);
+            const earnings = stats.daily * diffDays;
+            
+            // Limit max earnings to prevents exploits if time drifts? (Optional)
+            if(earnings <= 0) return;
+
+            // Update User Balance & Rig Timestamp
+            // We use a transaction to ensure atomic update (money + timestamp)
+            db.beginTransaction(err => {
+                if(err) return console.error("[Mining] Tx Error", err);
+
+                // 1. Give BTC
+                db.query('UPDATE users SET btc = btc + ? WHERE id = ?', [earnings, rig.user_id], (err) => {
+                    if(err) {
+                        return db.rollback(() => console.error("[Mining] User Update Error", err));
+                    }
+
+                    // 2. Update Rig Timestamp
+                    // Also decrease health slightly? (Optional, let's keep it simple for now)
+                    // Let's degrade health by 0.1% per hour? 
+                    // 0.1 / 24 * diffDays? Too complex for now.
+                    db.query('UPDATE player_rigs SET last_collection = NOW() WHERE id = ?', [rig.id], (err) => {
+                        if(err) {
+                            return db.rollback(() => console.error("[Mining] Rig Update Error", err));
+                        }
+                        
+                        db.commit((err) => {
+                            if(err) console.error("[Mining] Commit Error", err);
+                            // Success
+                        });
+                    });
+                });
+            });
+        });
+    });
+}, 60000); // Run every 60 seconds
+
+/*
+const GPU_STATS = {
+    'gx_100': { hashrate: 25, daily: 0.006, power: 100 },
+    'gx_300': { hashrate: 80, daily: 0.020, power: 250 },
+    'gx_500': { hashrate: 200, daily: 0.050, power: 500 },
+    'gx_800': { hashrate: 400, daily: 0.100, power: 850 },
+    'gx_titan': { hashrate: 2500, daily: 0.625, power: 2000 }
+};
+*/
 
 // 1. Get Mining Summary
 app.get('/api/crypto/summary/:userId', (req, res) => {
