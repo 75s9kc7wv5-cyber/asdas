@@ -16,7 +16,7 @@ db.connect((err) => {
     console.log('Connected to database.');
 
     const queries = [
-        // 1. Users Table
+        // 1. Users Table (Updated with BTC columns)
         `CREATE TABLE IF NOT EXISTS users (
             id INT AUTO_INCREMENT PRIMARY KEY,
             username VARCHAR(255) NOT NULL UNIQUE,
@@ -40,6 +40,8 @@ db.connect((err) => {
             profile_views INT DEFAULT 0,
             last_login DATETIME DEFAULT NULL,
             mute_expires_at TIMESTAMP NULL DEFAULT NULL,
+            btc DECIMAL(20, 8) DEFAULT 0,
+            last_crypto_trade TIMESTAMP NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )`,
 
@@ -55,7 +57,17 @@ db.connect((err) => {
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )`,
 
-        // 3. Toxic Logs
+        // 3. Inventory (NEW - Critical Missing Table)
+        `CREATE TABLE IF NOT EXISTS inventory (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            item_key VARCHAR(50) NOT NULL,
+            quantity INT DEFAULT 0,
+            UNIQUE KEY unique_item (user_id, item_key),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )`,
+
+        // 4. Toxic Logs
         `CREATE TABLE IF NOT EXISTS toxic_logs (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
@@ -65,7 +77,7 @@ db.connect((err) => {
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )`,
 
-        // 4. Profile Visits
+        // 5. Profile Visits
         `CREATE TABLE IF NOT EXISTS profile_visits (
             id INT AUTO_INCREMENT PRIMARY KEY,
             profile_id INT NOT NULL,
@@ -75,7 +87,7 @@ db.connect((err) => {
             FOREIGN KEY (visitor_id) REFERENCES users(id) ON DELETE CASCADE
         )`,
 
-        // 5. Profile Comments
+        // 6. Profile Comments
         `CREATE TABLE IF NOT EXISTS profile_comments (
             id INT AUTO_INCREMENT PRIMARY KEY,
             profile_user_id INT NOT NULL,
@@ -86,7 +98,7 @@ db.connect((err) => {
             FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE CASCADE
         )`,
 
-        // 6. User Logs
+        // 7. User Logs
         `CREATE TABLE IF NOT EXISTS user_logs (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
@@ -95,7 +107,7 @@ db.connect((err) => {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`,
 
-        // 7. Active Educations
+        // 8. Active Educations
         `CREATE TABLE IF NOT EXISTS active_educations (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
@@ -105,7 +117,7 @@ db.connect((err) => {
             UNIQUE KEY unique_user (user_id)
         )`,
 
-        // 8. Licenses (Virtual table in code, but good to have if needed)
+        // 9. Licenses
         `CREATE TABLE IF NOT EXISTS licenses (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
@@ -114,7 +126,7 @@ db.connect((err) => {
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )`,
 
-        // 9. Player Mines
+        // 10. Player Mines
         `CREATE TABLE IF NOT EXISTS player_mines (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
@@ -131,7 +143,7 @@ db.connect((err) => {
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )`,
 
-        // 10. Mine Logs
+        // 11. Mine Logs
         `CREATE TABLE IF NOT EXISTS mine_logs (
             id INT AUTO_INCREMENT PRIMARY KEY,
             mine_id INT NOT NULL,
@@ -142,7 +154,7 @@ db.connect((err) => {
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )`,
 
-        // 11. Mine Active Workers
+        // 12. Mine Active Workers
         `CREATE TABLE IF NOT EXISTS mine_active_workers (
             id INT AUTO_INCREMENT PRIMARY KEY,
             mine_id INT NOT NULL,
@@ -152,13 +164,13 @@ db.connect((err) => {
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )`,
 
-        // 12. Mine Settings
+        // 13. Mine Settings
         `CREATE TABLE IF NOT EXISTS mine_settings (
             mine_type VARCHAR(50) PRIMARY KEY,
             production_time INT DEFAULT 60
         )`,
 
-        // 13. Arge Levels
+        // 14. Arge Levels
         `CREATE TABLE IF NOT EXISTS arge_levels (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
@@ -173,7 +185,7 @@ db.connect((err) => {
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )`,
 
-        // 14. Property Types
+        // 15. Property Types
         `CREATE TABLE IF NOT EXISTS property_types (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(255) NOT NULL,
@@ -186,7 +198,7 @@ db.connect((err) => {
             image VARCHAR(255)
         )`,
 
-        // 15. Player Properties
+        // 16. Player Properties
         `CREATE TABLE IF NOT EXISTS player_properties (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
@@ -197,7 +209,7 @@ db.connect((err) => {
             FOREIGN KEY (property_type_id) REFERENCES property_types(id)
         )`,
 
-        // 16. Parties
+        // 17. Parties
         `CREATE TABLE IF NOT EXISTS parties (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(100) NOT NULL,
@@ -210,7 +222,7 @@ db.connect((err) => {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )`,
 
-        // 17. Chat Messages
+        // 18. Chat Messages
         `CREATE TABLE IF NOT EXISTS chat_messages (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
@@ -221,7 +233,7 @@ db.connect((err) => {
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )`,
 
-        // 18. Message Reports
+        // 19. Message Reports
         `CREATE TABLE IF NOT EXISTS message_reports (
             id INT AUTO_INCREMENT PRIMARY KEY,
             message_id INT NOT NULL,
@@ -232,7 +244,7 @@ db.connect((err) => {
             FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE
         )`,
 
-        // 19. Daily Jobs
+        // 20. Daily Jobs
         `CREATE TABLE IF NOT EXISTS daily_jobs (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(255) NOT NULL,
@@ -247,7 +259,7 @@ db.connect((err) => {
             reward_diamond INT DEFAULT 0
         )`,
 
-        // 20. Active Daily Jobs
+        // 21. Active Daily Jobs
         `CREATE TABLE IF NOT EXISTS active_daily_jobs (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
@@ -258,7 +270,7 @@ db.connect((err) => {
             UNIQUE KEY unique_active_user (user_id)
         )`,
 
-        // 21. Completed Daily Jobs
+        // 22. Completed Daily Jobs
         `CREATE TABLE IF NOT EXISTS completed_daily_jobs (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
@@ -267,7 +279,7 @@ db.connect((err) => {
             UNIQUE KEY unique_daily_completion (user_id, job_id, completed_at)
         )`,
 
-        // 22. Hospitals
+        // 23. Hospitals
         `CREATE TABLE IF NOT EXISTS hospitals (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
@@ -282,7 +294,7 @@ db.connect((err) => {
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )`,
 
-        // 23. Hospital Treatments
+        // 24. Hospital Treatments
         `CREATE TABLE IF NOT EXISTS hospital_treatments (
             id INT AUTO_INCREMENT PRIMARY KEY,
             hospital_id INT NOT NULL,
@@ -292,7 +304,7 @@ db.connect((err) => {
             FOREIGN KEY (hospital_id) REFERENCES hospitals(id) ON DELETE CASCADE
         )`,
 
-        // 24. Hospital Active Treatments
+        // 25. Hospital Active Treatments
         `CREATE TABLE IF NOT EXISTS hospital_active_treatments (
             id INT AUTO_INCREMENT PRIMARY KEY,
             hospital_id INT NOT NULL,
@@ -306,7 +318,25 @@ db.connect((err) => {
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )`,
 
-        // 25. Farm Types
+        // 26. Hospital Levels (NEW)
+        `CREATE TABLE IF NOT EXISTS hospital_levels (
+            level INT PRIMARY KEY,
+            capacity INT NOT NULL,
+            treatment_duration INT NOT NULL,
+            health_regen INT NOT NULL,
+            treatment_price INT NOT NULL,
+            upgrade_cost_money BIGINT NOT NULL,
+            upgrade_cost_gold INT NOT NULL,
+            upgrade_cost_diamond INT NOT NULL,
+            upgrade_duration_minutes INT NOT NULL,
+            req_lumber INT DEFAULT 0,
+            req_brick INT DEFAULT 0,
+            req_glass INT DEFAULT 0,
+            req_concrete INT DEFAULT 0,
+            req_steel INT DEFAULT 0
+        )`,
+
+        // 27. Farm Types
         `CREATE TABLE IF NOT EXISTS farm_types (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(50) NOT NULL,
@@ -317,7 +347,7 @@ db.connect((err) => {
             description TEXT
         )`,
 
-        // 26. Player Farms
+        // 28. Player Farms
         `CREATE TABLE IF NOT EXISTS player_farms (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
@@ -328,7 +358,23 @@ db.connect((err) => {
             FOREIGN KEY (farm_type_id) REFERENCES farm_types(id)
         )`,
 
-        // 27. Ranch Types
+        // 29. Farm Levels (NEW)
+        `CREATE TABLE IF NOT EXISTS farm_levels (
+            level INT PRIMARY KEY,
+            cost_money BIGINT DEFAULT 0,
+            cost_gold INT DEFAULT 0,
+            cost_diamond INT DEFAULT 0,
+            cost_wood INT DEFAULT 0,
+            cost_brick INT DEFAULT 0,
+            cost_cement INT DEFAULT 0,
+            cost_glass INT DEFAULT 0,
+            cost_steel INT DEFAULT 0,
+            duration_seconds INT DEFAULT 60,
+            capacity_worker_increase INT DEFAULT 5,
+            capacity_storage_increase INT DEFAULT 500
+        )`,
+
+        // 30. Ranch Types
         `CREATE TABLE IF NOT EXISTS ranch_types (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(50) NOT NULL,
@@ -341,7 +387,7 @@ db.connect((err) => {
             description TEXT
         )`,
 
-        // 28. Player Ranches
+        // 31. Player Ranches
         `CREATE TABLE IF NOT EXISTS player_ranches (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
@@ -355,7 +401,7 @@ db.connect((err) => {
             FOREIGN KEY (ranch_type_id) REFERENCES ranch_types(id)
         )`,
 
-        // 29. Ranch Active Workers
+        // 32. Ranch Active Workers
         `CREATE TABLE IF NOT EXISTS ranch_active_workers (
             id INT AUTO_INCREMENT PRIMARY KEY,
             ranch_id INT NOT NULL,
@@ -366,7 +412,7 @@ db.connect((err) => {
             FOREIGN KEY (ranch_id) REFERENCES player_ranches(id) ON DELETE CASCADE
         )`,
 
-        // 30. Ranch Logs
+        // 33. Ranch Logs
         `CREATE TABLE IF NOT EXISTS ranch_logs (
             id INT AUTO_INCREMENT PRIMARY KEY,
             ranch_id INT NOT NULL,
@@ -376,7 +422,7 @@ db.connect((err) => {
             FOREIGN KEY (ranch_id) REFERENCES player_ranches(id) ON DELETE CASCADE
         )`,
 
-        // 31. Banks
+        // 34. Banks
         `CREATE TABLE IF NOT EXISTS banks (
             id INT AUTO_INCREMENT PRIMARY KEY,
             owner_id INT NOT NULL,
@@ -389,7 +435,7 @@ db.connect((err) => {
             FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
         )`,
 
-        // 32. Bank Accounts
+        // 35. Bank Accounts
         `CREATE TABLE IF NOT EXISTS bank_accounts (
             id INT AUTO_INCREMENT PRIMARY KEY,
             bank_id INT NOT NULL,
@@ -402,7 +448,7 @@ db.connect((err) => {
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )`,
 
-        // 33. Bank Deposits
+        // 36. Bank Deposits
         `CREATE TABLE IF NOT EXISTS bank_deposits (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
@@ -412,6 +458,68 @@ db.connect((err) => {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (bank_id) REFERENCES banks(id) ON DELETE CASCADE,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )`,
+
+        // 37. Market Listings (NEW)
+        `CREATE TABLE IF NOT EXISTS market_listings (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            seller_id INT NOT NULL,
+            item_id VARCHAR(50) NOT NULL,
+            quantity INT NOT NULL,
+            price INT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
+        )`,
+
+        // 38. Market History (NEW - for Crypto)
+        `CREATE TABLE IF NOT EXISTS market_history (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            price DECIMAL(15, 2) NOT NULL,
+            volume FLOAT DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+
+        // 39. Market Trades (NEW - for Crypto)
+        `CREATE TABLE IF NOT EXISTS market_trades (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            type VARCHAR(10) NOT NULL,
+            price DECIMAL(15, 2) NOT NULL,
+            amount DECIMAL(20, 8) NOT NULL,
+            total_price DECIMAL(20, 2) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+
+        // 40. Cookie Consents (NEW)
+        `CREATE TABLE IF NOT EXISTS cookie_consents (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            ip_address VARCHAR(100),
+            consent BOOLEAN DEFAULT FALSE,
+            consent_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            user_agent TEXT,
+            INDEX idx_ip (ip_address),
+            INDEX idx_date (consent_date)
+        )`,
+
+        // 41. Bug Reports (NEW)
+        `CREATE TABLE IF NOT EXISTS bug_reports (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT,
+            username VARCHAR(255),
+            subject VARCHAR(255) NOT NULL,
+            description TEXT NOT NULL,
+            status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+            admin_reply TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_user_id (user_id)
+        )`,
+        
+        // 42. User Daily Rewards (NEW)
+        `CREATE TABLE IF NOT EXISTS user_daily_rewards (
+            user_id INT NOT NULL,
+            last_claim_date DATETIME DEFAULT NULL,
+            current_streak INT DEFAULT 0,
+            PRIMARY KEY (user_id)
         )`
     ];
 
@@ -422,7 +530,6 @@ db.connect((err) => {
             await new Promise((resolve) => {
                 db.query(query, (err) => {
                     if (err) console.error('Query failed:', err.message);
-                    // else console.log('Table created/verified.');
                     resolve();
                 });
             });
@@ -511,6 +618,29 @@ db.connect((err) => {
                 });
             }
         });
+        
+        // Populate Farm Levels (2-10)
+        for (let i = 2; i <= 10; i++) {
+             const data = [i, i * 1000000, i * 50, i * 10, i * 100, i * 100, i * 50, i * 50, i * 25];
+             db.query('INSERT IGNORE INTO farm_levels (level, cost_money, cost_gold, cost_diamond, cost_wood, cost_brick, cost_cement, cost_glass, cost_steel) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', data);
+        }
+        
+        // Populate Hospital Levels (1-20)
+        for (let lvl = 1; lvl <= 20; lvl++) {
+            const capacity = lvl * 5;
+            const duration = Math.max(1, 16 - lvl);
+            const regen = 100;
+            const price = 100 + (lvl - 1) * 50;
+            const costMoney = (lvl === 1) ? 0 : (lvl - 1) * 20000;
+            const costGold = (lvl - 1) * 50;
+            const costDiamond = (lvl - 1) * 10;
+            const durMin = (lvl - 1) * 10;
+            
+            db.query(`INSERT IGNORE INTO hospital_levels 
+                (level, capacity, treatment_duration, health_regen, treatment_price, upgrade_cost_money, upgrade_cost_gold, upgrade_cost_diamond, upgrade_duration_minutes, req_lumber, req_brick, req_glass, req_concrete, req_steel) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, 0)`, 
+                [lvl, capacity, duration, regen, price, costMoney, costGold, costDiamond, durMin]);
+        }
 
         console.log('Setup complete. Press Ctrl+C to exit if it doesn\'t close automatically.');
         setTimeout(() => {

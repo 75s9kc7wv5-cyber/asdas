@@ -7458,9 +7458,10 @@ app.post('/api/properties/collect-tax', (req, res) => {
 
 const PORT = 3000;
 console.log('Attempting to start server on port ' + PORT);
-app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`);
 });
+
 
 
 // --- PARTY MANAGEMENT ENDPOINTS ---
