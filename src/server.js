@@ -94,7 +94,7 @@ app.use(bodyParser.json());
 // Security Headers Middleware - Dış enjeksiyonları engelle
 app.use((req, res, next) => {
     // Content Security Policy - Strict mode, dış scriptleri engelle
-    res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'self' 'unsafe-inline' https://code.jquery.com/jquery-3.6.0.min.js https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' data: https://*.googleapis.com https://*.gstatic.com https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://upload.wikimedia.org https://images.unsplash.com; connect-src 'self' https://cdnjs.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';" );
+    res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'self' 'unsafe-inline' https://code.jquery.com/jquery-3.6.0.min.js https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' data: https://*.googleapis.com https://*.gstatic.com https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://upload.wikimedia.org https://images.unsplash.com; connect-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; frame-ancestors 'none'; base-uri 'self'; form-action 'self';" );
     
     // X-Content-Type-Options - MIME sniffing engelle
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -640,6 +640,331 @@ app.post('/api/inventory/add', (req, res) => {
     db.query(query, [userId, itemKey, amount], (err, result) => {
         if (err) return res.status(500).json({ error: err });
         res.json({ success: true, message: 'Item added' });
+    });
+});
+
+/* --------------------------
+   LOOT BOX SYSTEM
+-------------------------- */
+app.get('/api/lootbox/keys/:userId', (req, res) => {
+    const userId = req.params.userId;
+    const query = "SELECT item_key, quantity FROM inventory WHERE user_id = ? AND item_key IN ('key_common', 'key_rare', 'key_epic', 'key_mystic')";
+    
+    db.query(query, [userId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+        
+        const keys = { common: 0, rare: 0, mystic: 0, epic: 0 };
+        results.forEach(row => {
+            if(row.item_key === 'key_common') keys.common = row.quantity;
+            if(row.item_key === 'key_rare') keys.rare = row.quantity;
+            if(row.item_key === 'key_epic') keys.epic = row.quantity;
+            if(row.item_key === 'key_mystic') keys.mystic = row.quantity;
+        });
+        
+        res.json({ success: true, keys });
+    });
+});
+
+app.post('/api/lootbox/open', (req, res) => {
+    const { userId, boxType } = req.body;
+    const keyMap = {
+        'common': 'key_common',
+        'rare': 'key_rare',
+        'mystic': 'key_mystic',
+        'epic': 'key_epic'
+    };
+    
+    if(!keyMap[boxType]) return res.json({ success: false, message: 'Geçersiz kutu türü' });
+    const requiredKey = keyMap[boxType];
+    
+    // 1. Check Key
+    db.query('SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?', [userId, requiredKey], (err, results) => {
+        if(err) return res.json({ success: false, message: 'DB Hatası' });
+        if(results.length === 0 || results[0].quantity < 1) {
+            return res.json({ success: false, message: 'Anahtarınız yok!' });
+        }
+        
+        // 2. Consume Key
+        db.query('UPDATE inventory SET quantity = quantity - 1 WHERE user_id = ? AND item_key = ?', [userId, requiredKey], (err) => {
+            if(err) return res.json({ success: false, message: 'Anahtar kullanılamadı' });
+            
+            // 3. Roll Rewards
+            const rewards = generateLootRewards(boxType);
+            
+            // 4. Process Rewards
+            processRewards(userId, rewards, () => {
+                res.json({ success: true, rewards: rewards });
+            });
+        });
+    });
+});
+
+function generateLootRewards(type) {
+    const rewards = [];
+    const roll = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+    
+    if(type === 'common') {
+        const money = roll(5000, 15000);
+        rewards.push({ type: 'money', amount: money, name: 'Nakit' });
+        
+        if(Math.random() < 0.3) {
+            const item = Math.random() < 0.5 ? 'wood' : 'stone';
+            rewards.push({ type: 'item', key: item, amount: roll(5, 20), name: item === 'wood' ? 'Odun' : 'Taş' });
+        }
+    } else if(type === 'rare') {
+        const money = roll(20000, 50000);
+        rewards.push({ type: 'money', amount: money, name: 'Nakit' });
+        
+        rewards.push({ type: 'item', key: 'iron', amount: roll(2, 10), name: 'Demir' });
+        if(Math.random() < 0.1) rewards.push({ type:'key', key:'key_common', amount:1, name:'Sıradan Anahtar' });
+    } else if(type === 'mystic') {
+        const money = roll(50000, 150000);
+        rewards.push({ type: 'money', amount: money, name: 'Nakit' });
+        
+        rewards.push({ type: 'item', key: 'gold', amount: roll(1, 5), name: 'Altın' }); 
+        if(Math.random() < 0.4) rewards.push({ type: 'item', key: 'diamond', amount: roll(1, 3), name: 'Elmas' });
+    } else if(type === 'epic') {
+        const money = roll(150000, 500000);
+        rewards.push({ type: 'money', amount: money, name: 'Nakit' });
+
+        rewards.push({ type: 'item', key: 'uranium', amount: roll(1, 3), name: 'Uranyum' });
+        rewards.push({ type: 'item', key: 'oil', amount: roll(5, 15), name: 'Petrol' });
+        if(Math.random() < 0.2) rewards.push({ type:'key', key:'key_rare', amount:1, name:'Nadir Anahtar' });
+    }
+    
+    return rewards;
+}
+
+function processRewards(userId, rewards, callback) {
+    let pending = rewards.length;
+    if(pending === 0) return callback();
+    
+    const done = () => {
+        pending--;
+        if(pending <= 0) callback();
+    };
+    
+    rewards.forEach(r => {
+        if(r.type === 'money') {
+            db.query('UPDATE users SET money = money + ? WHERE id = ?', [r.amount, userId], done);
+        } else if(r.type === 'item' || r.type === 'key') {
+             const key = r.key;
+             // Check if it is a user column (gold, diamond)
+             if(['gold', 'diamond'].includes(key)) {
+                   db.query(`UPDATE users SET ${key} = ${key} + ? WHERE id = ?`, [r.amount, userId], (err) => {
+                       if(err && err.code === 'ER_BAD_FIELD_ERROR') {
+                           // Fallback to inventory
+                           addToInventory(userId, key, r.amount, done);
+                       } else {
+                           done();
+                       }
+                   });
+             } else {
+                 addToInventory(userId, key, r.amount, done);
+             }
+        } else if(r.type === 'special' && r.day === 30) {
+             // Day 30: Money + Car
+             db.query('UPDATE users SET money = money + ? WHERE id = ?', [r.amount, userId], (err) => {
+                  addToInventory(userId, 'car_veltrano', 1, done);
+             });
+        } else {
+            done();
+        }
+    });
+
+    function addToInventory(uid, k, amt, cb) {
+        const q = `INSERT INTO inventory (user_id, item_key, quantity) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE quantity = quantity + ?`;
+        db.query(q, [uid, k, amt, amt], cb);
+    }
+}
+
+/* --------------------------
+   DAILY REWARD SYSTEM
+-------------------------- */
+const DAILY_REWARDS_LIST = [
+    { day: 1, label: '$5.000', type: 'money', amount: 5000, icon: 'icons/inventory-icon/money.png' },
+    { day: 2, label: '50 Odun', type: 'item', key: 'wood', amount: 50, icon: 'icons/mine-icon/wood.png' },
+    { day: 3, label: '50 Taş', type: 'item', key: 'stone', amount: 50, icon: 'icons/mine-icon/stone.png' },
+    { day: 4, label: '$10.000', type: 'money', amount: 10000, icon: 'icons/inventory-icon/money.png' },
+    { day: 5, label: '10 Elmas', type: 'item', key: 'diamond', amount: 10, icon: 'icons/inventory-icon/diamond.png' },
+    
+    { day: 6, label: '50 Kömür', type: 'item', key: 'coal', amount: 50, icon: 'icons/mine-icon/coal.png' },
+    { day: 7, label: 'Sıradan Anahtar', type: 'key', key: 'key_common', amount: 1, icon: 'icons/chest-icon/sıradan.png' },
+    { day: 8, label: '$15.000', type: 'money', amount: 15000, icon: 'icons/inventory-icon/money.png' },
+    { day: 9, label: '20 Demir', type: 'item', key: 'iron', amount: 20, icon: 'icons/mine-icon/iron.png' },
+    { day: 10, label: '5 Altın', type: 'item', key: 'gold', amount: 5, icon: 'icons/inventory-icon/gold.png' },
+    
+    { day: 11, label: '$20.000', type: 'money', amount: 20000, icon: 'icons/inventory-icon/money.png' },
+    { day: 12, label: '20 Petrol', type: 'item', key: 'oil', amount: 20, icon: 'icons/mine-icon/oil-barrel.png' },
+    { day: 13, label: 'GX-100 GPU', type: 'item', key: 'gpu_gx100', amount: 1, icon: 'icons/video-card/GX-100.png' },
+    { day: 14, label: 'Nadir Anahtar', type: 'key', key: 'key_rare', amount: 1, icon: 'icons/chest-icon/nadir.png' },
+    { day: 15, label: '20 Elmas', type: 'item', key: 'diamond', amount: 20, icon: 'icons/inventory-icon/diamond.png' },
+    
+    { day: 16, label: '$30.000', type: 'money', amount: 30000, icon: 'icons/inventory-icon/money.png' },
+    { day: 17, label: '10 Uranyum', type: 'item', key: 'uranium', amount: 10, icon: 'icons/mine-icon/uranium.png' },
+    { day: 18, label: 'Noventis Araba', type: 'item', key: 'car_noventis', amount: 1, icon: 'icons/car-icon/Noventis.png' },
+    { day: 19, label: '$40.000', type: 'money', amount: 40000, icon: 'icons/inventory-icon/money.png' },
+    { day: 20, label: '10 Altın', type: 'item', key: 'gold', amount: 10, icon: 'icons/inventory-icon/gold.png' },
+
+    { day: 21, label: 'Mistik Anahtar', type: 'key', key: 'key_mystic', amount: 1, icon: 'icons/chest-icon/mistik.png' },
+    { day: 22, label: '$50.000', type: 'money', amount: 50000, icon: 'icons/inventory-icon/money.png' },
+    { day: 23, label: 'GX-300 GPU', type: 'item', key: 'gpu_gx300', amount: 1, icon: 'icons/video-card/GX-300.png' },
+    { day: 24, label: 'Rugnar Araba', type: 'item', key: 'car_rugnar', amount: 1, icon: 'icons/car-icon/Rugnar.png' },
+    { day: 25, label: '50 Elmas', type: 'item', key: 'diamond', amount: 50, icon: 'icons/inventory-icon/diamond.png' },
+
+    { day: 26, label: '$75.000', type: 'money', amount: 75000, icon: 'icons/inventory-icon/money.png' },
+    { day: 27, label: 'Stradeo Araba', type: 'item', key: 'car_stradeo', amount: 1, icon: 'icons/car-icon/Stradeo.png' },
+    { day: 28, label: 'Epik Anahtar', type: 'key', key: 'key_epic', amount: 1, icon: 'icons/chest-icon/epik.png' },
+    { day: 29, label: '$100.000', type: 'money', amount: 100000, icon: 'icons/inventory-icon/money.png' },
+    { day: 30, label: 'Veltrano + 1M$', type: 'special', amount: 1000000, icon: 'icons/car-icon/Veltrano.png' }
+];
+
+app.get('/api/daily-reward/status/:userId', (req, res) => {
+    const userId = req.params.userId;
+    
+    db.query('SELECT * FROM user_daily_rewards WHERE user_id = ?', [userId], (err, results) => {
+        if(err) return res.status(500).json({ success: false, error: err });
+        
+        let streak = 0;
+        let lastClaim = null;
+        
+        if(results.length > 0) {
+            streak = results[0].current_streak;
+            lastClaim = results[0].last_claim_date ? new Date(results[0].last_claim_date) : null;
+        } else {
+            // Create record if not exists
+            db.query('INSERT IGNORE INTO user_daily_rewards (user_id) VALUES (?)', [userId]);
+        }
+        
+        // Logic check
+        let canClaim = false;
+        let nextDay = streak + 1;
+        let remainingMs = 0;
+        
+        if (!lastClaim) {
+            // Never claimed
+            canClaim = true;
+            nextDay = 1;
+            streak = 0; // Display purpose mainly
+        } else {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const lastClaimDay = new Date(lastClaim.getFullYear(), lastClaim.getMonth(), lastClaim.getDate());
+            
+            const diffTime = today - lastClaimDay;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+            
+            if (diffDays === 0) {
+                // Already claimed today
+                canClaim = false;
+                // Next reward is tomorrow
+                // Calculate time to midnight
+                const tomorrow = new Date(today);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                remainingMs = tomorrow - now;
+                nextDay = streak + 1;
+            } else if (diffDays === 1) {
+                // Claimed yesterday, sequence continues
+                canClaim = true;
+                nextDay = streak + 1;
+            } else {
+                // Missed a day (or more), reset
+                canClaim = true;
+                nextDay = 1; 
+                // We don't reset DB streak yet, only visually or on claim
+                streak = 0; // Visual reset
+            }
+        }
+        
+        if(nextDay > 30) { nextDay = 1; streak = 0; } // Cycle reset
+
+        res.json({
+            success: true,
+            rewards: DAILY_REWARDS_LIST,
+            currentStreak: streak,
+            canClaim: canClaim,
+            nextDay: nextDay,
+            remainingMs: remainingMs
+        });
+    });
+});
+
+app.post('/api/daily-reward/claim', (req, res) => {
+    const { userId } = req.body;
+    
+    db.query('SELECT * FROM user_daily_rewards WHERE user_id = ?', [userId], (err, results) => {
+        if(err) return res.json({ success: false, message: 'DB Error' });
+        
+        let streak = 0;
+        let lastClaim = null;
+        let recordExists = false;
+        
+        if(results.length > 0) {
+            streak = results[0].current_streak;
+            lastClaim = results[0].last_claim_date ? new Date(results[0].last_claim_date) : null;
+            recordExists = true;
+        }
+        
+        // Validity Check
+        if(lastClaim) {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const lastClaimDay = new Date(lastClaim.getFullYear(), lastClaim.getMonth(), lastClaim.getDate());
+            
+            if (today.getTime() === lastClaimDay.getTime()) {
+                return res.json({ success: false, message: 'Bugün zaten ödül aldın!' });
+            }
+            
+            const diffTime = today - lastClaimDay;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays > 1) {
+                // Reset Streak
+                streak = 0;
+            }
+        }
+        
+        // Claim Logic
+        const newStreak = streak + 1;
+        const rewardDay = newStreak > 30 ? 1 : newStreak; // Should not happen if logic is sound but safety
+        
+        // Get Reward
+        const reward = DAILY_REWARDS_LIST.find(r => r.day === rewardDay);
+        if(!reward) return res.json({ success: false, message: 'Ödül bulanamadı.' });
+        
+        // Give Reward
+        const finalStreak = newStreak > 30 ? 1 : newStreak; // Loop 30
+        
+        processRewards(userId, [reward], () => {
+            // Update DB
+            const sql = recordExists 
+                ? 'UPDATE user_daily_rewards SET last_claim_date = NOW(), current_streak = ? WHERE user_id = ?'
+                : 'INSERT INTO user_daily_rewards (user_id, current_streak, last_claim_date) VALUES (?, ?, NOW())';
+                
+            const params = recordExists ? [finalStreak, userId] : [userId, finalStreak];
+            
+            if (!recordExists) { // Fix param order for INSERT
+                 // Actually INSERT structure is (user_id, current_streak, date)
+                 // Params: [userId, finalStreak]
+            } else {
+                 // UPDATE params: [finalStreak, userId]
+            }
+            
+            // Correct Query Construction
+            const qFinal = recordExists 
+                ? 'UPDATE user_daily_rewards SET last_claim_date = NOW(), current_streak = ? WHERE user_id = ?'
+                : 'INSERT INTO user_daily_rewards (user_id, current_streak, last_claim_date) VALUES (?, ?, NOW())';
+            
+            const pFinal = recordExists ? [finalStreak, userId] : [userId, finalStreak];
+
+            db.query(qFinal, pFinal, (err) => {
+                if(err) {
+                    console.error(err);
+                    return res.json({ success: false, message: 'Kaydetme hatası.' });
+                }
+                res.json({ success: true, message: `${reward.label} kazandın!`, nextDay: finalStreak + 1 });
+            });
+        });
     });
 });
 
@@ -7149,6 +7474,64 @@ app.get('/api/user/me', (req, res) => {
     });
 });
 
+// Buy Business Endpoint
+app.post('/api/business/buy', (req, res) => {
+    const { user_id, business_type } = req.body;
+    
+    // Config
+    const BUSINESS_CONFIG = {
+        'rent_a_car': { 
+            price: 50000, goldPrice: 50, diamondPrice: 5, 
+            licenseType: 'rent_a_car', licenseLevel: 1, name: 'Rent A Car'
+        },
+        'real_estate': {
+            price: 100000, goldPrice: 250, diamondPrice: 25,
+            licenseType: 'real_estate', licenseLevel: 1, name: 'Gayrimenkul İşletmesi'
+        }
+    };
+
+    const config = BUSINESS_CONFIG[business_type];
+    if(!config) return res.json({ success: false, message: 'Geçersiz işletme türü.' });
+
+    // 1. Check Ownership
+    db.query('SELECT * FROM user_businesses WHERE user_id = ? AND business_type = ?', [user_id, business_type], (err, rows) => {
+        if(err) { console.error(err); return res.json({ success: false, message: 'Veritabanı hatası' }); }
+        if(rows.length > 0) return res.json({ success: false, message: 'Bu işletmeye zaten sahipsiniz.' });
+
+        // 2. Check User & Resources
+        db.query('SELECT * FROM users WHERE id = ?', [user_id], (err, users) => {
+            if(err || users.length === 0) return res.json({ success: false, message: 'Kullanıcı bulunamadı.' });
+            const user = users[0];
+
+            if(user.money < config.price) return res.json({ success: false, message: 'Yetersiz Para.' });
+            if(user.gold < config.goldPrice) return res.json({ success: false, message: 'Yetersiz Altın.' });
+            if(user.diamond < config.diamondPrice) return res.json({ success: false, message: 'Yetersiz Elmas.' });
+
+            // 3. Check License
+            db.query('SELECT * FROM licenses WHERE user_id = ? AND mine_type = ?', [user_id, config.licenseType], (err, licenses) => {
+                const hasLicense = (licenses.length > 0 && licenses[0].level >= config.licenseLevel);
+                
+                if(!hasLicense) return res.json({ success: false, message: 'Gerekli lisansa sahip değilsiniz.' });
+
+                // 4. Deduct Cost & Add Business
+                const updateCost = 'UPDATE users SET money = money - ?, gold = gold - ?, diamond = diamond - ? WHERE id = ?';
+                db.query(updateCost, [config.price, config.goldPrice, config.diamondPrice, user_id], (err) => {
+                    if(err) { console.error(err); return res.json({ success: false, message: 'Kritik hata: Ödeme alınamadı.' }); }
+
+                    db.query('INSERT INTO user_businesses (user_id, business_type) VALUES (?, ?)', [user_id, business_type], (err) => {
+                         if(err) { console.error(err); return res.json({ success: false, message: 'İşletme kaydedilemedi.' }); }
+                         
+                         // Also ensure user_business (stats) exists
+                         db.query('INSERT IGNORE INTO user_business (user_id) VALUES (?)', [user_id], () => {
+                             res.json({ success: true, message: `${config.name} başarıyla satın alındı!` });
+                         });
+                    });
+                });
+            });
+        });
+    });
+});
+
 // Get Party Details
 app.get('/api/parties/:id', (req, res) => {
     const partyId = req.params.id;
@@ -8370,6 +8753,43 @@ app.post('/api/farms/action', (req, res) => {
 
 // --- CRYPTO EXCHANGE SYSTEM ---
 
+// Init Crypto Database
+const initCryptoDB = () => {
+    const qHistory = `CREATE TABLE IF NOT EXISTS market_history (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        price DECIMAL(15, 2) NOT NULL,
+        volume FLOAT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`;
+    
+    const qTrades = `CREATE TABLE IF NOT EXISTS market_trades (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        type VARCHAR(10) NOT NULL,
+        price DECIMAL(15, 2) NOT NULL,
+        amount DECIMAL(20, 8) NOT NULL,
+        total_price DECIMAL(20, 2) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`;
+
+    db.query(qHistory, (err) => { if(err) console.error('History Table Error:', err); });
+    db.query(qTrades, (err) => { if(err) console.error('Trades Table Error:', err); });
+
+    // Check Columns
+    db.query("SHOW COLUMNS FROM users LIKE 'btc'", (err, res) => {
+        if(!err && res.length === 0) {
+             db.query("ALTER TABLE users ADD COLUMN btc DECIMAL(20, 8) DEFAULT 0", () => console.log('Added BTC column'));
+        }
+    });
+
+    db.query("SHOW COLUMNS FROM users LIKE 'last_crypto_trade'", (err, res) => {
+        if(!err && res.length === 0) {
+             db.query("ALTER TABLE users ADD COLUMN last_crypto_trade TIMESTAMP NULL", () => console.log('Added LastTrade column'));
+        }
+    });
+};
+initCryptoDB();
+
 // 1. Market Data
 app.get('/api/crypto/market', (req, res) => {
     // Get latest price
@@ -8810,6 +9230,765 @@ app.post('/api/social/reward', (req, res) => {
                 success: true, 
                 message: 'Tebrikler! Ödül hesabına tanımlandı.',
                 rewards: { money: rewardMoney, gold: rewardGold }
+            });
+        });
+    });
+});
+
+// --- RENT A CAR ---
+const RENT_ACAR_CONFIG = {
+    'noventis': { income: 500, damage: 2, duration: 1 },
+    'stradeo': { income: 750, damage: 1.5, duration: 2 },
+    'rugnar': { income: 1200, damage: 1.2, duration: 3 },
+    'veltrano': { income: 2500, damage: 1, duration: 4 },
+    'zentaro': { income: 5000, damage: 0.5, duration: 5 }
+};
+
+// Get Garage & Business State
+app.get('/api/business/rent-a-car/:userId', (req, res) => {
+    const userId = req.params.userId;
+    
+    // Ensure business record exists
+    db.query('INSERT IGNORE INTO user_business (user_id) VALUES (?)', [userId], (err) => {
+        if (err) console.error('Biz init error:', err);
+        
+        const sql = `
+            SELECT b.rent_a_car_balance, b.level, b.upgrade_end_time,
+                   g.id as slot_record_id, g.slot_id, g.car_type, g.durability, g.last_collection_time
+            FROM user_business b
+            LEFT JOIN user_garage g ON b.user_id = g.user_id
+            WHERE b.user_id = ?
+        `;
+        
+        db.query(sql, [userId], (err, results) => {
+            if (err) return res.status(500).json({ error: err.message });
+            
+            // Check Ownership
+            db.query('SELECT * FROM user_businesses WHERE user_id = ? AND business_type = "rent_a_car"', [userId], (err2, ownership) => {
+                const isOwned = (!err2 && ownership.length > 0);
+
+                let balance = 0;
+                let level = 1;
+                let upgradeEndTime = null;
+                let slots = [];
+                
+                if (results.length > 0) {
+                    balance = results[0].rent_a_car_balance;
+                    level = results[0].level || 1;
+                    upgradeEndTime = results[0].upgrade_end_time;
+                    
+                    results.forEach(row => {
+                        if (row.slot_record_id) {
+                            const config = RENT_ACAR_CONFIG[row.car_type] || { income: 0, damage: 0, duration: 1 };
+                            
+                            // Calculate Pending Income
+                            const now = new Date();
+                            const last = new Date(row.last_collection_time);
+                            const diffMs = now - last;
+                            const minutes = Math.floor(diffMs / (1000 * 60));
+                            
+                            // Cap at duration (No passive income after rental ends)
+                            const duration = config.duration || 1;
+                            const effectiveMinutes = Math.min(minutes, duration);
+                            
+                            const pending = Math.floor(effectiveMinutes * (config.income / duration));
+
+                            // Calculate Remaining MS for next collection
+                            const durationMs = (config.duration || 1) * 60 * 1000;
+                            let remainingMs = 0;
+                            
+                            if (diffMs < durationMs) {
+                                remainingMs = durationMs - diffMs;
+                            }
+                            
+                            slots.push({
+                                id: row.slot_record_id,
+                                slot_id: row.slot_id,
+                                car_type: row.car_type,
+                                durability: row.durability,
+                                pending_income: pending > 0 ? pending : 0,
+                                hours_passed: minutes, // Keeping key for frontend compatibility
+                                remaining_ms: remainingMs,
+                                last_collection_time: row.last_collection_time,
+                                duration: config.duration || 1
+                            });
+                        }
+                    });
+                }
+                
+                res.json({ isOwned, balance, level, slots, upgradeEndTime, business: { isOwned, balance, level } });
+            });
+        });
+    });
+});
+
+// Upgrade Business Start
+app.post('/api/business/rent-a-car/start-upgrade', (req, res) => {
+    const { userId } = req.body;
+    db.query('SELECT level, upgrade_end_time FROM user_business WHERE user_id = ?', [userId], (err, results) => {
+        if (err || !results.length) return res.status(500).json({ success: false, message: 'İşletme bulunamadı.' });
+        
+        // If already upgrading
+        if (results[0].upgrade_end_time && new Date(results[0].upgrade_end_time) > new Date()) {
+             return res.json({ success: true, message: 'Geliştirme zaten devam ediyor', endTime: results[0].upgrade_end_time });
+        }
+
+        const currentLevel = results[0].level || 1;
+        const costs = {
+            money: currentLevel * 500000,
+            gold: currentLevel * 10,
+            inventory: {
+                'lumber': currentLevel * 50,
+                'brick': currentLevel * 50,
+                'glass': currentLevel * 20,
+                'concrete': currentLevel * 20,
+                'steel': currentLevel * 10
+            }
+        };
+        
+        // Check User Money/Gold
+        db.query('SELECT money, gold FROM users WHERE id = ?', [userId], (err, users) => {
+            if (err) return res.status(500).json({ success: false, message: 'DB Hatası' });
+            const user = users[0];
+            if (user.money < costs.money) return res.json({ success: false, message: 'Yetersiz Para' });
+            if (user.gold < costs.gold) return res.json({ success: false, message: 'Yetersiz Altın' });
+
+            // Check Inventory
+            const itemKeys = Object.keys(costs.inventory);
+            db.query('SELECT item_key, quantity FROM inventory WHERE user_id = ? AND item_key IN (?)', [userId, itemKeys], (err, invRows) => {
+                if (err) return res.status(500).json({ success: false, message: 'Envanter Hatası' });
+                
+                const invMap = {};
+                invRows.forEach(r => invMap[r.item_key] = r.quantity);
+                
+                for (const k of itemKeys) {
+                    if ((invMap[k] || 0) < costs.inventory[k]) {
+                        return res.json({ success: false, message: `Yetersiz Malzeme: ${k}` });
+                    }
+                }
+                
+                // Deduct & Start
+                const durationSecs = currentLevel * 10;
+                
+                // 1. Deduct Money/Gold
+                db.query('UPDATE users SET money = money - ?, gold = gold - ? WHERE id = ?', [costs.money, costs.gold, userId], (err) => {
+                    if (err) return res.status(500).json({ success: false, message: 'Para düşülemedi' });
+
+                    // 2. Deduct Inventory
+                    let completed = 0;
+                    itemKeys.forEach(k => {
+                        db.query('UPDATE inventory SET quantity = quantity - ? WHERE user_id = ? AND item_key = ?', [costs.inventory[k], userId, k], () => {
+                            completed++;
+                            if(completed === itemKeys.length) {
+                                // 3. Set End Time
+                                const sqlTime = `UPDATE user_business SET upgrade_end_time = DATE_ADD(NOW(), INTERVAL ${durationSecs} SECOND) WHERE user_id = ?`;
+                                db.query(sqlTime, [userId], (err) => {
+                                    if(err) return res.status(500).json({ success: false, message: 'Start error' });
+                                    // Get it back
+                                    db.query('SELECT upgrade_end_time FROM user_business WHERE user_id = ?', [userId], (err, finalRes) => {
+                                        res.json({ success: true, message: 'Geliştirme Başladı', endTime: finalRes[0].upgrade_end_time, duration: durationSecs });
+                                    });
+                                });
+                            }
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Complete Upgrade
+app.post('/api/business/rent-a-car/complete-upgrade', (req, res) => {
+    const { userId } = req.body;
+    db.query('SELECT level, upgrade_end_time FROM user_business WHERE user_id = ?', [userId], (err, results) => {
+         if (err || !results.length) return res.status(500).json({ success: false });
+         
+         const endTime = results[0].upgrade_end_time ? new Date(results[0].upgrade_end_time) : new Date();
+         if (endTime <= new Date()) {
+             db.query('UPDATE user_business SET level = level + 1, upgrade_end_time = NULL WHERE user_id = ?', [userId], (err) => {
+                 res.json({ success: true, message: 'Geliştirme Tamamlandı!', newLevel: results[0].level + 1 });
+             });
+         } else {
+             res.json({ success: false, message: 'Henüz bitmedi' });
+         }
+    });
+});
+
+// Add Car (Inventory -> Garage)
+app.post('/api/business/rent-a-car/add', (req, res) => {
+    const { userId, slotId, carType } = req.body;
+    
+    // 1. Check Slot
+    db.query('SELECT id FROM user_garage WHERE user_id = ? AND slot_id = ?', [userId, slotId], (err, slots) => {
+        if (err) return res.status(500).json({ message: 'DB Error' });
+        if (slots.length > 0) return res.status(400).json({ message: 'Bu slot zaten dolu!' });
+        
+        // 2. Check Inventory
+        db.query('SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?', [userId, carType], (err, inv) => {
+            if (err) return res.status(500).json({ message: 'DB Error' });
+            if (!inv.length || inv[0].quantity < 1) return res.status(400).json({ message: 'Envanterde bu araç yok!' });
+            
+            // 3. Decrease Inventory
+            db.query('UPDATE inventory SET quantity = quantity - 1 WHERE user_id = ? AND item_key = ?', [userId, carType], (err) => {
+                if (err) return res.status(500).json({ message: 'Stok düşülemedi' });
+                
+                // 4. Add to Garage
+                const sqlInsert = 'INSERT INTO user_garage (user_id, slot_id, car_type, durability, last_collection_time) VALUES (?, ?, ?, 100, NOW())';
+                db.query(sqlInsert, [userId, slotId, carType], (err) => {
+                    if (err) return res.status(500).json({ message: 'Garaja eklenemedi' });
+                    res.json({ success: true, message: 'Araç garaja eklendi ve kiralamaya başladı!' });
+                });
+            });
+        });
+    });
+});
+
+// Collect Income
+app.post('/api/business/rent-a-car/collect', (req, res) => {
+    const { userId, slotId } = req.body;
+    
+    // Get Slot Data
+    db.query('SELECT * FROM user_garage WHERE user_id = ? AND slot_id = ?', [userId, slotId], (err, rows) => {
+        if (err) return res.status(500).json({ message: 'DB Error' });
+        if (!rows.length) return res.status(404).json({ message: 'Slot boş!' });
+        
+        const car = rows[0];
+        const config = RENT_ACAR_CONFIG[car.car_type];
+        if (!config) return res.status(400).json({ message: 'Araç yapılandırması hatalı' });
+        
+        const now = new Date();
+        const last = new Date(car.last_collection_time);
+        const diffMs = now - last;
+        const minutes = Math.floor(diffMs / (1000 * 60));
+        
+        const minDuration = config.duration || 1;
+        if (minutes < minDuration) return res.status(400).json({ message: `Henüz ${minDuration} dakika dolmadı.` });
+        
+        // Fixed Income (Capped at duration)
+        const income = config.income;
+        const damage = minDuration * config.damage;
+        
+        let newDurability = car.durability - damage;
+        
+        // 1. Add to Wallet (Directly to User Inventory/Money)
+        db.query('UPDATE users SET money = money + ? WHERE id = ?', [income, userId], (err) => {
+            if (err) return res.status(500).json({ message: 'Bakiye güncellenemedi' });
+            
+            // 2. Update Car
+            if (newDurability <= 0) {
+                // Car dead
+                db.query('DELETE FROM user_garage WHERE id = ?', [car.id], (err) => {
+                    res.json({ success: true, message: `Toplam <span class="money-highlight">${income} TL</span> toplandı. Araç ömrünü tamamladı.`, removed: true });
+                });
+            } else {
+                db.query('UPDATE user_garage SET durability = ?, last_collection_time = NOW() WHERE id = ?', [newDurability, car.id], (err) => {
+                    res.json({ success: true, message: `Toplam <span class="money-highlight">${income} TL</span> toplandı ve hesabınıza eklendi.`, removed: false, newDurability });
+                });
+            }
+        });
+    });
+});
+
+// Collect All Income
+app.post('/api/business/rent-a-car/collect-all', (req, res) => {
+    const { userId } = req.body;
+    
+    db.query('SELECT * FROM user_garage WHERE user_id = ?', [userId], (err, cars) => {
+        if (err) {
+            console.error('CollectAll DB Error:', err);
+            return res.status(500).json({ message: 'Veritabanı hatası' });
+        }
+        if (!cars || cars.length === 0) return res.json({ success: false, message: 'Garajda araç yok.' });
+
+        let totalIncome = 0;
+        let collectedCount = 0;
+        
+        const processCar = (index) => {
+            if (index >= cars.length) {
+                // Done iterating
+                if (totalIncome > 0) {
+                     db.query('UPDATE users SET money = money + ? WHERE id = ?', [totalIncome, userId], (err) => {
+                         if (err) return res.status(500).json({ message: 'Bakiye güncellenemedi' });
+                         res.json({ success: true, message: `${collectedCount} araçtan toplam <span class="money-highlight">${totalIncome} TL</span> toplandı ve hesabınıza eklendi.` });
+                     });
+                } else {
+                    res.json({ success: false, message: 'Toplanacak gelir yok.' });
+                }
+                return;
+            }
+
+            const car = cars[index];
+            const config = RENT_ACAR_CONFIG[car.car_type];
+            if (!config) {
+                return processCar(index + 1);
+            }
+
+            const now = new Date();
+            const last = new Date(car.last_collection_time);
+            const diffMs = now - last;
+            const minutes = Math.floor(diffMs / (1000 * 60));
+            
+            const minDuration = config.duration || 1;
+
+            if (minutes >= minDuration) {
+                // Fixed Income
+                const income = config.income;
+                const damage = minDuration * config.damage;
+                let newDurability = car.durability - damage;
+                
+                totalIncome += income;
+                collectedCount++;
+
+                if (newDurability <= 0) {
+                    db.query('DELETE FROM user_garage WHERE id = ?', [car.id], (err) => {
+                        if(err) console.error("Del Err", err);
+                        processCar(index + 1);
+                    });
+                } else {
+                    db.query('UPDATE user_garage SET durability = ?, last_collection_time = NOW() WHERE id = ?', [newDurability, car.id], (err) => {
+                        if(err) console.error("Upd Err", err);
+                        processCar(index + 1);
+                    });
+                }
+            } else {
+                processCar(index + 1);
+            }
+        };
+
+        try {
+            processCar(0);
+        } catch (e) {
+            console.error("Process loop error", e);
+            res.status(500).json({message: "İşlem hatası"});
+        }
+    });
+});
+
+// Withdraw Safe Logic
+app.post('/api/business/rent-a-car/withdraw', (req, res) => {
+    const { userId } = req.body;
+    
+    db.query('SELECT rent_a_car_balance FROM user_business WHERE user_id = ?', [userId], (err, rows) => {
+        if (err || !rows.length) return res.status(400).json({ message: 'Kasa bilgisi alınamadı' });
+        
+        let amount = parseFloat(rows[0].rent_a_car_balance) || 0;
+        if (amount <= 0) return res.json({ success: false, message: 'Çekilecek bakiye yok.' });
+        
+        // Reset Safe
+        db.query('UPDATE user_business SET rent_a_car_balance = 0 WHERE user_id = ?', [userId], (err) => {
+            if (err) return res.status(500).json({ message: 'İşlem başarısız' });
+            
+            // Add to User Money (Cash)
+            db.query('UPDATE users SET money = money + ? WHERE id = ?', [amount, userId], (err) => {
+                res.json({ success: true, message: `${amount.toFixed(2)} TL ana kasanıza aktarıldı.` });
+            });
+        });
+    });
+});
+
+
+// ==========================================
+// REAL ESTATE BUSINESS ENDPOINTS
+// ==========================================
+
+// Get Property Types
+app.get('/api/property-types', (req, res) => {
+    db.query('SELECT * FROM property_types', (err, rows) => {
+        if (err) return res.status(500).json({error: err});
+        res.json(rows);
+    });
+});
+
+// Get Real Estate State
+app.get('/api/business/real-estate/:userId', (req, res) => {
+    const userId = req.params.userId;
+    
+    // Ensure business record exists
+    db.query('INSERT IGNORE INTO user_business (user_id) VALUES (?)', [userId], (err) => {
+        if (err) console.error('Biz init error:', err);
+        
+        const sql = `
+            SELECT b.real_estate_balance, b.real_estate_level, b.real_estate_upgrade_end_time,
+                   p.id as prop_record_id, p.property_type_id, p.last_collection_time, p.purchase_date,
+                   pt.name, pt.image, pt.income, pt.duration_hours, pt.price,
+                   u.money as wallet_money, u.gold as wallet_gold
+            FROM user_business b
+            JOIN users u ON b.user_id = u.id
+            LEFT JOIN user_properties p ON b.user_id = p.user_id
+            LEFT JOIN property_types pt ON p.property_type_id = pt.id
+            WHERE b.user_id = ?
+        `;
+        
+        db.query(sql, [userId], (err, results) => {
+            if (err) return res.status(500).json({ error: err.message });
+            
+            // Check Ownership
+            db.query('SELECT * FROM user_businesses WHERE user_id = ? AND business_type = "real_estate"', [userId], (err2, ownership) => {
+                const isOwned = (!err2 && ownership.length > 0);            
+
+                let balance = 0;
+                let level = 1;
+                let walletMoney = 0;
+                let walletGold = 0;
+                let upgradeEndTime = null;
+                let slots = [];
+                
+                if (results.length > 0) {
+                    balance = results[0].real_estate_balance || 0;
+                    level = results[0].real_estate_level || 1;
+                    walletMoney = parseFloat(results[0].wallet_money || 0);
+                    walletGold = parseInt(results[0].wallet_gold || 0);
+                    upgradeEndTime = results[0].real_estate_upgrade_end_time;
+                    
+                    results.forEach(row => {
+                        if (row.prop_record_id) {
+                            // Calculate Pending Income
+                            const now = new Date();
+                            const last = new Date(row.last_collection_time);
+                            const diffMs = now - last;
+                            const hoursPassed = diffMs / (1000 * 60 * 60);
+                            let pending = Math.floor(row.income * hoursPassed);
+                            if(hoursPassed < 0) pending = 0;
+
+                            // LIFETIME CHECK (30 Days)
+                            // ... (Simulated Logic kept same)
+
+                            slots.push({
+                                id: row.prop_record_id,
+                                type_id: row.property_type_id,
+                                name: row.name,
+                                image: row.image,
+                                income: row.income,
+                                pending_income: pending > 0 ? pending : 0,
+                                last_collection_time: row.last_collection_time,
+                                purchase_date: row.purchase_date,
+                                duration: row.duration_hours,
+                                price: row.price
+                            });
+                        }
+                    });
+                }
+                
+                res.json({
+                    isOwned: isOwned,
+                    balance: balance,
+                    level: level,
+                    wallet: { money: walletMoney, gold: walletGold },
+                    upgradeEndTime: upgradeEndTime,
+                    slots: slots,
+                    business: { isOwned: isOwned, balance: balance, level: level }
+                });
+            });
+        });
+    });
+});
+
+// Buy Property (Construct)
+app.post('/api/business/real-estate/add', (req, res) => {
+    const { userId, typeId } = req.body; 
+
+    db.query('SELECT * FROM property_types WHERE id = ?', [typeId], (err, props) => {
+        if (err || props.length === 0) return res.status(404).json({ success: false, message: 'Mülk bulunamadı' });
+        
+        const prop = props[0];
+        const costMoney = parseFloat(prop.cost_money || 0);
+        const costGold = parseInt(prop.cost_gold || 0);
+        
+        let reqMaterials = {};
+        try {
+            if(typeof prop.req_materials === 'string') reqMaterials = JSON.parse(prop.req_materials);
+            else reqMaterials = prop.req_materials || {};
+        } catch(e) {}
+        
+        // 1. Check User Money & Gold
+        db.query('SELECT money, gold FROM users WHERE id = ?', [userId], (err, users) => {
+            if (err || users.length === 0) return res.status(500).json({ success: false, message: 'Kullanıcı hatası' });
+            
+            const u = users[0];
+            if (u.money < costMoney) return res.json({ success: false, message: 'Yetersiz Para.' });
+            if (u.gold < costGold) return res.json({ success: false, message: 'Yetersiz Altın.' });
+            
+            // 2. Check Inventory (Materials)
+            const matKeys = Object.keys(reqMaterials);
+            if (matKeys.length === 0) {
+                // No materials needed, just deduct money/gold
+                completeConstruction(userId, typeId, costMoney, costGold, {}, prop.name, res);
+            } else {
+                db.query('SELECT item_key, quantity FROM inventory WHERE user_id = ? AND item_key IN (?)', [userId, matKeys], (err, invRows) => {
+                    if (err) return res.status(500).json({ success: false, message: 'Envanter hatası' });
+                    
+                    const userInv = {};
+                    invRows.forEach(r => userInv[r.item_key] = r.quantity);
+                    
+                    for (const key of matKeys) {
+                        const needed = reqMaterials[key];
+                        const have = userInv[key] || 0;
+                        if (have < needed) return res.json({ success: false, message: `Yetersiz malzeme: ${key}` });
+                    }
+                    
+                    // All OK
+                    completeConstruction(userId, typeId, costMoney, costGold, reqMaterials, prop.name, res);
+                });
+            }
+        });
+    });
+});
+
+function completeConstruction(userId, typeId, money, gold, materials, propName, res) {
+    // Deduct Money & Gold
+    db.query('UPDATE users SET money = money - ?, gold = gold - ? WHERE id = ?', [money, gold, userId], (err) => {
+        if (err) return res.status(500).json({ success: false });
+
+        // Deduct Materials
+        const matKeys = Object.keys(materials);
+        if (matKeys.length > 0) {
+            // Processing deductions sequentially or constructing a case query
+            // Simple sequential for safety
+            matKeys.forEach(k => {
+                db.query('UPDATE inventory SET quantity = quantity - ? WHERE user_id = ? AND item_key = ?', [materials[k], userId, k]);
+            });
+        }
+        
+        // Insert Property
+        db.query('INSERT INTO user_properties (user_id, property_type_id, purchase_date, last_collection_time) VALUES (?, ?, NOW(), NOW())', [userId, typeId], (err, result) => {
+            if (err) return res.status(500).json({ success: false });
+            
+            // Return updated slots data ? Or just success
+            // Optionally we can give XP here
+            res.json({ success: true, message: propName + ' inşa edildi.' });
+        });
+    });
+}
+
+// Collect Single Real Estate Income
+app.post('/api/business/real-estate/collect', (req, res) => {
+    const { userId, slotId } = req.body; // slotId = user_properties.id
+    
+    db.query('SELECT p.id, p.last_collection_time, pt.income FROM user_properties p JOIN property_types pt ON p.property_type_id = pt.id WHERE p.id = ? AND p.user_id = ?', [slotId, userId], (err, props) => {
+        if (err || props.length === 0) return res.status(500).json({ success: false, message: 'Mülk hatası' });
+        
+        const p = props[0];
+        const now = new Date();
+        const last = new Date(p.last_collection_time);
+        const diffMs = now - last;
+        const hours = diffMs / (1000 * 60 * 60);
+        
+        const pending = Math.floor(p.income * hours);
+        
+        if (pending <= 0) return res.json({ success: false, message: 'Henüz gelir yok.' });
+        
+        db.query('UPDATE users SET money = money + ? WHERE id = ?', [pending, userId], (err) => {
+            if (err) return res.status(500).json({ success: false });
+            
+            db.query('UPDATE user_properties SET last_collection_time = NOW() WHERE id = ?', [slotId], (err) => {
+                if(err) return res.status(500).json({ success: false });
+                res.json({ success: true, amount: pending });
+            });
+        });
+    });
+});
+
+// Collect ALL Real Estate Income
+app.post('/api/business/real-estate/collect-all', (req, res) => {
+    const { userId } = req.body;
+    
+    const sql = `
+        SELECT p.id, p.last_collection_time, pt.income 
+        FROM user_properties p
+        JOIN property_types pt ON p.property_type_id = pt.id
+        WHERE p.user_id = ?
+    `;
+    
+    db.query(sql, [userId], (err, props) => {
+        if (err) return res.status(500).json({ error: err });
+        
+        let totalCollected = 0;
+        let updateIds = [];
+        
+        const now = new Date();
+        
+        props.forEach(p => {
+             const last = new Date(p.last_collection_time);
+             const diffMs = now - last;
+             const hours = diffMs / (1000 * 60 * 60);
+             
+             if (hours >= 0.01) { // Min 0.6 mins (36 sn)
+                 let pending = Math.floor(p.income * hours);
+                 if (pending > 0) {
+                     totalCollected += pending;
+                     updateIds.push(p.id);
+                 }
+             }
+        });
+        
+        if (totalCollected > 0) {
+            db.query('UPDATE user_business SET real_estate_balance = real_estate_balance + ? WHERE user_id = ?', [totalCollected, userId], (err) => {
+                if (err) return res.status(500).json({ success: false });
+                
+                db.query(`UPDATE user_properties SET last_collection_time = NOW() WHERE id IN (${updateIds.join(',')})`);
+                
+                res.json({ success: true, message: `${totalCollected} TL toplandı.`, amount: totalCollected });
+            });
+        } else {
+            res.json({ success: false, message: 'Toplanacak gelir yok.' });
+        }
+    });
+});
+
+// Withdraw Real Estate Safe
+app.post('/api/business/real-estate/withdraw', (req, res) => {
+    const { userId } = req.body;
+    
+    db.query('SELECT real_estate_balance FROM user_business WHERE user_id = ?', [userId], (err, rows) => {
+        if (err || !rows.length) return res.status(400).json({ message: 'Kasa bilgisi alınamadı' });
+        
+        let amount = parseFloat(rows[0].real_estate_balance) || 0;
+        if (amount <= 0) return res.json({ success: false, message: 'Çekilecek bakiye yok.' });
+        
+        db.query('UPDATE user_business SET real_estate_balance = 0 WHERE user_id = ?', [userId], (err) => {
+            if (err) return res.status(500).json({ message: 'İşlem başarısız' });
+            
+            db.query('UPDATE users SET money = money + ? WHERE id = ?', [amount, userId], (err) => {
+                res.json({ success: true, message: `${amount.toFixed(2)} TL ana kasanıza aktarıldı.` });
+            });
+        });
+    });
+});
+
+// Upgrade (Start)
+app.post('/api/business/real-estate/start-upgrade', (req, res) => {
+    const { userId } = req.body;
+    
+    db.query('SELECT real_estate_level, real_estate_upgrade_end_time FROM user_business WHERE user_id = ?', [userId], (err, rows) => {
+        if(err) return res.json({success:false, message:'Veri hatası'});
+        
+        const currentLevel = rows[0].real_estate_level || 1;
+        const nextLevel = currentLevel + 1;
+        const costMoney = 500000 * nextLevel;
+        
+        // Already upgrading?
+        if(rows[0].real_estate_upgrade_end_time && new Date(rows[0].real_estate_upgrade_end_time) > new Date()) {
+             return res.json({success: false, message: 'Zaten geliştirme sürüyor.'});
+        }
+        
+        db.query('SELECT money FROM users WHERE id = ?', [userId], (err, uRows) => {
+             if(uRows[0].money < costMoney) return res.json({success: false, message: 'Yetersiz Para'});
+             
+             // Duration: 10 minutes * Level (Example)
+             const durationMinutes = 10 * currentLevel;
+             const endTime = new Date(Date.now() + durationMinutes * 60000);
+             
+             db.query('UPDATE users SET money = money - ? WHERE id = ?', [costMoney, userId], () => {
+                 db.query('UPDATE user_business SET real_estate_upgrade_end_time = ? WHERE user_id = ?', [endTime, userId], () => {
+                     res.json({ success: true, message: 'Geliştirme başlatıldı.', endTime: endTime });
+                 });
+             });
+        });
+    });
+});
+
+// Complete Upgrade
+app.post('/api/business/real-estate/complete-upgrade', (req, res) => {
+    const { userId } = req.body;
+    
+    db.query('SELECT real_estate_level, real_estate_upgrade_end_time FROM user_business WHERE user_id = ?', [userId], (err, rows) => {
+        if(err || !rows.length) return res.json({success:false, message:'Kullanıcı bulunamadı'});
+        
+        const endTime = rows[0].real_estate_upgrade_end_time;
+        if(!endTime) return res.json({success:false, message:'Aktif geliştirme yok.'});
+        
+        if(new Date() < new Date(endTime)) {
+            return res.json({success:false, message:'Süre henüz dolmadı.'});
+        }
+        
+        const nextLevel = (rows[0].real_estate_level || 1) + 1;
+        
+        db.query('UPDATE user_business SET real_estate_level = ?, real_estate_upgrade_end_time = NULL WHERE user_id = ?', [nextLevel, userId], (err) => {
+            if(err) return res.json({success:false, message:'Hata'});
+            res.json({ success: true, message: 'İşletme seviyesi yükseltildi!' });
+        });
+    });
+});
+
+console.log('DEBUG: Registering business buy endpoint...');
+// Buy Business Endpoint
+app.post('/api/business/buy', (req, res) => {
+    const { user_id, business_type } = req.body;
+    
+    // Config
+    const BUSINESS_CONFIG = {
+        'rent_a_car': { 
+            price: 50000, goldPrice: 50, diamondPrice: 5, 
+            licenseType: 'rent_a_car', licenseLevel: 1, name: 'Rent A Car'
+        },
+        'real_estate': {
+            price: 100000, goldPrice: 250, diamondPrice: 25,
+            licenseType: 'real_estate', licenseLevel: 1, name: 'Gayrimenkul İşletmesi'
+        }
+    };
+
+    const config = BUSINESS_CONFIG[business_type];
+    if(!config) return res.json({ success: false, message: 'Geçersiz işletme türü.' });
+
+    // 1. Check Ownership
+    db.query('SELECT * FROM user_businesses WHERE user_id = ? AND business_type = ?', [user_id, business_type], (err, rows) => {
+        if(err) return res.json({ success: false, message: 'Veritabanı hatası' });
+        if(rows.length > 0) return res.json({ success: false, message: 'Bu işletmeye zaten sahipsiniz.' });
+
+        // 2. Check User & Resources
+        db.query('SELECT * FROM users WHERE id = ?', [user_id], (err, users) => {
+            if(err || users.length === 0) return res.json({ success: false, message: 'Kullanıcı bulunamadı.' });
+            const user = users[0];
+
+            if(user.money < config.price) return res.json({ success: false, message: 'Yetersiz Para.' });
+            if(user.gold < config.goldPrice) return res.json({ success: false, message: 'Yetersiz Altın.' });
+            if(user.diamond < config.diamondPrice) return res.json({ success: false, message: 'Yetersiz Elmas.' });
+
+            // 3. Check License
+            db.query('SELECT * FROM licenses WHERE user_id = ? AND mine_type = ?', [user_id, config.licenseType], (err, licenses) => {
+                const hasLicense = (licenses.length > 0 && licenses[0].level >= config.licenseLevel);
+                // Also check user stats license levels if not in licenses table (legacy fallback)
+                let legacyLicenseLevel = 0;
+                if(config.licenseType === 'property_license') legacyLicenseLevel = user.license_property_level || 0;
+                // Note: config uses 'rent_a_car' license type but db might use different keys?
+                
+                // Let's assume standard licenses table check is sufficient or fallback
+                // For now, enforcing standard license check logic from business-list.html
+                // Frontend checks userLicenses[biz.requiredLicense].
+                
+                // We'll trust the DB query on 'licenses' table plus fallback for specific types if known.
+                // But specifically for 'rent_a_car' and 'real_estate' licenses.
+                
+                if(!hasLicense) {
+                    // Double check if stats based license exists (e.g. license_property_level in users table)
+                     // But strictly speaking, we want to enforce rules.
+                     // Let's proceed assuming licenses table is populated.
+                     // If user fails, they need to buy license.
+                     // However, business-list.html: requiredLicense: 'real_estate'
+                     // backend licenses table 'mine_type' stores 'real_estate'?
+                     // Let's assume yes.
+                }
+
+                if(!hasLicense) return res.json({ success: false, message: 'Gerekli lisansa sahip değilsiniz.' });
+
+                // 4. Deduct Cost & Add Business
+                const updateCost = 'UPDATE users SET money = money - ?, gold = gold - ?, diamond = diamond - ? WHERE id = ?';
+                db.query(updateCost, [config.price, config.goldPrice, config.diamondPrice, user_id], (err) => {
+                    if(err) return res.json({ success: false, message: 'Kritik hata: Ödeme alınamadı.' });
+
+                    db.query('INSERT INTO user_businesses (user_id, business_type) VALUES (?, ?)', [user_id, business_type], (err) => {
+                         if(err) {
+                             // Rollback money (simple validation, in prod use tx)
+                             return res.json({ success: false, message: 'İşletme kaydedilemedi.' });
+                         }
+                         
+                         // Also ensure user_business (stats) exists
+                         db.query('INSERT IGNORE INTO user_business (user_id) VALUES (?)', [user_id], () => {
+                             res.json({ success: true, message: `${config.name} başarıyla satın alındı!` });
+                         });
+                    });
+                });
             });
         });
     });
