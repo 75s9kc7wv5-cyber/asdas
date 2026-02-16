@@ -98,16 +98,15 @@
 
         /* ÇİFTLİK KARTI (HERO) */
         .factory-hero {
-            background: linear-gradient(135deg, rgba(230, 126, 34, 0.15), var(--bg-card));
-            border: 1px solid var(--accent); border-radius: 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid #333; border-radius: 16px;
             padding: 15px; margin-bottom: 20px; position: relative;
             display: flex; align-items: center; gap: 15px;
-            box-shadow: 0 0 20px rgba(230, 126, 34, 0.1);
         }
         
         .fh-icon-box {
             width: 60px; height: 60px; background: rgba(0,0,0,0.3); border-radius: 12px;
-            display: flex; align-items: center; justify-content: center; border: 1px solid var(--accent);
+            display: flex; align-items: center; justify-content: center; border: 1px solid #333;
             font-size: 2rem; color: var(--accent);
         }
         
@@ -788,8 +787,11 @@
             const logList = document.getElementById('logList');
             logList.innerHTML = '';
             
-            if (factoryLogs.length === 0) {
-                logList.innerHTML = '<div class="log-item" style="justify-content:center;">Kayıt yok</div>';
+            // Son 10 kaydı al
+            const last10Logs = factoryLogs.slice(-10).reverse();
+            
+            if (last10Logs.length === 0) {
+                logList.innerHTML = '<div style="text-align: center; color: #555; font-size: 0.8rem;">Henüz üretim kaydı yok.</div>';
                 return;
             }
 
@@ -798,7 +800,7 @@
             };
             const productName = factoryData ? (typeMap[factoryData.ranch_type] || 'Ürün') : 'Ürün';
             
-            factoryLogs.forEach(log => {
+            last10Logs.forEach(log => {
                 const div = document.createElement('div');
                 div.className = 'log-item';
                 

@@ -1484,46 +1484,46 @@ app.post('/api/parties/create', (req, res) => {
 
 const FACTORY_RECIPES = {
     'bakery': [
-        { id: 'bread', name: 'Ekmek', inputs: { wheat: 3, egg: 3, energy: 1 }, output: { bread: 1 } },
-        { id: 'cake', name: 'Kek', inputs: { wheat: 3, egg: 3, fruit: 3, energy: 1 }, output: { cake: 1 } }
+        { id: 'bread', name: 'Ekmek', inputs: { wheat: 3, egg: 3, electricity: 1 }, output: { bread: 1 } },
+        { id: 'cake', name: 'Kek', inputs: { wheat: 3, egg: 3, fruit: 3, electricity: 1 }, output: { cake: 1 } }
     ],
     'ready_food': [
-        { id: 'salad', name: 'Salata', inputs: { vegetable: 3, energy: 1 }, output: { salad: 1 } },
-        { id: 'canned_fruit', name: 'Konserve Meyve', inputs: { fruit: 3, energy: 1 }, output: { canned_fruit: 1 } },
-        { id: 'cooked_meat', name: 'Pişmiş Et', inputs: { meat: 3, olive_oil: 1, energy: 1 }, output: { cooked_meat: 1 } },
-        { id: 'rice_dish', name: 'Pilav', inputs: { rice: 3, olive_oil: 1, energy: 1 }, output: { rice_dish: 1 } },
-        { id: 'meat_dish', name: 'Et Yemeği', inputs: { potato: 3, meat: 3, olive_oil: 1, energy: 1 }, output: { meat_dish: 1 } }
+        { id: 'salad', name: 'Salata', inputs: { vegetable: 3, electricity: 1 }, output: { salad: 1 } },
+        { id: 'canned_fruit', name: 'Konserve Meyve', inputs: { fruit: 3, electricity: 1 }, output: { canned_fruit: 1 } },
+        { id: 'cooked_meat', name: 'Pişmiş Et', inputs: { meat: 3, olive_oil: 1, electricity: 1 }, output: { cooked_meat: 1 } },
+        { id: 'rice_dish', name: 'Pilav', inputs: { rice: 3, olive_oil: 1, electricity: 1 }, output: { rice_dish: 1 } },
+        { id: 'meat_dish', name: 'Et Yemeği', inputs: { potato: 3, meat: 3, olive_oil: 1, electricity: 1 }, output: { meat_dish: 1 } }
     ],
     'olive_oil': [
-        { id: 'olive_oil', name: 'Zeytinyağı', inputs: { olive: 3, energy: 1 }, output: { olive_oil: 1 } }
+        { id: 'olive_oil', name: 'Zeytinyağı', inputs: { olive: 3, electricity: 1 }, output: { olive_oil: 1 } }
     ],
     'sweets': [
-        { id: 'energy_bar', name: 'Enerji Barı', inputs: { honey: 3, wheat: 3, fruit: 3, egg: 3, olive_oil: 1, energy: 1 }, output: { energy_bar: 1 } }
+        { id: 'energy_bar', name: 'Enerji Barı', inputs: { honey: 3, wheat: 3, fruit: 3, egg: 3, olive_oil: 1, electricity: 1 }, output: { energy_bar: 1 } }
     ],
     'gold_factory': [
-        { id: 'gold_ingot', name: 'Altın Külçe', inputs: { gold_nugget: 30, energy: 1 }, output: { gold: 1 } }
+        { id: 'gold_ingot', name: 'Altın Külçe', inputs: { gold_nugget: 30, electricity: 1 }, output: { gold: 1 } }
     ],
     'coal_plant': [
-        { id: 'coal_energy', name: 'Termik Enerji', inputs: { coal: 10 }, output: { energy: 1 } }
+        { id: 'coal_energy', name: 'Termik Enerji', inputs: { coal: 10 }, output: { electricity: 1 } }
     ],
     'nuclear_plant': [
-        { id: 'nuclear_energy', name: 'Nükleer Enerji', inputs: { uranium: 1 }, output: { energy: 3 } }
+        { id: 'nuclear_energy', name: 'Nükleer Enerji', inputs: { uranium: 1 }, output: { electricity: 3 } }
     ]
 };
 
 const FACTORY_INPUTS = {
-    'bakery': ['wheat', 'egg', 'fruit', 'energy'],
-    'ready_food': ['vegetable', 'fruit', 'meat', 'olive_oil', 'rice', 'potato', 'energy'],
-    'olive_oil': ['olive', 'energy'],
-    'sweets': ['honey', 'wheat', 'fruit', 'egg', 'olive_oil', 'energy'],
-    'gold_factory': ['gold_nugget', 'energy'],
+    'bakery': ['wheat', 'egg', 'fruit', 'electricity'],
+    'ready_food': ['vegetable', 'fruit', 'meat', 'olive_oil', 'rice', 'potato', 'electricity'],
+    'olive_oil': ['olive', 'electricity'],
+    'sweets': ['honey', 'wheat', 'fruit', 'egg', 'olive_oil', 'electricity'],
+    'gold_factory': ['gold_nugget', 'electricity'],
     'coal_plant': ['coal'],
     'nuclear_plant': ['uranium'],
-    'lumber': ['wood', 'energy'],
-    'brick': ['stone', 'energy'],
-    'glass': ['sand', 'energy'],
-    'concrete': ['sand', 'stone', 'energy'],
-    'steel': ['iron', 'coal', 'energy']
+    'lumber': ['electricity'],
+    'brick': ['electricity'],
+    'glass': ['electricity'],
+    'concrete': ['electricity'],
+    'steel': ['electricity']
 };
 
 const MINE_TYPES = [
@@ -1689,12 +1689,12 @@ app.get('/api/mines/detail/:id', (req, res) => {
                     const chanceIncrease = argeLevel * 10;
                     const totalChance = Math.min(baseChance + chanceIncrease, 100);
 
-                    // Get Logs
+                    // Get Logs (Production Only)
                     const logQuery = `
-                        SELECT ml.*, u.username 
+                        SELECT ml.id, ml.mine_id, ml.user_id, ml.product_key, ml.amount, ml.created_at, ml.log_type, u.username, u.avatar 
                         FROM mine_logs ml 
                         JOIN users u ON ml.user_id = u.id 
-                        WHERE ml.mine_id = ? 
+                        WHERE ml.mine_id = ? AND (ml.log_type IS NULL OR ml.log_type NOT IN ('DEPOSIT', 'WITHDRAW', 'SALARY'))
                         ORDER BY ml.created_at DESC 
                         LIMIT 10
                     `;
@@ -1705,44 +1705,58 @@ app.get('/api/mines/detail/:id', (req, res) => {
                             return res.status(500).json({ success: false, message: 'Logs Error' });
                         }
 
-                        // Get Inventory
-                        db.query('SELECT item_key, amount FROM factory_inventory WHERE mine_id = ?', [mineId], (err, invRes) => {
-                            const inventory = {};
-                            if (invRes) {
-                                invRes.forEach(row => inventory[row.item_key] = row.amount);
-                            }
-                            mine.inventory = inventory;
+                        // Get Transaction Logs (Vault)
+                        const transLogQuery = `
+                            SELECT ml.*, u.username, u.avatar 
+                            FROM mine_logs ml 
+                            JOIN users u ON ml.user_id = u.id 
+                            WHERE ml.mine_id = ? AND ml.log_type IN ('DEPOSIT', 'WITHDRAW', 'SALARY')
+                            ORDER BY ml.created_at DESC 
+                            LIMIT 10
+                        `;
 
-                            // Get Active Workers (Active OR Current User's Pending)
-                            const nextLevel = mine.level + 1;
-                            mine.upgradeCost = nextLevel * 5000;
-                            mine.upgradeRequirements = {
-                                lumber: nextLevel * 250,
-                                brick: nextLevel * 250,
-                                glass: nextLevel * 150,
-                                concrete: nextLevel * 100,
-                                steel: nextLevel * 50
-                            };
+                        db.query(transLogQuery, [mineId], (err, transactionLogs) => {
+                            if (err) console.error('Trans Logs Error:', err);
 
-                            const workersQuery = `
-                                SELECT maw.*, u.username, u.avatar,
-                                TIMESTAMPDIFF(SECOND, NOW(), maw.end_time) as remaining_seconds
-                                FROM mine_active_workers maw 
-                                JOIN users u ON maw.user_id = u.id 
-                                WHERE maw.mine_id = ? AND (maw.end_time > NOW() OR maw.user_id = ?)
-                            `;
-                            
-                            db.query(workersQuery, [mineId, userId], (err, workers) => {
-                                if (err) {
-                                    console.error('Workers Query Error:', err);
-                                    return res.status(500).json({ success: false, message: 'Workers Error' });
+                            // Get Inventory
+                            db.query('SELECT item_key, amount FROM factory_inventory WHERE mine_id = ?', [mineId], (err, invRes) => {
+                                const inventory = {};
+                                if (invRes) {
+                                    invRes.forEach(row => inventory[row.item_key] = row.amount);
                                 }
-                                
-                                // Add calculated fields to mine object
-                                mine.arge_level = argeLevel;
-                                mine.efficiency = totalChance;
+                                mine.inventory = inventory;
 
-                                res.json({ success: true, mine, logs, workers });
+                                // Get Active Workers (Active OR Current User's Pending)
+                                const nextLevel = mine.level + 1;
+                                mine.upgradeCost = nextLevel * 5000;
+                                mine.upgradeRequirements = {
+                                    lumber: nextLevel * 250,
+                                    brick: nextLevel * 250,
+                                    glass: nextLevel * 150,
+                                    concrete: nextLevel * 100,
+                                    steel: nextLevel * 50
+                                };
+
+                                const workersQuery = `
+                                    SELECT maw.*, u.username, u.avatar,
+                                    TIMESTAMPDIFF(SECOND, NOW(), maw.end_time) as remaining_seconds
+                                    FROM mine_active_workers maw 
+                                    JOIN users u ON maw.user_id = u.id 
+                                    WHERE maw.mine_id = ? AND (maw.end_time > NOW() OR maw.user_id = ?)
+                                `;
+                                
+                                db.query(workersQuery, [mineId, userId], (err, workers) => {
+                                    if (err) {
+                                        console.error('Workers Query Error:', err);
+                                        return res.status(500).json({ success: false, message: 'Workers Error' });
+                                    }
+                                    
+                                    // Add calculated fields to mine object
+                                    mine.arge_level = argeLevel;
+                                    mine.efficiency = totalChance;
+
+                                    res.json({ success: true, mine, logs, transactionLogs, workers });
+                                });
                             });
                         });
                     });
@@ -1801,7 +1815,52 @@ app.post('/api/mines/deposit/:id', (req, res) => {
 
                     db.commit(err => {
                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
-                        res.json({ success: true, message: 'Para yatırıldı.' });
+                        
+                        // Log Transaction (Deposit)
+                        const logQuery = 'INSERT INTO mine_logs (mine_id, user_id, amount, earnings, log_type) VALUES (?, ?, ?, ?, ?)';
+                        db.query(logQuery, [mineId, userId, 0, amount, 'DEPOSIT'], (logErr) => {
+                             if (logErr) console.error('Deposit Log Error:', logErr);
+                             res.json({ success: true, message: 'Para yatırıldı.' });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Withdraw Money from Mine Vault
+app.post('/api/mines/withdraw-vault/:id', (req, res) => {
+    const mineId = req.params.id;
+    const { userId, amount } = req.body;
+    
+    const withdrawAmount = parseInt(amount);
+    if (!withdrawAmount || withdrawAmount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
+
+        db.query('SELECT vault FROM player_mines WHERE id = ?', [mineId], (err, mines) => {
+            if (err || mines.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Maden bulunamadı.' }));
+            
+            const mine = mines[0];
+            if (mine.vault < withdrawAmount) return db.rollback(() => res.json({ success: false, message: 'Kasada yeterli para yok.' }));
+
+            db.query('UPDATE player_mines SET vault = vault - ? WHERE id = ?', [withdrawAmount, mineId], (err) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kasa güncellenemedi.' }));
+
+                db.query('UPDATE users SET money = money + ? WHERE id = ?', [withdrawAmount, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Para yüklenemedi.' }));
+
+                    db.commit(err => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                        
+                        // Log Transaction (Withdraw)
+                        const logQuery = 'INSERT INTO mine_logs (mine_id, user_id, amount, earnings, log_type) VALUES (?, ?, ?, ?, ?)';
+                        db.query(logQuery, [mineId, userId, 0, withdrawAmount, 'WITHDRAW'], (logErr) => {
+                             if (logErr) console.error('Withdraw Log Error:', logErr);
+                             res.json({ success: true, message: 'Para çekildi.' });
+                        });
                     });
                 });
             });
@@ -1919,13 +1978,12 @@ app.post('/api/mines/deposit-raw/:id', (req, res) => {
             if (err || mines.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Maden bulunamadı.' }));
             const mine = mines[0];
 
-            // Check if it's a new factory type
+            // Check if it's a new factory type or new input for legacy factory
             const allowedInputs = FACTORY_INPUTS[mine.mine_type];
-            if (allowedInputs) {
-                if (!allowedInputs.includes(itemKey)) {
-                    return db.rollback(() => res.json({ success: false, message: 'Bu fabrika bu hammaddeyi kabul etmiyor.' }));
-                }
-
+            
+            // If the itemKey is explicitly defined in FACTORY_INPUTS for this mine type, use the new system (factory_inventory)
+            if (allowedInputs && allowedInputs.includes(itemKey)) {
+                
                 // Check User Inventory
                 db.query('SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?', [userId, itemKey], (err, inv) => {
                     if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Envanter hatası.' }));
@@ -4563,17 +4621,17 @@ app.post('/api/mines/start', (req, res) => {
                      // Legacy Factories: Check & Deduct Energy + Raw Materials
                      const legacyFactories = ['lumber', 'brick', 'glass', 'concrete', 'steel'];
                      if (legacyFactories.includes(data.mine_type)) {
-                         const energyRequired = productionAmount;
+                         const electricityRequired = productionAmount;
                          
-                         // Check Energy
-                         const currentEnergy = inventory['energy'] || 0;
+                         // Check Electricity
+                         const currentElectricity = inventory['electricity'] || 0;
                          
-                         if (currentEnergy < energyRequired) {
-                             return db.rollback(() => res.json({ success: false, message: `Fabrikada yeterli Elektrik yok! (${energyRequired} gerekli, ${currentEnergy} mevcut)` }));
+                         if (currentElectricity < electricityRequired) {
+                             return db.rollback(() => res.json({ success: false, message: `Fabrikada yeterli Elektrik yok! (${electricityRequired} gerekli, ${currentElectricity} mevcut)` }));
                          }
 
                          // Prepare legacy factory inputs for deduction
-                         const legacyInputs = { energy: 1 };
+                         const legacyInputs = { electricity: 1 };
                          if (raw1Key) legacyInputs[raw1Key] = 3;
                          if (raw2Key) legacyInputs[raw2Key] = 3;
                          
@@ -4649,7 +4707,7 @@ app.post('/api/mines/start', (req, res) => {
                          const trNames = {
                              wheat: 'Buğday', egg: 'Yumurta', fruit: 'Meyve', vegetable: 'Sebze',
                              meat: 'Et', olive_oil: 'Zeytinyağı', rice: 'Pirinç', potato: 'Patates',
-                             olive: 'Zeytin', honey: 'Bal', energy: 'Elektrik',
+                             olive: 'Zeytin', honey: 'Bal', electricity: 'Elektrik',
                              wood: 'Odun', stone: 'Taş', iron: 'Demir', coal: 'Kömür',
                              sand: 'Kum', copper: 'Bakır', uranium: 'Uranyum', gold_nugget: 'Altın Parçası'
                          };
@@ -4771,8 +4829,8 @@ app.post('/api/mines/collect', (req, res) => {
                             if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Vault Update Error' }));
 
                             // Log Transaction
-                            const logQuery = 'INSERT INTO mine_logs (mine_id, user_id, amount, earnings, product_key) VALUES (?, ?, ?, ?, ?)';
-                            db.query(logQuery, [mineId, userId, amount, totalEarnings, productKey], (err) => {
+                            const logQuery = 'INSERT INTO mine_logs (mine_id, user_id, amount, earnings, product_key, log_type) VALUES (?, ?, ?, ?, ?, ?)';
+                            db.query(logQuery, [mineId, userId, amount, totalEarnings, productKey, 'SALARY'], (err) => {
                                 if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log Error' }));
 
                                 // Remove Active Worker
@@ -6223,6 +6281,38 @@ app.post('/api/ranches/deposit/:id', (req, res) => {
                     db.commit(err => {
                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
                         res.json({ success: true, message: 'Para yatırıldı.' });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Withdraw Money from Ranch Vault
+app.post('/api/ranches/withdraw-money/:id', (req, res) => {
+    const ranchId = req.params.id;
+    const { userId, amount } = req.body;
+    
+    if (amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
+
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction Error' });
+
+        db.query('SELECT vault FROM player_ranches WHERE id = ?', [ranchId], (err, ranches) => {
+            if (err || ranches.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Çiftlik bulunamadı.' }));
+            
+            const ranch = ranches[0];
+            if (ranch.vault < amount) return db.rollback(() => res.json({ success: false, message: 'Kasada yeterli para yok.' }));
+
+            db.query('UPDATE player_ranches SET vault = vault - ? WHERE id = ?', [amount, ranchId], (err) => {
+                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kasa güncellenemedi.' }));
+
+                db.query('UPDATE users SET money = money + ? WHERE id = ?', [amount, userId], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Para yüklenemedi.' }));
+
+                    db.commit(err => {
+                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit Error' }));
+                        res.json({ success: true, message: 'Para çekildi.' });
                     });
                 });
             });

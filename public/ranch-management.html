@@ -19,6 +19,7 @@
             --accent-cyan: #00e5ff;
             --accent-green: #2ecc71; 
             --accent-gold: #ffd700;
+            --accent-red: #ff4444;
             --text-white: #ffffff; 
             --text-muted: #888; 
             --border-color: #222;
@@ -98,7 +99,26 @@
             background: var(--bg-input); border: 1px solid var(--border-color);
             border-radius: 10px; padding: 15px; text-align: center;
         }
-        .wh-icon { font-size: 2rem; margin-bottom: 10px; display: block; }
+
+        .wh-icon-badge {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
+            border: 1px solid #333;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px auto;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .wh-icon { 
+            width: 40px;
+            height: 32px;
+            object-fit: contain;
+            display: block;
+        }
         .wh-title { font-size: 0.9rem; font-weight: 700; color: #fff; }
         .wh-amount { font-size: 1.2rem; font-weight: 800; margin: 5px 0; }
         .wh-cap { font-size: 0.7rem; color: #666; margin-bottom: 10px; }
@@ -165,7 +185,7 @@
         .modal-content { 
             background: #181818; 
             width: 90%; 
-            max-width: 550px;
+            max-width: 380px;
             padding: 25px; 
             border-radius: 12px; 
             border: 1px solid #444; 
@@ -414,8 +434,8 @@
 
         /* BUSINESS CARD */
         .business-card {
-            background: linear-gradient(135deg, rgba(230, 126, 34, 0.1), var(--bg-card));
-            border: 1px solid var(--accent);
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid #333;
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 20px;
@@ -432,7 +452,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 1px solid var(--accent);
+            border: 1px solid #333;
             flex-shrink: 0;
         }
 
@@ -447,7 +467,7 @@
         }
 
         .business-name {
-            font-size: 1.3rem;
+            font-size: 1rem;
             font-weight: 800;
             color: #fff;
             text-transform: uppercase;
@@ -771,7 +791,7 @@
                                     <div style="font-size: 0.85rem; color: #aaa;">İşlem Miktarı:</div>
                                     <div style="text-align: right; font-size: 0.75rem; color: #888;">
                                         <span style="margin-right: 10px;">Max Yatır: <span id="maxVaultDeposit" style="color:var(--accent-green); cursor:pointer; font-weight:bold;" onclick="setMaxAmount('deposit')">0</span> ₺</span>
-                                        <span>Max Çek: <span id="maxVaultWithdraw" style="color:var(--accent); cursor:pointer; font-weight:bold;" onclick="setMaxAmount('withdraw')">0</span> ₺</span>
+                                        <span>Max Çek: <span id="maxVaultWithdraw" style="color:var(--accent-red); cursor:pointer; font-weight:bold;" onclick="setMaxAmount('withdraw')">0</span> ₺</span>
                                     </div>
                                 </div>
                                 
@@ -790,21 +810,6 @@
                                 </div>
                             </div>
 
-                        </div>
-                    </div>
-                </div>
-
-                <!-- İŞLEM GEÇMİŞİ (Accordion - Ayrı Kart) -->
-                <div class="accordion-card">
-                    <div class="accordion-header active" onclick="toggleAccordion(this)">
-                        <div class="accordion-title"><i class="fas fa-history"></i> SON İŞLEMLER</div>
-                        <i class="fas fa-chevron-down accordion-icon"></i>
-                    </div>
-                    <div class="accordion-content" style="max-height: 500px;">
-                        <div class="accordion-body" style="padding: 10px 0;">
-                            <div class="log-list" id="transLogList" style="max-height: 200px;">
-                                <!-- JS ile doldurulacak -->
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -1322,33 +1327,39 @@
             const conf = resourceMap[factory.ranch_type];
             
             // Raw Material
-            const rawCard = document.createElement('div');
-            rawCard.className = 'wh-card';
-            rawCard.innerHTML = `
-                <img src="${conf.raw[0].icon}" class="wh-icon" style="width:40px;height:40px;object-fit:contain;">
-                <div class="wh-title">${conf.raw[0].name}</div>
-                <div class="wh-label">(hammadde)</div>
-                <div class="wh-amount" style="color:var(--accent-green)">${fmt(factory.raw)}</div>
-                <div class="wh-cap">Kapasite: ${fmt(factory.rawCap)}</div>
-                <input type="number" id="rawInput" class="wh-input" placeholder="Miktar">
-                <div style="display:flex; gap:5px;">
-                    <button class="btn-wh btn-add" onclick="confirmAction('raw', 'add', '${conf.raw[0].key}', '${conf.raw[0].name}')">DEPOYA AKTAR</button>
-                </div>
-            `;
-            grid.appendChild(rawCard);
+            if (conf.raw && conf.raw.length > 0) {
+                const rawCard = document.createElement('div');
+                rawCard.className = 'wh-card';
+                rawCard.innerHTML = `
+                    <div class="wh-icon-badge">
+                        <img src="${conf.raw[0].icon}" class="wh-icon">
+                    </div>
+                    <div class="wh-title">${conf.raw[0].name}</div>
+                    <div class="wh-label">(hammadde)</div>
+                    <div class="wh-amount" style="color:var(--accent-green)">${fmt(factory.raw)}</div>
+                    <div class="wh-cap">Kapasite: ${fmt(factory.rawCap)}</div>
+                    <input type="number" id="rawInput" class="wh-input" placeholder="Miktar">
+                    <div style="display:flex; gap:5px;">
+                        <button class="btn-wh btn-add" onclick="confirmAction('raw', 'add', '${conf.raw[0].key}', '${conf.raw[0].name}')">DEPOYA EKLE</button>
+                    </div>
+                `;
+                grid.appendChild(rawCard);
+            }
             
             // Product
             const prodCard = document.createElement('div');
             prodCard.className = 'wh-card';
             prodCard.innerHTML = `
-                <img src="${conf.prod.icon}" class="wh-icon" style="width:40px;height:40px;object-fit:contain;">
+                <div class="wh-icon-badge">
+                    <img src="${conf.prod.icon}" class="wh-icon">
+                </div>
                 <div class="wh-title">${conf.prod.name}</div>
                 <div class="wh-label">(ürün)</div>
                 <div class="wh-amount" style="color:var(--accent-cyan)">${fmt(factory.prod)}</div>
                 <div class="wh-cap">Kapasite: ${fmt(factory.prodCap)}</div>
                 <input type="number" id="prodInput" class="wh-input" placeholder="Miktar">
                 <div style="display:flex; gap:5px;">
-                    <button class="btn-wh btn-pull" onclick="confirmAction('prod', 'pull', '${conf.prod.key}', '${conf.prod.name}')">ENVANTERE AKTAR</button>
+                    <button class="btn-wh btn-pull" onclick="confirmAction('prod', 'pull', '${conf.prod.key}', '${conf.prod.name}')">ÇEK</button>
                 </div>
             `;
             grid.appendChild(prodCard);
@@ -1437,32 +1448,6 @@
         }
 
         // --- AYARLAR ---
-        function saveSettings() {
-            const name = document.getElementById('fNameInput').value;
-            const wage = parseInt(document.getElementById('fWageInput').value);
-            
-            if(name.length < 3) return toastr.warning("İsim çok kısa.");
-            if(wage < 1 || wage > 1000) return toastr.warning("Maaş 1 ile 1000 arasında olmalıdır.");
-
-            // Update endpoint for ranches
-            fetch(`/api/ranches/update/${ranchId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, salary: wage })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(data.success) {
-                    toastr.success(data.message);
-                    factory.name = name;
-                    factory.wage = wage;
-                    updateUI();
-                } else {
-                    toastr.error(data.message);
-                }
-            });
-        }
-
         function toggleAccordion(header) {
             header.classList.toggle('active');
             const content = header.nextElementSibling;
@@ -1503,21 +1488,21 @@
 
             const amount = parseInt(document.getElementById(inputId).value);
             
-            if(!amount || amount <= 0) return toastr.warning("Miktar giriniz.");
+            if(!amount || amount <= 0) return showStatusModal(false, "Miktar giriniz.");
 
             // Capacity Checks
             if(type === 'raw' && action === 'add') {
                 const currentAmount = factory.raw || 0;
                 const capacity = factory.rawCap || 0;
                 if(currentAmount + amount > capacity) {
-                    return toastr.warning(`Depo kapasitesi yetersiz! Mevcut: ${fmt(currentAmount)}, Kapasite: ${fmt(capacity)}, Eklenebilir: ${fmt(capacity - currentAmount)}`);
+                    return showStatusModal(false, `Depo kapasitesi yetersiz! Mevcut: ${fmt(currentAmount)}, Kapasite: ${fmt(capacity)}, Eklenebilir: ${fmt(capacity - currentAmount)}`);
                 }
             }
 
             if(type === 'prod' && action === 'pull') {
                 const currentStock = factory.prod || 0;
                 if(amount > currentStock) {
-                    return toastr.warning(`Yetersiz stok! Mevcut: ${fmt(currentStock)}`);
+                    return showStatusModal(false, `Yetersiz stok! Mevcut: ${fmt(currentStock)}`);
                 }
             }
 
@@ -1526,8 +1511,15 @@
                 const currentVault = factory.vault || 0;
                 const vaultCapacity = factory.level * 100000;
                 if(currentVault + amount > vaultCapacity) {
-                    return toastr.warning(`Kasa kapasitesi yetersiz! Mevcut: ${fmt(currentVault)}, Kapasite: ${fmt(vaultCapacity)}, Eklenebilir: ${fmt(vaultCapacity - currentVault)}`);
+                    return showStatusModal(false, `Kasa kapasitesi yetersiz! Mevcut: ${fmt(currentVault)}, Kapasite: ${fmt(vaultCapacity)}, Eklenebilir: ${fmt(vaultCapacity - currentVault)}`);
                 }
+            }
+
+            if(type === 'vault' && action === 'withdraw') {
+                 const currentVault = factory.vault || 0;
+                 if(amount > currentVault) {
+                     return showStatusModal(false, `Kasada yeterli para yok! Mevcut: ${fmt(currentVault)}`);
+                 }
             }
 
             pendingAction = { type, action, amount, itemKey };
@@ -1542,6 +1534,8 @@
                 desc = `${amount} adet ürün çiftlikten çekilip envantere eklenecek.`;
             } else if(type === 'vault' && action === 'add') {
                 desc = `${fmt(amount)} ₺ hesabınızdan çekilip çiftlik kasasına eklenecek.`;
+            } else if(type === 'vault' && action === 'withdraw') {
+                desc = `${fmt(amount)} ₺ çiftlik kasasından çekilip hesabınıza eklenecek.`;
             }
             
             document.getElementById('confirmModalMsg').innerHTML = `<p style="text-align:center; font-size:0.95rem; color:#ccc;">${desc}</p>`;
@@ -1569,6 +1563,8 @@
                 endpoint = `/api/ranches/withdraw/${ranchId}`;
             } else if(type === 'vault' && action === 'add') {
                 endpoint = `/api/ranches/deposit/${ranchId}`;
+            } else if(type === 'vault' && action === 'withdraw') {
+                endpoint = `/api/ranches/withdraw-money/${ranchId}`;
             }
 
             fetch(endpoint, {
@@ -1579,16 +1575,16 @@
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    toastr.success(data.message);
-                    document.getElementById(inputId).value = "";
+                    showStatusModal(true, data.message);
+                    if(inputId) document.getElementById(inputId).value = "";
                     loadFactoryData();
                 } else {
-                    toastr.error(data.message);
+                    showStatusModal(false, data.message);
                 }
             })
             .catch(err => {
                 console.error(err);
-                toastr.error('Bir hata oluştu');
+                showStatusModal(false, 'Bir hata oluştu');
             });
         }
 
@@ -1968,11 +1964,11 @@
                 btn.style.background = 'var(--accent-green)';
                 btn.style.color = '#000';
             } else {
-                content.style.borderTopColor = 'var(--accent)';
+                content.style.borderTopColor = 'var(--accent-red)';
                 icon.className = 'fas fa-times-circle';
-                icon.style.color = 'var(--accent)';
+                icon.style.color = 'var(--accent-red)';
                 title.innerText = 'HATA';
-                btn.style.background = 'var(--accent)';
+                btn.style.background = 'var(--accent-red)';
                 btn.style.color = '#fff';
             }
 

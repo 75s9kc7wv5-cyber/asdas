@@ -99,29 +99,21 @@
 
         /* İŞLETME KARTI */
         .business-card {
-            background: linear-gradient(135deg, rgba(231, 76, 60, 0.1), var(--bg-card));
-            border: 1px solid var(--accent);
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid #333;
             border-radius: 15px;
             padding: 15px;
             margin-bottom: 25px;
             display: flex;
             align-items: center;
             gap: 15px;
-            box-shadow: 0 0 20px rgba(231, 76, 60, 0.15);
             position: relative;
             overflow: hidden;
             animation: fadeInUp 0.6s ease-out;
         }
         
         .business-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(231, 76, 60, 0.1) 0%, transparent 70%);
-            pointer-events: none;
+            display: none;
         }
         
         .business-icon-wrapper {
@@ -129,20 +121,18 @@
             width: 65px;
             height: 65px;
             flex-shrink: 0;
-            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(231, 76, 60, 0.05));
-            border: 2px solid var(--accent);
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #333;
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 20px rgba(231, 76, 60, 0.3), inset 0 0 20px rgba(231, 76, 60, 0.1);
         }
         
         .business-icon {
-            width: 45px;
-            height: 45px;
+            width: 40px;
+            height: 40px;
             object-fit: contain;
-            filter: drop-shadow(0 0 10px rgba(231, 76, 60, 0.5));
         }
         
         .business-info {
@@ -151,7 +141,7 @@
         }
         
         .business-name {
-            font-size: 1.2rem;
+            font-size: 1rem;
             font-weight: 800;
             color: #fff;
             text-transform: uppercase;
@@ -301,12 +291,24 @@
         .wh-card-full {
             grid-column: span 2;
         }
+
+        .wh-icon-badge {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
+            border: 1px solid #333;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px auto;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
         
         .wh-icon { 
-            width: 60px;
-            height: 60px;
+            width: 40px;
+            height: 32px;
             object-fit: contain;
-            margin: 0 auto 12px auto;
             display: block;
         }
         
@@ -858,21 +860,6 @@
                     </div>
                 </div>
 
-                <!-- İŞLEM GEÇMİŞİ (Accordion - Ayrı Kart) -->
-                <div class="accordion-card">
-                    <div class="accordion-header active" onclick="toggleAccordion(this)">
-                        <div class="accordion-title"><i class="fas fa-history"></i> SON İŞLEMLER</div>
-                        <i class="fas fa-chevron-down accordion-icon"></i>
-                    </div>
-                    <div class="accordion-content" style="max-height: 500px;">
-                        <div class="accordion-body" style="padding: 10px 0;">
-                            <div class="log-list" id="transLogList" style="max-height: 200px;">
-                                <!-- JS ile doldurulacak -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
             </div>
 
         </main>
@@ -1333,7 +1320,9 @@
             
             return `
                 <div class="wh-card ${widthClass}">
-                    <img src="${item.icon}" class="wh-icon">
+                    <div class="wh-icon-badge">
+                        <img src="${item.icon}" class="wh-icon">
+                    </div>
                     <div class="wh-title">${item.name}</div>
                     <div class="wh-label">(${label})</div>
                     <div class="wh-amount">${fmt(amount)}</div>
@@ -1490,21 +1479,21 @@
 
             const amount = parseInt(document.getElementById(inputId).value);
             
-            if(!amount || amount <= 0) return toastr.warning("Miktar giriniz.");
+            if(!amount || amount <= 0) return showStatusModal(false, "Miktar giriniz.");
 
             // Capacity Checks
             if((type === 'raw' || type === 'raw2') && action === 'add') {
                 const currentAmount = (type === 'raw' ? factory.raw : factory.raw2) || 0;
                 const capacity = factory.rawCap || 0;
                 if(currentAmount + amount > capacity) {
-                    return toastr.warning(`Depo kapasitesi yetersiz! Mevcut: ${fmt(currentAmount)}, Kapasite: ${fmt(capacity)}, Eklenebilir: ${fmt(capacity - currentAmount)}`);
+                    return showStatusModal(false, `Depo kapasitesi yetersiz! Mevcut: ${fmt(currentAmount)}, Kapasite: ${fmt(capacity)}, Eklenebilir: ${fmt(capacity - currentAmount)}`);
                 }
             }
 
             if(type === 'prod' && action === 'pull') {
                 const currentStock = factory.prod || 0;
                 if(amount > currentStock) {
-                    return toastr.warning(`Yetersiz stok! Mevcut: ${fmt(currentStock)}`);
+                    return showStatusModal(false, `Yetersiz stok! Mevcut: ${fmt(currentStock)}`);
                 }
             }
 
@@ -1513,14 +1502,14 @@
                 const currentVault = factory.vault || 0;
                 const vaultCapacity = factory.level * 100000;
                 if(currentVault + amount > vaultCapacity) {
-                    return toastr.warning(`Kasa kapasitesi yetersiz! Mevcut: ${fmt(currentVault)}, Kapasite: ${fmt(vaultCapacity)}, Eklenebilir: ${fmt(vaultCapacity - currentVault)}`);
+                    return showStatusModal(false, `Kasa kapasitesi yetersiz! Mevcut: ${fmt(currentVault)}, Kapasite: ${fmt(vaultCapacity)}, Eklenebilir: ${fmt(vaultCapacity - currentVault)}`);
                 }
             }
 
             if(type === 'vault' && action === 'withdraw') {
                 const currentVault = factory.vault || 0;
                 if(amount > currentVault) {
-                    return toastr.warning(`Kasada yeterli bakiye yok! Mevcut: ${fmt(currentVault)}`);
+                    return showStatusModal(false, `Kasada yeterli bakiye yok! Mevcut: ${fmt(currentVault)}`);
                 }
             }
 
@@ -1591,16 +1580,16 @@
             })
             .then(data => {
                 if(data.success) {
-                    toastr.success(data.message);
-                    document.getElementById(inputId).value = "";
+                    showStatusModal(true, data.message);
+                    if(inputId) document.getElementById(inputId).value = "";
                     loadFactoryData(); // Reload to get fresh data
                 } else {
-                    toastr.error(data.message);
+                    showStatusModal(false, data.message);
                 }
             })
             .catch(err => {
                 console.error(err);
-                toastr.error('İşlem başarısız: ' + err.message);
+                showStatusModal(false, 'İşlem başarısız: ' + err.message);
             });
         }
 

@@ -98,16 +98,15 @@
 
         /* FABRİKA KARTI (HERO) */
         .factory-hero {
-            background: linear-gradient(135deg, rgba(231, 76, 60, 0.15), var(--bg-card));
-            border: 1px solid var(--accent); border-radius: 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid #333; border-radius: 16px;
             padding: 15px; margin-bottom: 20px; position: relative;
             display: flex; align-items: center; gap: 15px;
-            box-shadow: 0 0 20px rgba(231, 76, 60, 0.1);
         }
         
         .fh-icon-box {
             width: 60px; height: 60px; background: rgba(0,0,0,0.3); border-radius: 12px;
-            display: flex; align-items: center; justify-content: center; border: 1px solid var(--accent);
+            display: flex; align-items: center; justify-content: center; border: 1px solid #333;
             font-size: 2rem; color: var(--accent);
         }
         
@@ -705,11 +704,11 @@
             const mineName = factoryData.name || factoryData.mine_name || 'Bilinmeyen Maden';
             document.getElementById('mineNameDisplay').innerText = mineName;
             
-            // Icon logic based on type
+            // Icon logic based on type - Ürüne göre PNG icon çek
             const iconBox = document.querySelector('.fh-icon-box');
             const type = factoryData.mine_type;
             
-            // Icon map for mine types
+            // Icon map for mine types - PNG ikonları icons/mine-icon/ folder'ından
             const iconMap = {
                 'lumber': 'icons/mine-icon/wood.png',
                 'iron': 'icons/mine-icon/iron.png',
@@ -724,11 +723,12 @@
                 'brick': 'icons/mine-icon/stone.png',
                 'glass': 'icons/mine-icon/sand.png',
                 'concrete': 'icons/mine-icon/stone.png',
-                'steel': 'icons/mine-icon/iron.png'
+                'steel': 'icons/mine-icon/iron.png',
+                'wood': 'icons/mine-icon/wood.png'
             };
             
             if (iconMap[type]) {
-                iconBox.innerHTML = `<img src="${iconMap[type]}" style="width:50px; height:50px; object-fit:contain;">`;
+                iconBox.innerHTML = `<img src="${iconMap[type]}" style="width:40px; height:40px; object-fit:contain;">`;
             } else {
                 // Default icon
                 iconBox.innerHTML = `<i class="fas fa-hammer"></i>`;
@@ -876,8 +876,11 @@
             const logList = document.getElementById('logList');
             logList.innerHTML = '';
             
-            if (factoryLogs.length === 0) {
-                logList.innerHTML = '<div class="log-item" style="justify-content:center;">Kayıt yok</div>';
+            // Son 10 kaydı al
+            const last10Logs = factoryLogs.slice(-10).reverse();
+            
+            if (last10Logs.length === 0) {
+                logList.innerHTML = '<div style="text-align: center; color: #555; font-size: 0.8rem;">Henüz üretim kaydı yok.</div>';
                 return;
             }
 
@@ -889,7 +892,7 @@
             };
             const productName = typeMap[factoryData.mine_type] || factoryData.mine_type || 'Ürün';
             
-            factoryLogs.forEach(log => {
+            last10Logs.forEach(log => {
                 const div = document.createElement('div');
                 div.className = 'log-item';
                 

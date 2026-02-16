@@ -110,29 +110,21 @@
 
         /* İŞLETME KARTI */
         .business-card {
-            background: linear-gradient(135deg, rgba(0, 229, 255, 0.1), var(--bg-card));
-            border: 1px solid var(--accent-cyan);
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid #333;
             border-radius: 15px;
             padding: 15px;
             margin-bottom: 25px;
             display: flex;
             align-items: center;
             gap: 15px;
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.15);
             position: relative;
             overflow: hidden;
             animation: fadeInUp 0.6s ease-out;
         }
         
         .business-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(0, 229, 255, 0.1) 0%, transparent 70%);
-            pointer-events: none;
+            display: none;
         }
         
         .business-icon-wrapper {
@@ -140,20 +132,18 @@
             width: 65px;
             height: 65px;
             flex-shrink: 0;
-            background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(0, 229, 255, 0.05));
-            border: 2px solid var(--accent-cyan);
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #333;
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.3), inset 0 0 20px rgba(0, 229, 255, 0.1);
         }
         
         .business-icon {
-            width: 60px;
-            height: 60px;
+            width: 40px;
+            height: 40px;
             object-fit: contain;
-            filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.5));
         }
         
         .business-info {
@@ -162,7 +152,7 @@
         }
         
         .business-name {
-            font-size: 1.2rem;
+            font-size: 1rem;
             font-weight: 800;
             color: #fff;
             text-transform: uppercase;
@@ -302,12 +292,22 @@
             grid-column: span 2;
         }
         
-        .wh-icon { 
-            width: 60px;
-            height: 60px;
-            object-fit: contain;
+        .wh-icon-badge {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             margin: 0 auto 12px auto;
-            display: block;
+            border: 1px solid #333;
+        }
+        
+        .wh-icon { 
+            width: 40px;
+            height: 32px;
+            object-fit: contain;
         }
         
         .wh-title { font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: 3px; }
@@ -876,20 +876,7 @@
                     </div>
                 </div>
 
-                <!-- İŞLEM GEÇMİŞİ (Accordion - Ayrı Kart) -->
-                <div class="accordion-card">
-                    <div class="accordion-header active" onclick="toggleAccordion(this)">
-                        <div class="accordion-title"><i class="fas fa-history"></i> SON İŞLEMLER</div>
-                        <i class="fas fa-chevron-down accordion-icon"></i>
-                    </div>
-                    <div class="accordion-content" style="max-height: 500px;">
-                        <div class="accordion-body" style="padding: 10px 0;">
-                            <div class="log-list" id="transLogList" style="max-height: 200px;">
-                                <!-- JS ile doldurulacak -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
 
             </div>
 
@@ -1017,21 +1004,21 @@
             'lumber': { 
                 raw: [
                     { name: 'Odun', key: 'wood', icon: 'icons/mine-icon/wood.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: { name: 'Tahta', key: 'lumber', icon: 'icons/factory-icon/wood-plank.png' }
             },
             'brick': { 
                 raw: [
                     { name: 'Taş', key: 'stone', icon: 'icons/mine-icon/stone.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: { name: 'Tuğla', key: 'brick', icon: 'icons/factory-icon/brick.png' }
             },
             'glass': { 
                 raw: [
                     { name: 'Kum', key: 'sand', icon: 'icons/mine-icon/sand.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: { name: 'Cam', key: 'glass', icon: 'icons/factory-icon/window.png' }
             },
@@ -1039,7 +1026,7 @@
                 raw: [
                     { name: 'Kum', key: 'sand', icon: 'icons/mine-icon/sand.png' },
                     { name: 'Taş', key: 'stone', icon: 'icons/mine-icon/stone.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: { name: 'Çimento', key: 'concrete', icon: 'icons/factory-icon/cement.png' }
             },
@@ -1047,7 +1034,7 @@
                 raw: [
                     { name: 'Demir', key: 'iron', icon: 'icons/mine-icon/iron.png' },
                     { name: 'Kömür', key: 'coal', icon: 'icons/mine-icon/coal.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: { name: 'Çelik', key: 'steel', icon: 'icons/factory-icon/steel.png' }
             },
@@ -1055,7 +1042,7 @@
                 raw: [
                     { name: 'Kum', key: 'sand', icon: 'icons/mine-icon/sand.png' },
                     { name: 'Kömür', key: 'coal', icon: 'icons/mine-icon/coal.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: { name: 'Silikon', key: 'silicon', icon: 'icons/factory-icon/silikon.png' }
             },
@@ -1064,7 +1051,7 @@
                     { name: 'Buğday', key: 'wheat', icon: 'icons/farm-icon/wheat.png' },
                     { name: 'Yumurta', key: 'egg', icon: 'icons/ranch-icon/egg.png' },
                     { name: 'Meyve', key: 'fruit', icon: 'icons/farm-icon/fruit.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: [
                     { name: 'Ekmek', key: 'bread', icon: 'icons/food-factory/bread.png' },
@@ -1079,7 +1066,7 @@
                     { name: 'Zeytinyağı', key: 'olive_oil', icon: 'icons/food-factory/olive-oil.png' },
                     { name: 'Pirinç', key: 'rice', icon: 'icons/farm-icon/rice.png' },
                     { name: 'Patates', key: 'potato', icon: 'icons/farm-icon/potato.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: [
                     { name: 'Salata', key: 'salad', icon: 'icons/food-factory/salad.png' },
@@ -1092,7 +1079,7 @@
             'olive_oil': { 
                 raw: [
                     { name: 'Zeytin', key: 'olive', icon: 'icons/farm-icon/olive.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: { name: 'Zeytinyağı', key: 'olive_oil', icon: 'icons/food-factory/olive-oil.png' }
             },
@@ -1103,7 +1090,7 @@
                     { name: 'Meyve', key: 'fruit', icon: 'icons/farm-icon/fruit.png' },
                     { name: 'Yumurta', key: 'egg', icon: 'icons/ranch-icon/egg.png' },
                     { name: 'Zeytinyağı', key: 'olive_oil', icon: 'icons/food-factory/olive-oil.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: [
                     { name: 'Enerji Barı', key: 'energy_bar', icon: 'icons/food-factory/energy-bar.png' }
@@ -1112,36 +1099,36 @@
             'gold_factory': { 
                 raw: [
                     { name: 'Altın Parçası', key: 'gold_nugget', icon: 'icons/mine-icon/gold-nugget.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: { name: 'Altın Külçe', key: 'gold', icon: 'icons/inventory-icon/gold.png' }
             },
             'wind_turbine': { 
                 factoryIcon: 'icons/energy-factory-icon/wind-turbine.png',
                 raw: [],
-                prod: { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                prod: { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
             },
             'solar_plant': { 
                 factoryIcon: 'icons/energy-factory-icon/solar-panel.png',
                 raw: [],
-                prod: { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                prod: { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
             },
             'coal_plant': { 
                 factoryIcon: 'icons/energy-factory-icon/fossil-fuel.png',
                 raw: [{ name: 'Kömür', key: 'coal', icon: 'icons/mine-icon/coal.png' }],
-                prod: { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                prod: { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
             },
             'nuclear_plant': { 
                 factoryIcon: 'icons/energy-factory-icon/nuclear-plant.png',
                 raw: [{ name: 'Uranyum', key: 'uranium', icon: 'icons/mine-icon/uranium.png' }],
-                prod: { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                prod: { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
             },
             'chip_factory': { 
                 factoryIcon: 'icons/factory-icon/chip.png',
                 raw: [
                     { name: 'Silikon', key: 'silicon', icon: 'icons/factory-icon/silikon.png' },
                     { name: 'Altın', key: 'gold', icon: 'icons/inventory-icon/gold.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: { name: 'Çip', key: 'chip', icon: 'icons/factory-icon/chip.png' }
             },
@@ -1149,7 +1136,7 @@
                 factoryIcon: 'icons/factory-icon/plastic.png',
                 raw: [
                     { name: 'Petrol', key: 'oil', icon: 'icons/mine-icon/oil-barrel.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: { name: 'Plastik', key: 'plastic', icon: 'icons/factory-icon/plastic.png' }
             },
@@ -1157,7 +1144,7 @@
                 factoryIcon: 'icons/factory-icon/tire.png',
                 raw: [
                     { name: 'Petrol', key: 'oil', icon: 'icons/mine-icon/oil-barrel.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: { name: 'Lastik', key: 'tire', icon: 'icons/factory-icon/tire.png' }
             },
@@ -1169,7 +1156,7 @@
                     { name: 'Elektronik Kart', key: 'electronic_card', icon: 'icons/factory-icon/electronic-board.png' },
                     { name: 'Altın Kablo', key: 'gold_cable', icon: 'icons/factory-icon/gold-cable.png' },
                     { name: 'Bakır Kablo', key: 'copper_cable', icon: 'icons/factory-icon/copper-cable.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: { name: 'Motor', key: 'engine', icon: 'icons/factory-icon/car-engine.png' }
             },
@@ -1179,7 +1166,7 @@
                     { name: 'Bakır', key: 'copper', icon: 'icons/mine-icon/copper.png' },
                     { name: 'Plastik', key: 'plastic', icon: 'icons/factory-icon/plastic.png' },
                     { name: 'Altın', key: 'gold', icon: 'icons/inventory-icon/gold.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: [
                     { name: 'Bakır Kablo', key: 'copper_cable', icon: 'icons/factory-icon/copper-cable.png' },
@@ -1193,7 +1180,7 @@
                     { name: 'Bakır Kablo', key: 'copper_cable', icon: 'icons/factory-icon/copper-cable.png' },
                     { name: 'Altın Kablo', key: 'gold_cable', icon: 'icons/factory-icon/gold-cable.png' },
                     { name: 'Silikon', key: 'silicon', icon: 'icons/factory-icon/silikon.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: { name: 'Elektronik Kart', key: 'electronic_card', icon: 'icons/factory-icon/electronic-board.png' }
             },
@@ -1206,7 +1193,7 @@
                     { name: 'Silikon', key: 'silicon', icon: 'icons/factory-icon/silikon.png' },
                     { name: 'Bakır Kablo', key: 'copper_cable', icon: 'icons/factory-icon/copper-cable.png' },
                     { name: 'Altın Kablo', key: 'gold_cable', icon: 'icons/factory-icon/gold-cable.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: [
                     { name: 'GX-100', key: 'gx_100', recipeId: 'gx_100', icon: 'icons/video-card/GX-100.png' },
@@ -1219,7 +1206,7 @@
             'mine_factory': {
                 raw: [
                     { name: 'Petrol', key: 'oil', icon: 'icons/mine-icon/oil-barrel.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: { name: 'Plastik', key: 'plastic', icon: 'icons/factory-icon/plastic.png' }
             },
@@ -1229,7 +1216,7 @@
                     { name: 'Bakır', key: 'copper', icon: 'icons/mine-icon/copper.png' },
                     { name: 'Plastik', key: 'plastic', icon: 'icons/factory-icon/plastic.png' },
                     { name: 'Altın', key: 'gold', icon: 'icons/inventory-icon/gold.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: [
                     { name: 'Bakır Kablo', key: 'copper_cable', recipeId: 'copper_cable', icon: 'icons/factory-icon/copper-cable.png' },
@@ -1243,7 +1230,7 @@
                     { name: 'Cam', key: 'glass', icon: 'icons/factory-icon/window.png' },
                     { name: 'Motor', key: 'engine', icon: 'icons/factory-icon/car-engine.png' },
                     { name: 'Lastik', key: 'tire', icon: 'icons/factory-icon/tire.png' },
-                    { name: 'Elektrik', key: 'energy', icon: 'icons/energy-factory-icon/battery.png' }
+                    { name: 'Elektrik', key: 'electricity', icon: 'icons/energy-factory-icon/battery.png' }
                 ],
                 prod: [
                     { name: 'Noventis', key: 'noventis', recipeId: 'noventis', icon: 'icons/car-icon/Noventis.png' },
@@ -1321,8 +1308,6 @@
                     created_at: m.created_at
                 };
 
-                fetchUser();
-
                 if (data.logs) {
                     updateLogs(data.logs);
                 }
@@ -1330,13 +1315,17 @@
                     updateTransactionLogs(data.transactionLogs);
                 }
 
-                updateUI();
+                // Kullanıcı verisini ve envanterini çektikten sonra UI'ı güncelle
+                fetchUser().then(() => {
+                    updateUI();
+                });
             })
             .catch(err => console.error(err));
         }
 
         function fetchUser() {
-             return fetch('/api/login', { 
+             // Fetch User Stats
+             fetch('/api/login', { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: user.username, password: user.password }) 
@@ -1347,8 +1336,16 @@
                     user = data.user;
                     localStorage.setItem('simWorldUser', JSON.stringify(user));
                 }
-                return data;
             });
+
+            // Fetch User Inventory
+            return fetch(`/api/inventory/${user.id}`)
+                .then(res => res.json())
+                .then(data => {
+                    userInventory = data || {};
+                    // Update max amounts in inputs if any open
+                    return data;
+                });
         }
 
         function updateUI() {
@@ -1539,17 +1536,28 @@
             const btnClass = action === 'add' ? 'btn-add' : 'btn-pull';
             const btnText = action === 'add' ? 'Depoya Aktar' : 'Envantere Aktar';
             const typeLabel = action === 'add' ? '(Hammadde)' : '(Ürün)';
+            
             // Unique ID for each item input
             const inputId = `input_${item.key}`;
+
+            let userStockInfo = '';
+            if (action === 'add') {
+                const userAmount = userInventory[item.key] || 0;
+                userStockInfo = `<div class="wh-label" style="color:var(--accent-green); margin-bottom:5px;">Envanterde: ${fmt(userAmount)}</div>`;
+            }
             
             return `
                 <div class="wh-card">
-                    <img src="${item.icon}" class="wh-icon" style="width:50px; height:50px; object-fit:contain; margin:0 auto 10px auto;">
+                    <div class="wh-icon-badge">
+                        <img src="${item.icon}" class="wh-icon" alt="${item.name}">
+                    </div>
                     <div class="wh-title">${item.name.toUpperCase()}</div>
                     <div class="wh-label">${typeLabel}</div>
                     <div class="wh-amount">${amount}</div>
                     <div class="wh-cap">Kapasite: ${cap}</div>
                     
+                    ${userStockInfo}
+
                     <input type="number" id="${inputId}" class="wh-input" placeholder="Miktar">
                     <button class="btn-wh ${btnClass}" onclick="confirmAction('${type}', '${action}', '${item.key}', '${item.name}')">${btnText}</button>
                 </div>
@@ -1670,11 +1678,40 @@
 
             logs.forEach(log => {
                 const date = new Date(log.created_at);
-                const timeStr = date.toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'});
-                const amount = (log.amount !== undefined && log.amount !== null) ? log.amount : '?';
-                const avatarUrl = log.avatar || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
-                
-                const finalProductName = (log.product_key && productNames[log.product_key]) ? productNames[log.product_key] : (log.product_key ? log.product_key.toUpperCase() : defaultProductName);
+                // 16 Şub 2026 - 14:14 Formatı
+                const d = date.getDate();
+                const m = date.toLocaleDateString('tr-TR', { month: 'short' });
+                const y = date.getFullYear();
+                const t = date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                const timeStr = `${d} ${m} ${y} - ${t}`;
+
+                let avatarUrl = log.avatar || 'default.png';
+                if (!avatarUrl.startsWith('uploads/') && !avatarUrl.startsWith('http')) {
+                    avatarUrl = 'uploads/avatars/' + avatarUrl;
+                }
+                let contentHtml = '';
+
+                if (log.log_type === 'DEPOSIT') {
+                    contentHtml = `
+                        <span style="color:#aaa; margin-right:4px;">Kasaya</span>
+                        <span style="color:#2ecc71; font-weight:bold;">${fmt(Math.abs(log.earnings))} TL</span>
+                        <span style="color:#3498db; font-weight:bold; margin-left:4px;">Para Yatırdı</span>`;
+                } else if (log.log_type === 'WITHDRAW') {
+                    contentHtml = `
+                        <span style="color:#aaa; margin-right:4px;">Kasadan</span>
+                        <span style="color:#2ecc71; font-weight:bold;">${fmt(Math.abs(log.earnings))} TL</span>
+                        <span style="color:#e74c3c; font-weight:bold; margin-left:4px;">Para Çekti</span>`;
+                } else if (log.log_type === 'SALARY') {
+                    contentHtml = `
+                        <span style="color:#aaa; margin-right:4px;">Kasadan</span>
+                        <span style="color:#2ecc71; font-weight:bold;">${fmt(Math.abs(log.earnings))} TL</span>
+                        <span style="color:#f1c40f; font-weight:bold; margin-left:4px;">Maaş Verildi</span>`;
+                } else {
+                    // Üretim
+                    const amount = (log.amount !== undefined && log.amount !== null) ? log.amount : '?';
+                    const finalProductName = (log.product_key && productNames[log.product_key]) ? productNames[log.product_key] : (log.product_key ? log.product_key.toUpperCase() : defaultProductName);
+                    contentHtml = `<span class="log-highlight" style="margin-left: 5px;">${amount}x ${finalProductName} üretti</span>`;
+                }
                 
                 const div = document.createElement('div');
                 div.className = 'log-item';
@@ -1682,7 +1719,7 @@
                     <img src="${avatarUrl}" class="log-avatar" onerror="this.src='uploads/avatars/default.png'">
                     <div class="log-text">
                         <span class="log-user-link" onclick="window.location.href='profile.html?id=${log.user_id}'" style="cursor:pointer;">${log.user_id} - ${log.username}</span>
-                        <span class="log-highlight" style="margin-left: 5px;">${amount}x ${finalProductName} üretti</span>
+                        ${contentHtml}
                     </div>
                     <span class="log-time">${timeStr}</span>
                 `;
@@ -1696,25 +1733,57 @@
             list.innerHTML = '';
             
             if(!logs || logs.length === 0) {
-                list.innerHTML = '<div class="log-item" style="justify-content:center; color:#666;">İşlem kaydı yok.</div>';
+                list.innerHTML = '<div class="log-item" style="justify-content:center; color:#666;">Henüz kayıt yok.</div>';
                 return;
             }
 
             logs.forEach(log => {
                 const date = new Date(log.created_at);
                 const timeStr = date.toLocaleDateString('tr-TR') + ' ' + date.toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'});
-                const isDeposit = log.log_type === 'DEPOSIT';
-                const icon = isDeposit ? '<i class="fas fa-arrow-down" ></i>' : '<i class="fas fa-arrow-up" style="color:var(--accent)"></i>';
-                const color = isDeposit ? 'var(--accent-green)' : 'var(--accent)';
                 
+                let actionText = '';
+                let msgPrefix = '';
+                let actionColor = '';
+                const amount = Math.abs(log.earnings);
+
+                // Determine Log Type and Formatting
+                if (log.log_type === 'DEPOSIT') {
+                    // "Kasaya ...tl Para Yatırdı" (Mavi)
+                    msgPrefix = 'Kasaya';
+                    actionText = 'Para Yatırdı';
+                    actionColor = '#007bff'; // Blue
+                } else if (log.log_type === 'WITHDRAW') {
+                    // "Kasadan ...tl Para Çekti" (Kırmızı)
+                    msgPrefix = 'Kasadan';
+                    actionText = 'Para Çekti';
+                    actionColor = '#dc3545'; // Red
+                } else if (log.log_type === 'SALARY') {
+                    // "Kasadan ...tl Maaş Verildi" (Sarı)
+                    msgPrefix = 'Kasadan';
+                    actionText = 'Maaş Verildi';
+                    actionColor = '#ffc107'; // Yellow
+                } else { 
+                    // Fallback
+                    msgPrefix = '';
+                    actionText = 'İşlem Yaptı';
+                    actionColor = '#28a745'; // Green
+                }
+                
+                let avatarUrl = log.avatar || 'default.png';
+                if (!avatarUrl.startsWith('uploads/') && !avatarUrl.startsWith('http')) {
+                    avatarUrl = 'uploads/avatars/' + avatarUrl;
+                }
+
                 const div = document.createElement('div');
                 div.className = 'log-item';
                 div.innerHTML = `
-                    <div style="width:24px; text-align:center; margin-right:8px;">${icon}</div>
+                    <img src="${avatarUrl}" class="log-avatar" alt="Avatar">
                     <div class="log-text">
-                        <span style="color: #00d9ff; font-weight: bold; font-size:0.75rem;">${log.user_id} - ${log.username}</span>
-                        <span style="color: #ffffff; font-weight: bold; font-size:0.75rem;">Adlı Oyuncu</span>
-                        <span style="color:${color}; font-weight:bold; margin-left:5px;">${fmt(Math.abs(log.earnings))} TL ${isDeposit ? 'Yatırdı' : 'Çekti'}</span>
+                        <span style="color: #ffffff; font-weight: bold; margin-right: 5px;">${log.user_id} - ${log.username}</span>
+                        
+                        <span style="color: #aaa; margin-right: 5px;">${msgPrefix}</span>
+                        <span style="color: #2ecc71; font-weight: bold; margin-right: 5px;">${fmt(amount)} TL</span>
+                        <span style="color: ${actionColor}; font-weight: bold;">${actionText}</span>
                     </div>
                     <span class="log-time">${timeStr}</span>
                 `;
@@ -1803,13 +1872,13 @@
             const inputId = type === 'vault' ? 'vaultInput' : `input_${itemKey}`;
             const amount = parseInt(document.getElementById(inputId).value);
             
-            if(!amount || amount <= 0) return toastr.warning("Miktar giriniz.");
+            if(!amount || amount <= 0) return showStatusModal(false, "Miktar giriniz.");
 
             // Kullanıcının envanterinde yeterli miktar var mı kontrol et (add işlemleri için)
             if(action === 'add' && type !== 'vault') {
                 const userAmount = userInventory[itemKey] || 0;
                 if(amount > userAmount) {
-                    return toastr.warning(`Envanterinizde yeterli ${itemName} yok! Mevcut: ${fmt(userAmount)}`);
+                    return showStatusModal(false, `Envanterinizde yeterli ${itemName} yok! Mevcut: ${fmt(userAmount)}`);
                 }
             }
 
@@ -1820,17 +1889,17 @@
                 const remainingCapacity = vaultCapacity - currentVault;
                 
                 if(currentVault >= vaultCapacity) {
-                    return toastr.warning("Kasa kapasitesi dolu!");
+                    return showStatusModal(false, "Kasa kapasitesi dolu!");
                 }
                 
                 if(amount > remainingCapacity) {
-                    return toastr.warning(`Kasa kapasitesi yetersiz! Maksimum ${fmt(remainingCapacity)} ₺ ekleyebilirsiniz.`);
+                    return showStatusModal(false, `Kasa kapasitesi yetersiz! Maksimum ${fmt(remainingCapacity)} ₺ ekleyebilirsiniz.`);
                 }
                 
                 // Kullanıcının yeterli parası var mı?
                 const userMoney = user.money || 0;
                 if(amount > userMoney) {
-                    return toastr.warning(`Yeterli paranız yok! Mevcut: ${fmt(userMoney)} ₺`);
+                    return showStatusModal(false, `Yeterli paranız yok! Mevcut: ${fmt(userMoney)} ₺`);
                 }
             }
 
@@ -1860,11 +1929,11 @@
                 const remainingRawCapacity = rawCapacity - currentItemAmount;
                 
                 if(currentItemAmount >= rawCapacity) {
-                    return toastr.warning(`${itemName} deposu kapasitesi dolu!`);
+                    return showStatusModal(false, `${itemName} deposu kapasitesi dolu!`);
                 }
                 
                 if(amount > remainingRawCapacity) {
-                    return toastr.warning(`${itemName} deposu kapasitesi yetersiz! Maksimum ${fmt(remainingRawCapacity)} adet ekleyebilirsiniz.`);
+                    return showStatusModal(false, `${itemName} deposu kapasitesi yetersiz! Maksimum ${fmt(remainingRawCapacity)} adet ekleyebilirsiniz.`);
                 }
             }
 
@@ -1892,7 +1961,7 @@
                 }
                 
                 if(amount > currentProdAmount) {
-                    return toastr.warning(`Fabrika deposunda yeterli ${itemName} yok! Mevcut: ${fmt(currentProdAmount)}`);
+                    return showStatusModal(false, `Fabrika deposunda yeterli ${itemName} yok! Mevcut: ${fmt(currentProdAmount)}`);
                 }
             }
 
@@ -1943,13 +2012,21 @@
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    toastr.success(data.message);
-                    if (document.getElementById(inputId)) {
+                    showStatusModal(true, data.message);
+                    if (inputId && document.getElementById(inputId)) {
                         document.getElementById(inputId).value = "";
                     }
                     loadFactoryData(); // Reload to get fresh data
                 } else {
-                    toastr.error(data.message);
+                    showStatusModal(false, data.message);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                if (err && err.message) {
+                   showStatusModal(false, 'Hata: ' + err.message);
+                } else {
+                   showStatusModal(false, 'Bir hata oluştu.');
                 }
             });
         }

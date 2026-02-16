@@ -98,16 +98,15 @@
 
         /* TARLA KARTI (HERO) */
         .factory-hero {
-            background: linear-gradient(135deg, rgba(46, 204, 113, 0.15), var(--bg-card));
-            border: 1px solid var(--accent); border-radius: 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid #333; border-radius: 16px;
             padding: 15px; margin-bottom: 20px; position: relative;
             display: flex; align-items: center; gap: 15px;
-            box-shadow: 0 0 20px rgba(46, 204, 113, 0.1);
         }
         
         .fh-icon-box {
             width: 60px; height: 60px; background: rgba(0,0,0,0.3); border-radius: 12px;
-            display: flex; align-items: center; justify-content: center; border: 1px solid var(--accent);
+            display: flex; align-items: center; justify-content: center; border: 1px solid #333;
             font-size: 2rem; color: var(--accent);
         }
         
@@ -837,8 +836,10 @@
             };
             const productName = factoryData ? (typeMap[factoryData.farm_type] || 'Ürün') : 'Ürün';
             
-            // Sadece ÜRETİM loglarını göster (Son 20)
-            productionLogs.slice(0, 20).forEach(log => {
+            // Son 10 kaydı al
+            const last10Logs = productionLogs.slice(-10).reverse();
+            
+            last10Logs.forEach(log => {
                 const div = document.createElement('div');
                 div.className = 'log-item';
                 

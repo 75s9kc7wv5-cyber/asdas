@@ -69,48 +69,40 @@
 
         /* HEADER */
         .page-header {
+            margin-bottom: 25px;
+            animation: fadeInDown 0.5s;
+            position: relative;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 15px;
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
-        .header-back-btn {
+        .back-btn {
+            background: var(--bg-input);
+            color: #fff;
             width: 40px;
             height: 40px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 10px;
-            color: var(--text-white);
-            text-decoration: none;
-            transition: all 0.3s;
-            flex-shrink: 0;
-        }
-        
-        .header-back-btn:hover {
-            background: var(--accent-cyan);
-            color: #000;
-            border-color: var(--accent-cyan);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.2rem;
         }
 
-        .header-content h1 {
-            font-size: 1.4rem;
-            color: var(--accent-purple);
+        .page-title {
+            font-size: 1rem;
             font-weight: 800;
-            margin-bottom: 2px;
+            color: #fff;
+            margin-bottom: 4px;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            text-shadow: 0 0 20px rgba(155, 89, 182, 0.3);
         }
 
-        .header-content p {
-            font-size: 0.85rem;
+        .page-description {
+            font-size: 0.8rem;
             color: var(--text-muted);
+            line-height: 1.3;
         }
 
         /* LOADING */
@@ -387,12 +379,10 @@
         .upgrade-cost-status.ok {
             background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(46, 204, 113, 0.1));
             color: var(--accent-green);
-            box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
         }
         .upgrade-cost-status.fail {
             background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(231, 76, 60, 0.1));
             color: var(--accent-red);
-            box-shadow: 0 0 15px rgba(231, 76, 60, 0.3);
         }
 
         .modal-btns {
@@ -444,12 +434,12 @@
         <main>
             <div class="container">
                 <div class="page-header">
-                    <a href="home.html" class="header-back-btn">
+                    <a href="home.html" class="back-btn">
                         <i class="fas fa-arrow-left"></i>
                     </a>
-                    <div class="header-content">
-                        <h1>İŞLETMELERİM</h1>
-                        <p>Sahip olduğunuz veya yönettiğiniz tüm işletmeler</p>
+                    <div>
+                        <h1 class="page-title">İŞLETMELERİM</h1>
+                        <p class="page-description">Sahip olduğunuz veya yönettiğiniz tüm işletmeler</p>
                     </div>
                 </div>
 
@@ -487,7 +477,9 @@
                 <div id="msgIcon" style="margin-bottom: 15px; font-size: 3rem;"></div>
                 <h3 class="modal-title" id="msgTitle"></h3>
                 <p class="modal-desc" id="msgDesc" style="margin-bottom: 20px; color: #ccc;"></p>
-                <button class="m-btn btn-confirm" onclick="closeMessageModal()">TAMAM</button>
+                <div class="modal-btns">
+                    <button class="m-btn btn-confirm" onclick="closeMessageModal()">TAMAM</button>
+                </div>
             </div>
         </div>
     </div>
@@ -501,7 +493,7 @@
                 type: 'rent_a_car',
                 name: 'RENT A CAR',
                 desc: 'Araç kiralama filosu. Geniş araç parkı ile müşterilere hizmet verin ve düzenli gelir elde edin.',
-                price: 1000000,
+                price: 50000,
                 goldPrice: 50,
                 diamondPrice: 5,
                 requiredLicense: 'rent_a_car',
@@ -514,10 +506,10 @@
                 type: 'real_estate',
                 name: 'GAYRİMENKUL İŞLETMESİ',
                 desc: 'Konut ve arsa alım satımı yapın, mülklerinizi kiraya vererek düzenli gelir elde edin.',
-                price: 5000000,
+                price: 100000,
                 goldPrice: 250,
                 diamondPrice: 25,
-                requiredLicense: 'property_license',
+                requiredLicense: 'real_estate',
                 requiredLicenseLevel: 1,
                 requiredLicenseName: '1. Seviye Gayrimenkul Lisansı',
                 icon: 'icons/business-icon/real-estate.png',
@@ -548,16 +540,39 @@
         function loadData(userId) {
             $('#business-content').html('<div class="loading"><i class="fas fa-spinner"></i><p>İşletmeler yükleniyor...</p></div>');
             
-            // Parallel fetches for businesses and licenses
+            // Parallel fetches for each business type and licenses
             Promise.all([
-                fetch(`/api/user-businesses?user_id=${userId}`).then(res => res.json()),
-                fetch(`/api/licenses/${userId}`).then(res => res.json()),
-                fetch(`/api/user-stats/${userId}`).then(res => res.json())
+                fetch(`/api/business/rent-a-car/${userId}`)
+                    .then(res => res.ok ? res.json() : { error: true })
+                    .catch(e => { console.error('Rent-a-car fetch error:', e); return { error: true }; }),
+                fetch(`/api/business/real-estate/${userId}`)
+                    .then(res => res.ok ? res.json() : { error: true })
+                    .catch(e => { console.error('Real-estate fetch error:', e); return { error: true }; }),
+                fetch(`/api/licenses/${userId}`)
+                    .then(res => res.ok ? res.json() : {})
+                    .catch(e => { console.error('Licenses fetch error:', e); return {}; }),
+                fetch(`/api/user-stats/${userId}`)
+                    .then(res => res.ok ? res.json() : {})
+                    .catch(e => { console.error('User stats fetch error:', e); return {}; })
             ])
-            .then(([bizData, licData, statsData]) => {
-                if (bizData.success) {
-                    userBusinesses = bizData.businesses;
+            .then(([rentalData, realEstateData, licData, statsData]) => {
+                // Build businesses array from individual endpoints
+                userBusinesses = [];
+                
+                if (rentalData && !rentalData.error && rentalData.business) {
+                    userBusinesses.push({
+                        business_type: 'rent_a_car',
+                        ...rentalData.business
+                    });
                 }
+                
+                if (realEstateData && !realEstateData.error && realEstateData.business) {
+                    userBusinesses.push({
+                        business_type: 'real_estate',
+                        ...realEstateData.business
+                    });
+                }
+                
                 userLicenses = licData || {};
                 
                 // Merge stats licenses if missing from licenses endpoint
@@ -565,15 +580,19 @@
                     if (statsData.license_property_level && !userLicenses['property_license']) {
                         userLicenses['property_license'] = statsData.license_property_level;
                     }
-                    // Rent A Car logic check: usually business but maybe license variable name differs?
-                    // Assuming rent_a_car license is standard in licenses table or handles elsewhere.
                 }
+
+                console.log('Lisans Kontrol Debug:');
+                console.log('licenses endpoint verisi:', licData);
+                console.log('stats endpoint verisi:', statsData);
+                console.log('Final userLicenses:', userLicenses);
+                console.log('property_license level:', userLicenses['property_license']);
 
                 renderBusinesses();
             })
             .catch(error => {
-                console.error(error);
-                $('#business-content').html('<div class="empty-state"><p>Bağlantı hatası.</p></div>');
+                console.error('loadData error:', error);
+                renderBusinesses(); // Show available businesses even if endpoints fail
             });
         }
 
@@ -638,18 +657,9 @@
                 const statusClass = isOk ? 'ok' : 'fail';
                 const statusIcon = isOk ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
                 
-                // Using font-awesome icons for resources instead of images for simplicity based on previous context, 
-                // but if images are available they can be used. Sticking to FA icons + user provided structure.
-                
                 let iconHtml = '';
                 if(iconPath) {
-                   iconHtml = `<img src="${iconPath}" alt="">`; 
-                } else {
-                   // Default icons based on label
-                   if(label === 'Para') iconHtml = '<i class="fas fa-coins" style="color:var(--accent-gold); margin-right:10px;"></i>';
-                   else if(label === 'Altın') iconHtml = '<i class="fas fa-cubes" style="color:var(--accent-orange); margin-right:10px;"></i>';
-                   else if(label === 'Elmas') iconHtml = '<i class="fas fa-gem" style="color:var(--accent-cyan); margin-right:10px;"></i>';
-                   else if(label === 'Lisans') iconHtml = '<i class="fas fa-certificate" style="color:var(--accent-purple); margin-right:10px;"></i>';
+                   iconHtml = `<img src="${iconPath}" alt="" style="width: 20px; height: 20px; margin-right: 10px;">`; 
                 }
 
                 return `
@@ -670,20 +680,20 @@
             // Money
             const hasMoney = user.money >= biz.price;
             if(!hasMoney) canBuy = false;
-            reqHtml += addReqItem('Para', biz.price.toLocaleString(), hasMoney);
+            reqHtml += addReqItem('Para', biz.price.toLocaleString(), hasMoney, 'icons/inventory-icon/money.png');
 
             // Gold
             if (biz.goldPrice > 0) {
                 const hasGold = user.gold >= biz.goldPrice;
                 if(!hasGold) canBuy = false;
-                reqHtml += addReqItem('Altın', biz.goldPrice, hasGold);
+                reqHtml += addReqItem('Altın', biz.goldPrice, hasGold, 'icons/inventory-icon/gold.png');
             }
 
             // Diamond
             if (biz.diamondPrice > 0) {
                 const hasDiamond = user.diamond >= biz.diamondPrice;
                 if(!hasDiamond) canBuy = false;
-                reqHtml += addReqItem('Elmas', biz.diamondPrice, hasDiamond);
+                reqHtml += addReqItem('Elmas', biz.diamondPrice, hasDiamond, 'icons/inventory-icon/diamond.png');
             }
 
             // License
@@ -692,7 +702,16 @@
                 const currentLevel = userLicenses[biz.requiredLicense] || 0;
                 const hasLicense = currentLevel >= requiredLevel;
                 if(!hasLicense) canBuy = false;
-                reqHtml += addReqItem('Lisans', biz.requiredLicenseName, hasLicense);
+                const licenseStatusText = hasLicense ? 'var' : 'yok';
+                
+                console.log(`${biz.name} Lisans Kontrolü:`);
+                console.log('requiredLicense key:', biz.requiredLicense);
+                console.log('requiredLevel:', requiredLevel);
+                console.log('currentLevel:', currentLevel);
+                console.log('hasLicense:', hasLicense);
+                console.log('Tüm userLicenses:', userLicenses);
+                
+                reqHtml += addReqItem(biz.requiredLicenseName, licenseStatusText, hasLicense, 'icons/licence-icon/licence.png');
             }
 
             $('#reqList').html(reqHtml);

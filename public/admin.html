@@ -564,8 +564,10 @@
             </div>
             <div class="form-card">
                 <div class="form-group">
-                    <label class="form-label"><i class="fas fa-user"></i> Oyuncu ID</label>
-                    <input type="number" id="invUserId" class="form-input" placeholder="Örn: 1">
+                    <label class="form-label"><i class="fas fa-user"></i> Oyuncu Seç</label>
+                    <select id="invUserId" class="form-input" style="background: var(--bg-input); color: #fff;">
+                        <option value="">Oyuncu Seçiniz...</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label class="form-label"><i class="fas fa-cubes"></i> Eşya (Item Key)</label>
@@ -952,10 +954,26 @@
                 const res = await fetch('/api/admin/users');
                 const users = await res.json();
                 renderUsers(users);
+                populateUserSelect(users);
             } catch (e) {
                 console.error(e);
                 toastr.error('Kullanıcılar yüklenemedi.');
             }
+        }
+
+        function populateUserSelect(users) {
+            const select = document.getElementById('invUserId');
+            if (!select || select.tagName !== 'SELECT') return;
+
+            // Keep the default option
+            select.innerHTML = '<option value="">Oyuncu Seçiniz...</option>';
+
+            users.forEach(u => {
+                const option = document.createElement('option');
+                option.value = u.id;
+                option.textContent = `#${u.id} - ${u.username} (Lv. ${u.level})`;
+                select.appendChild(option);
+            });
         }
 
         function renderUsers(users) {

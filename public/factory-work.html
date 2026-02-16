@@ -98,17 +98,16 @@
 
         /* FABRİKA KARTI (HERO) */
         .factory-hero {
-            background: linear-gradient(135deg, rgba(0, 229, 255, 0.15), var(--bg-card));
-            border: 1px solid var(--accent-cyan); border-radius: 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid #333; border-radius: 16px;
             padding: 15px; margin-bottom: 20px; position: relative;
             display: flex; align-items: center; gap: 15px;
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
             color: var(--accent-cyan);
         }
         
         .fh-icon-box {
             width: 60px; height: 60px; background: rgba(0,0,0,0.3); border-radius: 12px;
-            display: flex; align-items: center; justify-content: center; border: 1px solid var(--accent-cyan);
+            display: flex; align-items: center; justify-content: center; border: 1px solid #333;
             font-size: 2rem; color: var(--accent-cyan);
         }
         
@@ -546,6 +545,18 @@
             </div>
         </div>
 
+        <!-- HATA MODALI -->
+        <div class="modal-overlay" id="failModal" style="z-index: 202;">
+            <div class="modal-content" style="border-top: 3px solid #e74c3c;">
+                <i class="fas fa-times-circle" style="font-size:3rem; color:#e74c3c; margin-bottom:15px;"></i>
+                <h3 class="m-title" style="color: #fff;">İŞLEM BAŞARISIZ</h3>
+                <p class="m-desc" id="failDesc">Bir hata oluştu.</p>
+                <div class="m-btns">
+                    <button class="m-btn btn-confirm" style="background: #e74c3c;" onclick="closeFailModal()">TAMAM</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -746,75 +757,57 @@
             const factoryName = factoryData.name || 'Bilinmeyen Fabrika';
             document.getElementById('factoryNameDisplay').innerText = factoryName;
 
-            // Icon logic based on type
+            // Icon logic based on type - Ürüne göre PNG icon çek
             const iconBox = document.querySelector('.fh-icon-box');
             let iconClass = 'fa-industry';
-            
             const type = factoryData.mine_type;
-            if (type === 'lumber') iconClass = 'fa-tree';
-            else if (type === 'brick') iconClass = 'fa-cubes';
-            else if (type === 'iron') iconClass = 'fa-hammer';
+            
+            // PNG icon mapping (ürün adına göre)
+            const pngIconMap = {
+                'lumber': 'icons/factory-icon/wood-plank.png',
+                'brick': 'icons/factory-icon/brick.png',
+                'glass': 'icons/factory-icon/window.png',
+                'concrete': 'icons/factory-icon/cement.png',
+                'steel': 'icons/factory-icon/steel.png',
+                'gold': 'icons/inventory-icon/gold.png',
+                'diamond': 'icons/inventory-icon/diamond.png',
+                'wind_turbine': 'icons/energy-factory-icon/wind-turbine.png',
+                'solar_plant': 'icons/energy-factory-icon/solar-panel.png',
+                'coal_plant': 'icons/energy-factory-icon/fossil-fuel.png',
+                'nuclear_plant': 'icons/energy-factory-icon/nuclear-plant.png',
+                'chip_factory': 'icons/factory-icon/chip.png',
+                'plastic_factory': 'icons/factory-icon/plastic.png',
+                'cable_factory': 'icons/factory-icon/copper-cable.png',
+                'electronic_card_factory': 'icons/factory-icon/electronic-board.png',
+                'tyre_factory': 'icons/factory-icon/tire.png',
+                'engine_factory': 'icons/factory-icon/car-engine.png',
+                'car_factory': 'icons/factory-icon/car-factory.png',
+                'gpu_factory': 'icons/video-card/GX-100.png',
+                'bakery': 'icons/factory-icon/food-factory.png',
+                'ready_food': 'icons/factory-icon/food-factory.png',
+                'olive_oil': 'icons/factory-icon/food-factory.png',
+                'sweets': 'icons/factory-icon/food-factory.png',
+                'silicon': 'icons/factory-icon/silikon.png'
+            };
+            
+            // PNG icon'u varsa kullan, yoksa FontAwesome kullan
+            if (pngIconMap[type]) {
+                iconBox.innerHTML = `<img src="${pngIconMap[type]}" style="width:40px;height:40px;object-fit:contain;">`;
+                return;
+            }
+            
+            // FontAwesome fallback
+            if (type === 'iron') iconClass = 'fa-hammer';
             else if (type === 'coal') iconClass = 'fa-fire';
             else if (type === 'oil') iconClass = 'fa-oil-can';
-            else if (type === 'gold') {
-                iconBox.innerHTML = `<img src="icons/inventory-icon/gold.png" style="width:64px;height:64px;object-fit:contain;">`;
-                return;
-            }
-            else if (type === 'diamond') {
-                iconBox.innerHTML = `<img src="icons/inventory-icon/diamond.png" style="width:64px;height:64px;object-fit:contain;">`;
-                return;
-            }
-            else if (type === 'wind_turbine') {
-                iconBox.innerHTML = `<img src="icons/energy-factory-icon/wind-turbine.png" style="width:64px;height:64px;object-fit:contain;">`;
-                return;
-            }
-            else if (type === 'solar_plant') {
-                iconBox.innerHTML = `<img src="icons/energy-factory-icon/solar-panel.png" style="width:64px;height:64px;object-fit:contain;">`;
-                return;
-            }
-            else if (type === 'coal_plant') {
-                iconBox.innerHTML = `<img src="icons/energy-factory-icon/fossil-fuel.png" style="width:64px;height:64px;object-fit:contain;">`;
-                return;
-            }
-            else if (type === 'nuclear_plant') {
-                iconBox.innerHTML = `<img src="icons/energy-factory-icon/nuclear-plant.png" style="width:64px;height:64px;object-fit:contain;">`;
-                return;
-            }
             else if (type === 'stone') iconClass = 'fa-mountain';
             else if (type === 'sand') iconClass = 'fa-hourglass-half';
             else if (type === 'copper') iconClass = 'fa-bolt';
             else if (type === 'uranium') iconClass = 'fa-radiation';
-            else if (type === 'glass') iconClass = 'fa-wine-glass';
-            else if (type === 'concrete') iconClass = 'fa-building';
-            else if (type === 'steel') iconClass = 'fa-hard-hat';
             else if (type === 'agricultural') iconClass = 'fa-wheat';
             else if (type === 'animal') iconClass = 'fa-paw';
-            else if (type === 'chip_factory') {
-                iconBox.innerHTML = `<img src="icons/factory-icon/chip.png" style="width:64px;height:64px;object-fit:contain;">`;
-                console.log('Chip factory icon set');
-                return;
-            } else if (type === 'plastic_factory') {
-                iconBox.innerHTML = `<img src="icons/factory-icon/plastic.png" style="width:64px;height:64px;object-fit:contain;">`;
-                console.log('Plastic factory icon set');
-                return;
-            } else if (type === 'cable_factory') {
-                 iconBox.innerHTML = `<img src="icons/factory-icon/cable.png" style="width:64px;height:64px;object-fit:contain;">`;
-                 return;
-            } else if (type === 'tyre_factory') {
-                 iconBox.innerHTML = `<img src="icons/factory-icon/tire.png" style="width:64px;height:64px;object-fit:contain;">`;
-                 return;
-            }
             else if (type === 'food') iconClass = 'fa-utensils';
-            else if (type === 'bakery') iconClass = 'fa-bread-slice';
-            else if (type === 'ready_food') iconClass = 'fa-utensils';
-            else if (type === 'olive_oil') iconClass = 'fa-bottle-droplet';
-            else if (type === 'sweets') iconClass = 'fa-candy-cane';
             else if (type === 'weapon') iconClass = 'fa-crosshairs';
-            else if (type === 'solar') iconClass = 'fa-solar-panel';
-            else if (type === 'gpu_factory') {
-                iconBox.innerHTML = `<img src="icons/video-card/GX-100.png" style="width:64px;height:64px;object-fit:contain;">`;
-                return;
-            }
             
             iconBox.innerHTML = `<i class="fas ${iconClass}"></i>`; 
         }
@@ -1046,8 +1039,11 @@
             const logList = document.getElementById('logList');
             logList.innerHTML = '';
             
-            if (factoryLogs.length === 0) {
-                logList.innerHTML = '<div class="log-item" style="justify-content:center;">Kayıt yok</div>';
+            // Son 10 kaydı al
+            const last10Logs = factoryLogs.slice(-10).reverse();
+            
+            if (last10Logs.length === 0) {
+                logList.innerHTML = '<div style="text-align: center; color: #555; font-size: 0.8rem;">Henüz üretim kaydı yok.</div>';
                 return;
             }
 
@@ -1079,13 +1075,18 @@
 
             const defaultProductName = factoryData ? (typeMap[factoryData.mine_type] || 'Ürün') : 'Ürün';
             
-            factoryLogs.forEach(log => {
+            last10Logs.forEach(log => {
                 const div = document.createElement('div');
                 div.className = 'log-item';
                 
                 // Format time
                 const date = new Date(log.created_at);
-                const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                // 16 Şub 2026 - 14:14 Formatı
+                const d = date.getDate();
+                const m = date.toLocaleDateString('tr-TR', { month: 'short' });
+                const y = date.getFullYear();
+                const t = date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                const timeStr = `${d} ${m} ${y} - ${t}`;
                 
                 const amount = (log.amount !== undefined && log.amount !== null) ? log.amount : '?';
                 const pName = (log.product_key && productNames[log.product_key]) ? productNames[log.product_key] : (log.product_key ? log.product_key.toUpperCase() : defaultProductName);
@@ -1288,7 +1289,7 @@
             const isWorking = factoryWorkers.some(w => w.user_id === user.id);
             
             if (isWorking) {
-                toastr.warning('Zaten bu fabrikada çalışıyorsunuz.');
+                openFailModal('Zaten bu fabrikada çalışıyorsunuz.');
                 return;
             }
 
@@ -1443,6 +1444,15 @@
 
         function closeSuccessModal() {
             document.getElementById('successModal').style.display = 'none';
+        }
+
+        function openFailModal(msg) {
+            if(msg) document.getElementById('failDesc').innerHTML = msg;
+            document.getElementById('failModal').style.display = 'flex';
+        }
+
+        function closeFailModal() {
+            document.getElementById('failModal').style.display = 'none';
         }
 
         function formatMoney(num) {
