@@ -519,7 +519,6 @@
 
         let userBusinesses = [];
         let userLicenses = {};
-        let currentUserData = {};
 
         function initPage() {
             const user = JSON.parse(localStorage.getItem('simWorldUser'));
@@ -527,8 +526,6 @@
                 window.location.href = 'login.html';
                 return;
             }
-            // Initialize with cached data to prevent errors before load
-            currentUserData = user;
 
             toastr.options = {
                 positionClass: 'toast-top-right',
@@ -562,26 +559,17 @@
                 // Build businesses array from individual endpoints
                 userBusinesses = [];
                 
-                // Store latest user stats
-                if (statsData && statsData.username) {
-                    currentUserData = statsData;
-                    // Update localStorage to keep it fresh across pages too (optional but good)
-                    const lsUser = JSON.parse(localStorage.getItem('simWorldUser')) || {};
-                    const mergedUser = { ...lsUser, ...statsData };
-                    localStorage.setItem('simWorldUser', JSON.stringify(mergedUser));
-                }
-                
-                if (rentalData && !rentalData.error && rentalData.isOwned) {
+                if (rentalData && !rentalData.error && rentalData.business) {
                     userBusinesses.push({
                         business_type: 'rent_a_car',
-                        ...rentalData
+                        ...rentalData.business
                     });
                 }
                 
-                if (realEstateData && !realEstateData.error && realEstateData.isOwned) {
+                if (realEstateData && !realEstateData.error && realEstateData.business) {
                     userBusinesses.push({
                         business_type: 'real_estate',
-                        ...realEstateData
+                        ...realEstateData.business
                     });
                 }
                 
@@ -655,8 +643,7 @@
             const biz = AVAILABLE_BUSINESSES.find(b => b.type === type);
             if (!biz) return;
             
-            // Use live data from fetched stats
-            const user = currentUserData || JSON.parse(localStorage.getItem('simWorldUser'));
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
             
             $('#modalIconContainer').html(`<img src="${biz.icon}" alt="${biz.name}" style="width: 64px; height: 64px;">`);
             $('#mTitle').text(biz.name);
