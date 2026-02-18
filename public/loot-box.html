@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Sim of World - Kutu Açılımı</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="js/loader-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+    
+    <style>
+        #toast-container { z-index: 999999 !important; }
+        :root {
+            --bg-dark: #0a0a0a; 
+            --bg-card: #141414; 
+            --bg-input: #1a1a1a;
+            --common-color: #bdc3c7;
+            --rare-color: #3498db;
+            --mystic-color: #00e5ff;
+            --mystic-glow: #00bcd4;
+            --epic-color: #9b59b6;
+            --epic-glow: #8e44ad;
+            --text-white: #ffffff; 
+            --text-muted: #888; 
+            --border-color: #222;
+            --accent-cyan: #00e5ff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%; max-width: 450px; background-color: var(--bg-dark);
+            height: 100vh; display: flex; flex-direction: column; position: relative;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5); border-left: 1px solid #111; border-right: 1px solid #111;
+        }
+        
+        /* MAIN */
+        main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
+
+        .page-header {
+            display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px;
+        }
+        .back-btn {
+            background: var(--bg-input); border: 1px solid var(--border-color); color: #fff;
+            width: 40px; height: 40px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            font-size: 1.2rem; transition: all 0.2s;
+        }
+        .back-btn:hover { background: var(--bg-card); }
+        
+        .page-title { font-size: 1.3rem; font-weight: 800; color: #fff; margin-bottom: 4px; text-transform: uppercase; }
+        .page-desc { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* KEY STATUS */
+        .key-status-bar {
+            display: flex; gap: 10px; margin-bottom: 25px;
+        }
+        .key-item {
+            flex: 1; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .key-icon { font-size: 1.2rem; margin-bottom: 5px; }
+        .key-count { font-size: 1.1rem; font-weight: 700; }
+        .key-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+
+        /* LOOT BOXES */
+        .loot-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        
+        .loot-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color); border-radius: 16px; padding: 12px;
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            gap: 8px; position: relative; overflow: hidden;
+            transition: transform 0.2s;
+            /* Removed min-height and adjusted sizing for compactness */
+        }
+        .loot-card:active { transform: scale(0.98); }
+
+        .card-glow {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0.05; pointer-events: none; z-index: 0;
+        }
+
+        .box-visual {
+            width: 90px; height: 90px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.5rem; z-index: 1; transition: all 0.3s;
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px; /* Square/Badge shape */
+            border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 5px;
+        }
+        .box-visual img { width: 60%; max-height: 60%; filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); transition: transform 0.3s; }
+        .box-visual img:hover { transform: scale(1.1); }
+        
+        .box-info { width: 100%; z-index: 1; display: flex; flex-direction: column; align-items: center; padding-bottom: 5px; }
+        .box-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .box-desc { display: none; }
+        .req-text { font-size: 0.65rem; color: #aaa; margin-bottom: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .open-btn {
+            width: 100%;
+            background: var(--bg-input); border: 1px solid var(--border-color); color: #fff;
+            padding: 8px 10px; border-radius: 8px; font-weight: 800; cursor: pointer;
+            font-family: 'Rajdhani'; transition: all 0.2s; font-size: 0.9rem;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .open-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .open-btn:hover:not(:disabled) { filter: brightness(1.2); }
+
+        /* VARIANTS */
+        .loot-common { border-color: var(--border-color); border-top: 3px solid var(--common-color); }
+        .loot-common .box-visual { border-color: var(--common-color); background: rgba(189, 195, 199, 0.1); }
+        .loot-common .card-glow { background: var(--common-color); }
+        .loot-common .open-btn { border-color: var(--border-color); color: var(--text-muted); }
+        .loot-common .open-btn:hover { color: #fff; border-color: var(--common-color); background: rgba(189, 195, 199, 0.1); }
+        
+        .loot-rare { border-color: var(--border-color); border-top: 3px solid var(--rare-color); }
+        .loot-rare .box-visual { border-color: var(--rare-color); background: rgba(52, 152, 219, 0.1); }
+        .loot-rare .card-glow { background: var(--rare-color); }
+        .loot-rare .open-btn { border-color: var(--border-color); color: var(--rare-color); }
+        .loot-rare .open-btn:hover { color: #fff; border-color: var(--rare-color); background: rgba(52, 152, 219, 0.1); }
+
+        .loot-mystic { border-color: var(--border-color); box-shadow: none; border-top: 3px solid var(--mystic-color); }
+        .loot-mystic .box-visual { border-color: var(--mystic-color); background: rgba(0, 229, 255, 0.1); box-shadow: 0 0 15px rgba(0, 229, 255, 0.2); }
+        .loot-mystic .card-glow { background: var(--mystic-color); }
+        .loot-mystic .open-btn { border-color: var(--border-color); color: var(--mystic-color); }
+        .loot-mystic .open-btn:hover { color: #fff; border-color: var(--mystic-color); background: rgba(0, 229, 255, 0.1); }
+
+        .loot-epic { border-color: var(--border-color); box-shadow: none; border-top: 3px solid var(--epic-color); }
+        .loot-epic .box-visual { border-color: var(--epic-color); background: rgba(155, 89, 182, 0.1); box-shadow: 0 0 15px rgba(155, 89, 182, 0.2); }
+        .loot-epic .card-glow { background: var(--epic-color); }
+        .loot-epic .open-btn { border-color: var(--border-color); color: var(--epic-color); }
+        .loot-epic .open-btn:hover { color: #fff; border-color: var(--epic-color); background: rgba(155, 89, 182, 0.1); }
+
+        /* ANIMATIONS */
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+        
+        .shaking { animation: shake 0.5s; animation-iteration-count: infinite; }
+
+        /* MODAL STYLES */
+        .modal-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 1000;
+            display: none; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        .modal-overlay.active { display: flex; }
+        
+        .modal-content {
+            background: #181818; width: 85%; padding: 25px; border-radius: 10px;
+            border: 1px solid #444; text-align: center; border-top: 3px solid #9b59b6;
+            box-shadow: 0 0 30px rgba(155, 89, 182, 0.2);
+        }
+        
+        .m-icon { font-size: 3rem; color: var(--accent-cyan); margin-bottom: 10px; }
+        .m-title { font-size: 1.3rem; margin-bottom: 10px; color: #fff; font-weight: bold; }
+        .m-details { background: #222; padding: 10px; border-radius: 6px; margin-bottom: 20px; text-align: left; font-size: 0.9rem; color: #ccc; }
+        .m-row { display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .m-row:last-child { border: none; padding: 0; margin: 0; }
+
+        .reward-title { font-size: 1.8rem; margin-bottom: 25px; color: #fff; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .rewards-list {
+            display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px;
+            max-height: 50vh; overflow-y: auto; padding: 0 5px;
+        }
+
+        .reward-item {
+            display: flex; align-items: center; background: rgba(0,0,0,0.3);
+            padding: 12px 15px; border-radius: 10px;
+            animation: slideUp 0.3s backwards;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: transform 0.2s;
+        }
+        .reward-item:hover { transform: translateX(5px); background: rgba(255,255,255,0.05); }
+        
+        .r-icon { font-size: 1.5rem; margin-right: 15px; width: 40px; text-align: center; display: flex; align-items: center; justify-content: center; }
+        .r-img { max-width: 100%; height: auto; display: block; }
+        .r-info { text-align: left; }
+        .r-amount { font-size: 1.2rem; font-weight: 800; }
+        .r-name { font-size: 0.9rem; color: #ccc; }
+
+        .claim-btn {
+            background: #fff; color: #000; padding: 12px 40px; border: none; border-radius: 30px;
+            font-size: 1.2rem; font-weight: 800; cursor: pointer; transition: transform 0.2s;
+            font-family: 'Rajdhani'; margin-top: 10px;
+        }
+        .claim-btn:hover { transform: scale(1.05); }
+
+        @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 80% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- HEADER injected by JS -->
+
+        <main>
+            <div class="page-header">
+                <button class="back-btn" onclick="window.location.href='home.html'">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="page-title-box">
+                    <div class="page-title">Kutu Açılımı</div>
+                    <div class="page-desc">Anahtarlarını kullanarak sürpriz ödüller kazan!</div>
+                </div>
+            </div>
+
+            <div class="key-status-bar">
+                <div class="key-item">
+                    <i class="fas fa-key key-icon" style="color:var(--common-color)"></i>
+                    <span class="key-count" id="keyCountCommon">0</span>
+                    <span class="key-label">Sıradan</span>
+                </div>
+                <div class="key-item">
+                    <i class="fas fa-key key-icon" style="color:var(--rare-color)"></i>
+                    <span class="key-count" id="keyCountRare">0</span>
+                    <span class="key-label">Nadir</span>
+                </div>
+                <div class="key-item">
+                    <i class="fas fa-key key-icon" style="color:var(--mystic-color)"></i>
+                    <span class="key-count" id="keyCountMystic">0</span>
+                    <span class="key-label">Mistik</span>
+                </div>
+                <div class="key-item">
+                    <i class="fas fa-key key-icon" style="color:var(--epic-color)"></i>
+                    <span class="key-count" id="keyCountEpic">0</span>
+                    <span class="key-label">Epik</span>
+                </div>
+            </div>
+
+            <div class="loot-grid">
+                <!-- COMMON -->
+                <div class="loot-card loot-common">
+                    <div class="card-glow"></div>
+                    <div class="box-visual" id="boxCommon">
+                        <img src="icons/chest-icon/sıradan.png" alt="Sıradan Kutu">
+                    </div>
+                    <div class="box-info">
+                        <div class="box-title" style="color:var(--common-color)">Sıradan Kutu</div>
+                        <div class="req-text">Açmak İçin 1 Sıradan Anahtar Gerekli</div>
+                        <button class="open-btn" onclick="openBox('common')" id="btnCommon">
+                            KUTUYU AÇ
+                        </button>
+                    </div>
+                </div>
+
+                <!-- RARE -->
+                <div class="loot-card loot-rare">
+                    <div class="card-glow"></div>
+                    <div class="box-visual" id="boxRare">
+                        <img src="icons/chest-icon/nadir.png" alt="Nadir Kutu">
+                    </div>
+                    <div class="box-info">
+                        <div class="box-title" style="color:var(--rare-color)">Nadir Kutu</div>
+                        <div class="req-text">Açmak İçin 1 Nadir Anahtar Gerekli</div>
+                        <button class="open-btn" onclick="openBox('rare')" id="btnRare">
+                            KUTUYU AÇ
+                        </button>
+                    </div>
+                </div>
+
+                <!-- MYSTIC (NEW) -->
+                <div class="loot-card loot-mystic">
+                    <div class="card-glow"></div>
+                    <div class="box-visual" id="boxMystic">
+                        <img src="icons/chest-icon/mistik.png" alt="Mistik Kutu">
+                    </div>
+                    <div class="box-info">
+                        <div class="box-title" style="color:var(--mystic-color)">Mistik Kutu</div>
+                        <div class="req-text">Açmak İçin 1 Mistik Anahtar Gerekli</div>
+                        <button class="open-btn" onclick="openBox('mystic')" id="btnMystic">
+                            KUTUYU AÇ
+                        </button>
+                    </div>
+                </div>
+
+                <!-- EPIC -->
+                <div class="loot-card loot-epic">
+                    <div class="card-glow"></div>
+                    <div class="box-visual" id="boxEpic">
+                         <img src="icons/chest-icon/epik.png" alt="Epik Kutu">
+                    </div>
+                    <div class="box-info">
+                        <div class="box-title" style="color:var(--epic-color)">Epik Kutu</div>
+                        <div class="req-text">Açmak İçin 1 Epik Anahtar Gerekli</div>
+                        <button class="open-btn" onclick="openBox('epic')" id="btnEpic">
+                           KUTUYU AÇ
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+        
+        
+        <!-- Bottom Menu injected by JS -->
+        
+        <!-- REWARD OVERLAY -->
+        <div class="modal-overlay" id="rewardOverlay">
+            <div class="modal-content">
+                <div class="reward-title">ÖDÜL KAZANDIN!</div>
+                <div class="rewards-list" id="rewardsList">
+                    <!-- Rewards will be inserted here dynamically -->
+                </div>
+                <button class="claim-btn" onclick="closeReward()">HARİKA</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <!-- Header Manager includes Menu Manager automatically -->
+    <script src="js/header-manager.js"></script>
+
+    <script>
+        toastr.options = { "positionClass": "toast-top-right", "timeOut": "3000" };
+
+        let userKeys = { common:0, rare:0, mystic:0, epic:0 };
+        let isOpening = false;
+
+        $(function(){
+            checkLogin();
+        });
+
+        async function checkLogin() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) { window.location.href = 'login.html'; return; }
+            // Header manager handles user display
+            loadKeys();
+        }
+
+        async function loadKeys() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            try {
+                const res = await fetch(`/api/lootbox/keys/${user.id}`);
+                const data = await res.json();
+                
+                if (data.success) {
+                    userKeys = data.keys;
+                    updateUI();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function updateUI() {
+            // Count
+            document.getElementById('keyCountCommon').innerText = userKeys.common || 0;
+            document.getElementById('keyCountRare').innerText = userKeys.rare || 0;
+            document.getElementById('keyCountMystic').innerText = userKeys.mystic || 0;
+            document.getElementById('keyCountEpic').innerText = userKeys.epic || 0;
+
+            // Buttons
+            document.getElementById('btnCommon').disabled = ((userKeys.common || 0) < 1 || isOpening);
+            document.getElementById('btnRare').disabled = ((userKeys.rare || 0) < 1 || isOpening);
+            document.getElementById('btnMystic').disabled = ((userKeys.mystic || 0) < 1 || isOpening);
+            document.getElementById('btnEpic').disabled = ((userKeys.epic || 0) < 1 || isOpening);
+        }
+
+        async function openBox(type) {
+            if (isOpening) return;
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            
+            // UI Feedback
+            isOpening = true;
+            updateUI();
+            
+            const boxIdMap = { 'common': 'boxCommon', 'rare': 'boxRare', 'mystic': 'boxMystic', 'epic': 'boxEpic' };
+            const boxEl = document.getElementById(boxIdMap[type]);
+            
+            // Animation
+            boxEl.classList.add('shaking');
+            
+            try {
+                const res = await fetch('/api/lootbox/open', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: user.id,
+                        boxType: type
+                    })
+                });
+                
+                const data = await res.json();
+                
+                // Wait for animation (simulated delay)
+                setTimeout(() => {
+                    boxEl.classList.remove('shaking');
+                    if (data.success) {
+                        // Pass the array of rewards
+                        showRewards(data.rewards);
+                        loadKeys(); // Refresh keys
+                    } else {
+                        toastr.error(data.message);
+                    }
+                    isOpening = false;
+                    updateUI(); // Unlock buttons
+                }, 3000); // 3 Seconds Delay as requested
+                
+            } catch (e) {
+                console.error(e);
+                boxEl.classList.remove('shaking');
+                toastr.error('Bir hata oluştu.');
+                isOpening = false;
+                updateUI();
+            }
+        }
+
+        function showRewards(rewards) {
+            const overlay = document.getElementById('rewardOverlay');
+            const listEl = document.getElementById('rewardsList');
+            listEl.innerHTML = ''; // Clear previous
+
+            const trMap = {
+                'money': 'Para',
+                'gold': 'Altın',
+                'diamond': 'Elmas',
+                'oil': 'Petrol',
+                'iron': 'Demir',
+                'uranium': 'Uranyum',
+                'wood': 'Odun',
+                'stone': 'Taş',
+                'coal': 'Kömür',
+                'copper': 'Bakır',
+                'sand': 'Kum',
+                'key_common': 'Sıradan Anahtar',
+                'key_rare': 'Nadir Anahtar',
+                'key_epic': 'Epik Anahtar',
+                'key_mystic': 'Mistik Anahtar'
+            };
+
+            rewards.forEach((r, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'reward-item';
+                itemDiv.style.animationDelay = (index * 0.1) + 's';
+
+                let iconHtml = '';
+                let name = trMap[r.key] || trMap[r.type] || r.name;
+                let amountText = `${r.amount}x`;
+                
+                if (r.type === 'money') {
+                    iconHtml = '<img src="icons/inventory-icon/money.png" class="r-img" alt="Para">';
+                    name = 'Nakit';
+                    amountText = new Intl.NumberFormat('tr-TR').format(r.amount) + ' TL';
+                } 
+                else if (r.type === 'key') {
+                    let color = '#fff';
+                    if (r.key === 'key_common') { color = 'var(--common-color)'; }
+                    if (r.key === 'key_rare') { color = 'var(--rare-color)'; }
+                    if (r.key === 'key_mystic') { color = 'var(--mystic-color)'; }
+                    if (r.key === 'key_epic') { color = 'var(--epic-color)'; }
+                    iconHtml = `<i class="fas fa-key" style="color:${color}; font-size: 1.5rem;"></i>`;
+                    name = trMap[r.key] || r.name;
+                } 
+                else if (r.type === 'item') {
+                    let imgPath = '';
+                    const k = r.key.toLowerCase();
+                    
+                    if (k.includes('gold')) imgPath = 'icons/inventory-icon/gold.png';
+                    else if (k.includes('diamond')) imgPath = 'icons/inventory-icon/diamond.png';
+                    else if (k.includes('oil')) imgPath = 'icons/mine-icon/oil-barrel.png';
+                    else if (k.includes('iron')) imgPath = 'icons/mine-icon/iron.png';
+                    else if (k.includes('uranium')) imgPath = 'icons/mine-icon/uranium.png';
+                    else if (k.includes('wood')) imgPath = 'icons/mine-icon/wood.png';
+                    else if (k.includes('stone')) imgPath = 'icons/mine-icon/stone.png';
+                    else if (k.includes('coal')) imgPath = 'icons/mine-icon/coal.png';
+                    else if (k.includes('copper')) imgPath = 'icons/mine-icon/copper.png';
+                    else if (k.includes('sand')) imgPath = 'icons/mine-icon/sand.png';
+                    
+                    if (imgPath) {
+                        iconHtml = `<img src="${imgPath}" class="r-img" alt="${name}">`;
+                    } else {
+                        iconHtml = '<i class="fas fa-cubes" style="color:#ccc; font-size: 1.5rem;"></i>';
+                    }
+                }
+
+                itemDiv.innerHTML = `
+                    <div class="r-icon">${iconHtml}</div>
+                    <div class="r-info">
+                        <div class="r-amount" style="color:#fff">${amountText}</div>
+                        <div class="r-name">${name}</div>
+                    </div>
+                `;
+                listEl.appendChild(itemDiv);
+            });
+            
+            overlay.style.display = 'flex';
+        }
+
+        function closeReward() {
+            document.getElementById('rewardOverlay').style.display = 'none';
+        }
+
+    </script>
+</body>
+</html>

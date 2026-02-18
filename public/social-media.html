@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Sosyal Medya Ödülleri</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="js/loader-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+    <style>
+        :root {
+            --primary: #e74c3c;
+            --bg-dark: #0d0d0d;
+            --bg-panel: #161616;
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            
+            --status-claimed: #e74c3c; /* Kırmızı - Alınmış */
+            --status-available: #2ecc71; /* Yeşil - Alınmamış */
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-main);
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('img/world-map.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        main {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+
+        /* Header Style */
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-left: 5px;
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        .back-btn:hover { background: #252525; color: #fff; border-color: #555; }
+
+        .header-title-group h2 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+        .header-title-group p {
+            font-size: 0.9rem;
+            color: #999;
+            margin: 3px 0 0 0;
+        }
+
+        /* Social Cards Revised */
+        .social-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .social-card {
+            background: rgba(30,30,30,0.6);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: 0.3s;
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+            border-left: 5px solid #444; /* Default */
+        }
+        .social-card:hover { transform: translateY(-3px); background: rgba(40,40,40,0.8); }
+
+        /* Conditional Border Colors */
+        .social-card.claimed { border-left-color: var(--status-claimed); }
+        .social-card.available { border-left-color: var(--status-available); }
+
+        .icon-box {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: rgba(0,0,0,0.2);
+            padding: 5px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .icon-box img { width: 100%; height: 100%; object-fit: contain; }
+
+        .card-content { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .card-title { font-size: 1.1rem; font-weight: 800; color: #fff; }
+        .card-desc { font-size: 0.8rem; color: #888; margin-bottom: 5px; }
+
+        .badge-reward {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #ffd700;
+            width: fit-content;
+        }
+        
+        .arrow-icon {
+            font-size: 1.2rem;
+            color: #555;
+            transition: 0.3s;
+        }
+        .social-card:hover .arrow-icon { transform: translateX(5px); color: #fff; }
+
+        /* Confetti */
+        .confetti { position: absolute; pointer-events: none; z-index: 999; }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        
+        <!-- Header injected by header-manager.js -->
+
+        <main style="padding-top:20px;">
+            
+            <div class="header-left">
+                <a href="home.html" class="back-btn">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <div class="header-title-group">
+                    <h2>SOSYAL MEDYA</h2>
+                    <p>Topluluğumuza katıl, ödülleri kap!</p>
+                </div>
+            </div>
+
+            <div class="social-list" id="socialListArea">
+                <div style="text-align:center; padding:20px; color:#666;">Yükleniyor...</div>
+            </div>
+
+        </main>
+
+        <!-- Bottom Menu injected by menu-manager.js -->
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="js/header-manager.js"></script>
+    <script src="js/menu-manager.js"></script>
+    <script>
+        const user = JSON.parse(localStorage.getItem('simWorldUser'));
+        if(!user) window.location.href = 'login.html';
+
+        // Platforms Config
+        const platforms = [
+            { 
+                id: 'instagram', 
+                name: 'Instagram', 
+                desc: 'Bizi Instagram\'da takip et',
+                url: 'https://instagram.com/simofworld',
+                icon: 'icons/social-media-icon/instagram.png'
+            },
+            { 
+                id: 'telegram', 
+                name: 'Telegram', 
+                desc: 'Sohbet grubumuza katıl',
+                url: 'https://t.me/+e7iOKzyh4x43ZTY8',
+                icon: 'icons/social-media-icon/telegram.png'
+            },
+            { 
+                id: 'youtube', 
+                name: 'YouTube', 
+                desc: 'Kanalımıza abone ol',
+                url: 'https://youtube.com/@simofworld',
+                icon: 'icons/social-media-icon/youtube.png'
+            },
+            { 
+                id: 'x', 
+                name: 'X (Twitter)', 
+                desc: 'Güncel haberleri takip et',
+                url: 'https://x.com/simofworld',
+                icon: 'icons/social-media-icon/twitter.png' 
+            }
+        ];
+
+        $(document).ready(function() {
+            fetchUserAndRender();
+        });
+
+        function fetchUserAndRender() {
+            // Get fresh user data including social columns
+            $.get('/api/user/me?userId=' + user.id, function(res) {
+                if(res.success) {
+                    renderCards(res.user);
+                } else {
+                    $('#socialListArea').html('Kullanıcı verisi alınamadı.');
+                }
+            });
+        }
+
+        function renderCards(userData) {
+            const container = $('#socialListArea');
+            container.empty();
+
+            platforms.forEach(p => {
+                const isClaimed = userData['social_' + p.id] === 1;
+                const statusClass = isClaimed ? 'claimed' : 'available';
+                // claimed -> Red (User request: "alınmışsa kırmızı")
+                // available -> Green (User request: "alınmamışsa yeşil")
+
+                const html = `
+                    <div class="social-card ${statusClass}" onclick="handleCardClick('${p.id}', '${p.url}', ${isClaimed})">
+                        <div class="icon-box">
+                            <img src="${p.icon}" alt="${p.name}">
+                        </div>
+                        <div class="card-content">
+                            <div class="card-title">${p.name}</div>
+                            <div class="card-desc">${p.desc}</div>
+                            <div class="badge-reward">
+                                <i class="fas fa-coins"></i> 50.000 + <i class="fas fa-gem" style="color:#00e5ff;"></i> 10
+                            </div> 
+                        </div>
+                        <i class="fas fa-chevron-right arrow-icon"></i>
+                    </div>
+                `;
+                container.append(html);
+            });
+        }
+
+        function handleCardClick(platform, url, isClaimed) {
+            // 1. Open URL
+            window.open(url, '_blank');
+
+            // 2. If not claimed, try to claim
+            if(!isClaimed) {
+                // Wait a bit to simulate check
+                setTimeout(() => {
+                    claimReward(platform);
+                }, 1500);
+            }
+        }
+
+        function claimReward(platform) {
+            $.ajax({
+                url: '/api/social/reward',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    userId: user.id,
+                    platform: platform
+                }),
+                success: function(res) {
+                    if(res.success) {
+                        toastr.success(res.message);
+                        confetti({
+                            particleCount: 100,
+                            spread: 70,
+                            origin: { y: 0.6 }
+                        });
+                        // Refresh UI to show red border
+                        fetchUserAndRender();
+                    } else {
+                        // Already claimed or error
+                         if(res.message.includes('zaten')) {
+                            // Just refresh to be sure
+                            fetchUserAndRender();
+                         } else {
+                             toastr.error(res.message);
+                         }
+                    }
+                }
+            });
+        }
+    
+    </script>
+</body>
+</html>

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Sim of World - Ayarlar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <link rel="stylesheet" href="css/global-menu.css">
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #161616;
+            --accent-cyan: #00e5ff;
+            --accent-red: #e74c3c;
+            --accent-green: #2ecc71;
+            --text-white: #ffffff;
+            --text-gray: #a0a0a0;
+            --border-color: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            color: var(--text-white);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            min-height: 100vh;
+            position: relative;
+            padding-bottom: 80px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .header-badge {
+            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(20,20,20,0.95) 100%);
+            padding: 20px;
+            border-radius: 0 0 20px 20px;
+            margin: 0 0 25px 0;
+            border-top: 3px solid var(--accent-cyan);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+        }
+        .header-badge::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: radial-gradient(circle, var(--accent-cyan) 0%, transparent 100%);
+            opacity: 0.7;
+        }
+        .header-badge h1 {
+            font-size: 1.8rem;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .header-badge h1 i { color: var(--accent-cyan); }
+        .header-badge p {
+            font-size: 0.9rem;
+            color: #aaa;
+            font-weight: 500;
+        }
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            font-size: 1.2rem;
+            cursor: pointer;
+            text-decoration: none;
+            z-index: 10;
+        }
+
+        .settings-section {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section-title {
+            font-size: 1rem;
+            color: var(--text-gray);
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        /* FORM ELEMENTS */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            background: #222;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 5px;
+            font-family: 'Rajdhani';
+            font-size: 1rem;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+        }
+
+        .btn-save {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent-cyan);
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Rajdhani';
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        .btn-save:hover {
+            opacity: 0.9;
+        }
+
+        /* TOGGLES */
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #333;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent-cyan);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        /* DANGER ZONE */
+        .btn-logout {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 1px solid var(--accent-red);
+            color: var(--accent-red);
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Rajdhani';
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+
+        .btn-logout:hover {
+            background: var(--accent-red);
+            color: #fff;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div class="header-badge">
+            <a href="javascript:history.back()" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+            <h1><i class="fas fa-cog"></i> Ayarlar</h1>
+            <p>Hesap ve oyun tercihleri</p>
+        </div>
+
+        <!-- AVATAR SETTINGS -->
+        <div class="settings-section">
+            <div class="section-title">Avatar Değiştir</div>
+            <div style="text-align:center; margin-bottom:15px;">
+                <img id="currentAvatar" src="https://ui-avatars.com/api/?name=User" style="width:100px; height:100px; border-radius:50%; border:2px solid var(--accent-cyan); object-fit:cover;">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Yeni Avatar (Max 2MB - JPG, PNG, GIF)</label>
+                <input type="file" id="avatarInput" accept="image/*" class="form-input" style="padding:8px;">
+            </div>
+            <button class="btn-save" onclick="uploadAvatar()">AVATARI GÜNCELLE</button>
+        </div>
+
+        <!-- USERNAME SETTINGS -->
+        <div class="settings-section">
+            <div class="section-title">Kullanıcı Adı Değiştir</div>
+            <div style="margin-bottom:10px; color:var(--accent-cyan); font-size:0.9rem;">
+                <img src="icons/inventory-icon/diamond.png" style="width:16px;height:16px;vertical-align:middle;"> Ücret: 100 Elmas
+            </div>
+            <div class="form-group">
+                <label class="form-label">Yeni Kullanıcı Adı</label>
+                <input type="text" class="form-input" id="newUsername" placeholder="Yeni adınız...">
+            </div>
+            <button class="btn-save" onclick="changeUsername()">İSMİ DEĞİŞTİR</button>
+        </div>
+
+        <!-- ACCOUNT SECURITY -->
+        <div class="settings-section">
+            <div class="section-title">Şifre Değiştir</div>
+            
+            <div class="form-group">
+                <label class="form-label">Mevcut Şifre</label>
+                <input type="password" class="form-input" id="currentPass" placeholder="******">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Yeni Şifre</label>
+                <input type="password" class="form-input" id="newPass" placeholder="******">
+            </div>
+
+            <button class="btn-save" onclick="changePassword()">ŞİFREYİ GÜNCELLE</button>
+        </div>
+
+        <!-- PREFERENCES -->
+        <div class="settings-section">
+            <div class="section-title">Oyun Tercihleri</div>
+            
+            <div class="setting-item">
+                <span>Ses Efektleri</span>
+                <label class="switch">
+                    <input type="checkbox" id="toggleSound" onchange="savePreferences()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <span>Bildirimler</span>
+                <label class="switch">
+                    <input type="checkbox" id="toggleNotif" onchange="savePreferences()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="setting-item">
+                <span>Karanlık Mod (Daima Açık)</span>
+                <label class="switch">
+                    <input type="checkbox" checked disabled>
+                    <span class="slider" style="opacity:0.5"></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- SUPPORT -->
+        <div class="settings-section">
+            <div class="section-title">Destek & Geri Bildirim</div>
+            <a href="bug-report.html" class="btn-save" style="display:block; text-align:center; text-decoration:none; background:#e74c3c; color:#fff;">
+                <i class="fas fa-bug"></i> HATA BİLDİR
+            </a>
+        </div>
+
+        <!-- SESSION -->
+        <div class="settings-section" style="border-bottom:none;">
+            <div class="section-title" style="color:var(--accent-red)">Oturum</div>
+            <button class="btn-logout" onclick="logout()">ÇIKIŞ YAP</button>
+            
+            <div style="text-align:center; margin-top:20px; color:#444; font-size:0.8rem;">
+                Sim of World v1.0.2<br>
+                ID: <span id="userIdDisplay">...</span>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/loader-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+    <script src="js/header-manager.js"></script>
+    <script src="js/menu-manager.js"></script>
+</body>
+</html>

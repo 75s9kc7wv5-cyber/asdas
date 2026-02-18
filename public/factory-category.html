@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Sim of World - Fabrikalar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/global-menu.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-header: #0a0a0a;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-red: #e74c3c;
+            --accent-gold: #ffd700;
+            --accent-orange: #e67e22;
+            --text-white: #ffffff;
+            --text-muted: #888;
+            --card-bg: rgba(30, 30, 30, 0.95);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('img/world-map.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* MAIN */
+        main { flex: 1; padding: 15px; overflow-y: auto; padding-bottom: 80px; }
+
+        /* TABS */
+        .tabs-container { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
+        .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: #777; font-family: 'Rajdhani'; font-weight: bold; cursor: pointer; border-radius: 6px; transition: all 0.3s; }
+        .tab-btn.active { background: #222; color: var(--accent-cyan); box-shadow: 0 0 10px rgba(0, 229, 255, 0.1); }
+
+        /* PAGE TITLE */
+        .section-header { text-align: center; margin-bottom: 25px; animation: fadeIn 0.5s; }
+        .header-badge {
+            display: inline-block;
+            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(10,10,10,0.95) 100%);
+            border: 1px solid #333;
+            border-top: 3px solid var(--accent-cyan);
+            padding: 15px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .header-badge::after {
+            content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+            width: 60%; height: 2px; background: radial-gradient(circle, var(--accent-cyan) 0%, transparent 100%);
+            opacity: 0.5;
+        }
+        .section-title { 
+            font-size: 1.4rem; font-weight: 800; letter-spacing: 2px; color: #fff; margin-bottom: 5px; 
+            text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 10px;
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+        }
+        .section-desc { font-size: 0.85rem; color: #999; font-weight: 500; }
+
+        .page-header {
+            margin-bottom: 25px;
+            animation: fadeInDown 0.5s;
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        .back-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.2rem;
+        }
+        .back-btn:hover {
+            background: #2a2a2a;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+        }
+        .page-header-content {
+            flex: 1;
+        }
+        .page-title {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .page-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.3;
+        }
+
+        /* FACTORY GRID */
+        .factory-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; animation: slideUp 0.6s ease; }
+
+        .factory-card {
+            background: var(--card-bg);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            text-decoration: none;
+            color: #fff;
+            text-align: center;
+            position: relative;
+            height: auto;
+            min-height: 120px;
+            overflow: hidden;
+        }
+        .factory-card:hover { transform: translateY(-3px); border-color: var(--accent-orange); background: rgba(40,40,40,0.95); }
+
+        .factory-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--accent-orange);
+        }
+
+        .f-icon-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            background: #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            font-size: 1.5rem;
+        }
+
+        .f-name { font-size: 0.85rem; font-weight: 700; line-height: 1.2; margin-bottom: 0; }
+        .f-count { font-size: 0.7rem; color: var(--accent-gold); margin-top: 2px; }
+        .count-badge { 
+            background: #222;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            display: inline-block;
+            margin-top: 4px;
+            font-size: 0.7rem;
+            color: #fff;
+        }
+
+        /* Kart Stilleri (Görseldekine benzer gradientler) */
+        .type-farm { border-top: none; }
+        .type-animal { border-top: none; }
+        .type-food { border-top: none; }
+        .type-weapon { border-top: none; }
+        .type-construction { border-top: none; }
+        .type-energy { border-top: none; }
+
+        .type-farm .f-icon-circle { color: var(--accent-green); box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); }
+        .type-animal .f-icon-circle { color: var(--accent-orange); box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); }
+        .type-food .f-icon-circle { color: var(--accent-cyan); box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); }
+        .type-weapon .f-icon-circle { color: var(--accent-red); box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); }
+        .type-construction .f-icon-circle { color: #f1c40f; box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); }
+        .type-energy .f-icon-circle { color: #9b59b6; box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); }
+
+        /* New Categories CSS */
+        .category-header { 
+            font-size: 1rem; color: var(--accent-cyan); margin-bottom: 10px; margin-top: 20px;
+            border-bottom: 1px solid #333; padding-bottom: 5px; font-weight: 700; letter-spacing: 1px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .category-title { font-size: 1rem; color: inherit; font-weight: 700; display: flex; align-items: center; gap: 10px; margin: 0; }
+        
+        /* Colors for headers */
+        .h-construction { color: #f1c40f; }
+        .h-food { color: var(--accent-green); }
+        .h-heavy { color: var(--accent-red); }
+        .h-energy { color: #9b59b6; }
+
+        .f-name {
+            font-size: 0.85rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 0;
+        }
+        .f-power { font-size: 0.75rem; color: #aaa; }
+        .f-power span { font-weight: bold; color: #fff; }
+
+        /* LIST VIEW STYLES */
+        .factory-list-view { display: flex; flex-direction: column; gap: 10px; }
+        .factory-list-card {
+            background: var(--card-bg);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: transform 0.2s, border-color 0.2s;
+            text-decoration: none;
+            color: #fff;
+        }
+        .factory-list-card:hover { transform: translateX(5px); border-color: var(--accent-cyan); background: rgba(40,40,40,0.95); }
+        .factory-list-card.status-owned { border-left: 4px solid var(--accent-green); }
+        .factory-list-card.status-not-owned { border-left: 4px solid var(--accent-red); }
+        .factory-list-card .f-icon-circle { width: 50px; height: 50px; margin-bottom: 0; flex-shrink: 0; }
+        .factory-list-card .f-info { flex: 1; text-align: left; }
+        .factory-list-card .f-name { font-size: 0.85rem; font-weight: 700; line-height: 1.2; margin-bottom: 0; }
+        .factory-list-card .f-desc { font-size: 0.8rem; color: #888; margin-top: 4px; }
+        .factory-list-card .action-btn { width: auto; padding: 8px 20px; margin-top: 0; }
+        .btn-buy { background: var(--accent-gold); color: #000; }
+        .btn-manage { background: var(--accent-cyan); color: #000; }
+
+        /* ÜRETİM MODALI */
+        .modal-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 100;
+            display: none; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        .modal-content {
+            background: #151515; width: 90%; padding: 20px; border-radius: 10px;
+            border: 1px solid #444; position: relative; text-align: center;
+        }
+        .modal-close { position: absolute; top: 10px; right: 15px; color: #aaa; cursor: pointer; }
+        
+        .prod-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; }
+        .prod-icon-lg { font-size: 3rem; margin-bottom: 10px; }
+        .prod-title { font-size: 1.4rem; color: #fff; }
+        
+        /* Reçete Alanı */
+        .recipe-box {
+            background: #222; padding: 15px; border-radius: 6px; margin-bottom: 20px;
+            display: flex; align-items: center; justify-content: space-around; border: 1px solid #333;
+        }
+        .res-item { display: flex; flex-direction: column; align-items: center; font-size: 0.8rem; color: #ccc; }
+        .res-arrow { color: var(--accent-cyan); font-size: 1.2rem; }
+        .res-img { font-size: 1.5rem; margin-bottom: 5px; }
+
+        /* Progress Bar */
+        .progress-area { margin-bottom: 20px; display: none; }
+        .p-bar-bg { width: 100%; height: 10px; background: #333; border-radius: 5px; overflow: hidden; }
+        .p-bar-fill { height: 100%; width: 0%; background: var(--accent-cyan); transition: width 0.1s linear; }
+        .p-text { font-size: 0.8rem; margin-top: 5px; color: var(--accent-cyan); }
+
+        .action-btn { width: 100%; padding: 12px; border: none; border-radius: 5px; font-family: 'Rajdhani'; font-weight: bold; font-size: 1rem; cursor: pointer; }
+        .btn-start { background: var(--accent-green); color: #000; }
+        .btn-working { background: #333; color: #fff; cursor: wait; }
+
+        /* BUY MODAL */
+        .req-list { 
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            margin: 15px 0;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .info-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 10px;
+            transition: all 0.2s;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        .info-list-item:last-child {
+            border-bottom: none;
+        }
+        .info-list-item:hover {
+            opacity: 0.8;
+            background: rgba(255,255,255,0.02);
+        }
+        .info-left {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            flex: 1;
+        }
+        .info-left i {
+            width: 28px;
+            min-width: 28px;
+            text-align: left;
+            margin-right: 10px;
+            font-size: 1rem;
+        }
+        .info-left img {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            margin-right: 10px;
+        }
+        .info-label {
+            color: #aaa;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .info-value {
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: right;
+            margin-left: auto;
+        }
+        .upgrade-cost-status {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            margin-left: 15px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .upgrade-cost-status.ok {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(46, 204, 113, 0.1));
+            color: var(--accent-green);
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
+        }
+        .upgrade-cost-status.fail {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(231, 76, 60, 0.1));
+            color: var(--accent-red);
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.3);
+        }
+
+        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; }
+        .btn-confirm { background: var(--accent-green); color: #000; }
+        .btn-cancel { background: #333; color: #fff; }
+        .btn-confirm:disabled { background: #444; color: #888; cursor: not-allowed; }
+
+        /* BOTTOM NAV */
+        .bottom-nav {
+            position: absolute; bottom: 0; width: 100%; background: #0a0a0a;
+            border-top: 1px solid #333; display: flex; justify-content: space-around;
+            padding: 10px 0; z-index: 10;
+        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 0.75rem; cursor: pointer; }
+        .nav-item i { font-size: 1.4rem; margin-bottom: 3px; }
+        .nav-item.active { color: var(--accent-cyan); }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Header removed, injected by header-manager.js -->
+
+        <main>
+            <div class="page-header">
+                <button class="back-btn" onclick="window.location.href='home.html'">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="page-header-content">
+                    <div class="page-title">
+                        FABRİKALAR
+                    </div>
+                    <div class="page-subtitle">Fabrika kategorilerini inceleyebilir veya sahip olduğun fabrikaları görebilirsin.</div>
+                </div>
+            </div>
+            <div class="tabs-container">
+                <button class="tab-btn active" onclick="switchTab('categories')">FABRİKA KATEGORİLERİ</button>
+                <button class="tab-btn" onclick="switchTab('my-factories')">FABRİKALARIM</button>
+            </div>
+
+            <div id="tab-categories">
+
+                <div id="factoriesContainer">
+                    <!-- JS ile doldurulacak -->
+                    <div style="text-align:center; padding:20px; color:#666;">Yükleniyor...</div>
+                </div>
+            </div>
+
+            <div id="tab-my-factories" style="display:none;">
+                <div id="myFactoriesList"></div>
+            </div>
+
+        </main>
+
+        <div class="modal-overlay" id="prodModal">
+            <div class="modal-content">
+                <span class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></span>
+                
+                <div class="prod-header">
+                    <div id="mIcon" class="prod-icon-lg"></div>
+                    <h2 id="mTitle" class="prod-title">Fabrika Adı</h2>
+                </div>
+
+                <div class="recipe-box">
+                    <div class="res-item">
+                        <i class="fas fa-cube res-img" style="color:#aaa"></i>
+                        <span id="reqText">10 Demir</span>
+                    </div>
+                    <div class="res-arrow"><i class="fas fa-arrow-right"></i></div>
+                    <div class="res-item">
+                        <i id="outIcon" class="fas fa-box res-img" style="color:#fff"></i>
+                        <span id="outText">1 Silah</span>
+                    </div>
+                </div>
+
+                <div class="progress-area" id="progArea">
+                    <div class="p-bar-bg"><div class="p-bar-fill" id="pBar"></div></div>
+                    <div class="p-text">Üretim Yapılıyor...</div>
+                </div>
+
+                <button id="prodBtn" class="action-btn btn-start" onclick="startProduction()">ÜRETİMİ BAŞLAT</button>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="buyModal">
+            <div class="modal-content">
+                <div id="buyIconContainer" style="margin-bottom:15px; display:flex; justify-content:center;">
+                    <!-- Icon injected here -->
+                </div>
+                <h3 style="color:#fff; margin-bottom:10px;" id="buyTitle">Fabrika Satın Al</h3>
+                <p style="color:#888; font-size:0.9rem;">Bu işletmeyi kurmak için gereksinimleri karşılamalısınız.</p>
+                
+                <div class="req-list" id="reqList">
+                    <!-- Requirements here -->
+                </div>
+
+                <div class="modal-btns">
+                    <button class="m-btn btn-cancel" onclick="closeBuyModal()">İPTAL</button>
+                    <button class="m-btn btn-confirm" id="btnConfirmBuy" onclick="confirmBuy()">SATIN AL</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="successModal">
+            <div class="modal-content" style="border-top: 3px solid var(--accent-green); box-shadow: 0 0 30px rgba(46, 204, 113, 0.2);">
+                <div style="font-size: 3rem; color: var(--accent-green); margin-bottom: 20px;">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3 style="color:#fff; margin-bottom:10px;">TEBRİKLER!</h3>
+                <p id="successMsg" style="color:#aaa; font-size:0.9rem; margin-bottom: 20px;">
+                    <!-- JS fills this -->
+                </p>
+                <p style="color: var(--accent-cyan); font-size: 0.9rem; margin-bottom: 20px;">"Fabrikalarım" sekmesinden yönetebilirsin.</p>
+                <button class="m-btn btn-confirm" onclick="closeSuccessModal()" style="width: 100%;">TAMAM</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+
+    <script>
+        toastr.options = { "positionClass": "toast-top-right", "timeOut": "3000" };
+        let selectedFactory = null;
+        let userData = {};
+        let userLicenses = {};
+
+        // Veriler
+        const factoryTypes = [
+            // Construction
+            { id: 'lumber', category: 'construction', name: 'Kereste Fabrikası', img: 'icons/factory-icon/wood-plank.png', color: 'type-construction', reqLevel: 5, costMoney: 5000, costGold: 0, costDiamond: 0 },
+            { id: 'brick', category: 'construction', name: 'Tuğla Fabrikası', img: 'icons/factory-icon/brick.png', color: 'type-construction', reqLevel: 8, costMoney: 8000, costGold: 0, costDiamond: 0 },
+            { id: 'glass', category: 'construction', name: 'Cam Fabrikası', img: 'icons/factory-icon/window.png', color: 'type-construction', reqLevel: 12, costMoney: 12000, costGold: 5, costDiamond: 0 },
+            { id: 'concrete', category: 'construction', name: 'Çimento Fabrikası', img: 'icons/factory-icon/cement.png', color: 'type-construction', reqLevel: 15, costMoney: 15000, costGold: 10, costDiamond: 0 },
+            { id: 'steel', category: 'construction', name: 'Çelik Fabrikası', img: 'icons/factory-icon/steel.png', color: 'type-construction', reqLevel: 20, costMoney: 25000, costGold: 20, costDiamond: 0 },
+            
+            // Food
+            { id: 'bakery', category: 'food', name: 'Fırın ve Unlu Mamuller Tesisi', img: 'icons/factory-icon/food-factory.png', color: 'type-food', reqLevel: 5, costMoney: 5000, costGold: 0, costDiamond: 0 },
+            { id: 'ready_food', category: 'food', name: 'Hazır Yemek Üretim Tesisi', img: 'icons/factory-icon/food-factory.png', color: 'type-food', reqLevel: 8, costMoney: 8000, costGold: 0, costDiamond: 0 },
+            { id: 'olive_oil', category: 'food', name: 'Zeytinyağı Üretim Tesisi', img: 'icons/factory-icon/food-factory.png', color: 'type-food', reqLevel: 10, costMoney: 10000, costGold: 5, costDiamond: 0 },
+            { id: 'sweets', category: 'food', name: 'Tatlı & Şekerleme Üretim Tesisi', img: 'icons/factory-icon/food-factory.png', color: 'type-food', reqLevel: 12, costMoney: 12000, costGold: 5, costDiamond: 0 },
+            
+            // Heavy
+            { id: 'gold_factory', category: 'heavy', name: 'Altın Rafinerisi', img: 'icons/inventory-icon/gold.png', color: 'type-weapon', reqLevel: 20, costMoney: 40000, costGold: 0, costDiamond: 5 },
+             { id: 'silicon', category: 'heavy', name: 'Silikon Fabrikası', img: 'icons/factory-icon/silikon.png', color: 'type-weapon', reqLevel: 25, costMoney: 30000, costGold: 25, costDiamond: 5 },
+            { id: 'plastic_factory', category: 'heavy', name: 'Plastik Fabrikası', img: 'icons/factory-icon/plastic.png', color: 'type-weapon', reqLevel: 15, costMoney: 15000, costGold: 10, costDiamond: 0 },
+            { id: 'tyre_factory', category: 'heavy', name: 'Lastik Fabrikası', img: 'icons/factory-icon/tire.png', color: 'type-weapon', reqLevel: 17, costMoney: 20000, costGold: 12, costDiamond: 0 },
+            { id: 'engine_factory', category: 'heavy', name: 'Motor Fabrikası', img: 'icons/factory-icon/car-engine.png', color: 'type-weapon', reqLevel: 19, costMoney: 25000, costGold: 15, costDiamond: 2 },
+            { id: 'car_factory', category: 'heavy', name: 'Otomotiv Fabrikası', img: 'icons/factory-icon/car-factory.png', color: 'type-weapon', reqLevel: 24, costMoney: 50000, costGold: 20, costDiamond: 5 },
+            { id: 'cable_factory', category: 'heavy', name: 'Kablo Fabrikası', img: 'icons/factory-icon/cable.png', color: 'type-weapon', reqLevel: 18, costMoney: 18000, costGold: 12, costDiamond: 0 },
+            { id: 'electronic_card_factory', category: 'heavy', name: 'Elektronik Kart Fabrikası', img: 'icons/factory-icon/electronic-board.png', color: 'type-weapon', reqLevel: 22, costMoney: 22000, costGold: 18, costDiamond: 2 },
+            { id: 'chip_factory', category: 'heavy', name: 'Çip Fabrikası', img: 'icons/factory-icon/chip.png', color: 'type-weapon', reqLevel: 35, costMoney: 45000, costGold: 40, costDiamond: 10 },
+            { id: 'gpu_factory', category: 'heavy', name: 'GPU Fabrikası', img: 'icons/factory-icon/video-card.png', color: 'type-weapon', reqLevel: 40, costMoney: 60000, costGold: 60, costDiamond: 15 },
+            
+            // Energy
+            { id: 'coal_plant', category: 'energy', name: 'Kömür Enerji Santrali', img: 'icons/energy-factory-icon/fossil-fuel.png', color: 'type-energy', reqLevel: 20, costMoney: 30000, costGold: 15, costDiamond: 0 },
+            { id: 'nuclear_plant', category: 'energy', name: 'Nükleer Enerji Santrali', img: 'icons/energy-factory-icon/nuclear-plant.png', color: 'type-energy', reqLevel: 50, costMoney: 100000, costGold: 50, costDiamond: 10 }
+        ];
+
+        const categories = [
+            { id: 'construction', name: 'İNŞAAT MALZEMELERİ', icon: 'fa-hard-hat', color: 'h-construction' },
+            { id: 'food', name: 'GIDA ÜRETİM', icon: 'fa-utensils', color: 'h-food' },
+            { id: 'heavy', name: 'AĞIR SANAYİ', icon: 'fa-cogs', color: 'h-heavy' },
+            { id: 'energy', name: 'ENERJİ TESİSLERİ', icon: 'fa-bolt', color: 'h-energy' }
+        ];
+
+        const factoryData = {
+            'agricultural': { icon: 'fa-seedling', color: 'var(--accent-green)', req: 'Su', out: 'Buğday', outIcon: 'fa-wheat' },
+            'animal': { icon: 'fa-paw', color: 'var(--accent-orange)', req: 'Yem', out: 'Et', outIcon: 'fa-drumstick-bite' },
+            'bakery': { icon: 'fa-bread-slice', color: 'var(--accent-cyan)', req: 'Buğday', out: 'Ekmek', outIcon: 'fa-bread-slice' },
+            'ready_food': { icon: 'fa-utensils', color: 'var(--accent-cyan)', req: 'Sebze', out: 'Konserve', outIcon: 'fa-box' },
+            'olive_oil': { icon: 'fa-bottle-droplet', color: 'var(--accent-cyan)', req: 'Zeytin', out: 'Zeytinyağı', outIcon: 'fa-bottle-water' },
+            'sweets': { icon: 'fa-candy-cane', color: 'var(--accent-cyan)', req: 'Bal', out: 'Şekerleme', outIcon: 'fa-candy-cane' },
+            'weapon': { icon: 'fa-crosshairs', color: 'var(--accent-red)', req: 'Demir', out: 'Tüfek', outIcon: 'fa-fighter-jet' },
+            'silicon': { icon: 'fa-microchip', color: 'var(--accent-red)', req: 'Kum + Kömür', out: 'Silikon', outIcon: 'fa-microchip' },
+            'plastic_factory': { img: 'icons/factory-icon/plastic.png', color: '#e67e22', req: 'Petrol + Elektrik', out: 'Plastik', outImg: 'icons/factory-icon/plastic.png' },
+            'tyre_factory': { img: 'icons/factory-icon/tire.png', color: '#e67e22', req: 'Petrol + Elektrik', out: 'Lastik', outImg: 'icons/factory-icon/tire.png' },
+            'engine_factory': { img: 'icons/factory-icon/car-engine.png', color: '#e67e22', req: 'Çelik + Demir + Elektrik', out: 'Motor', outImg: 'icons/factory-icon/car-engine.png' },
+            'car_factory': { img: 'icons/factory-icon/car-factory.png', color: '#e67e22', req: 'Motor + Lastik + Cam', out: 'Araba', outImg: 'icons/factory-icon/car.png' },
+            'cable_factory': { img: 'icons/factory-icon/cable.png', color: '#e67e22', req: 'Bakır + Plastik + Elektrik', out: 'Kablo', outImg: 'icons/factory-icon/cable.png' },
+            'electronic_card_factory': { img: 'icons/factory-icon/electronic-board.png', color: '#e67e22', req: 'Kablo + Plastik + Silikon', out: 'Elektronik Kart', outImg: 'icons/factory-icon/electronic-board.png' },
+            'chip_factory': { img: 'icons/factory-icon/chip.png', color: 'var(--accent-red)', req: 'Silikon + Altın + Bakır + Elektrik', out: 'Çip', outImg: 'icons/factory-icon/chip.png' },
+            'gpu_factory': { img: 'icons/factory-icon/video-card.png', color: 'var(--accent-red)', req: 'Çip + Kart + Elektrik', out: 'GPU', outImg: 'icons/factory-icon/video-card.png' },
+            'lumber': { icon: 'fa-tree', color: '#f1c40f', req: 'Odun', out: 'Kereste', outIcon: 'fa-pallet' },
+            'brick': { icon: 'fa-th-large', color: '#f1c40f', req: 'Kil', out: 'Tuğla', outIcon: 'fa-cubes' },
+            'glass': { icon: 'fa-square', color: '#f1c40f', req: 'Kum', out: 'Cam', outIcon: 'fa-wine-glass' },
+            'concrete': { icon: 'fa-truck-mixer', color: '#f1c40f', req: 'Kum', out: 'Çimento', outIcon: 'fa-building' },
+            'steel': { icon: 'fa-industry', color: '#f1c40f', req: 'Demir', out: 'Çelik', outIcon: 'fa-layer-group' }
+        };
+
+        async function fetchUserData(userId) {
+             try {
+                const res = await fetch(`/api/profile/${userId}`);
+                if (res.ok) {
+                    const json = await res.json();
+                    userData = json.user || json;
+                }
+            } catch (e) { console.error(e); }
+        }
+        
+        async function fetchUserLicenses(userId) {
+             try {
+                const res = await fetch(`/api/licenses/${userId}`);
+                if (res.ok) {
+                    userLicenses = await res.json();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadFactories() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (user) {
+                await Promise.all([
+                    fetchUserData(user.id),
+                    fetchUserLicenses(user.id)
+                ]);
+            }
+
+            try {
+                // Fetch all city mines to count them (assuming factories are stored as mines)
+                const res = await fetch('/api/mines/city');
+                const allMines = await res.json();
+
+                // Count factories by type
+                const counts = {};
+                factoryTypes.forEach(t => counts[t.id] = 0);
+                
+                allMines.forEach(m => {
+                    if (counts[m.mine_type] !== undefined) {
+                        counts[m.mine_type]++;
+                    }
+                });
+
+                renderPage(counts);
+
+            } catch (e) {
+                console.error(e);
+                document.getElementById('factoriesContainer').innerHTML = '<div style="text-align:center; color:red;">Veri yüklenemedi.</div>';
+            }
+        }
+
+        function renderPage(counts) {
+            const container = document.getElementById('factoriesContainer');
+            container.innerHTML = '';
+
+            categories.forEach(cat => {
+                // Create Section
+                const section = document.createElement('div');
+                section.className = 'cat-section'; // Reusing class if defined or just div
+                section.style.marginBottom = '25px';
+                
+                const header = document.createElement('div');
+                header.className = `category-header ${cat.color}`;
+                header.innerHTML = `<h3 class="category-title"><i class="fas ${cat.icon}"></i> ${cat.name}</h3>`;
+                section.appendChild(header);
+
+                // Create Grid
+                const grid = document.createElement('div');
+                grid.className = 'factory-grid';
+
+                // Filter factories for this category
+                const factories = factoryTypes.filter(f => f.category === cat.id);
+                
+                factories.forEach(fac => {
+                    const count = counts[fac.id] || 0;
+                    
+                    const card = document.createElement('div');
+                    card.className = `factory-card ${fac.color}`;
+                    if (fac.disabled) {
+                        card.style.opacity = '0.5';
+                        card.style.cursor = 'default';
+                    } else {
+                        card.onclick = () => location.href = `factory-list.html?type=${fac.id}`;
+                    }
+                    
+                    let iconHtml = '';
+                    if (fac.img) {
+                        iconHtml = `<img src="${fac.img}" alt="${fac.name}" style="width: 32px; height: 32px; object-fit: contain;">`;
+                    } else {
+                        iconHtml = `<i class="fas ${fac.icon}"></i>`;
+                    }
+
+                    card.innerHTML = `
+                        <div class="f-icon-circle">${iconHtml}</div>
+                        <div class="f-name">${fac.name}</div>
+                        <div class="count-badge">
+                            ${fac.disabled ? 'Yakında' : count + ' Adet İşletme'}
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+
+                section.appendChild(grid);
+                container.appendChild(section);
+            });
+        }
+
+        // Tab Değiştirme
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('active');
+                if (tabName === 'categories' && b.innerText.includes('KATEGORİ')) b.classList.add('active');
+                if (tabName === 'my-factories' && b.innerText.includes('FABRİKALARIM')) b.classList.add('active');
+            });
+
+            document.getElementById('tab-categories').style.display = 'none';
+            document.getElementById('tab-my-factories').style.display = 'none';
+
+            document.getElementById(`tab-${tabName}`).style.display = 'block';
+
+            if (tabName === 'my-factories') {
+                loadMyFactories();
+            }
+        }
+
+        async function loadMyFactories() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) return;
+
+            const container = document.getElementById('myFactoriesList');
+            container.innerHTML = '<div style="text-align:center; padding:20px;">Yükleniyor...</div>';
+
+            try {
+                await Promise.all([
+                    fetchUserData(user.id),
+                    fetchUserLicenses(user.id)
+                ]);
+
+                // Fetch user's owned factories
+                const res = await fetch(`/api/mines/my/${user.id}`);
+                const myMines = await res.json();
+
+                container.innerHTML = '';
+                const list = document.createElement('div');
+                list.className = 'factory-list-view';
+
+                factoryTypes.forEach(fac => {
+                    // Check if user owns at least one of this type
+                    const ownedFactories = myMines.filter(m => m.mine_type === fac.id);
+                    const isOwned = ownedFactories.length > 0;
+
+                    // If owned, list EACH instance
+                    if (isOwned) {
+                        ownedFactories.forEach(mine => {
+                            const card = document.createElement('div');
+                            card.className = `factory-list-card ${fac.color} status-owned`;
+                            
+                            let iconHtml = '';
+                            if (fac.img) {
+                                iconHtml = `<img src="${fac.img}" alt="${fac.name}" style="width: 30px; height: 30px; object-fit: contain;">`;
+                            } else {
+                                iconHtml = `<i class="fas ${fac.icon}"></i>`;
+                            }
+
+                            let managePage = 'factory-management.html';
+                            let workPage = 'factory-work.html';
+                            if (fac.id === 'agricultural') {
+                                managePage = 'farm-management.html';
+                                workPage = 'farm-work.html';
+                            } else if (fac.id === 'animal') {
+                                managePage = 'ranch-management.html';
+                                workPage = 'ranch-work.html';
+                            }
+
+                            // Make the whole card clickable
+                            card.onclick = function() { location.href = `${managePage}?id=${mine.id}`; };
+                            card.style.cursor = 'pointer';
+
+                            card.innerHTML = `
+                                <div class="f-icon-circle">${iconHtml}</div>
+                                <div class="f-info">
+                                    <div class="f-name">${fac.name}</div>
+                                    <div class="f-desc">Yönetim ve üretim paneli</div>
+                                </div>
+                                <i class="fas fa-chevron-right" style="color: #fff;"></i>
+                            `;
+                            list.appendChild(card);
+                        });
+                    } else {
+                        // If NOT owned, list the TYPE with BUY button
+                        const card = document.createElement('div');
+                        card.className = `factory-list-card ${fac.color} status-not-owned`;
+                        
+                        let iconHtml = '';
+                        if (fac.img) {
+                            iconHtml = `<img src="${fac.img}" alt="${fac.name}" style="width: 30px; height: 30px; object-fit: contain;">`;
+                        } else {
+                            iconHtml = `<i class="fas ${fac.icon}"></i>`;
+                        }
+
+                        if (!fac.disabled) {
+                            card.setAttribute('onclick', `openBuyModal('${fac.id}')`);
+                            card.style.cursor = 'pointer';
+                        }
+
+                        card.innerHTML = `
+                            <div class="f-icon-circle">${iconHtml}</div>
+                            <div class="f-info">
+                                <div class="f-name">${fac.name}</div>
+                                <div class="f-desc">${fac.disabled ? 'Çok Yakında' : 'Satın alıp üretim yapabilirsin.'}</div>
+                            </div>
+                            ${!fac.disabled ? `<i class="fas fa-chevron-right right-arrow" style="font-size:1.2rem; color:#fff; margin-right:5px;"></i>` : ''}
+                        `;
+                        list.appendChild(card);
+                    }
+                });
+                container.appendChild(list);
+
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = '<div style="text-align:center; color:red;">Hata oluştu.</div>';
+            }
+        }
+
+        async function openBuyModal(typeId) {
+            selectedFactory = factoryTypes.find(f => f.id === typeId);
+            if (!selectedFactory) return;
+
+            document.getElementById('buyTitle').innerText = selectedFactory.name + " Satın Almayı Onaylıyor musun?";
+            
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if(user) {
+                await fetchUserData(user.id);
+                await fetchUserLicenses(user.id);
+            }
+            
+            renderBuyModalContent();
+        }
+
+        function renderBuyModalContent() {
+            // Icon
+            const iconContainer = document.getElementById('buyIconContainer');
+            // Kare badge stili (ortalanmış, koyu arkaplan, çerçeve)
+            const badgeStyle = 'display:flex; align-items:center; justify-content:center; width:70px; height:70px; background:#222; border:1px solid #444; border-radius:12px; margin:0 auto 15px;';
+            
+            if (selectedFactory.img) {
+                iconContainer.innerHTML = `<div style="${badgeStyle}"><img src="${selectedFactory.img}" style="width: 50px; height: 50px; object-fit: contain;"></div>`;
+            } else {
+                iconContainer.innerHTML = `<div style="${badgeStyle}"><i class="fas ${selectedFactory.icon}" style="font-size: 30px; color: #fff;"></i></div>`;
+            }
+
+            const reqList = document.getElementById('reqList');
+            reqList.innerHTML = '';
+            let canBuy = true;
+
+            // 1. Para
+            const userMoney = userData.money || 0;
+            const moneyOk = userMoney >= selectedFactory.costMoney;
+            if (!moneyOk) canBuy = false;
+            const moneyFormatted = new Intl.NumberFormat('tr-TR').format(selectedFactory.costMoney);
+            
+            reqList.innerHTML += `
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <img src="icons/inventory-icon/money.png" style="width: 24px; height: 24px; margin-right: 10px;">
+                        <div class="info-label">Para</div>
+                    </div>
+                    <div class="info-value">${moneyFormatted} ₺</div>
+                    <div class="upgrade-cost-status ${moneyOk ? 'ok' : 'fail'}">
+                        <i class="fas fa-${moneyOk ? 'check' : 'times'}"></i>
+                    </div>
+                </div>
+            `;
+
+            // 2. Altın
+            if (selectedFactory.costGold > 0) {
+                const userGold = userData.gold || 0;
+                const goldOk = userGold >= selectedFactory.costGold;
+                if (!goldOk) canBuy = false;
+
+                reqList.innerHTML += `
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <img src="icons/inventory-icon/gold.png" style="width: 24px; height: 24px; margin-right: 10px;">
+                            <div class="info-label">Altın</div>
+                        </div>
+                        <div class="info-value">${selectedFactory.costGold}</div>
+                        <div class="upgrade-cost-status ${goldOk ? 'ok' : 'fail'}">
+                            <i class="fas fa-${goldOk ? 'check' : 'times'}"></i>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 3. Elmas
+            if (selectedFactory.costDiamond > 0) {
+                const userDiamond = userData.diamond || 0;
+                const diaOk = userDiamond >= selectedFactory.costDiamond;
+                if (!diaOk) canBuy = false;
+                
+                reqList.innerHTML += `
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <img src="icons/inventory-icon/diamond.png" style="width: 24px; height: 24px; margin-right: 10px;">
+                            <div class="info-label">Elmas</div>
+                        </div>
+                        <div class="info-value">${selectedFactory.costDiamond}</div>
+                        <div class="upgrade-cost-status ${diaOk ? 'ok' : 'fail'}">
+                            <i class="fas fa-${diaOk ? 'check' : 'times'}"></i>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 4. Lisans
+            const licLevel = userLicenses[selectedFactory.id] || 0;
+            const licOk = licLevel >= 1;
+            if (!licOk) canBuy = false;
+            
+            reqList.innerHTML += `
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-certificate" style="color: var(--accent-orange); font-size: 1rem; width: 24px; text-align: center; margin-right: 10px;"></i>
+                        <div class="info-label">1. Seviye ${selectedFactory.name} Lisansı</div>
+                    </div>
+                    <div class="upgrade-cost-status ${licOk ? 'ok' : 'fail'}">
+                        <i class="fas fa-${licOk ? 'check' : 'times'}"></i>
+                    </div>
+                </div>
+            `;
+
+            const btn = document.getElementById('btnConfirmBuy');
+            if (canBuy) {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            } else {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            }
+
+            document.getElementById('buyModal').classList.add('active');
+            document.getElementById('buyModal').style.display = 'flex';
+        }
+
+        function closeBuyModal() {
+            document.getElementById('buyModal').classList.remove('active');
+            document.getElementById('buyModal').style.display = 'none';
+        }
+
+        async function confirmBuy() {
+            if (!selectedFactory) return;
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            
+            const btn = document.getElementById('btnConfirmBuy');
+            if(btn) {
+                btn.disabled = true;
+                btn.innerText = 'İşleniyor...';
+            }
+
+            try {
+                const response = await fetch('/api/mines/buy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, mineType: selectedFactory.id })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    closeBuyModal();
+                    
+                    // Show Success Modal
+                    document.getElementById('successMsg').innerText = `${selectedFactory.name} işletmesi satın alındı.`;
+                    const sModal = document.getElementById('successModal');
+                    sModal.classList.add('active');
+                    sModal.style.display = 'flex';
+
+                    loadFactories(); // Refresh grid
+                    loadMyFactories(); // Refresh list
+                    if(window.updateHeaderStats) window.updateHeaderStats();
+                } else {
+                    toastr.error(result.message);
+                }
+            } catch (e) {
+                console.error(e);
+                toastr.error('İşlem başarısız.');
+            } finally {
+                if(btn) {
+                    btn.disabled = false;
+                    btn.innerText = 'SATIN AL';
+                }
+            }
+        }
+
+        function closeSuccessModal() {
+            const sModal = document.getElementById('successModal');
+            sModal.classList.remove('active');
+            sModal.style.display = 'none';
+        }
+
+        // Modal Açma
+        function openProductionModal(title, type) {
+            const data = factoryData[type];
+            if (!data) return; // Safety check
+
+            document.getElementById('mTitle').innerText = title;
+            
+            const iconDiv = document.getElementById('mIcon');
+            if (data.img) {
+                iconDiv.innerHTML = `<img src="${data.img}" style="width: 50px; height: 50px; object-fit: contain;">`;
+            } else {
+                iconDiv.innerHTML = `<i class="fas ${data.icon}"></i>`;
+            }
+            iconDiv.style.color = data.color;
+
+            // Reçete Güncelle
+            document.getElementById('reqText').innerText = `10 ${data.req}`;
+            document.getElementById('outText').innerText = `1 ${data.out}`;
+            
+            const outIcon = document.getElementById('outIcon');
+            if (data.outImg) {
+                const newImg = document.createElement('img');
+                newImg.id = 'outIcon';
+                newImg.src = data.outImg;
+                newImg.className = 'res-img';
+                newImg.style.width = '30px';
+                newImg.style.height = '30px';
+                newImg.style.objectFit = 'contain';
+                outIcon.replaceWith(newImg);
+            } else {
+                if(outIcon.tagName === 'IMG') {
+                    const newI = document.createElement('i');
+                    newI.id = 'outIcon';
+                    newI.className = `fas ${data.outIcon} res-img`;
+                    newI.style.color = '#fff';
+                    outIcon.replaceWith(newI);
+                } else {
+                    outIcon.className = `fas ${data.outIcon} res-img`;
+                }
+            }
+            outIcon.style.color = data.color;
+
+            // Reset UI
+            document.getElementById('progArea').style.display = 'none';
+            document.getElementById('pBar').style.width = '0%';
+            const btn = document.getElementById('prodBtn');
+            btn.innerText = "ÜRETİMİ BAŞLAT";
+            btn.className = "action-btn btn-start";
+            btn.disabled = false;
+
+            document.getElementById('prodModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('prodModal').style.display = 'none';
+        }
+
+        // Üretim Simülasyonu
+        function startProduction() {
+            const btn = document.getElementById('prodBtn');
+            const progArea = document.getElementById('progArea');
+            const pBar = document.getElementById('pBar');
+
+            btn.innerText = "ÜRETİLİYOR...";
+            btn.className = "action-btn btn-working";
+            btn.disabled = true;
+            progArea.style.display = 'block';
+
+            let width = 0;
+            const interval = setInterval(() => {
+                if (width >= 100) {
+                    clearInterval(interval);
+                    pBar.style.width = '100%';
+                    btn.innerText = "TAMAMLANDI!";
+                    btn.style.background = "#fff";
+                    btn.style.color = "#000";
+                    setTimeout(() => {
+                        alert("Üretim Başarılı! Envantere eklendi.");
+                        closeModal();
+                    }, 500);
+                } else {
+                    width++;
+                    pBar.style.width = width + '%';
+                }
+            }, 50); // 5 saniye sürer
+        }
+
+        // Load on start
+        window.addEventListener('load', () => {
+            loadFactories();
+            // Default tab logic is handled by HTML structure initially showing tab-build
+        });
+    </script>
+    <script src="js/loader-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+    <script src="js/header-manager.js"></script>
+</body>
+</html>

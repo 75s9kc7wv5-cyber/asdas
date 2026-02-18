@@ -1,0 +1,2129 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Sim of World - Tarla Yönetimi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-dark: #0a0a0a; 
+            --bg-card: #141414; 
+            --bg-input: #1a1a1a;
+            --accent: #2ecc71; /* Tarla Teması: Yeşil */
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71; 
+            --accent-gold: #ffd700;
+            --accent-red: #ff4444;
+            --text-white: #ffffff; 
+            --text-muted: #888; 
+            --border-color: #222;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%; max-width: 450px; background-color: var(--bg-dark);
+            height: 100vh; display: flex; flex-direction: column; position: relative;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5); border-left: 1px solid #111; border-right: 1px solid #111;
+        }
+
+        /* HEADER */
+        /* Header injected by header-manager.js */
+
+        /* MAIN */
+        main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
+
+        .page-header { 
+            margin-bottom: 25px; 
+            animation: fadeInDown 0.5s; 
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .back-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.2rem;
+        }
+        
+        .back-btn:hover {
+            background: var(--accent-cyan);
+            color: #000;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+        }
+        
+        .header-content {
+            flex: 1;
+        }
+        
+        .page-title {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        
+        .page-description {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.3;
+        }
+        
+        .page-author {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: left;
+        }
+        
+        .page-author span {
+            color: var(--accent-cyan);
+            font-weight: 600;
+        }
+
+        /* İŞLETME KARTI */
+        .business-card {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.1), var(--bg-card));
+            border: 1px solid var(--accent);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 0 20px rgba(46, 204, 113, 0.15);
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .business-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(46, 204, 113, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        
+        .business-icon-wrapper {
+            position: relative;
+            width: 65px;
+            height: 65px;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(46, 204, 113, 0.05));
+            border: 2px solid var(--accent);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(46, 204, 113, 0.3), inset 0 0 20px rgba(46, 204, 113, 0.1);
+        }
+        
+        .business-icon {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 10px rgba(46, 204, 113, 0.5));
+        }
+        
+        .business-info {
+            flex: 1;
+            z-index: 1;
+        }
+        
+        .business-name {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* FABRİKA KARTI */
+        .factory-card {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.15), var(--bg-card));
+            border: 1px solid var(--accent); border-radius: 12px; padding: 20px;
+            margin-bottom: 20px; position: relative; text-align: center;
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.1);
+        }
+        .fc-icon { font-size: 3rem; color: var(--accent); margin-bottom: 10px; }
+        .fc-name { font-size: 1.3rem; font-weight: 800; text-transform: uppercase; }
+        .fc-level { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px; }
+        
+        .fc-stats { display: flex; justify-content: space-around; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid #333; }
+        .fs-item { text-align: center; }
+        .fs-lbl { font-size: 0.7rem; color: #888; display: block; }
+        .fs-val { font-size: 1rem; font-weight: bold; color: #fff; }
+
+        /* AYARLAR KARTI */
+        .settings-card {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 10px; padding: 15px; margin-bottom: 20px;
+        }
+        .card-header { font-size: 0.9rem; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #333; padding-bottom: 5px; margin-bottom: 15px; }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-label { display: block; font-size: 0.8rem; color: #fff; margin-bottom: 5px; font-weight: 600; }
+        .form-input { 
+            width: 100%; background: #000; border: 1px solid #444; color: #fff; 
+            padding: 10px; border-radius: 5px; font-family: 'Rajdhani'; font-size: 1rem;
+        }
+        .btn-save {
+            width: 100%; background: #333; color: #fff; border: 1px solid #555;
+            padding: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.2s;
+        }
+        .btn-save:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+        /* KASA YÖNETİMİ */
+        .vault-balance-section {
+            text-align: center;
+            padding: 10px 0;
+        }
+        
+        .vault-balance-label {
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 10px;
+        }
+        
+        .vault-balance-amount {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--accent-green);
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+        
+        .vault-balance-amount::after {
+            content: ' ₺';
+            font-size: 1.5rem;
+            color: var(--accent-green);
+            margin-left: 8px;
+        }
+        
+        .vault-balance-capacity {
+            font-size: 0.8rem;
+            color: #555;
+        }
+        
+        .vault-add-section {
+            padding: 5px 0;
+        }
+        
+        .vault-add-limit {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        
+        .vault-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .vault-btn {
+            width: 100%;
+            background: var(--accent-green);
+            color: #000;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            font-family: 'Rajdhani';
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
+        }
+        
+        .vault-btn:hover {
+            background: #27ae60;
+            box-shadow: 0 0 25px rgba(46, 204, 113, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* DEPO YÖNETİMİ */
+        .warehouse-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        
+        .wh-card {
+            background: var(--bg-input); border: 1px solid var(--border-color);
+            border-radius: 10px; padding: 15px; text-align: center;
+            position: relative;
+        }
+        
+        .wh-card-full {
+            grid-column: span 2;
+        }
+        
+        .wh-icon-badge {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px auto;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .wh-icon { 
+            width: 62px;
+            height: 32px;
+            object-fit: contain;
+            display: block;
+        }
+        
+        .wh-title { font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: 3px; }
+        .wh-label { font-size: 0.75rem; color: #666; margin-bottom: 8px; font-style: italic; }
+        .wh-amount { font-size: 1.5rem; font-weight: 800; margin: 8px 0 5px 0; color: var(--accent-cyan); }
+        .wh-cap { font-size: 0.75rem; color: #555; margin-bottom: 10px; }
+        
+        .wh-input { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 5px; text-align: center; margin-bottom: 5px; border-radius: 4px; font-family: 'Rajdhani'; }
+        
+        .btn-wh { width: 100%; padding: 8px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 0.9rem; }
+        .btn-add { background: var(--accent-green); color: #000; }
+        .btn-pull { background: var(--accent-cyan); color: #000; }
+
+        /* GELİŞTİRME */
+        .upgrade-card {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.05), var(--bg-card));
+            border: 1px solid var(--accent-gold); border-radius: 10px; padding: 15px;
+            margin-bottom: 20px; text-align: center;
+        }
+        .u-info { display: flex; justify-content: space-between; margin-bottom: 15px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 5px; }
+        .u-col h4 { font-size: 0.8rem; color: var(--accent-gold); margin-bottom: 5px; }
+        .u-col p { font-size: 1rem; font-weight: bold; }
+        
+        .btn-upgrade {
+            width: 100%; background: var(--accent-gold); color: #000; border: none;
+            padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer;
+            font-family: 'Rajdhani'; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+
+        /* SAYAÇ */
+        .upgrade-progress { display: none; margin-top: 10px; }
+        .up-bg { width: 100%; height: 8px; background: #333; border-radius: 4px; overflow: hidden; }
+        .up-fill { width: 0%; height: 100%; background: var(--accent-gold); transition: width 1s linear; }
+        .up-text { font-size: 0.8rem; color: var(--accent-gold); margin-top: 5px; font-weight: bold; }
+
+        /* LOGLAR */
+        .log-container { background: var(--bg-card); border-radius: 10px; padding: 15px; border: 1px solid var(--border-color); }
+        .log-list { max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+        .log-item {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.2s;
+            min-height: 36px;
+        }
+        .log-item:hover { background: rgba(255,255,255,0.05); }
+        .log-avatar {
+            width: 24px; height: 24px; border-radius: 50%; margin-right: 8px; object-fit: cover; border: 1px solid #444;
+        }
+        .log-text { font-size: 0.75rem; color: #ccc; flex: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 3px; }
+        .log-user-link { color: #fff; text-decoration: none; font-weight: 700; }
+        .log-time { font-size: 0.65rem; color: #555; margin-left: auto; white-space: nowrap; }
+        .log-highlight { color: var(--accent); font-weight: 600; }
+
+        /* MODAL */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; display: none; justify-content: center; align-items: center; animation: fadeIn 0.3s; }
+        .modal-content { 
+            background: #181818; 
+            width: 90%; 
+            max-width: 380px;
+            padding: 25px; 
+            border-radius: 12px; 
+            border: 1px solid #444; 
+            text-align: center; 
+            border-top: 3px solid var(--accent-gold);
+        }
+        .m-title { font-size: 1.3rem; margin-bottom: 10px; color: #fff; font-weight: bold; }
+        .m-price { font-size: 1.5rem; color: var(--accent-gold); font-weight: bold; margin: 15px 0; display: block; }
+        .m-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 1rem; }
+        .btn-confirm { background: var(--accent-green); color: #000; }
+        .btn-cancel { background: #333; color: #fff; }
+
+        /* CONFIRM MODAL */
+        #confirmModal .modal-content { 
+            border-top-color: var(--accent-gold);
+            max-width: 420px;
+        }
+        #confirmModal .btn-confirm { background: var(--accent-cyan); }
+
+        /* GELİŞTİRME MALİYETLERİ */
+        .upgrade-costs-list {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .upgrade-cost-item {
+            display: flex;
+            align-items: center;
+            padding: 5px 0;
+        }
+        
+        .upgrade-cost-item:last-child {
+            border-bottom: none;
+        }
+        
+        .upgrade-cost-icon {
+            width: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .upgrade-cost-icon img {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+        }
+        
+        .upgrade-cost-icon i {
+            font-size: 1rem;
+        }
+        
+        .upgrade-cost-name {
+            flex: 1;
+            font-size: 0.85rem;
+            color: #aaa;
+        }
+        
+        .upgrade-cost-value {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .upgrade-cost-amount {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #fff;
+            text-align: right;
+        }
+        
+        .upgrade-cost-status {
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 0.7rem;
+        }
+        
+        .upgrade-cost-status.ok {
+            color: var(--accent-green);
+            background: rgba(46, 204, 113, 0.15);
+        }
+        
+        .upgrade-cost-status.fail {
+            color: #e74c3c;
+            background: rgba(231, 76, 60, 0.15);
+        }
+        
+        .upgrade-btn-container {
+            margin-top: 20px;
+        }
+        
+        .btn-start-upgrade {
+            width: 100%;
+            background: var(--accent-gold);
+            color: #000;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 1.05rem;
+            cursor: pointer;
+            font-family: 'Rajdhani';
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+        
+        .btn-start-upgrade:hover {
+            background: #ffd700;
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
+            transform: translateY(-2px);
+        }
+        
+        .btn-start-upgrade:disabled {
+            background: #444;
+            color: #666;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* TABS */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
+        .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: #777; font-family: 'Rajdhani'; font-weight: bold; cursor: pointer; border-radius: 6px; transition: all 0.3s; font-size: 0.85rem; }
+        .tab-btn.active { background: #222; color: var(--accent-cyan); border: 1px solid var(--accent-cyan); box-shadow: 0 0 10px rgba(0, 229, 255, 0.1); }
+
+                /* BİLGİ LİSTESİ */
+                        .info-list { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; margin-bottom: 20px; }
+                                .info-list-header { font-size: 0.85rem; color: var(--accent-cyan); font-weight: 700; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+                                        .info-item { display: flex; align-items: center; padding: 6px 0; }
+                                                .info-item:last-child { border-bottom: none; }
+                                                        .info-item i { font-size: 1.1rem; width: 28px; }
+                                                                .info-item .info-label { flex: 1; font-size: 0.8rem; color: #aaa; }
+                                                                        .info-item .info-value { font-size: 0.8rem; font-weight: bold; color: #fff; text-align: right; }
+                                                                        
+        /* ACCORDION */
+        .accordion-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .accordion-header {
+            padding: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.02);
+            transition: background 0.2s;
+        }
+        .accordion-header:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .accordion-header.active {
+             border-bottom: 1px solid var(--border-color);
+             background: rgba(255, 255, 255, 0.05);
+        }
+        .accordion-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .accordion-icon {
+            color: #666;
+            transition: transform 0.3s ease;
+        }
+        .accordion-header.active .accordion-icon {
+            transform: rotate(180deg);
+            color: var(--accent);
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .accordion-body {
+            padding: 15px;
+        }
+
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes workPulse { 
+            0% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 2px var(--accent)); } 
+            50% { transform: scale(1.1); opacity: 0.9; filter: drop-shadow(0 0 8px var(--accent)); } 
+            100% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 2px var(--accent)); } 
+        }
+
+        /* BOTTOM NAV */
+        .bottom-nav { position: absolute; bottom: 0; width: 100%; background: #0a0a0a; border-top: 1px solid #333; display: flex; justify-content: space-around; padding: 10px 0; z-index: 10; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 0.75rem; cursor: pointer; }
+        .nav-item i { font-size: 1.4rem; margin-bottom: 3px; }
+        .nav-item.active { color: var(--accent-cyan); }
+
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- HEADER -->
+        <!-- Header injected by header-manager.js -->
+
+        <main>
+            <!-- Sayfa Başlığı -->
+            <div class="page-header">
+                <div class="back-btn" onclick="window.location.href='farm-list.html'">
+                    <i class="fas fa-arrow-left"></i>
+                </div>
+                <div class="header-content">
+                    <div class="page-title">Tarla Yönetimi</div>
+                    <div class="page-description">İşletmenizi yönetin ve geliştirin</div>
+                </div>
+            </div>
+
+            <!-- İŞLETME KARTI -->
+            <div class="business-card">
+                <div class="business-icon-wrapper">
+                    <img src="" id="businessIcon" class="business-icon" alt="">
+                </div>
+                <div class="business-info">
+                    <div class="business-name" id="businessName">-</div>
+                </div>
+            </div>
+
+            <!-- TABS -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('bilgiler', event)">BİLGİLER</button>
+                <button class="tab-btn" onclick="switchTab('ayarlar', event)">AYARLAR</button>
+                <button class="tab-btn" onclick="switchTab('depo', event)">DEPO</button>
+                <button class="tab-btn" onclick="switchTab('kasa', event)">KASA</button>
+            </div>
+
+            <!-- BİLGİLER TAB -->
+            <div id="tab-bilgiler">
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <div class="accordion-title"><i class="fas fa-info-circle"></i> İŞLETME BİLGİLERİ</div>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
+                    </div>
+                    <div class="accordion-content" style="max-height: 2000px;">
+                        <div class="accordion-body">
+                            <div class="info-list" style="border:none; padding:0; background:transparent; box-shadow:none; margin:0;">
+                                <div class="info-item">
+                                    <i class="fas fa-user" style="color: var(--accent-cyan);"></i>
+                                    <span class="info-label">İşletme Sahibi</span>
+                                    <span class="info-value" id="info-owner">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-layer-group" ></i>
+                                    <span class="info-label">İşletme Seviyesi</span>
+                                    <span class="info-value" id="info-level">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-layer-group" ></i>
+                                    <span class="info-label">İşletme Kategorisi</span>
+                                    <span class="info-value" id="info-category">Tarla</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-shopping-basket" style="color: var(--accent-green);"></i>
+                                    <span class="info-label">Üretilen Ürün</span>
+                                    <span class="info-value" id="info-product">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-users" style="color: #3498db;"></i>
+                                    <span class="info-label">İşçi Kapasitesi</span>
+                                    <span class="info-value" id="info-worker">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-flask" style="color: #e91e63;"></i>
+                                    <span class="info-label">Arge Seviyesi</span>
+                                    <span class="info-value" id="info-efficiency" style="color:var(--accent-gold)">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-tachometer-alt" style="color: var(--accent-cyan);"></i>
+                                    <span class="info-label">Üretim Hızı</span>
+                                    <span class="info-value" id="info-speed">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-money-bill-wave" style="color: #27ae60;"></i>
+                                    <span class="info-label">Birim Maaş</span>
+                                    <span class="info-value" id="info-wage">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-calendar-alt" style="color: #e67e22;"></i>
+                                    <span class="info-label">Kuruluş Tarihi</span>
+                                    <span class="info-value" id="info-created">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- İŞLETME İSTATİSTİKLERİ -->
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <div class="accordion-title"><i class="fas fa-chart-line"></i> İŞLETME İSTATİSTİKLERİ</div>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
+                    </div>
+                    <div class="accordion-content" style="max-height: 500px;">
+                        <div class="accordion-body">
+                            <div class="info-list" style="border:none; padding:0; background:transparent; box-shadow:none; margin:0;">
+                                <div class="info-item">
+                                    <img id="icon-total-production" src="icons/farm-icon/wheat.png" style="width:20px; height:20px; object-fit:contain; margin-right:8px;">
+                                    <span class="info-label">Toplam Üretim Miktarı</span>
+                                    <span class="info-value" id="info-total-production">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- İŞLEM GEÇMİŞİ LOG (ACCORDION) -->
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <div class="accordion-title"><i class="fas fa-history"></i> İŞLEM GEÇMİŞİ</div>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
+                    </div>
+                    <div class="accordion-content" style="max-height: 500px;">
+                        <div class="accordion-body">
+                            <div class="log-list" id="logList"><div style="text-align:center; color:#555; font-size:0.8rem;">Henüz kayıt yok.</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AYARLAR TAB -->
+            <div id="tab-ayarlar" style="display:none;">
+            <!-- GENEL AYARLAR -->
+            <div class="accordion-card">
+                <div class="accordion-header active" onclick="toggleAccordion(this)">
+                    <div class="accordion-title"><i class="fas fa-cogs"></i> GENEL AYARLAR</div>
+                    <i class="fas fa-chevron-down accordion-icon"></i>
+                </div>
+                <div class="accordion-content" style="max-height: 500px;">
+                    <div class="accordion-body">
+                        <div class="form-group">
+                            <label class="form-label">İşletme Adı (3-40 karakter)</label>
+                            <input type="text" id="fNameInput" class="form-input" value="Tarla İşletmesi" minlength="3" maxlength="40">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Birim Maaş (₺) (0-1000)</label>
+                            <input type="number" id="fWageInput" class="form-input" value="2500" min="0" max="1000">
+                        </div>
+                        <button class="btn-save" onclick="saveSettings()">KAYDET</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GELİŞTİRME -->
+            <div class="accordion-card">
+                <div class="accordion-header active" onclick="toggleAccordion(this)">
+                    <div class="accordion-title" ><i class="fas fa-arrow-up"></i> GELİŞTİRME</div>
+                    <i class="fas fa-chevron-down accordion-icon"></i>
+                </div>
+                <div class="accordion-content" style="max-height: 2000px;">
+                    <div class="accordion-body">
+                        <!-- Geliştirme Maliyetleri (Sadece geliştirme yapılmıyorsa göster) -->
+                        <div id="upgradeCostsContainer">
+                            <!-- JS ile doldurulacak -->
+                        </div>
+                        
+                        <!-- Geliştirme Sayacı (Sadece geliştirme yapılıyorsa göster) -->
+                        <div id="upgradeCountdownContainer" style="display: none;">
+                            <div style="text-align: center; padding: 20px 0;">
+                                <div style="font-size: 0.85rem; color: #888; margin-bottom: 15px;">
+                                    <i class="fas fa-hammer"></i> GELİŞTİRME DEVAM EDİYOR
+                                </div>
+                                
+                                <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #333;">
+                                    <div style="font-size: 2.5rem; font-weight: 800; color: var(--accent-gold); letter-spacing: 2px;" id="upgradeCountdownText">
+                                        00:00
+                                    </div>
+                                    <div style="font-size: 0.75rem; color: #666; margin-top: 8px;">
+                                        Kalan Süre
+                                    </div>
+                                </div>
+                                
+                                <div style="width: 100%; height: 10px; background: #000; border-radius: 5px; overflow: hidden; border: 1px solid #333; margin-bottom: 20px;">
+                                    <div id="upgradeCountdownBar" style="width: 0%; height: 100%; background: var(--accent-gold); transition: width 1s linear;"></div>
+                                </div>
+                                
+                                <button class="vault-btn" onclick="openSpeedUpModal()" style="background: var(--accent-cyan);">
+                                    <i class="fas fa-bolt"></i> HIZLANDIR
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <!-- DEPO TAB -->
+            <div id="tab-depo" style="display:none;">
+            <!-- DEPO YÖNETİMİ -->
+            <div class="settings-card">
+                <div class="card-header"><i class="fas fa-boxes"></i> DEPO YÖNETİMİ</div>
+                
+                <div class="warehouse-grid" id="warehouseGrid">
+                    <!-- JS ile doldurulacak -->
+                </div>
+            </div>
+            </div>
+
+            <!-- KASA TAB -->
+            <div id="tab-kasa" style="display:none;">
+                
+                <!-- KASA YÖNETİMİ (Accordion) -->
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <div class="accordion-title"><i class="fas fa-coins"></i> KASA YÖNETİMİ</div>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
+                    </div>
+                    <div class="accordion-content" style="max-height: 1000px;">
+                        <div class="accordion-body">
+                            
+                            <!-- Bakiye Kısmı -->
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                <div style="font-size: 0.9rem; color: #888; margin-bottom: 5px;">MEVCUT BAKİYE</div>
+                                <div class="vault-balance-amount" id="fVault" >0</div>
+                                <div class="vault-balance-capacity" id="vaultCapacityText" style="color: #666; font-size: 0.85rem;">Kapasite: 0 / 0 ₺</div>
+                                <!-- Progress Bar -->
+                                <div style="width: 100%; height: 6px; background: #222; border-radius: 3px; margin: 10px 0; overflow: hidden; border: 1px solid #333;">
+                                    <div id="vaultProgressBar" style="width: 0%; height: 100%; background: var(--accent-gold); transition: width 0.5s ease;"></div>
+                                </div>
+                            </div>
+
+                            <!-- İşlem Kısmı -->
+                            <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border: 1px solid #333;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                    <div style="font-size: 0.85rem; color: #aaa;">İşlem Miktarı:</div>
+                                    <div style="text-align: right; font-size: 0.75rem; color: #888;">
+                                        <span style="margin-right: 10px;">Max Yatır: <span id="maxVaultDeposit" style="color:var(--accent-green); cursor:pointer; font-weight:bold;" onclick="setMaxAmount('deposit')">0</span> ₺</span>
+                                        <span>Max Çek: <span id="maxVaultWithdraw" style="color:var(--accent); cursor:pointer; font-weight:bold;" onclick="setMaxAmount('withdraw')">0</span> ₺</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="vault-input-group" style="position: relative; margin-bottom: 15px;">
+                                    <input type="number" id="vaultInput" class="form-input" placeholder="0" style="text-align: center; font-size: 1.5rem; color: var(--accent-gold); font-weight: bold; padding-right: 40px; border-color: #444;">
+                                    <span style="position: absolute; right: 15px; top: 10px; color: #666; font-weight: bold;">₺</span>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <button class="vault-btn" onclick="confirmAction('vault', 'add', null, null)" style="background: var(--accent-green); color: #000;">
+                                        <i class="fas fa-arrow-down"></i> YATIR
+                                    </button>
+                                    <button class="vault-btn" onclick="confirmAction('vault', 'withdraw', null, null)" style="background: #e74c3c; color: #fff; border: 1px solid #c0392b;">
+                                        <i class="fas fa-arrow-up"></i> ÇEK
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- MODAL -->
+        <div class="modal-overlay" id="upgradeModal">
+            <div class="modal-content">
+                <i class="fas fa-hammer" style="font-size:3rem; color:var(--accent-gold); margin-bottom:10px;"></i>
+                <h3 class="m-title">Seviye Yükselt</h3>
+                <p class="m-desc">Kapasiteyi ve üretim hızını artırmak için tarlayı geliştir.</p>
+                
+                <div id="upgradeCosts" style="text-align:left; background:#111; padding:10px; border-radius:8px; margin-bottom:15px; font-size:0.9rem;">
+                    <!-- JS will fill this -->
+                </div>
+                
+                <div class="m-btns">
+                    <button class="m-btn btn-cancel" onclick="closeModal('upgradeModal')">İPTAL</button>
+                    <button class="m-btn btn-confirm" onclick="startUpgrade()">GELİŞTİR</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONFIRM MODAL -->
+        <div class="modal-overlay" id="confirmModal">
+            <div class="modal-content">
+                <i class="fas fa-arrow-up" style="font-size:3.5rem; color:var(--accent-gold); margin-bottom:15px;"></i>
+                <h3 class="m-title" id="confirmModalTitle" style="font-size: 1.5rem; margin-bottom: 20px;">ONAYLA</h3>
+                <div id="confirmModalMsg" style="margin-bottom: 25px; line-height: 1.6;"></div>
+                
+                <div class="m-btns">
+                    <button class="m-btn btn-cancel" onclick="closeModal('confirmModal')">VAZGEÇ</button>
+                    <button class="m-btn btn-confirm" id="confirmActionBtn">ONAYLA</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SPEED UP MODAL -->
+        <div class="modal-overlay" id="speedUpModal">
+            <div class="modal-content" style="border-top-color: var(--accent-cyan);">
+                <i class="fas fa-bolt" style="font-size:3rem; color:var(--accent-cyan); margin-bottom:15px;"></i>
+                <h3 class="m-title" style="font-size: 1.3rem; margin-bottom: 20px;">Geliştirmeyi Hızlandır</h3>
+                <p style="color: #aaa; margin: 15px 0; font-size: 0.95rem; line-height: 1.6;">Geliştirmeyi <span id="speedUpCostText" style="color: var(--accent-cyan); font-weight: 700;">0</span> elmas karşılığında hızlandırmak istiyor musun?</p>
+                
+                <div class="m-btns">
+                    <button class="m-btn btn-cancel" onclick="closeModal('speedUpModal')">İPTAL</button>
+                    <button class="m-btn btn-confirm" style="background: var(--accent-cyan);" onclick="speedUpUpgrade()">HIZLANDIR</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SETTINGS CONFIRM MODAL -->
+        <div class="modal-overlay" id="settingsModal">
+            <div class="modal-content" style="border-top-color: var(--accent-gold); max-width: 420px;">
+                <i class="fas fa-question-circle" style="font-size:3rem; color:var(--accent-gold); margin-bottom:10px;"></i>
+                <h3 class="m-title">AYARLARI KAYDET</h3>
+                <p class="m-desc">İşletme ayarlarınız güncellenecektir. Onaylıyor musunuz?</p>
+                
+                <div class="m-btns">
+                    <button class="m-btn btn-cancel" onclick="closeModal('settingsModal')">VAZGEÇ</button>
+                    <button class="m-btn btn-confirm" style="background: var(--accent-green); color: #000;" onclick="confirmSettings()">KAYDET</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATUS MODAL -->
+        <div class="modal-overlay" id="statusModal">
+            <div class="modal-content" id="statusModalContent">
+                <i class="fas" id="statusIcon" style="font-size:3rem; margin-bottom:10px;"></i>
+                <h3 class="m-title" id="statusTitle"></h3>
+                <p class="m-desc" id="statusMessage" style="color:#ccc; margin-bottom:20px;"></p>
+                <div class="m-btns">
+                     <button class="m-btn" id="statusBtn" onclick="document.getElementById('statusModal').style.display='none'">TAMAM</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="js/loader-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+    <script src="js/header-manager.js"></script>
+    <script src="js/menu-manager.js"></script>
+
+    <script>
+        // --- VERİLER ---
+        let user = JSON.parse(localStorage.getItem('simWorldUser'));
+        if (!user) window.location.href = 'login.html';
+        
+        let userLicenses = {};
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const farmId = urlParams.get('id');
+
+        if (!farmId) {
+            showStatusModal(false, 'Geçersiz Tarla ID');
+            setTimeout(() => window.location.href = 'index.html', 2000);
+        }
+
+        let factory = {};
+        let userArgeData = {};
+
+        const fmt = (n) => n.toLocaleString('tr-TR');
+
+        // Resource Configuration
+        const resourceMap = {
+            'wheat': { 
+                main: 'icons/farm-icon/wheat.png',
+                raw: [{ name: 'Tohum', key: 'seed', icon: 'icons/ranch-icon/seed.png' }],
+                prod: { name: 'Buğday', key: 'wheat', icon: 'icons/farm-icon/wheat.png' }
+            },
+            'corn': { 
+                main: 'icons/farm-icon/corn.png',
+                raw: [{ name: 'Tohum', key: 'seed', icon: 'icons/ranch-icon/seed.png' }],
+                prod: { name: 'Mısır', key: 'corn', icon: 'icons/farm-icon/corn.png' }
+            },
+            'fruit': { 
+                main: 'icons/farm-icon/fruit.png',
+                raw: [{ name: 'Tohum', key: 'seed', icon: 'icons/ranch-icon/seed.png' }],
+                prod: { name: 'Meyve', key: 'fruit', icon: 'icons/farm-icon/fruit.png' }
+            },
+            'vegetable': { 
+                main: 'icons/farm-icon/vegetables.png',
+                raw: [{ name: 'Tohum', key: 'seed', icon: 'icons/ranch-icon/seed.png' }],
+                prod: { name: 'Sebze', key: 'vegetable', icon: 'icons/farm-icon/vegetables.png' }
+            },
+            'rice': { 
+                main: 'icons/farm-icon/rice.png',
+                raw: [{ name: 'Tohum', key: 'seed', icon: 'icons/ranch-icon/seed.png' }],
+                prod: { name: 'Pirinç', key: 'rice', icon: 'icons/farm-icon/rice.png' }
+            },
+            'potato': { 
+                main: 'icons/farm-icon/potato.png',
+                raw: [{ name: 'Tohum', key: 'seed', icon: 'icons/ranch-icon/seed.png' }],
+                prod: { name: 'Patates', key: 'potato', icon: 'icons/farm-icon/potato.png' }
+            },
+            'olive': { 
+                main: 'icons/farm-icon/olive.png',
+                raw: [{ name: 'Tohum', key: 'seed', icon: 'icons/ranch-icon/seed.png' }],
+                prod: { name: 'Zeytin', key: 'olive', icon: 'icons/farm-icon/olive.png' }
+            }
+        };
+
+        window.onload = () => { 
+            loadFactoryData();
+        };
+
+        let upgradeInfo = null;
+        let upgradeTimerInterval = null;
+        let upgradeCountdownInterval = null;
+
+        function loadFactoryData() {
+            fetchUser();
+            
+            // Fetch AR-GE Data
+            fetch(`/api/arge/status/${user.id}`)
+                .then(res => res.json())
+                .then(data => { userArgeData = data || {}; })
+                .catch(e => console.error('AR-GE fetch error:', e));
+            
+            // Fetch Licenses
+            fetch(`/api/licenses/${user.id}`)
+                .then(res => res.json())
+                .then(data => { userLicenses = data; })
+                .catch(e => console.error('License fetch error:', e));
+
+            // 1. Get Farm Details
+            fetch(`/api/farms/detail/${farmId}?userId=${user.id}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) {
+                        showStatusModal(false, data.message);
+                        return;
+                    }
+                    
+                    const m = data.farm;
+                    if (m.user_id !== user.id) {
+                        showStatusModal(false, 'Bu tarlaya erişim yetkiniz yok!');
+                        setTimeout(() => window.location.href = 'index.html', 2000);
+                        return;
+                    }
+
+                    factory = {
+                        name: m.name || m.farm_name || 'Tarla', 
+                        typeName: m.farm_name || 'Tarla',
+                        farm_name: m.farm_name,
+                        farm_type: m.farm_type,
+                        level: m.level,
+                        wage: m.salary,
+                        raw: m.reserve || 0, 
+                        rawCap: m.capacity || m.level * 10000, // Use DB capacity if available
+                        prod: m.stock || 0, 
+                        prodCap: (m.capacity || m.level * 5000) / 2, // Split capacity? Or just use same. Let's stick to logic.
+                        workers: m.workers,
+                        maxWorkers: m.max_workers,
+                        efficiency: 100, 
+                        productionTime: m.production_time || 60,
+                        vault: m.vault || 0,
+                        type: m.farm_type,
+                        owner_id: m.user_id,
+                        owner_name: m.owner_name || m.username || 'Bilinmiyor',
+                        created_at: m.created_at
+                    };
+
+                    // 2. Get Upgrade Info
+                    fetch(`/api/farms/upgrade-info/${farmId}?userId=${user.id}`)
+                        .then(res => res.json())
+                        .then(upData => {
+                            console.log('Upgrade Info Response:', upData);
+                            if(upData.success) {
+                                upgradeInfo = upData;
+                                updateUpgradeUI();
+                            } else {
+                                console.error('Upgrade info fetch failed:', upData);
+                            }
+                        })
+                        .catch(err => console.error('Upgrade info fetch error:', err));
+
+                    fetchUser();
+
+                    if (data.logs) {
+                        updateLogs(data.logs);
+                    }
+
+                    updateUI();
+                })
+                .catch(err => console.error(err));
+        }
+
+        function updateUpgradeUI() {
+            if (!upgradeInfo) return;
+
+            const farm = upgradeInfo.farm;
+            const next = upgradeInfo.nextLevel;
+
+            const curLvlEl = document.getElementById('curLvl');
+            if (curLvlEl) curLvlEl.innerText = farm.level;
+            
+            const nextLvlEl = document.getElementById('nextLvl');
+            if (upgradeInfo.maxLevel) {
+                if (nextLvlEl) nextLvlEl.innerText = "MAX";
+                const upgradeBtn = document.getElementById('upgradeBtn');
+                if (upgradeBtn) upgradeBtn.style.display = 'none';
+                const maxLevelMsg = document.getElementById('maxLevelMsg');
+                if (maxLevelMsg) maxLevelMsg.style.display = 'block';
+                return;
+            }
+
+            const maxLevelMsgEl = document.getElementById('maxLevelMsg');
+            if (maxLevelMsgEl) maxLevelMsgEl.style.display = 'none';
+            if (nextLvlEl) nextLvlEl.innerText = next.level;
+
+            const btn = document.getElementById('upgradeBtn');
+            const prog = document.getElementById('upgradeProgress');
+            const bar = document.getElementById('upBar');
+            const txt = document.getElementById('upTimer');
+
+            if (farm.isUpgrading) {
+                if (btn) btn.style.display = 'none';
+                if (prog) prog.style.display = 'block';
+
+                // Add Speed Up Button logic
+                let speedBtn = document.getElementById('speedUpBtn');
+                if (!speedBtn && prog) {
+                    speedBtn = document.createElement('button');
+                    speedBtn.id = 'speedUpBtn';
+                    speedBtn.className = 'btn-upgrade';
+                    speedBtn.style.background = 'var(--accent-cyan)';
+                    speedBtn.style.marginTop = '10px';
+                    speedBtn.style.color = '#000';
+                    speedBtn.innerHTML = '<i class="fas fa-bolt"></i> HIZLANDIR';
+                    speedBtn.onclick = openSpeedUpModal;
+                    prog.parentNode.insertBefore(speedBtn, prog.nextSibling);
+                }
+                if (speedBtn) speedBtn.style.display = 'flex';
+
+                startTimer(farm.timeLeft, next.duration);
+            } else {
+                if (btn) {
+                    btn.style.display = 'flex';
+                    btn.innerText = `YÜKSELT (Seviye ${next.level})`;
+                }
+                if (prog) prog.style.display = 'none';
+
+                const speedBtn = document.getElementById('speedUpBtn');
+                if (speedBtn) speedBtn.style.display = 'none';
+            }
+            
+            // Ayarlar sekmesindeki geliştirme maliyetlerini güncelle
+            updateUpgradeCostsUI();
+        }
+
+        function startTimer(timeLeft, totalDuration) {
+            if (upgradeTimerInterval) clearInterval(upgradeTimerInterval);
+            
+            const bar = document.getElementById('upBar');
+            const txt = document.getElementById('upTimer');
+
+            if (!bar || !txt) return;
+
+            const update = () => {
+                if (timeLeft <= 0) {
+                    clearInterval(upgradeTimerInterval);
+                    completeUpgrade();
+                    return;
+                }
+                
+                let percent = 0;
+                if (totalDuration > 0) {
+                    percent = ((totalDuration - timeLeft) / totalDuration) * 100;
+                }
+                bar.style.width = percent + "%";
+                
+                const min = Math.floor(timeLeft / 60);
+                const sec = timeLeft % 60;
+                txt.innerText = `Geliştiriliyor... ${min}dk ${sec}sn`;
+                
+                timeLeft--;
+            };
+
+            update();
+            upgradeTimerInterval = setInterval(update, 1000);
+        }
+
+        function completeUpgrade() {
+            // Countdown interval'ını temizle
+            if (upgradeCountdownInterval) {
+                clearInterval(upgradeCountdownInterval);
+                upgradeCountdownInterval = null;
+            }
+            
+            fetch(`/api/farms/complete-upgrade/${farmId}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showStatusModal(true, data.message);
+                        if (window.fetchNotifications) window.fetchNotifications();
+                        loadFactoryData(); // Reload all
+                    } else {
+                        // If not ready (server time sync issue), reload data to sync timer
+                        if(data.message && data.message.includes('Henüz')) {
+                            setTimeout(loadFactoryData, 2000);
+                        } else {
+                            showStatusModal(false, data.message);
+                        }
+                    }
+                })
+                .catch(err => console.error(err));
+        }
+
+        // --- GELİŞTİRME ---
+        function openUpgradeModal() { 
+            if(!upgradeInfo || upgradeInfo.maxLevel) return;
+            
+            fetchUser().then(() => {
+                const costs = upgradeInfo.nextLevel.costs;
+                const nextLvl = upgradeInfo.nextLevel.level;
+                
+                // Lisans Kontrolü
+                const licenseKey = factory.farm_type;
+                const licenseName = factory.farm_name;
+                const requiredLicenseText = `${nextLvl}. Seviye ${licenseName} Lisansı`;
+                
+                const userLicenseLevel = userLicenses[licenseKey] || 0;
+                const hasLicense = userLicenseLevel >= nextLvl;
+                
+                const lColor = hasLicense ? '#2ecc71' : '#e74c3c';
+                const lBg = hasLicense ? 'rgba(46, 204, 113, 0.15)' : 'rgba(231, 76, 60, 0.15)';
+                const lIcon = hasLicense ? 'fas fa-check-circle' : 'fas fa-times-circle';
+
+                const licenseBadge = `
+                    <div style="background:${lBg}; color:${lColor}; border:1px solid ${lColor}; padding:8px; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:bold; font-size:0.9rem;">
+                        <i class="${lIcon}"></i> ${requiredLicenseText}
+                    </div>
+                `;
+
+                // Helper for resource badges
+                const check = (val, cost, label, icon, isImage = false) => {
+                    if (!cost) return '';
+                    const has = (val || 0) >= cost;
+                    const color = has ? '#2ecc71' : '#e74c3c';
+                    const bg = has ? 'rgba(46, 204, 113, 0.15)' : 'rgba(231, 76, 60, 0.15)';
+                    
+                    const iconHtml = isImage 
+                        ? `<img src="${icon}" style="width:20px; height:20px; object-fit:contain;">`
+                        : `<i class="${icon}"></i>`;
+
+                    return `
+                        <div style="background:${bg}; color:${color}; border:1px solid ${color}; padding:8px; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:bold;">
+                            ${iconHtml} ${fmt(cost)} ${label}
+                        </div>
+                    `;
+                };
+
+                // Helper for benefit badges
+                const benefit = (text, icon) => {
+                    return `
+                        <div style="background:rgba(255, 215, 0, 0.15); color:#ffd700; border:1px solid #ffd700; padding:8px; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:bold;">
+                            <i class="${icon}"></i> ${text}
+                        </div>
+                    `;
+                };
+
+                const html = `
+                    <div style="text-align:left; margin-bottom:15px;">
+                        <h4 style="color:#fff; border-bottom:1px solid #333; padding-bottom:5px; margin-bottom:10px;">GEREKSİNİMLER</h4>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:0.9rem;">
+                            ${check(user.money, costs.money, '₺', 'fas fa-money-bill')}
+                            ${check(user.gold, costs.gold, 'Altın', 'fas fa-coins')}
+                            ${check(user.diamond, costs.diamond, 'Elmas', 'fas fa-gem')}
+                            ${check(user.wood, costs.wood, 'Tahta', 'icons/factory-icon/wood-plank.png', true)}
+                            ${check(user.brick, costs.brick, 'Tuğla', 'icons/factory-icon/brick.png', true)}
+                            ${check(user.cement, costs.cement, 'Çimento', 'icons/factory-icon/cement.png', true)}
+                            ${check(user.glass, costs.glass, 'Cam', 'icons/factory-icon/window.png', true)}
+                            ${check(user.steel, costs.steel, 'Çelik', 'icons/factory-icon/steel.png', true)}
+                        </div>
+                        <div style="margin-top:10px; text-align:center;">
+                            ${licenseBadge}
+                        </div>
+                    </div>
+
+                    <div style="text-align:left; margin-bottom:15px;">
+                        <h4 style="color:#fff; border-bottom:1px solid #333; padding-bottom:5px; margin-bottom:10px;">KAZANIMLAR</h4>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:0.9rem;">
+                            ${benefit('+' + (upgradeInfo.nextLevel.benefits.workers || 5) + ' İşçi', 'fas fa-users')}
+                            ${benefit('+' + (upgradeInfo.nextLevel.benefits.storage || 500) + ' Depo', 'fas fa-warehouse')}
+                            ${benefit(Math.ceil(upgradeInfo.nextLevel.duration / 60) + ' Dakika', 'fas fa-clock')}
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('upgradeCosts').innerHTML = html;
+                document.getElementById('upgradeModal').style.display = 'flex'; 
+            });
+        }
+
+        function startUpgrade() {
+            closeModal('upgradeModal');
+
+            fetch(`/api/farms/start-upgrade/${farmId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    showStatusModal(true, data.message);
+                    loadFactoryData();
+                } else {
+                    showStatusModal(false, data.message);
+                }
+            })
+            .catch(err => showStatusModal(false, "Bağlantı hatası"));
+        }
+
+        function openSpeedUpModal() {
+            if (!upgradeInfo || !upgradeInfo.farm) return;
+            
+            const farm = upgradeInfo.farm;
+            const cost = farm.level * 10;
+            
+            fetchUser().then(() => {
+                document.getElementById('speedUpCostText').innerText = cost;
+                document.getElementById('speedUpModal').style.display = 'flex';
+            });
+        }
+
+        function speedUpUpgrade() {
+            closeModal('speedUpModal');
+            fetch(`/api/farms/speed-up/${farmId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showStatusModal(true, data.message);
+                    
+                    // Timer'ları temizle
+                    if (upgradeTimerInterval) {
+                        clearInterval(upgradeTimerInterval);
+                        upgradeTimerInterval = null;
+                    }
+                    if (upgradeCountdownInterval) {
+                        clearInterval(upgradeCountdownInterval);
+                        upgradeCountdownInterval = null;
+                    }
+                    
+                    // Bildirimleri güncelle
+                    if (window.fetchNotifications) window.fetchNotifications();
+                    
+                    // Tüm verileri yenile
+                    loadFactoryData();
+                    
+                    // Ayarlar sekmesindeyse UI'ı güncelle
+                    setTimeout(() => {
+                        updateUpgradeCostsUI();
+                    }, 500);
+                } else {
+                    showStatusModal(false, data.message);
+                }
+            })
+            .catch(err => showStatusModal(false, "Bağlantı hatası"));
+        }
+
+        function fetchUser() {
+            return fetch(`/api/user-stats/${user.id}`)
+                .then(res => res.json())
+                .then(data => {
+                    user.money = data.money;
+                    user.gold = data.gold;
+                    user.diamond = data.diamond;
+                    user.wood = data.wood;
+                    user.brick = data.brick;
+                    user.cement = data.cement;
+                    user.glass = data.glass;
+                    user.steel = data.steel;
+                    user.license_farm_level = data.license_farm_level;
+                    localStorage.setItem('simWorldUser', JSON.stringify(user));
+                });
+        }
+
+        function updateUI() {
+            if(!factory.name) return;
+            
+            // İşletme kartı başlığı ve ikonu
+            document.getElementById('businessName').innerText = factory.name || 'Tarla';
+            
+            // Back Button Update
+            const backBtn = document.querySelector('.back-btn');
+            if (backBtn && factory.farm_type) {
+                backBtn.onclick = function() {
+                    window.location.href = `farm-list.html?type=${factory.farm_type}`;
+                };
+            }
+
+            // İşletme kartı ikonu
+            const bizIcon = document.getElementById('businessIcon');
+            if (bizIcon && factory.farm_type && resourceMap[factory.farm_type]) {
+                bizIcon.src = resourceMap[factory.farm_type].main;
+            }
+            
+            // Bilgiler sekmesi
+            document.getElementById('info-owner').innerText = `${factory.owner_id} - ${factory.owner_name || 'Bilinmiyor'}`;
+            document.getElementById('info-level').innerText = factory.level + '. Seviye';
+            
+            // İşletme Kategorisi ve Üretilen Ürün
+            const categoryName = factory.farm_type ? resourceMap[factory.farm_type]?.prod.name : '-';
+            const catEl = document.getElementById('info-category');
+            if(catEl) catEl.innerText = 'Tarla';
+            
+            const prodElInfo = document.getElementById('info-product');
+            if(prodElInfo) prodElInfo.innerText = categoryName;
+            
+            const workerEl = document.getElementById('info-worker');
+            if(workerEl) workerEl.innerText = `${factory.workers}/${factory.maxWorkers}`;
+            
+            // Hammadde Deposu: depodaki hammadde / kapasite
+            const rawAmount = factory.raw || 0;
+            const rawCapacity = factory.rawCap || 0;
+            const rawEl = document.getElementById('info-raw-warehouse');
+            if(rawEl) rawEl.innerText = `${fmt(rawAmount)}/${fmt(rawCapacity)}`;
+            
+            // Ürün Deposu: depodaki ürün / kapasite
+            const prodAmount = factory.prod || 0;
+            const prodCapacity = factory.prodCap || 0;
+            const prodEl = document.getElementById('info-prod-warehouse');
+            if(prodEl) prodEl.innerText = `${fmt(prodAmount)}/${fmt(prodCapacity)}`;
+            
+            // Kasa Kapasitesi
+            const vaultCapacity = factory.level * 100000;
+            const vaultEl = document.getElementById('info-vault-capacity');
+            if(vaultEl) vaultEl.innerText = `${fmt(factory.vault)}/${fmt(vaultCapacity)}`;
+            
+            // Kasa Sekmesi Güncelleme
+            const fVault = document.getElementById('fVault');
+            if (fVault) fVault.innerText = fmt(factory.vault);
+            
+            const vaultCapText = document.getElementById('vaultCapacityText');
+            if (vaultCapText) vaultCapText.innerText = `Kapasite: ${fmt(factory.vault)} / ${fmt(vaultCapacity)} ₺`;
+            
+            const vaultBar = document.getElementById('vaultProgressBar');
+            if (vaultBar) {
+                const percent = Math.min(100, (factory.vault / vaultCapacity) * 100);
+                vaultBar.style.width = `${percent}%`;
+                
+                // Renk değişimi
+                if (percent > 90) vaultBar.style.background = '#e74c3c'; // Dolmak üzere (Kırmızı)
+                else if (percent > 70) vaultBar.style.background = '#f1c40f'; //arı
+                else vaultBar.style.background = 'var(--accent-gold)'; // Normal
+            }
+            
+            const maxDep = document.getElementById('maxVaultDeposit');
+            if (maxDep) maxDep.innerText = fmt(Math.max(0, Math.min(user.money, vaultCapacity - factory.vault)));
+            
+            const maxWith = document.getElementById('maxVaultWithdraw');
+            if (maxWith) {
+                maxWith.innerText = fmt(factory.vault);
+                maxWith.style.color = '#e74c3c';
+            }
+            
+            // AR-GE Seviyesi
+            const farmType = factory.farm_type || 'wheat';
+            const userArge = userArgeData[farmType] || { level: 0 };
+            const argeLevel = userArge.level || 0;
+            const argeBonus = argeLevel * 10;
+            const effEl = document.getElementById('info-efficiency');
+            if(effEl) effEl.innerText = `${argeLevel}. Seviye (+%${argeBonus})`;
+            
+            let t = factory.productionTime;
+            let tStr = t < 60 ? `${t} saniye` : (t % 60 === 0 ? `${t/60} dakika` : `${Math.floor(t/60)}dk ${t%60}sn`);
+            const speedEl = document.getElementById('info-speed');
+            if(speedEl) speedEl.innerText = tStr;
+            
+            const wageEl = document.getElementById('info-wage');
+            if(wageEl) wageEl.innerText = fmt(factory.wage) + ' ₺/Adet';
+            
+            // İstatistikler: Loglardan hesaplanıyor
+            
+            // Format creation date
+            if (factory.created_at) {
+                const date = new Date(factory.created_at);
+                const formattedDate = date.toLocaleDateString('tr-TR', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                const createdEl = document.getElementById('info-created');
+                if(createdEl) createdEl.innerText = formattedDate;
+            } else {
+                const createdEl = document.getElementById('info-created');
+                if(createdEl) createdEl.innerText = '-';
+            }
+            
+            const fNameInput = document.getElementById('fNameInput');
+            if(fNameInput) fNameInput.value = factory.name;
+            
+            const fWageInput = document.getElementById('fWageInput');
+            if(fWageInput) fWageInput.value = factory.wage;
+            
+            // Kasa bilgilerini güncelle (Eski kod kalıntısı temizliği)
+            // document.getElementById('maxVaultAdd').innerText = ... (Kaldırıldı)
+
+            renderWarehouse();
+            
+            // Geliştirme maliyetlerini güncelle
+            updateUpgradeCostsUI();
+        }
+
+        function renderWarehouse() {
+            const grid = document.getElementById('warehouseGrid');
+            grid.innerHTML = '';
+            
+            if(!factory.farm_type || !resourceMap[factory.farm_type]) return;
+            
+            const conf = resourceMap[factory.farm_type];
+            
+            // Raw Material
+            const rawCard = document.createElement('div');
+            rawCard.className = 'wh-card';
+            rawCard.innerHTML = `
+                <div class="wh-icon-badge">
+                    <img src="${conf.raw[0].icon}" class="wh-icon">
+                </div>
+                <div class="wh-title">${conf.raw[0].name}</div>
+                <div class="wh-label">(hammadde)</div>
+                <div class="wh-amount" style="color:var(--accent-green)">${fmt(factory.raw)}</div>
+                <div class="wh-cap">Kapasite: ${fmt(factory.rawCap)}</div>
+                <input type="number" id="rawInput" class="wh-input" placeholder="Miktar">
+                <button class="btn-wh btn-add" onclick="confirmAction('raw', 'add', '${conf.raw[0].key}', '${conf.raw[0].name}')">DEPOYA AKTAR</button>
+            `;
+            grid.appendChild(rawCard);
+            
+            // Product
+            const prodCard = document.createElement('div');
+            prodCard.className = 'wh-card';
+            prodCard.innerHTML = `
+                <div class="wh-icon-badge">
+                    <img src="${conf.prod.icon}" class="wh-icon">
+                </div>
+                <div class="wh-title">${conf.prod.name}</div>
+                <div class="wh-label">(ürün)</div>
+                <div class="wh-amount" style="color:var(--accent-cyan)">${fmt(factory.prod)}</div>
+                <div class="wh-cap">Kapasite: ${fmt(factory.prodCap)}</div>
+                <input type="number" id="prodInput" class="wh-input" placeholder="Miktar">
+                <button class="btn-wh btn-pull" onclick="confirmAction('prod', 'pull', '${conf.prod.key}', '${conf.prod.name}')">ENVANTERE AKTAR</button>
+            `;
+            grid.appendChild(prodCard);
+        }
+
+        function updateLogs(logs) {
+            // İstatistik Hesaplama
+            let totalProd = 0;
+            if(logs && logs.length > 0) {
+                logs.forEach(l => {
+                    if(l.amount) totalProd += Number(l.amount);
+                });
+            }
+            const elProd = document.getElementById('info-total-production');
+            if(elProd) elProd.innerText = fmt(totalProd) + ' Adet';
+
+            const elProdIcon = document.getElementById('icon-total-production');
+            if(elProdIcon && factory.farm_type && resourceMap[factory.farm_type]) {
+                elProdIcon.src = resourceMap[factory.farm_type].prod.icon;
+            }
+
+            const list = document.getElementById('logList');
+            list.innerHTML = '';
+            if(!logs || logs.length === 0) {
+                list.innerHTML = '<div style="text-align:center; color:#555; font-size:0.8rem;">Henüz kayıt yok.</div>';
+                return;
+            }
+
+            // Determine product name
+            let productName = 'Ürün';
+            if(factory.farm_type && resourceMap[factory.farm_type]) {
+                productName = resourceMap[factory.farm_type].prod.name;
+            }
+
+            logs.forEach(l => {
+                const date = new Date(l.created_at);
+                const d = date.getDate();
+                const m = date.toLocaleDateString('tr-TR', { month: 'long' });
+                const y = date.getFullYear();
+                const t = date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                // 12 şubat 2026 - 14:44 Formatı
+                const timeStr = `${d} ${m} ${y} - ${t}`;
+
+                const item = document.createElement('div');
+                item.className = 'log-item';
+                item.style.alignItems = 'center';
+                
+                const avatarUrl = l.avatar ? (l.avatar.startsWith('uploads/') ? l.avatar : `uploads/${l.avatar}`) : 'img/default-avatar.png';
+                const amount = l.amount || 0;
+
+                item.innerHTML = `
+                    <img src="${avatarUrl}" class="log-avatar" onerror="this.src='uploads/avatars/default.png'">
+                    <div class="log-text">
+                        <span class="log-user-link" onclick="window.location.href='profile.html?id=${l.user_id}'" style="cursor:pointer;">${l.user_id} - ${l.username}</span>
+                        <span class="log-highlight" style="margin-left: 5px;">${amount}x ${productName} üretti</span>
+                    </div>
+                    <span class="log-time">${timeStr}</span>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        // --- TAB SİSTEMİ ---
+        function toggleAccordion(header) {
+            header.classList.toggle('active');
+            const content = header.nextElementSibling;
+            if (content.style.maxHeight && content.style.maxHeight !== '0px') {
+                content.style.maxHeight = null;
+            } else {
+                content.style.maxHeight = content.scrollHeight + "px";
+            }
+        }
+
+        function switchTab(tab, event) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.getElementById('tab-bilgiler').style.display = 'none';
+            document.getElementById('tab-ayarlar').style.display = 'none';
+            document.getElementById('tab-depo').style.display = 'none';
+            document.getElementById('tab-kasa').style.display = 'none';
+            
+            document.getElementById('tab-' + tab).style.display = 'block';
+            
+            // Ayarlar sekmesine geçildiğinde geliştirme maliyetlerini güncelle
+            if (tab === 'ayarlar') {
+                updateUpgradeCostsUI();
+            }
+        }
+
+        let pendingAction = null;
+        function confirmAction(type, action, itemKey, itemName) {
+            let inputId = '';
+            if(type === 'raw') inputId = 'rawInput';
+            else if(type === 'prod') inputId = 'prodInput';
+            else if(type === 'vault') inputId = 'vaultInput';
+
+            const amount = parseInt(document.getElementById(inputId).value);
+            
+            if(!amount || amount <= 0) return showStatusModal(false, "Miktar giriniz.");
+
+            // Capacity Checks
+            if(type === 'raw' && action === 'add') {
+                const currentAmount = factory.raw || 0;
+                const capacity = factory.rawCap || 0;
+                if(currentAmount + amount > capacity) {
+                    return showStatusModal(false, `Depo kapasitesi yetersiz! Mevcut: ${fmt(currentAmount)}, Kapasite: ${fmt(capacity)}, Eklenebilir: ${fmt(capacity - currentAmount)}`);
+                }
+            }
+
+            if(type === 'prod' && action === 'pull') {
+                const currentStock = factory.prod || 0;
+                if(amount > currentStock) {
+                    return showStatusModal(false, `Yetersiz stok! Mevcut: ${fmt(currentStock)}`);
+                }
+            }
+
+            // Vault Limit Check
+            if(type === 'vault' && action === 'add') {
+                const currentVault = factory.vault || 0;
+                const vaultCapacity = factory.level * 100000;
+                if(currentVault + amount > vaultCapacity) {
+                    return showStatusModal(false, `Kasa kapasitesi yetersiz! Mevcut: ${fmt(currentVault)}, Kapasite: ${fmt(vaultCapacity)}, Eklenebilir: ${fmt(vaultCapacity - currentVault)}`);
+                }
+            }
+
+            pendingAction = { type, action, amount, itemKey };
+            
+            // Modal başlığını ayarla
+            document.getElementById('confirmModalTitle').innerText = 'ONAYLA';
+            
+            let desc = "";
+            if(type === 'raw' && action === 'add') {
+                desc = `${amount} adet ${itemName} envanterden düşülüp tarlaya eklenecek.`;
+            } else if(type === 'prod' && action === 'pull') {
+                desc = `${amount} adet ürün tarladan çekilip envantere eklenecek.`;
+            } else if(type === 'vault' && action === 'add') {
+                desc = `${fmt(amount)} ₺ hesabınızdan çekilip tarla kasasına eklenecek.`;
+            } else if(type === 'vault' && action === 'withdraw') {
+                desc = `${fmt(amount)} ₺ tarla kasasından çekilip hesabınıza eklenecek.`;
+            }
+            
+            document.getElementById('confirmModalMsg').innerHTML = `<p style="text-align:center; font-size:0.95rem; color:#ccc;">${desc}</p>`;
+            document.getElementById('confirmActionBtn').onclick = executeAction;
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+        
+        function executeAction() {
+            if(!pendingAction) return;
+            closeModal('confirmModal');
+            
+            const { type, action, amount, itemKey } = pendingAction;
+            let inputId = '';
+            if(type === 'raw') inputId = 'rawInput';
+            else if(type === 'prod') inputId = 'prodInput';
+            else if(type === 'vault') inputId = 'vaultInput';
+
+            let endpoint = '';
+            let body = { userId: user.id, amount: amount };
+
+            if(type === 'raw' && action === 'add') {
+                endpoint = `/api/farms/deposit-seed/${farmId}`;
+                body.itemKey = itemKey;
+            } else if(type === 'prod' && action === 'pull') {
+                endpoint = `/api/farms/withdraw-product/${farmId}`;
+            } else if(type === 'vault' && action === 'add') {
+                endpoint = `/api/farms/deposit/${farmId}`;
+            } else if(type === 'vault' && action === 'withdraw') {
+                endpoint = `/api/farms/withdraw/${farmId}`;
+            }
+
+            fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    showStatusModal(true, data.message);
+                    document.getElementById(inputId).value = "";
+                    loadFactoryData();
+                } else {
+                    showStatusModal(false, data.message);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showStatusModal(false, 'Bir hata oluştu');
+            });
+        }
+
+        function saveSettings() {
+            const name = document.getElementById('fNameInput').value.trim();
+            const wage = parseInt(document.getElementById('fWageInput').value);
+            
+            if(name.length < 3) return showStatusModal(false, "İşletme adı en az 3 karakter olmalıdır.");
+            if(name.length > 40) return showStatusModal(false, "İşletme adı en fazla 40 karakter olabilir.");
+            if(isNaN(wage) || wage < 0 || wage > 1000) return showStatusModal(false, "Birim maaş 0 ile 1000 arasında olmalıdır.");
+
+            pendingSettings = { name, wage };
+            
+            document.getElementById('settingsModal').style.display = 'flex';
+        }
+
+        function confirmSettings() {
+            if(!pendingSettings) return;
+            closeModal('settingsModal');
+            
+            const { name, wage } = pendingSettings;
+
+            fetch(`/api/farms/update/${farmId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id, name, salary: wage })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    showStatusModal(true, data.message);
+                    factory.name = name;
+                    factory.wage = wage;
+                    // Update business card
+                    document.getElementById('businessName').innerText = name;
+                    updateUI();
+                } else {
+                    showStatusModal(false, data.message);
+                }
+                pendingSettings = null;
+            })
+            .catch(err => {
+                showStatusModal(false, 'Bir hata oluştu!');
+                console.error(err);
+                pendingSettings = null;
+            });
+        }
+        
+        function startUpgradeCountdown(timeLeft, totalDuration) {
+            if (upgradeCountdownInterval) clearInterval(upgradeCountdownInterval);
+            
+            const bar = document.getElementById('upgradeCountdownBar');
+            const txt = document.getElementById('upgradeCountdownText');
+
+            if (!bar || !txt) return;
+
+            const update = () => {
+                if (timeLeft <= 0) {
+                    clearInterval(upgradeCountdownInterval);
+                    completeUpgrade();
+                    return;
+                }
+                
+                // Progress bar güncelle
+                let percent = 0;
+                if (totalDuration > 0) {
+                    percent = ((totalDuration - timeLeft) / totalDuration) * 100;
+                }
+                bar.style.width = percent + "%";
+                
+                // Zaman formatı (MM:SS)
+                const min = Math.floor(timeLeft / 60);
+                const sec = timeLeft % 60;
+                const minStr = String(min).padStart(2, '0');
+                const secStr = String(sec).padStart(2, '0');
+                txt.innerText = `${minStr}:${secStr}`;
+                
+                timeLeft--;
+            };
+
+            update();
+            upgradeCountdownInterval = setInterval(update, 1000);
+        }
+        
+        function updateUpgradeCostsUI() {
+            const container = document.getElementById('upgradeCostsContainer');
+            const countdownContainer = document.getElementById('upgradeCountdownContainer');
+            if (!container) return;
+            
+            const farm = upgradeInfo?.farm;
+            
+            // Geliştirme devam ediyorsa sayacı göster, maliyetleri gizle
+            if (farm && farm.isUpgrading) {
+                if (container) container.style.display = 'none';
+                if (countdownContainer) {
+                    countdownContainer.style.display = 'block';
+                    const next = upgradeInfo.nextLevel;
+                    if (next) {
+                        startUpgradeCountdown(farm.timeLeft, next.duration);
+                    }
+                }
+                return;
+            }
+            
+            // Geliştirme yoksa maliyetleri göster, sayacı gizle
+            if (container) container.style.display = 'block';
+            if (countdownContainer) countdownContainer.style.display = 'none';
+            
+            if (!upgradeInfo || upgradeInfo.maxLevel) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #666;">
+                        <i class="fas fa-trophy" style="font-size: 2rem; margin-bottom: 10px; color: var(--accent-gold);"></i>
+                        <div style="font-size: 1.1rem; font-weight: 700;">MAKSİMUM SEVİYE</div>
+                        <div style="font-size: 0.85rem; margin-top: 5px;">İşletmeniz maksimum seviyeye ulaştı!</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const next = upgradeInfo.nextLevel;
+            const costs = next.costs;
+            
+            // Lisans Kontrolü
+            const licenseKey = factory.type;
+            const userLicenseLevel = userLicenses[licenseKey] || 0;
+            const hasLicense = userLicenseLevel >= next.level;
+            
+            // Resource definitions with icons
+            const resources = [
+                { key: 'money', name: 'Para', icon: 'fas fa-money-bill-wave', color: '#27ae60', userValue: user.money, isImage: false },
+                { key: 'gold', name: 'Altın', icon: 'fas fa-coins', color: '#ffd700', userValue: user.gold, isImage: false },
+                { key: 'diamond', name: 'Elmas', icon: 'fas fa-gem', color: '#00e5ff', userValue: user.diamond, isImage: false },
+                { key: 'wood', name: 'Tahta', icon: 'icons/factory-icon/wood-plank.png', color: '#8B4513', userValue: user.wood, isImage: true },
+                { key: 'brick', name: 'Tuğla', icon: 'icons/factory-icon/brick.png', color: '#b74434', userValue: user.brick, isImage: true },
+                { key: 'cement', name: 'Çimento', icon: 'icons/factory-icon/cement.png', color: '#7f8c8d', userValue: user.cement, isImage: true },
+                { key: 'glass', name: 'Cam', icon: 'icons/factory-icon/window.png', color: '#3498db', userValue: user.glass, isImage: true },
+                { key: 'steel', name: 'Çelik', icon: 'icons/factory-icon/steel.png', color: '#95a5a6', userValue: user.steel, isImage: true }
+            ];
+            
+            // MALİYET BAŞLIĞI
+            let costsHTML = '<div class="info-list-header"><i class="fas fa-coins"></i> MALİYETLER</div>';
+            costsHTML += '<div class="upgrade-costs-list">';
+            let allSufficient = hasLicense;
+            
+            resources.forEach(resource => {
+                const cost = costs[resource.key];
+                if (cost && cost > 0) {
+                    const userVal = resource.userValue || 0;
+                    const isSufficient = userVal >= cost;
+                    if (!isSufficient) allSufficient = false;
+                    
+                    const iconHTML = resource.isImage 
+                        ? `<img src="${resource.icon}" alt="${resource.name}">`
+                        : `<i class="${resource.icon}" style="color: ${resource.color};"></i>`;
+                    
+                    const statusIcon = isSufficient 
+                        ? '<i class="fas fa-check"></i>'
+                        : '<i class="fas fa-times"></i>';
+                    
+                    const statusClass = isSufficient ? 'ok' : 'fail';
+                    
+                    // Para için ₺, diğerleri için Adet
+                    const unit = resource.key === 'money' ? ' ₺' : ' Adet';
+                    
+                    costsHTML += `
+                        <div class="upgrade-cost-item">
+                            <div class="upgrade-cost-icon">
+                                ${iconHTML}
+                            </div>
+                            <div class="upgrade-cost-name">${resource.name}</div>
+                            <div class="upgrade-cost-value">
+                                <div class="upgrade-cost-amount">${fmt(cost)}${unit}</div>
+                                <div class="upgrade-cost-status ${statusClass}">
+                                    ${statusIcon}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            // Lisans durumunu ekle
+            const licenseStatusIcon = hasLicense ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
+            const licenseStatusClass = hasLicense ? 'ok' : 'fail';
+            const categoryName = resourceMap[factory.type] ? resourceMap[factory.type].prod.name : 'Çiftlik';
+            
+            costsHTML += `
+                <div class="upgrade-cost-item">
+                    <div class="upgrade-cost-icon">
+                        <i class="fas fa-certificate" ></i>
+                    </div>
+                    <div class="upgrade-cost-name">Lisans</div>
+                    <div class="upgrade-cost-value">
+                        <div class="upgrade-cost-amount">${next.level}. Seviye ${categoryName} Lisansı</div>
+                        <div class="upgrade-cost-status ${licenseStatusClass}">
+                            ${licenseStatusIcon}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            costsHTML += '</div>';
+            
+            // KAZANIMLAR BAŞLIĞI VE LİSTESİ
+            const benefits = next.benefits || {};
+            const workerBonus = benefits.workers || 5;
+            const storageBonus = benefits.storage || 500;
+            const vaultBonus = 100000; // Her seviye 100k kasa kapasitesi
+            
+            costsHTML += `
+                <div class="info-list-header" style="margin-top: 20px;"><i class="fas fa-gift"></i> KAZANIMLAR</div>
+                <div class="upgrade-costs-list">
+                    <div class="upgrade-cost-item">
+                        <div class="upgrade-cost-icon">
+                            <i class="fas fa-users" style="color: var(--accent-green);"></i>
+                        </div>
+                        <div class="upgrade-cost-name">İşçi Kapasitesi</div>
+                        <div class="upgrade-cost-value">
+                            <div class="upgrade-cost-amount">+${workerBonus}</div>
+                        </div>
+                    </div>
+                    <div class="upgrade-cost-item">
+                        <div class="upgrade-cost-icon">
+                            <i class="fas fa-vault" style="color: var(--accent-green);"></i>
+                        </div>
+                        <div class="upgrade-cost-name">Kasa Kapasitesi</div>
+                        <div class="upgrade-cost-value">
+                            <div class="upgrade-cost-amount">+${fmt(vaultBonus)} ₺</div>
+                        </div>
+                    </div>
+                    <div class="upgrade-cost-item">
+                        <div class="upgrade-cost-icon">
+                            <i class="fas fa-warehouse" style="color: var(--accent-green);"></i>
+                        </div>
+                        <div class="upgrade-cost-name">Depo Kapasitesi</div>
+                        <div class="upgrade-cost-value">
+                            <div class="upgrade-cost-amount">+${fmt(storageBonus)}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Geliştirme Süresi
+            const durationMinutes = Math.ceil(next.duration / 60);
+            costsHTML += `
+                <div style="text-align: center; margin: 20px 0 15px 0; padding: 10px; background: rgba(0, 0, 0, 0.3); border-radius: 8px;">
+                    <div style="font-size: 0.75rem; color: #888; margin-bottom: 5px;">Geliştirme Süresi</div>
+                    <div style="font-size: 1.1rem; font-weight: 700; color: var(--accent-gold);">
+                        <i class="fas fa-clock"></i> ${durationMinutes} Dakika
+                    </div>
+                </div>
+            `;
+            
+            // Upgrade button
+            const isUpgrading = farm && farm.isUpgrading;
+            const buttonDisabled = !allSufficient || isUpgrading;
+            const buttonText = isUpgrading 
+                ? '<i class="fas fa-spinner fa-spin"></i> GELİŞTİRİLİYOR...'
+                : `<i class="fas fa-arrow-up"></i> SEVİYE ${next.level}'E YÜKSELT`;
+            
+            costsHTML += `
+                <div class="upgrade-btn-container">
+                    <button class="btn-start-upgrade" onclick="startUpgradeFromSettings()" ${buttonDisabled ? 'disabled' : ''}>
+                        ${buttonText}
+                    </button>
+                </div>
+            `;
+            
+            container.innerHTML = costsHTML;
+        }
+        
+        function startUpgradeFromSettings() {
+            console.log('startUpgradeFromSettings called');
+            console.log('upgradeInfo:', upgradeInfo);
+            console.log('factory:', factory);
+            
+            if (!upgradeInfo || upgradeInfo.maxLevel || upgradeInfo.farm.isUpgrading) {
+                console.log('Conditions failed:', {
+                    hasUpgradeInfo: !!upgradeInfo,
+                    isMaxLevel: upgradeInfo?.maxLevel,
+                    isUpgrading: upgradeInfo?.farm?.isUpgrading
+                });
+                return;
+            }
+            
+            const next = upgradeInfo.nextLevel;
+            const currentLevel = factory.level;
+            const categoryName = resourceMap[factory.type] ? resourceMap[factory.type].prod.name : 'Çiftlik';
+            
+            // Onay modalı göster
+            document.getElementById('confirmModalTitle').innerText = 'GELİŞTİRMEYİ BAŞLAT';
+            document.getElementById('confirmModalMsg').innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 1.3rem; margin-bottom: 20px; color: #fff;">
+                        <strong style="color: var(--accent);">${factory.name}</strong>
+                    </div>
+                    <div style="font-size: 2rem; margin-bottom: 25px; display: flex; align-items: center; justify-content: center; gap: 15px;">
+                        <div style="background: rgba(255, 215, 0, 0.15); padding: 15px 25px; border-radius: 10px; border: 2px solid var(--accent-gold);">
+                            <div style="font-size: 0.75rem; color: #888; margin-bottom: 5px;">Mevcut Seviye</div>
+                            <div style="font-size: 2rem; font-weight: 800; color: var(--accent-gold);">${currentLevel}</div>
+                        </div>
+                        <i class="fas fa-arrow-right" style="color: var(--accent-cyan); font-size: 1.5rem;"></i>
+                        <div style="background: rgba(46, 204, 113, 0.15); padding: 15px 25px; border-radius: 10px; border: 2px solid var(--accent-green);">
+                            <div style="font-size: 0.75rem; color: #888; margin-bottom: 5px;">Yeni Seviye</div>
+                            <div style="font-size: 2rem; font-weight: 800; color: var(--accent-green);">${next.level}</div>
+                        </div>
+                    </div>
+                    <div style="font-size: 1rem; color: #aaa; margin-bottom: 10px;">
+                        Bu işletmeyi geliştirmek istediğinizden emin misiniz?
+                    </div>
+                    <div style="font-size: 0.9rem; color: #666;">
+                        Geliştirme süresi: <strong >${Math.ceil(next.duration / 60)} dakika</strong>
+                    </div>
+                </div>
+            `;
+            document.getElementById('confirmModal').style.display = 'flex';
+            
+            // Buton olay dinleyicisini güncelle
+            const confirmBtn = document.getElementById('confirmActionBtn');
+            confirmBtn.onclick = () => {
+                closeModal('confirmModal');
+                
+                fetch(`/api/farms/start-upgrade/${farmId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showStatusModal(true, 'Geliştirme başlatıldı!');
+                        loadFactoryData();
+                        // Ayarlar sekmesindeyse UI'ı güncelle
+                        setTimeout(() => {
+                            updateUpgradeCostsUI();
+                        }, 500);
+                    } else {
+                        showStatusModal(false, data.message);
+                    }
+                });
+            };
+        }
+
+
+        function showStatusModal(success, message) {
+            const modal = document.getElementById('statusModal');
+            const content = document.getElementById('statusModalContent');
+            const icon = document.getElementById('statusIcon');
+            const title = document.getElementById('statusTitle');
+            const msg = document.getElementById('statusMessage');
+            const btn = document.getElementById('statusBtn');
+
+            if (success) {
+                // content.style.borderTopColor = 'var(--accent-green)';
+                icon.className = 'fas fa-check-circle';
+                icon.style.color = 'var(--accent-green)';
+                title.innerText = 'BAŞARILI';
+                btn.style.background = 'var(--accent-green)';
+                btn.style.color = '#000';
+            } else {
+                content.style.borderTopColor = 'var(--accent-red)';
+                icon.className = 'fas fa-times-circle';
+                icon.style.color = 'var(--accent-red)';
+                title.innerText = 'HATA';
+                btn.style.background = 'var(--accent-red)';
+                btn.style.color = '#fff';
+            }
+
+            msg.innerText = message;
+            modal.style.display = 'flex';
+        }
+
+        function setMaxAmount(type) {
+            const vaultCapacity = factory.level * 100000;
+            let amount = 0;
+            
+            if (type === 'deposit') {
+                // Kullanıcının parası veya kasa boşluğu kadar
+                let maxDep = Math.min(user.money, vaultCapacity - factory.vault);
+                amount = maxDep > 0 ? maxDep : 0;
+            } else if (type === 'withdraw') {
+                // Kasadaki para kadar
+                amount = factory.vault;
+            }
+            
+            if (amount < 0) amount = 0;
+            
+            const el = document.getElementById('vaultInput');
+            if (el) el.value = amount;
+        }
+
+    </script>
+</body>
+</html>

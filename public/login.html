@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>World of Sim - Giriş Yap</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #161616;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-red: #e74c3c;
+            --text-white: #ffffff;
+            --text-gray: #a0a0a0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+            background-image: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 400px;
+            background-color: rgba(22, 22, 22, 0.95);
+            padding: 40px;
+            border-radius: 10px;
+            border: 1px solid #333;
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.1);
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            color: var(--text-white);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .logo span { color: var(--accent-cyan); }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-gray);
+            font-size: 0.9rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 5px;
+            color: #fff;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+        }
+
+        .btn-auth {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent-cyan);
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-auth:hover {
+            background: #00b8cc;
+            transform: translateY(-2px);
+        }
+
+        .auth-footer {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: var(--text-gray);
+        }
+
+        .auth-link {
+            color: var(--accent-cyan);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .auth-link:hover { text-decoration: underline; }
+
+        .error-msg {
+            color: var(--accent-red);
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        /* Cookie Banner */
+        .cookie-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(13, 13, 13, 0.98);
+            border-top: 2px solid var(--accent-cyan);
+            padding: 20px;
+            z-index: 10000;
+            display: none;
+        }
+
+        .cookie-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .cookie-text {
+            flex: 1;
+            color: #ccc;
+            font-size: 0.9rem;
+        }
+
+        .cookie-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-cookie {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-accept {
+            background: var(--accent-green);
+            color: #000;
+        }
+
+        .btn-reject {
+            background: #333;
+            color: #fff;
+        }
+
+        .btn-cookie:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        <div class="logo">World of <span>Sim</span></div>
+        
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label class="form-label">Kullanıcı Adı</label>
+                <input type="text" class="form-input" id="username" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Şifre</label>
+                <input type="password" class="form-input" id="password" required>
+            </div>
+
+            <button type="submit" class="btn-auth">GİRİŞ YAP</button>
+        </form>
+
+        <div class="auth-footer">
+            Hesabın yok mu? <a href="register.html" class="auth-link">Kayıt Ol</a>
+        </div>
+    </div>
+
+    <!-- Notification Modal -->
+    <div class="modal-overlay" id="notificationModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:10001; align-items:center; justify-content:center;">
+        <div class="modal-content" style="background:#161616; width:90%; max-width:400px; padding:30px; border-radius:10px; border:1px solid #333; text-align:center; position:relative; border-top: 3px solid var(--accent-cyan);">
+            <i class="fas" id="notifIcon" style="font-size: 3rem; margin-bottom: 20px;"></i>
+            <h3 class="modal-title" id="notifTitle" style="color:#fff; margin-bottom:10px; font-size:1.5rem; font-weight:700;">BAŞLIK</h3>
+            <p class="modal-text" id="notifMessage" style="color:#ccc; text-align: center; margin-bottom: 25px; font-size: 1rem;">Mesaj içeriği</p>
+            <button class="btn-auth" id="notifBtn" onclick="closeNotificationModal()">TAMAM</button>
+        </div>
+    </div>
+
+    <!-- Cookie Banner -->
+    <div class="cookie-banner" id="cookieBanner">
+        <div class="cookie-content">
+            <div class="cookie-text">
+                <strong>🍪 Çerez Politikası</strong><br>
+                Web sitemizde deneyiminizi geliştirmek için çerezler kullanıyoruz. Çerezleri kabul ederek sitemizin daha iyi çalışmasına yardımcı olursunuz.
+            </div>
+            <div class="cookie-buttons">
+                <button class="btn-cookie btn-reject" onclick="rejectCookies()">Reddet</button>
+                <button class="btn-cookie btn-accept" onclick="acceptCookies()">Kabul Et</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sayfa yüklendiğinde çerez bannerını kontrol et
+        window.addEventListener('load', () => {
+            const cookieConsent = localStorage.getItem('cookieConsent');
+            if (!cookieConsent) {
+                document.getElementById('cookieBanner').style.display = 'block';
+            }
+        });
+
+        async function acceptCookies() {
+            localStorage.setItem('cookieConsent', 'accepted');
+            document.getElementById('cookieBanner').style.display = 'none';
+            
+            // Sunucuya çerez onayını gönder
+            try {
+                await fetch('/api/cookie-consent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        consent: true,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+            } catch (err) {
+                console.error('Cookie consent error:', err);
+            }
+        }
+
+        function rejectCookies() {
+            localStorage.setItem('cookieConsent', 'rejected');
+            document.getElementById('cookieBanner').style.display = 'none';
+        }
+
+        let isSuccess = false;
+
+        function showNotification(type, title, message) {
+            const modal = document.getElementById('notificationModal');
+            const icon = document.getElementById('notifIcon');
+            const titleEl = document.getElementById('notifTitle');
+            const msgEl = document.getElementById('notifMessage');
+            const btn = document.getElementById('notifBtn');
+            const content = modal.querySelector('.modal-content');
+
+            modal.style.display = 'flex';
+            titleEl.innerText = title;
+            msgEl.innerText = message;
+            
+            if (type === 'success') {
+                isSuccess = true;
+                icon.className = 'fas fa-check-circle';
+                icon.style.color = 'var(--accent-green)';
+                titleEl.style.color = 'var(--accent-green)';
+                content.style.borderColor = 'var(--accent-green)';
+                btn.style.background = 'var(--accent-green)';
+                btn.innerText = "OYUNA GİR";
+                
+                // Otomatik yönlendirme (1.5 saniye sonra)
+                setTimeout(() => {
+                    window.location.href = 'home.html';
+                }, 1500);
+            } else {
+                isSuccess = false;
+                icon.className = 'fas fa-times-circle';
+                icon.style.color = 'var(--accent-red)';
+                titleEl.style.color = 'var(--accent-red)';
+                content.style.borderColor = 'var(--accent-red)';
+                btn.style.background = 'var(--accent-red)';
+                btn.innerText = "TEKRAR DENE";
+            }
+        }
+
+        function closeNotificationModal() {
+            document.getElementById('notificationModal').style.display = 'none';
+            if(isSuccess) {
+                window.location.href = 'home.html';
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Başarılı giriş
+                    localStorage.setItem('simWorldUser', JSON.stringify(data.user));
+                    showNotification('success', 'Giriş Başarılı', 'Hoşgeldiniz! Oyuna yönlendiriliyorsunuz...');
+                } else {
+                    // Hata mesajlarını özelleştir
+                    let errorTitle = 'Giriş Başarısız';
+                    let errorText = data.message || 'Kullanıcı adı veya şifre hatalı.';
+                    
+                    if (data.message && data.message.includes('Kullanıcı')) {
+                        errorText = 'Bu kullanıcı adı ile kayıtlı bir hesap bulunamadı.';
+                    } else if (data.message && data.message.includes('şifre')) { // Backend genellikle "Kullanıcı adı veya şifre hatalı" döner, ama ayrıma izin veriyorsa.
+                        errorText = 'Şifreniz hatalı. Lütfen tekrar deneyin.';
+                    }
+
+                    showNotification('error', errorTitle, errorText);
+                }
+            } catch (err) {
+                console.error(err);
+                showNotification('error', 'Bağlantı Hatası', 'Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edin.');
+            }
+        }
+    </script>
+    <script src="js/loader-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+</body>
+</html>

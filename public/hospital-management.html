@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Sim of World - Hastane Yönetimi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    
+    <script>
+        // Suppress Chrome Extension errors
+        window.addEventListener('unhandledrejection', function(event) {
+            if (event.reason && event.reason.message && event.reason.message.includes('message channel closed')) {
+                event.preventDefault();
+            }
+        });
+    </script>
+
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #161616;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-gold: #ffd700;
+            --accent-red: #e74c3c;
+            --accent-purple: #9b59b6;
+            --text-white: #ffffff;
+            --text-muted: #888;
+            --border-color: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            border-left: 1px solid #222;
+            border-right: 1px solid #222;
+        }
+
+        /* MAIN */
+        main {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+
+        .page-header { 
+            margin-bottom: 25px; 
+            animation: fadeInDown 0.5s; 
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .back-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.2rem;
+        }
+        
+        .back-btn:hover {
+            background: var(--accent-cyan);
+            color: #000;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+        }
+        
+        .header-content {
+            flex: 1;
+        }
+        
+        .page-title {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        
+        .page-description {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.3;
+        }
+        
+        /* KASA KARTI */
+        .vault-card {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.1), rgba(30,30,30,0.9));
+            border: 1px solid var(--accent-green);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .vault-icon { font-size: 2.5rem; color: var(--accent-green); margin-bottom: 10px; }
+        .vault-title { font-size: 0.9rem; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+        .vault-amount { font-size: 1.8rem; font-weight: bold; color: #fff; margin: 5px 0 15px 0; text-shadow: 0 0 10px rgba(46, 204, 113, 0.3); }
+        
+        .vault-actions { display: flex; gap: 10px; }
+        .vault-input { 
+            flex: 1; background: #000; border: 1px solid #444; color: #fff; 
+            padding: 10px; border-radius: 5px; font-family: 'Rajdhani'; font-weight: bold; text-align: center;
+        }
+        .btn-withdraw {
+            background: var(--accent-green); color: #000; border: none; padding: 0 20px;
+            border-radius: 5px; font-weight: bold; font-family: 'Rajdhani'; cursor: pointer;
+        }
+
+        /* AYARLAR KARTI */
+        .settings-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .card-title { font-size: 1.1rem; color: var(--accent-cyan); margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-label { display: block; font-size: 0.8rem; color: #fff; margin-bottom: 5px; font-weight: 600; }
+        .form-input { 
+            width: 100%; background: #111; border: 1px solid #444; color: #fff; 
+            padding: 10px; border-radius: 5px; font-family: 'Rajdhani';
+        }
+        .btn-save {
+            width: 100%; background: #333; color: #fff; border: 1px solid #555;
+            padding: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-save:hover { background: var(--accent-cyan); color: #000; border-color: var(--accent-cyan); }
+
+        /* GELİŞTİRME KARTI */
+        .upgrade-card {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.05), rgba(30,30,30,0.9));
+            border: 1px solid var(--accent-gold);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        .upgrade-info { display: flex; justify-content: space-between; margin-bottom: 15px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 5px; }
+        .u-col h4 { color: var(--accent-gold); font-size: 0.8rem; margin-bottom: 5px; }
+        .u-col p { font-size: 1rem; font-weight: bold; }
+        .u-arrow { display: flex; align-items: center; color: #555; }
+
+        .btn-upgrade {
+            width: 100%; background: var(--accent-gold); color: #000; border: none;
+            padding: 12px; border-radius: 5px; font-weight: bold; font-size: 1rem; 
+            cursor: pointer; font-family: 'Rajdhani'; display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        
+        /* Sayaç/Progress */
+        .upgrade-progress-container { display: none; margin-top: 10px; }
+        .u-progress-bg { width: 100%; height: 10px; background: #333; border-radius: 5px; overflow: hidden; }
+        .u-progress-fill { width: 0%; height: 100%; background: var(--accent-gold); transition: width 0.1s linear; }
+        .u-timer-text { font-size: 0.9rem; color: var(--accent-gold); margin-top: 5px; font-weight: bold; }
+
+        /* MODAL */
+        .modal-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 100;
+            display: none; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        .modal-content {
+            background: #181818; width: 90%; padding: 20px; border-radius: 10px;
+            border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-gold);
+        }
+        .m-price { font-size: 1.5rem; color: var(--accent-gold); font-weight: bold; margin: 15px 0; display: block; }
+        
+        /* Gereksinim Grid */
+        .req-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .req-item {
+            background: #111; border: 1px solid #333; padding: 10px 5px; border-radius: 5px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .req-icon { font-size: 1.2rem; margin-bottom: 5px; }
+        .req-val { font-size: 0.9rem; font-weight: bold; }
+        .req-label { font-size: 0.65rem; color: #aaa; text-transform: uppercase; }
+        
+        /* Renkli Gereksinimler */
+        .req-money { color: var(--accent-green); border-color: rgba(46, 204, 113, 0.3); }
+        .req-gold { color: var(--accent-gold); border-color: rgba(255, 215, 0, 0.3); }
+        .req-license { color: var(--accent-cyan); border-color: rgba(0, 229, 255, 0.3); }
+        .req-diamond { color: var(--accent-purple); border-color: rgba(155, 89, 182, 0.3); }
+
+        .m-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 1rem; }
+
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+
+        /* LOGLAR */
+        .log-container { background: var(--bg-card); border-radius: 10px; padding: 15px; border: 1px solid var(--border-color); }
+        .log-list { max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+        .log-item {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.2s;
+            min-height: 36px;
+        }
+        .log-item:hover { background: rgba(255,255,255,0.05); }
+        .log-avatar {
+            width: 24px; height: 24px; border-radius: 50%; margin-right: 8px; object-fit: cover; border: 1px solid #444;
+        }
+        .log-text { font-size: 0.75rem; color: #ccc; flex: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 3px; }
+        .log-user-link { color: #fff; text-decoration: none; font-weight: 700; }
+        .log-time { font-size: 0.65rem; color: #555; margin-left: auto; white-space: nowrap; }
+        .log-highlight { color: var(--accent-cyan); font-weight: 600; }
+
+        /* INFO LIST STYLE */
+        .info-list { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; margin-bottom: 20px; }
+        .info-list-header { font-size: 0.85rem; color: var(--accent-cyan); font-weight: 700; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .info-item { display: flex; align-items: center; padding: 6px 0; }
+        .info-item:last-child { border-bottom: none; }
+        .info-item i { font-size: 1.1rem; width: 28px; }
+        .info-item .info-label { flex: 1; font-size: 0.8rem; color: #aaa; }
+        .info-item .info-value { font-size: 0.8rem; font-weight: bold; color: #fff; text-align: right; }
+
+        /* TABS */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #111;
+            padding: 5px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: #777; font-family: 'Rajdhani', sans-serif; font-weight: bold; cursor: pointer; border-radius: 6px; transition: all 0.3s; }
+        .tab-btn.active { background: #222; color: var(--accent-cyan); border: 1px solid var(--accent-cyan); box-shadow: 0 0 10px rgba(0, 229, 255, 0.1); }
+        .tab-content { display: none; animation: fadeIn 0.4s; }
+        .tab-content.active { display: block; }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Header injected by header-manager.js -->
+
+        <main>
+            <div class="page-header">
+                <div class="back-btn" onclick="window.location.href='hospital-list.html'">
+                    <i class="fas fa-arrow-left"></i>
+                </div>
+                <div class="header-content">
+                    <div class="page-title">HASTANE YÖNETİMİ</div>
+                    <div class="page-description">Hastaneni geliştir, hastaları tedavi et ve kazan.</div>
+                </div>
+            </div>
+            <!-- İŞLETME KARTI -->
+            <div class="business-card" style="background: linear-gradient(135deg, rgba(0, 229, 255, 0.1), var(--bg-card)); border: 1px solid var(--accent-cyan); border-radius: 15px; padding: 15px; margin-bottom: 25px; display: flex; align-items: center; gap: 15px; position: relative; overflow: hidden;">
+                <div class="business-icon-wrapper" style="width: 65px; height: 65px; flex-shrink: 0; background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(0, 229, 255, 0.05)); border: 2px solid var(--accent-cyan); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <img src="icons/hospital-icon/hospital.png" class="business-icon" style="width: 60px; height: 60px; object-fit: contain;">
+                </div>
+                <div class="business-info">
+                    <div class="business-name" id="hNameDisplay" style="font-size: 1.2rem; font-weight: 800; color: #fff; text-transform: uppercase;">Yükleniyor...</div>
+                </div>
+            </div>
+
+            
+            <!-- TABS MENU -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('info')">BİLGİLER</button>
+                <button class="tab-btn" onclick="switchTab('settings')">AYARLAR</button>
+                <button class="tab-btn" onclick="switchTab('vault')">KASA</button>
+            </div>
+
+            <!-- TAB: INFO (UPGRADE & LOGS) -->
+            <div id="tab-info" class="tab-content active">
+                
+                <div class="info-list">
+                    <div class="info-list-header">
+                        <i class="fas fa-info-circle"></i> HASTANE BİLGİLERİ
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-user-tie" style="color:var(--accent-cyan)"></i>
+                        <span class="info-label">İşletme Sahibi</span>
+                        <span class="info-value" id="hOwnerDisplay">...</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-layer-group" style="color:var(--accent-gold)"></i>
+                        <span class="info-label">Seviye</span>
+                        <span class="info-value" id="statLevel">1</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-clock" style="color:var(--accent-gold)"></i>
+                        <span class="info-label">Tedavi Süresi</span>
+                        <span class="info-value" id="statDuration">15 Dk</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-heart" style="color:var(--accent-red)"></i>
+                        <span class="info-label">Sağlık Yenileme</span>
+                        <span class="info-value">%<span id="statRegen">100</span></span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-tag" style="color:var(--accent-green)"></i>
+                        <span class="info-label">Tedavi Ücreti</span>
+                        <span class="info-value"><span id="statPriceDisplay">0</span> ₺</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-bed" style="color:var(--accent-purple)"></i>
+                        <span class="info-label">Kapasite</span>
+                        <span class="info-value" id="statCapacity">0/5</span>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <div class="info-list-header">
+                        <i class="fas fa-chart-line"></i> GENEL İSTATİSTİKLER
+                    </div>
+                    <div class="info-list" style="margin-top:0; background:none; border:none; padding:0;">
+                        <div class="info-item">
+                            <i class="fas fa-procedures" style="color:var(--accent-cyan)"></i>
+                            <span class="info-label">Toplam Tedavi Sayısı</span>
+                            <span class="info-value" id="statTotalTreatments">0</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-coins" style="color:var(--accent-gold)"></i>
+                            <span class="info-label">Toplam Kazanç</span>
+                            <span class="info-value" id="statTotalEarnings">0 ₺</span>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <!-- LOGS CARD (Updated to match Hospital Detail History Style) -->
+                <div class="settings-card">
+                    <div class="info-list-header">
+                        <i class="fas fa-history"></i> SON İŞLEMLER (LOG)
+                    </div>
+                    <div id="logsTableBody" style="display: flex; flex-direction: column; gap: 10px; max-height: 200px; overflow-y: auto;">
+                        <div style="text-align:center; color:#666;">Kayıt yok.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: SETTINGS (RENAME/PRICE) -->
+            <div id="tab-settings" class="tab-content">
+                <div class="settings-card">
+                    <div class="info-list-header">
+                        <i class="fas fa-edit"></i> BİLGİLERİ DÜZENLE
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Hastane Adı (5-30 Karakter)</label>
+                        <input type="text" id="hNameInput" class="form-input" value="" autocomplete="off" data-lpignore="true" maxlength="30">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tedavi Ücreti (100 - 5.000 ₺)</label>
+                        <input type="number" id="hPriceInput" class="form-input" value="" autocomplete="off" data-lpignore="true" min="100" max="5000">
+                    </div>
+                    <button class="btn-save" onclick="openSettingsModal()">KAYDET</button>
+                </div>
+
+                <div class="settings-card upgrade-card">
+                    <div class="card-title" style="border-color:var(--accent-gold); color:var(--accent-gold);">HASTANE SEVİYESİ</div>
+                    
+                    <div class="upgrade-info">
+                        <div class="u-col">
+                            <h4>MEVCUT</h4>
+                            <p id="currentLevel">Seviye 1</p>
+                            <small style="color:#aaa" id="currentCap">5 Yatak</small>
+                        </div>
+                        <div class="u-arrow"><i class="fas fa-arrow-right" style="color:var(--accent-gold)"></i></div>
+                        <div class="u-col">
+                            <h4>SONRAKİ</h4>
+                            <p id="nextLevel">Seviye 2</p>
+                            <small style="color:var(--accent-green)" id="nextCap">55 Yatak</small>
+                        </div>
+                    </div>
+
+                    <button id="upgradeBtn" class="btn-upgrade" onclick="openUpgradeModal()">
+                        <i class="fas fa-arrow-circle-up"></i> GELİŞTİR
+                    </button>
+
+                    <div id="upgradeProgress" class="upgrade-progress-container">
+                        <div class="u-progress-bg">
+                            <div id="uBar" class="u-progress-fill"></div>
+                        </div>
+                        <div id="uTimer" class="u-timer-text">Geliştiriliyor... 10s</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: VAULT (KASA) -->
+            <div id="tab-vault" class="tab-content">
+                <!-- KASA YÖNETİMİ (Updated to match Mine Management Style) -->
+                <div class="settings-card" style="border-color:var(--accent-cyan)">
+                    <div class="info-list-header">
+                        <img src="icons/inventory-icon/money.png" style="width:20px;height:20px;object-fit:contain;"> KASA YÖNETİMİ
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Kasa Bakiyesi</label>
+                        <div style="font-size:1.2rem; font-weight:bold; color:#fff; margin-bottom:10px;" id="hospitalBalance">0 ₺</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Para Çek</label>
+                        <div style="display:flex; gap:10px;">
+                            <input type="number" id="withdrawAmount" class="form-input" placeholder="Miktar" autocomplete="off" data-lpignore="true">
+                            <button class="btn-save" style="width:auto; background:var(--accent-cyan); color:#000; border:none;" onclick="openWithdrawModal()">ÇEK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- UPGRADE MODAL -->
+        <div class="modal-overlay" id="confirmModal">
+            <div class="modal-content">
+                <i class="fas fa-hammer" style="font-size:3rem; color:var(--accent-gold); margin-bottom:10px;"></i>
+                <h3 style="color:#fff; margin-bottom:5px;">Seviye Yükselt</h3>
+                <p style="color:#aaa; font-size:0.8rem; margin-bottom:20px;">Kapasite ve gelir artışı için yükseltme yapın.</p>
+                
+                <div id="upgradeContent" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+                    <!-- JS fills this -->
+                </div>
+
+                <div class="m-btns">
+                    <button class="m-btn" style="background:#333; color:#fff;" onclick="closeModal('confirmModal')">İPTAL</button>
+                    <button class="m-btn" style="background:var(--accent-green); color:#000;" onclick="startUpgrade()">ONAYLA</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SPEED UP MODAL -->
+        <div class="modal-overlay" id="speedUpModal">
+            <div class="modal-content">
+                <i class="fas fa-bolt" style="font-size:3rem; color:#ffd700; margin-bottom:10px;"></i>
+                <h3 style="color:#fff; margin-bottom:5px;">Hızlandır</h3>
+                <p style="color:#aaa; font-size:0.9rem; margin-bottom:20px;">Geliştirmeyi hemen tamamlamak istiyor musunuz?</p>
+                <span class="m-price" id="speedUpCost" style="color:var(--accent-cyan);">0 Elmas</span>
+                
+                <div class="m-btns">
+                    <button class="m-btn" style="background:#333; color:#fff;" onclick="closeModal('speedUpModal')">İPTAL</button>
+                    <button class="m-btn" style="background:var(--accent-cyan); color:#000;" onclick="confirmSpeedUp()">HIZLANDIR</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- WITHDRAW MODAL -->
+        <div class="modal-overlay" id="withdrawModal">
+            <div class="modal-content" style="border-top-color: var(--accent-green);">
+                <i class="fas fa-money-bill-wave" style="font-size:3rem; color:var(--accent-green); margin-bottom:10px;"></i>
+                <h3 style="color:#fff; margin-bottom:5px;">Para Çekme</h3>
+                <p style="color:#aaa; font-size:0.9rem; margin-bottom:20px;">Kasadan <span id="wAmountDisplay" style="color:#fff; font-weight:bold;">0</span> ₺ çekmek istediğinize emin misiniz?</p>
+                
+                <div class="m-btns">
+                    <button class="m-btn" style="background:#333; color:#fff;" onclick="closeModal('withdrawModal')">İPTAL</button>
+                    <button class="m-btn" style="background:var(--accent-green); color:#000;" onclick="confirmWithdraw()">ONAYLA</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SETTINGS MODAL -->
+        <div class="modal-overlay" id="settingsModal">
+            <div class="modal-content" style="border-top-color: var(--accent-cyan);">
+                <i class="fas fa-cogs" style="font-size:3rem; color:var(--accent-cyan); margin-bottom:10px;"></i>
+                <h3 style="color:#fff; margin-bottom:5px;">Ayarları Kaydet</h3>
+                <p style="color:#aaa; font-size:0.9rem; margin-bottom:20px;">Hastane bilgilerini güncellemek istediğinize emin misiniz?<br><span style="color:var(--accent-red); font-weight:bold;">İşlem Ücreti: 10.000 ₺</span></p>
+                
+                <div class="m-btns">
+                    <button class="m-btn" style="background:#333; color:#fff;" onclick="closeModal('settingsModal')">İPTAL</button>
+                    <button class="m-btn" style="background:var(--accent-cyan); color:#000;" onclick="confirmSettings()">ONAYLA</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="js/loader-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+    <script src="js/header-manager.js"></script>
+    <script src="js/menu-manager.js"></script>
+    <script>
+        let user = {};
+        let hospital = {};
+        let hospitalLogs = [];
+        let userId = null;
+        let upgradeInterval = null;
+
+        const fmt = (num) => num.toLocaleString('tr-TR');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const u = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (u) {
+                userId = u.id;
+                initPage();
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        async function initPage() {
+            try {
+                // Get User Stats (for money/gold/license)
+                const userRes = await fetch(`/api/user-stats/${userId}`);
+                user = await userRes.json();
+
+                // Get Hospital Data (Add timestamp to prevent caching)
+                const hospRes = await fetch(`/api/hospitals/my/${userId}?t=${new Date().getTime()}`);
+                const hospData = await hospRes.json();
+
+                if (hospData.success && hospData.hasHospital) {
+                    hospital = hospData.hospital;
+                    hospitalLogs = hospData.logs || [];
+                    updateUI();
+                } else {
+                    alert("Hastaneye sahip değilsiniz.");
+                    window.location.href = 'hospital-list.html';
+                }
+            } catch (e) {
+                console.error(e);
+                toastr.error('Veriler yüklenemedi.');
+            }
+        }
+
+        function updateUI() {
+            // Stats
+            document.getElementById('statLevel').innerText = hospital.level;
+            document.getElementById('statCapacity').innerText = (hospital.active_patients || 0) + " / " + hospital.capacity;
+            document.getElementById('statPriceDisplay').innerText = fmt(hospital.price || 0);
+            document.getElementById('statTotalTreatments').innerText = fmt(hospital.total_treatments || 0);
+            document.getElementById('statTotalEarnings').innerText = fmt(hospital.balance || 0) + " ₺"; // Using balance as proxy
+            document.getElementById('statDuration').innerText = (hospital.treatment_duration || 15) + " Dk";
+            document.getElementById('statRegen').innerText = (hospital.health_regen || 100);
+            
+            // New Fields
+            document.getElementById('hNameDisplay').innerText = hospital.name;
+            document.getElementById('hOwnerDisplay').innerHTML = `<a href="profile.html?id=${hospital.user_id}" style="color:var(--accent-cyan); text-decoration:none;">${hospital.owner_name || user.username}</a>`;
+
+            document.getElementById('hospitalBalance').innerText = fmt(hospital.balance || 0) + " ₺";
+            document.getElementById('hNameInput').value = hospital.name;
+            document.getElementById('hPriceInput').value = hospital.price;
+            
+            document.getElementById('currentLevel').innerText = "Seviye " + hospital.level;
+            document.getElementById('nextLevel').innerText = "Seviye " + (hospital.level + 1);
+            document.getElementById('currentCap').innerText = hospital.capacity + " Yatak";
+            document.getElementById('nextCap').innerText = ((hospital.level + 1) * 5) + " Yatak";
+            
+            // Logs
+            const tbody = document.getElementById('logsTableBody');
+            tbody.innerHTML = '';
+            if (hospitalLogs.length === 0) {
+                tbody.innerHTML = '<div style="text-align:center; color:#666;">Kayıt yok.</div>';
+            } else {
+                hospitalLogs.forEach(log => {
+                    const date = new Date(log.created_at);
+                    const dateStr = date.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const avatar = log.avatar || 'uploads/avatars/default.png'; // Assuming avatar is available in log or need to join
+                    // Note: The current API for logs might not return avatar. Let's check server.js or assume default for now.
+                    // If avatar is not in log, we might need to update backend query.
+                    // For now, let's use a generic icon or try to use what we have.
+                    
+                    const row = `
+                        <div class="log-item">
+                            <img src="${avatar}" class="log-avatar">
+                            <div class="log-text">
+                                <span class="log-user-link">#${log.user_id} - ${log.patient_name}</span> 
+                                <span class="log-highlight">tedavi oldu</span>
+                            </div>
+                            <div class="log-time">${dateStr} ${timeStr}</div>
+                        </div>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            }
+
+            // Check Upgrade Status
+            let remaining = parseFloat(hospital.upgrade_remaining_seconds);
+            
+            // Fallback: If server didn't return remaining seconds, try to calc from end time
+            if (isNaN(remaining) && hospital.upgrade_end_time) {
+                const end = new Date(hospital.upgrade_end_time);
+                const now = new Date();
+                remaining = (end - now) / 1000;
+                console.log("Using fallback timer calc:", remaining);
+            }
+
+            if (remaining > 0) {
+                // Use 'remaining' to set the target end time relative to client NOW
+                // This ensures the timer runs for 'remaining' seconds regardless of clock sync
+                const now = new Date();
+                const targetEnd = new Date(now.getTime() + remaining * 1000);
+                startUpgradeTimer(targetEnd);
+            } else if (hospital.upgrade_end_time) {
+                // If we have an end time but remaining is <= 0, it's finished.
+                document.getElementById('upgradeBtn').innerText = "Tamamlanıyor...";
+                completeUpgrade();
+            } else {
+                if (upgradeInterval) clearInterval(upgradeInterval);
+                document.getElementById('upgradeBtn').style.display = 'flex';
+                document.getElementById('upgradeBtn').innerText = "GELİŞTİR"; 
+                document.getElementById('upgradeProgress').style.display = 'none';
+                
+                const speedUpBtn = document.getElementById('speedUpBtn');
+                if (speedUpBtn) speedUpBtn.remove();
+            }
+        }
+
+        function startUpgradeTimer(endTime) {
+            document.getElementById('upgradeBtn').style.display = 'none';
+            document.getElementById('upgradeProgress').style.display = 'block';
+            
+            // Inject Speed Up Button
+            let speedUpBtn = document.getElementById('speedUpBtn');
+            if (!speedUpBtn) {
+                speedUpBtn = document.createElement('button');
+                speedUpBtn.id = 'speedUpBtn';
+                speedUpBtn.className = 'btn-upgrade';
+                speedUpBtn.style.marginTop = '10px';
+                speedUpBtn.style.background = 'linear-gradient(45deg, #FFD700, #FFA500)';
+                speedUpBtn.style.color = '#000';
+                speedUpBtn.style.border = 'none';
+                speedUpBtn.innerHTML = '<i class="fas fa-bolt"></i> HIZLANDIR';
+                speedUpBtn.onclick = openSpeedUpModal;
+                document.getElementById('upgradeProgress').appendChild(speedUpBtn);
+            } else {
+                speedUpBtn.style.display = 'block';
+            }
+
+            if (upgradeInterval) clearInterval(upgradeInterval);
+
+            const updateTimer = () => {
+                const now = new Date();
+                const diff = endTime - now;
+
+                if (diff <= 0) {
+                    clearInterval(upgradeInterval);
+                    document.getElementById('uTimer').innerText = "Tamamlanıyor...";
+                    document.getElementById('uBar').style.width = "100%";
+                    if (speedUpBtn) speedUpBtn.style.display = 'none';
+                    completeUpgrade();
+                    return;
+                }
+
+                // Format Time
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                document.getElementById('uTimer').innerText = `Geliştiriliyor... ${hours}s ${minutes}dk ${seconds}sn`;
+                
+                // Bar (Approximate)
+                document.getElementById('uBar').style.width = "100%"; 
+                document.getElementById('uBar').style.animation = "pulse 2s infinite";
+            };
+
+            // Run immediately
+            updateTimer();
+            upgradeInterval = setInterval(updateTimer, 1000);
+        }
+
+        // --- WITHDRAW ---
+        function openWithdrawModal() {
+            const amount = parseInt(document.getElementById('withdrawAmount').value);
+            if (!amount || amount <= 0) return toastr.warning('Geçerli miktar giriniz.');
+            if (amount > (hospital.balance || 0)) return toastr.warning('Yetersiz bakiye.');
+
+            document.getElementById('wAmountDisplay').innerText = fmt(amount);
+            document.getElementById('withdrawModal').style.display = 'flex';
+        }
+
+        async function confirmWithdraw() {
+            const amount = parseInt(document.getElementById('withdrawAmount').value);
+            closeModal('withdrawModal');
+
+            try {
+                const res = await fetch('/api/hospital/withdraw', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, amount })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    toastr.success(data.message);
+                    hospital.balance -= amount;
+                    document.getElementById('withdrawAmount').value = '';
+                    updateUI();
+                    
+                    // Refresh user stats
+                    const userRes = await fetch(`/api/user-stats/${userId}`);
+                    user = await userRes.json();
+                    if (window.updateHeader) window.updateHeader(user);
+                } else {
+                    toastr.error(data.message);
+                }
+            } catch (e) {
+                toastr.error('Hata oluştu.');
+            }
+        }
+
+        // --- SETTINGS ---
+        function openSettingsModal() {
+            document.getElementById('settingsModal').style.display = 'flex';
+        }
+
+        async function confirmSettings() {
+            const name = document.getElementById('hNameInput').value;
+            const price = parseInt(document.getElementById('hPriceInput').value);
+            
+            if (!name || name.length < 5 || name.length > 30) {
+                toastr.warning('Hastane adı 5-30 karakter arasında olmalıdır.');
+                return;
+            }
+            if (isNaN(price) || price < 100 || price > 5000) {
+                toastr.warning('Fiyat 100 ile 5.000 arasında olmalıdır.');
+                return;
+            }
+
+            if (user.money < 10000) {
+                toastr.error('Yetersiz bakiye. İşlem ücreti: 10.000 ₺');
+                closeModal('settingsModal');
+                return;
+            }
+
+            closeModal('settingsModal');
+
+            try {
+                const res = await fetch('/api/hospital/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, name, price })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    toastr.success(data.message);
+                    hospital.name = name;
+                    hospital.price = price;
+                    
+                    updateUI();
+                    
+                    // Refresh user stats
+                    const userRes = await fetch(`/api/user-stats/${userId}`);
+                    user = await userRes.json();
+                    if (window.updateHeader) window.updateHeader(user);
+                } else {
+                    toastr.error(data.message);
+                }
+            } catch (e) {
+                toastr.error('Hata oluştu.');
+            }
+        }
+
+        // --- UPGRADE ---
+        async function openUpgradeModal() {
+            const nextLevel = hospital.level + 1;
+            
+            // Fetch Upgrade Info
+            let upgradeInfo = null;
+            try {
+                const res = await fetch(`/api/hospital/upgrade-info/${hospital.level}`);
+                const data = await res.json();
+                if (data.success) {
+                    upgradeInfo = data.info;
+                } else {
+                    toastr.warning(data.message);
+                    return;
+                }
+            } catch (e) {
+                console.error(e);
+                toastr.error('Bilgiler alınamadı.');
+                return;
+            }
+
+            // Costs from Server
+            const costMoney = upgradeInfo.upgrade_cost_money;
+            const costGold = upgradeInfo.upgrade_cost_gold;
+            const costDiamond = upgradeInfo.upgrade_cost_diamond;
+            
+            // Fetch Inventory & License
+            let inventory = {};
+            let licenses = [];
+            try {
+                const [invRes, licRes] = await Promise.all([
+                    fetch(`/api/inventory/${userId}`),
+                    fetch(`/api/licenses/${userId}`)
+                ]);
+                inventory = await invRes.json();
+                licenses = await licRes.json();
+            } catch (e) { console.error(e); }
+
+            const getAmount = (key) => {
+                if (Array.isArray(inventory)) {
+                    const item = inventory.find(i => i.item_key === key);
+                    return item ? (item.amount || item.quantity) : 0;
+                }
+                return inventory[key] || 0;
+            };
+
+            // Helper for resource badges
+            const check = (val, cost, label, icon, isImage = false) => {
+                if (!cost || cost <= 0) return '';
+                const has = (val || 0) >= cost;
+                const color = has ? '#2ecc71' : '#e74c3c';
+                const bg = has ? 'rgba(46, 204, 113, 0.15)' : 'rgba(231, 76, 60, 0.15)';
+                
+                const iconHtml = isImage 
+                    ? `<img src="${icon}" style="width:20px; height:20px; object-fit:contain;">`
+                    : `<i class="${icon}"></i>`;
+
+                return `
+                    <div style="background:${bg}; color:${color}; border:1px solid ${color}; padding:8px; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:bold; font-size:0.9rem;">
+                        ${iconHtml} ${fmt(cost)} ${label}
+                    </div>
+                `;
+            };
+
+            // Helper for benefit badges
+            const benefit = (text, icon) => {
+                return `
+                    <div style="background:rgba(255, 215, 0, 0.15); color:#ffd700; border:1px solid #ffd700; padding:8px; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:bold; font-size:0.9rem;">
+                        <i class="${icon}"></i> ${text}
+                    </div>
+                `;
+            };
+
+            // License Check
+            const requiredLicenseText = `${nextLevel}. Seviye Hastane Lisansı`;
+            // API returns object { "hospital": level, ... }
+            const currentLicLevel = (licenses['hospital'] || licenses['hospital_license'] || 0);
+            const hasLicense = currentLicLevel >= nextLevel;
+            
+            const lColor = hasLicense ? '#2ecc71' : '#e74c3c';
+            const lBg = hasLicense ? 'rgba(46, 204, 113, 0.15)' : 'rgba(231, 76, 60, 0.15)';
+            const lIcon = hasLicense ? 'fas fa-check-circle' : 'fas fa-times-circle';
+
+            const licenseBadge = `
+                <div style="background:${lBg}; color:${lColor}; border:1px solid ${lColor}; padding:8px; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:bold; font-size:0.9rem;">
+                    <i class="${lIcon}"></i> ${requiredLicenseText}
+                </div>
+            `;
+
+            // Materials from Server
+            const materials = [
+                { key: 'lumber', name: 'Tahta', icon: 'icons/factory-icon/wood-plank.png', amount: upgradeInfo.req_lumber },
+                { key: 'brick', name: 'Tuğla', icon: 'icons/factory-icon/brick.png', amount: upgradeInfo.req_brick },
+                { key: 'glass', name: 'Cam', icon: 'icons/factory-icon/window.png', amount: upgradeInfo.req_glass },
+                { key: 'concrete', name: 'Çimento', icon: 'icons/factory-icon/cement.png', amount: upgradeInfo.req_concrete },
+                { key: 'steel', name: 'Çelik', icon: 'icons/factory-icon/steel.png', amount: upgradeInfo.req_steel }
+            ];
+
+            let materialHtml = '';
+            materials.forEach(m => {
+                if (m.amount > 0) {
+                    materialHtml += check(getAmount(m.key), m.amount, m.name, m.icon, true);
+                }
+            });
+
+            // Duration from Server
+            const durationMinutes = upgradeInfo.upgrade_duration_minutes;
+
+            // Benefits
+            const capDiff = upgradeInfo.capacity - hospital.capacity;
+            const durDiff = hospital.treatment_duration - upgradeInfo.treatment_duration;
+            
+            let benefitsHtml = '';
+            if (capDiff > 0) benefitsHtml += benefit(`+${capDiff} Kapasite`, 'fas fa-bed');
+            if (durDiff > 0) benefitsHtml += benefit(`-${durDiff} Dk Tedavi Süresi`, 'fas fa-clock');
+            if (upgradeInfo.health_regen > hospital.health_regen) benefitsHtml += benefit(`+${upgradeInfo.health_regen - hospital.health_regen} Yenileme`, 'fas fa-heart');
+
+            const html = `
+                <div style="text-align:left; margin-bottom:15px;">
+                    <h4 style="color:#fff; border-bottom:1px solid #333; padding-bottom:5px; margin-bottom:10px;">GEREKSİNİMLER</h4>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:0.9rem;">
+                        ${check(user.money, costMoney, '₺', 'fas fa-money-bill')}
+                        ${check(user.gold, costGold, 'Altın', 'fas fa-coins')}
+                        ${check(user.diamond, costDiamond, 'Elmas', 'fas fa-gem')}
+                        ${materialHtml}
+                    </div>
+                    <div style="margin-top:10px;">
+                        ${licenseBadge}
+                    </div>
+                </div>
+
+                <div style="text-align:left; margin-bottom:15px;">
+                    <h4 style="color:#fff; border-bottom:1px solid #333; padding-bottom:5px; margin-bottom:10px;">KAZANIMLAR</h4>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:0.9rem;">
+                        ${benefitsHtml}
+                    </div>
+                </div>
+                
+                <p style="font-size:0.8rem; color:#888; text-align:center; margin-top:10px;">Geliştirme Süresi: ${durationMinutes} Dakikadır</p>
+            `;
+
+            document.getElementById('upgradeContent').innerHTML = html;
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+
+        async function startUpgrade() {
+            closeModal('confirmModal');
+
+            if (!userId) {
+                toastr.error('Kullanıcı kimliği bulunamadı.');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/hospital/upgrade', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    toastr.success(data.message);
+                    if (window.fetchNotifications) window.fetchNotifications();
+                    // Reload to get new state (upgrade_end_time)
+                    initPage();
+                    if (window.updateHeaderStats) window.updateHeaderStats();
+                } else {
+                    toastr.error(data.message || 'Geliştirme başlatılamadı.');
+                }
+            } catch (e) {
+                console.error("Upgrade Error:", e);
+                toastr.error('Hata oluştu: ' + e.message);
+            }
+        }
+
+        function completeUpgrade() {
+            fetch('/api/hospital/complete-upgrade', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: userId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    toastr.success(data.message);
+                    if (window.fetchNotifications) window.fetchNotifications();
+                    initPage();
+                } else {
+                    // If server says not ready (time sync issue), retry shortly
+                    if (data.message && data.message.includes('Henüz')) {
+                        setTimeout(initPage, 2000);
+                    } else {
+                        toastr.error(data.message);
+                    }
+                }
+            })
+            .catch(err => console.error(err));
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function openSpeedUpModal() {
+            if (!hospital) return;
+            
+            const nextLevel = hospital.level + 1;
+            const cost = nextLevel * 10;
+            
+            document.getElementById('speedUpCost').innerText = `${cost} Elmas`;
+            document.getElementById('speedUpModal').style.display = 'flex';
+        }
+
+        function confirmSpeedUp() {
+            closeModal('speedUpModal');
+            
+            fetch('/api/hospital/speed-up', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: userId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    toastr.success(data.message);
+                    initPage(); // Reload to see changes
+                    if (window.updateHeaderStats) window.updateHeaderStats();
+                } else {
+                    toastr.error(data.message);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                toastr.error("Bir hata oluştu.");
+            });
+        }
+
+        // --- TABS ---
+        function switchTab(tabName) {
+            // Buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+
+    </script>
+</body>
+</html>

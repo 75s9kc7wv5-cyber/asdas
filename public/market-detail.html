@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Sim of World - Ürün Detayı</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    
+    <style>
+        :root {
+            --bg-main: #0a0a0a;
+            --bg-card: #141414;
+            --bg-input: #1a1a1a;
+            --accent: #ffd700;
+            --text-primary: #ffffff;
+            --text-secondary: #888888;
+            --border-subtle: #222222;
+            --success: #2ecc71;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-main);
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        .game-container {
+            width: 100%; max-width: 450px; background-color: var(--bg-main);
+            height: 100vh; display: flex; flex-direction: column; position: relative;
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.05);
+            border-left: 1px solid #111; border-right: 1px solid #111;
+        }
+
+        main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
+        }
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        .back-btn:hover {
+            background: #2a2a2a;
+            border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+        }
+        .page-header-content {
+            flex: 1;
+            text-align: left;
+        }
+        .header-title-text { 
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #fff;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .header-subtitle-text {
+            font-size: 0.85rem;
+            color: #999;
+            font-weight: 500;
+        }
+
+        /* PRODUCT INFO */
+        .product-header {
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid #333;
+            border-top: 2px solid var(--accent);
+            border-radius: 12px;
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        .product-header::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(90deg, rgba(255, 215, 0, 0.05) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        
+        .ph-left { display: flex; align-items: center; gap: 15px; }
+
+        .ph-icon-wrapper {
+            width: 50px; height: 50px;
+            background: #151515;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid #333;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            flex-shrink: 0;
+        }
+        
+        .ph-icon { width: 60%; height: 60%; object-fit: contain; filter: drop-shadow(0 0 8px rgba(255,215,0,0.4)); margin: 0; }
+        
+        .ph-info { display: flex; flex-direction: column; gap: 2px; text-align: left; }
+        .ph-name { font-size: 1rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 1px; line-height: 1.2; }
+        .ph-desc { font-size: 0.8rem; color: #999; font-weight: 500; }
+        
+        .market-stat-grid {
+             display: flex; flex-direction: column; gap: 5px; align-items: flex-end;
+        }
+        .market-stat-card {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #444;
+            font-size: 0.75rem;
+            color: #ddd;
+            margin-right: 5px;
+        }
+        .market-stat-card span { color: var(--accent); font-weight: 700; margin-left: 3px; }
+
+        .btn-sell-action {
+            width: 100%;
+            background: linear-gradient(135deg, var(--accent) 0%, #ffb300 100%);
+            color: #000;
+            border: none;
+            padding: 10px;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 1.1rem;
+            cursor: pointer;
+            font-family: 'Rajdhani', sans-serif;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.25);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            border-top: 1px solid rgba(255,255,255,0.4);
+        }
+        
+        .btn-sell-action::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: 0.5s;
+        }
+
+        .btn-sell-action:hover { 
+            transform: translateY(-3px); 
+            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4); 
+        }
+
+        .btn-sell-action:hover::after {
+            left: 100%;
+        }
+
+        .btn-sell-action:active {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+        }
+
+        /* LISTINGS */
+        .listings-title { font-size: 1rem; font-weight: 700; margin-bottom: 10px; color: var(--text-primary); display: flex; justify-content: space-between; align-items: center; }
+        
+        .listings-list { 
+            display: flex; 
+            flex-direction: column;
+            gap: 10px; 
+        }
+
+        .listing-card {
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid #333;
+            border-left: 3px solid var(--accent);
+            border-radius: 8px;
+            padding: 0;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+        .listing-card:hover { 
+            background: rgba(255, 255, 255, 0.05);
+            border-color: #333;
+            border-left-color: #fff;
+            transform: translateX(5px);
+        }
+        
+        .lc-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+            padding: 0;
+            text-align: left !important;
+        }
+
+        .city-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 5px;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid #333;
+            font-size: 0.85rem;
+        }
+        
+        .owner-info {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: #ccc;
+        }
+        .owner-info i { font-size: 1rem; color: #555; }
+        
+        .lc-info-group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .lc-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .lc-icon {
+            width: 50px;
+            height: 50px;
+            background: #222;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            border: 1px solid #444;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .lc-icon img { width: 32px; height: 32px; object-fit: contain; }
+
+        .lc-left { display: flex; flex-direction: column; }
+        .lc-seller { font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: center; gap: 5px; }
+        .lc-stock { font-size: 0.9rem; color: var(--text-primary); font-weight: 600; margin-top: 2px; }
+        
+        .lc-right { text-align: right; }
+        .lc-price { font-size: 1.1rem; font-weight: 800; color: var(--success); }
+        .lc-unit { font-size: 0.7rem; color: var(--text-secondary); }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+            display: none; justify-content: center; align-items: center; z-index: 100;
+        }
+        .modal-content {
+            background: #141414;
+            border: 1px solid #333;
+            border-top: 3px solid var(--accent);
+            border-radius: 16px;
+            padding: 30px; 
+            width: 90%; max-width: 380px; 
+            position: relative;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+        }
+        .modal-title { 
+            font-size: 1.4rem; font-weight: 800; color: #fff; 
+            margin-bottom: 25px; text-align: center; 
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        
+        .input-group { margin-bottom: 20px; }
+        .input-label { display: block; font-size: 0.85rem; color: #aaa; margin-bottom: 8px; font-weight: 600; }
+        .modal-input {
+            width: 100%; background: #0a0a0a; border: 1px solid #333;
+            color: #fff; padding: 14px; border-radius: 10px; font-family: 'Rajdhani'; font-size: 1.1rem; font-weight: 700;
+            outline: none; transition: 0.2s; text-align: center;
+        }
+        .modal-input:focus { border-color: var(--accent); background: #000; }
+
+        .total-cost { 
+            text-align: center; font-size: 1rem; color: #888; margin-bottom: 25px; 
+            background: rgba(255,255,255,0.03); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);
+        }
+        .total-cost span { color: var(--success); font-weight: 800; font-size: 1rem; margin-left: 5px; }
+
+        .btn-confirm {
+            width: 100%; 
+            background: var(--accent); color: #000; border: none; padding: 14px;
+            border-radius: 10px; font-weight: 800; font-size: 1.1rem; cursor: pointer; font-family: 'Rajdhani';
+            transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-confirm:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.3);
+            background: #ffdb1a;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-confirm-green {
+            flex: 1;
+            background: #2ecc71; color: #fff; border: none; padding: 14px;
+            border-radius: 10px; font-weight: 800; font-size: 1rem; cursor: pointer; font-family: 'Rajdhani';
+            transition: 0.2s; display: flex; align-items: center; justify-content: center;
+        }
+        .btn-confirm-green:hover { background: #27ae60; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3); }
+
+        .btn-cancel {
+            flex: 1;
+            background: #e74c3c; 
+            color: #fff; border: none; padding: 14px;
+            border-radius: 10px; font-weight: 800; font-size: 1rem; cursor: pointer; font-family: 'Rajdhani';
+            transition: 0.2s; display: flex; align-items: center; justify-content: center;
+        }
+        .btn-cancel:hover { background: #c0392b; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3); }
+        
+        .btn-close {
+            position: absolute; top: 15px; right: 15px; 
+            background: rgba(255,255,255,0.05); border: 1px solid transparent; 
+            color: #666; width: 32px; height: 32px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem; cursor: pointer; transition: 0.2s;
+        }
+        .btn-close:hover { background: #222; color: #fff; border-color: #444; }
+
+        .badge-stock {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #444;
+            font-size: 0.75rem;
+            color: #ddd;
+            margin-right: 5px;
+        }
+
+        .seller-avatar-img {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #444;
+            display: block;
+        }
+
+        .badge-price {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #444;
+            font-size: 0.75rem;
+            color: #2ecc71;
+            font-weight: 800;
+            margin: 5px auto;
+            width: fit-content;
+        }
+
+        /* LOADER STYLES */
+        #game-loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #0d0d0d; z-index: 99999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        #game-loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        .loader-logo { font-size: 2.5rem; font-weight: 900; letter-spacing: 2px; margin-bottom: 40px; animation: pulseLogo 2s infinite ease-in-out; }
+        .loader-logo span { color: var(--accent); }
+        .spinner-container { position: relative; width: 80px; height: 80px; margin-bottom: 30px; }
+        .spinner-ring {
+            position: absolute; width: 100%; height: 100%; border-radius: 50%;
+            border: 3px solid transparent; border-top-color: var(--accent);
+            animation: spin 1s linear infinite; box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        }
+        .spinner-ring::before {
+            content: ""; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px;
+            border-radius: 50%; border: 3px solid transparent; border-top-color: rgba(255, 255, 255, 0.5);
+            animation: spinReverse 2s linear infinite;
+        }
+        .spinner-ring::after {
+            content: ""; position: absolute; top: 15px; left: 15px; right: 15px; bottom: 15px;
+            border-radius: 50%; border: 3px solid transparent; border-top-color: var(--accent);
+            animation: spin 3s linear infinite;
+        }
+        .loading-text { font-size: 1.2rem; font-weight: bold; letter-spacing: 2px; color: var(--accent); margin-bottom: 10px; text-transform: uppercase; }
+        .loading-tip { font-size: 0.8rem; color: #777; min-height: 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes spinReverse { 0% { transform: rotate(0deg); } 100% { transform: rotate(-360deg); } }
+        @keyframes pulseLogo { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.8; } }
+
+    </style>
+</head>
+<body>
+
+    <div id="game-loader">
+        <div class="loader-logo">SIM <span>OF WORLD</span></div>
+        <div class="spinner-container">
+            <div class="spinner-ring"></div>
+        </div>
+        <div class="loading-text">YÜKLENİYOR...</div>
+        <div class="loading-tip" id="loadingTip">Sunuculara bağlanılıyor...</div>
+    </div>
+
+    <div class="game-container">
+        <div id="header-container"></div>
+
+        <main>
+            <div class="page-header">
+                <button class="back-btn" onclick="goBackToList()">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="page-header-content">
+                    <div class="header-title-text" id="productTitle">
+                        ÜRÜN İLANI
+                    </div>
+                    <div class="header-subtitle-text">Pazar detayları ve işlemler</div>
+                </div>
+            </div>
+
+            <div class="product-header" id="productHeader">
+                <!-- JS ile doldurulacak -->
+            </div>
+
+            <button class="btn-sell-action" onclick="openSellModal()">
+                <i class="fas fa-plus"></i> Ürün Sat
+            </button>
+
+            <div class="listings-title">
+                <span id="listingsTitle">SATIŞ İLANLARI (0)</span>
+                <i class="fas fa-sort-amount-down" id="sortIcon" onclick="toggleSort()" style="cursor: pointer;"></i>
+            </div>
+
+            <div class="listings-list" id="listingsList">
+                <div style="text-align:center; padding:20px; color:#666;">Yükleniyor...</div>
+            </div>
+        </main>
+
+        <div id="menu-container"></div>
+    </div>
+
+    <!-- BUY MODAL -->
+    <div class="modal-overlay" id="buyModal">
+        <div class="modal-content">
+            <button class="btn-close" onclick="closeModal('buyModal')"><i class="fas fa-times"></i></button>
+            <h3 class="modal-title" id="buyModalTitle">SATIN AL</h3>
+            
+            <div style="margin-bottom: 15px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; display: flex; align-items: center; gap: 10px;">
+                <img id="buyModalSellerAvatar" src="uploads/avatars/default.png" class="seller-avatar-img" style="width: 32px; height: 32px;">
+                <div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary);">Satıcı</div>
+                    <div id="buyModalSeller" style="font-weight: 700; color: var(--text-primary);"></div>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Miktar Giriniz (Maks: <span id="maxStock">0</span>)</label>
+                <input type="number" id="buyAmount" class="modal-input" placeholder="0" min="1" oninput="if(this.value.length > 10) this.value = this.value.slice(0, 10); calculateTotal()">
+            </div>
+
+            <div class="total-cost">
+                Toplam Tutar: <span id="totalPrice">0</span> <span>₺</span>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeModal('buyModal')">İPTAL</button>
+                <button class="btn-confirm-green" onclick="confirmBuy()">SATIN AL</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SELL MODAL -->
+    <div class="modal-overlay" id="sellModal">
+        <div class="modal-content">
+            <button class="btn-close" onclick="closeModal('sellModal')"><i class="fas fa-times"></i></button>
+            <h3 class="modal-title" id="sellModalTitle">SATIŞ YAP</h3>
+            
+            <div class="input-group">
+                <label class="input-label">Satılacak Miktar (Envanterde <span id="userStock">0</span> adet mevcut)</label>
+                <input type="number" id="sellAmount" class="modal-input" placeholder="0" min="1" oninput="if(this.value.length > 10) this.value = this.value.slice(0, 10); calculateSellTotal()">
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Birim Fiyatı (₺)</label>
+                <input type="number" id="sellPrice" class="modal-input" placeholder="0" min="1" oninput="if(this.value.length > 10) this.value = this.value.slice(0, 10); calculateSellTotal()">
+            </div>
+
+            <div class="total-cost">
+                Toplam Kazanç: <span id="sellTotal">0</span> <span>₺</span>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeModal('sellModal')">İPTAL</button>
+                <button class="btn-confirm-green" onclick="confirmSell()">İLAN OLUŞTUR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PURCHASE SUCCESS MODAL -->
+    <div class="modal-overlay" id="purchaseSuccessModal">
+        <div class="modal-content">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="width: 80px; height: 80px; background: rgba(46, 204, 113, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 2px solid #2ecc71;">
+                    <i class="fas fa-check" style="font-size: 40px; color: #2ecc71;"></i>
+                </div>
+            </div>
+            <h3 class="modal-title" style="color: #2ecc71; margin-bottom: 15px;">SATIN ALMA BAŞARILI</h3>
+            
+            <div style="text-align: center; color: #ccc; font-size: 1.1rem; line-height: 1.6; margin-bottom: 30px;">
+                <span id="successSeller" style="color: #fff; font-weight: 700;"></span> satıcısından<br>
+                <span id="successPrice" style="color: var(--accent); font-weight: 700;"></span> karşılığında<br>
+                <span id="successAmount" style="color: #fff; font-weight: 700;"></span> adet <span id="successItem" style="color: #fff; font-weight: 700;"></span><br>
+                satın aldınız.
+            </div>
+
+            <button class="btn-confirm" onclick="closeModal('purchaseSuccessModal'); fetchListings(currentItemId); fetchInventory();">TAMAM</button>
+        </div>
+    </div>
+
+    <!-- ERROR MODAL (OWN ITEM) -->
+    <div class="modal-overlay" id="errorModal">
+        <div class="modal-content" style="border-top-color: #e74c3c;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="width: 80px; height: 80px; background: rgba(231, 76, 60, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 2px solid #e74c3c;">
+                    <i class="fas fa-times" style="font-size: 2.5rem; color: #e74c3c;"></i>
+                </div>
+            </div>
+            <h3 class="modal-title" style="color: #e74c3c; margin-bottom: 15px;">HATA</h3>
+            
+            <div style="text-align: center; color: #ccc; font-size: 1.1rem; line-height: 1.6; margin-bottom: 30px;">
+                Kendi satış ilanınızı satın alamazsınız!
+            </div>
+
+            <button class="btn-cancel" style="width:100%" onclick="closeModal('errorModal')">TAMAM</button>
+        </div>
+    </div>
+
+    <!-- INSUFFICIENT FUNDS MODAL -->
+    <div class="modal-overlay" id="insufficientFundsModal">
+        <div class="modal-content" style="border-top-color: #e74c3c;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="width: 80px; height: 80px; background: rgba(231, 76, 60, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 2px solid #e74c3c;">
+                    <i class="fas fa-wallet" style="font-size: 2.5rem; color: #e74c3c;"></i>
+                </div>
+            </div>
+            <h3 class="modal-title" style="color: #e74c3c; margin-bottom: 15px;">YETERSİZ BAKİYE</h3>
+            
+            <div style="text-align: center; color: #ccc; font-size: 1.1rem; line-height: 1.6; margin-bottom: 30px;">
+                Bu işlemi gerçekleştirmek için yeterli paranız bulunmamaktadır.
+                <br><br>
+                <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; font-size: 0.9rem;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                        <span>Gereken:</span>
+                        <span id="chkRequired" style="color:#e74c3c; font-weight:bold">0 ₺</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; border-top:1px solid #333; paddingTop:5px;">
+                        <span>Mevcut:</span>
+                        <span id="chkAvailable" style="color:#fff; font-weight:bold">0 ₺</span>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-cancel" style="width:100%" onclick="closeModal('insufficientFundsModal')">TAMAM</button>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="js/header-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+    <script src="js/menu-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+    <script>
+        // Same database as market-list.html for product info
+        const itemDatabase = {
+            'iron': { name: 'Demir', icon: 'icons/mine-icon/iron.png', desc: 'Sanayi hammaddesi' },
+            'copper': { name: 'Bakır', icon: 'icons/mine-icon/copper.png', desc: 'Elektronik bileşeni' },
+            'stone': { name: 'Taş', icon: 'icons/mine-icon/stone.png', desc: 'İnşaat malzemesi' },
+            'wood': { name: 'Odun', icon: 'icons/mine-icon/wood.png', desc: 'Temel yapı malzemesi' },
+            'sand': { name: 'Kum', icon: 'icons/mine-icon/sand.png', desc: 'Cam yapımında kullanılır' },
+            'coal': { name: 'Kömür', icon: 'icons/mine-icon/coal.png', desc: 'Enerji kaynağı' },
+            'oil': { name: 'Petrol', icon: 'icons/mine-icon/oil-barrel.png', desc: 'Sıvı altın' },
+            'uranium': { name: 'Uranyum', icon: 'icons/mine-icon/uranium.png', desc: 'Nükleer yakıt' },
+            'gold_nugget': { name: 'Altın Parçası', icon: 'icons/mine-icon/gold-nugget.png', desc: 'Değerli maden' },
+            'steak': { name: 'Et', icon: 'icons/food-factory/steak-food.png', desc: 'Yüksek protein' },
+            'salad': { name: 'Salata', icon: 'icons/food-factory/salad.png', desc: 'Sağlıklı öğün' },
+            'rice': { name: 'Pirinç', icon: 'icons/food-factory/rice.png', desc: 'Temel gıda' },
+            'canned_fruit': { name: 'Konserve', icon: 'icons/food-factory/fruit-canned.png', desc: 'Uzun ömürlü' },
+            'beef': { name: 'Sığır Eti', icon: 'icons/ranch-icon/beef.png', desc: 'Çiftlik ürünü' },
+            'honey': { name: 'Bal', icon: 'icons/ranch-icon/honey.png', desc: 'Doğal tatlandırıcı' },
+            'egg': { name: 'Yumurta', icon: 'icons/ranch-icon/egg.png', desc: 'Kahvaltılık' },
+            'electricity': { name: 'Elektrik', icon: 'icons/energy-factory-icon/battery.png', desc: 'Enerji depolama' },
+            'solar_panel': { name: 'Güneş Paneli', icon: 'icons/energy-factory-icon/solar-panel.png', desc: 'Yenilenebilir enerji' },
+            'wind_turbine': { name: 'Rüzgar Türbini', icon: 'icons/energy-factory-icon/wind-turbine.png', desc: 'Rüzgar enerjisi' },
+            'fossil_fuel': { name: 'Fosil Yakıt', icon: 'icons/energy-factory-icon/fossil-fuel.png', desc: 'Geleneksel yakıt' },
+            'cement': { name: 'Çimento', icon: 'icons/factory-icon/cement.png', desc: 'Yapı harcı' },
+            'brick': { name: 'Tuğla', icon: 'icons/factory-icon/brick.png', desc: 'Duvar malzemesi' },
+            'steel': { name: 'Çelik', icon: 'icons/factory-icon/steel.png', desc: 'Güçlendirilmiş metal' },
+            'glass': { name: 'Cam', icon: 'icons/factory-icon/window.png', desc: 'Şeffaf yapı' },
+            'plank': { name: 'Kereste', icon: 'icons/factory-icon/wood-plank.png', desc: 'İşlenmiş odun' },
+            'gold': { name: 'Altın', icon: 'icons/inventory-icon/gold.png', desc: 'Yatırım aracı' },
+            'diamond': { name: 'Elmas', icon: 'icons/inventory-icon/diamond.png', desc: 'En değerli taş' },
+            'weapon_basic': { name: 'Mühimmat', icon: 'icons/mine-icon/uranium.png', desc: 'Askeri malzeme' }
+        };
+
+        let currentListing = null;
+        let currentUserId = 1; 
+        let userMoney = 0;
+        let currentItemId = null;
+        let userInventory = 0;
+        let currentSort = 'asc';
+
+        // Toastr Config
+        toastr.options = {
+            "closeButton": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "timeOut": "3000",
+            "extendedTimeOut": "1000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "fadeIn",
+            "hideMethod": "fadeOut"
+        };
+
+        window.onload = () => {
+            // Loader Tips
+            const tips = [
+                "Sunuculara bağlanılıyor...", "Kullanıcı verileri şifreleniyor...", "Dünya haritası oluşturuluyor...",
+                "Piyasa verileri güncelleniyor...", "Maden rezervleri kontrol ediliyor...", "Varlıklarınız hesaplanıyor..."
+            ];
+            const tipElement = document.getElementById('loadingTip');
+            if(tipElement) {
+                setInterval(() => {
+                    tipElement.innerText = tips[Math.floor(Math.random() * tips.length)];
+                }, 800);
+            }
+
+            // Hide Loader after delay
+            setTimeout(() => {
+                const loader = document.getElementById('game-loader');
+                if(loader) loader.classList.add('hidden');
+            }, 1000);
+
+            const urlParams = new URLSearchParams(window.location.search);
+            currentItemId = urlParams.get('id');
+
+            if (!currentItemId || !itemDatabase[currentItemId]) {
+                alert('Ürün bulunamadı!');
+                window.location.href = 'market-category.html';
+                return;
+            }
+
+            renderProductInfo(currentItemId);
+            fetchListings(currentItemId);
+            fetchUser();
+        };
+
+        function fetchUser() {
+            const storedUser = localStorage.getItem('simWorldUser');
+            let userIdParam = '';
+            
+            if (storedUser) {
+                try {
+                    const user = JSON.parse(storedUser);
+                    if (user && user.id) {
+                        userIdParam = `?userId=${user.id}`;
+                    }
+                } catch (e) {
+                    console.error("User parse error", e);
+                }
+            }
+
+            fetch(`/api/user/me${userIdParam}`)
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success) {
+                        currentUserId = data.user.id;
+                        userMoney = data.user.money;
+                        fetchInventory();
+                    }
+                });
+        }
+
+        function fetchInventory() {
+            fetch(`/api/inventory/${currentUserId}`) 
+                .then(res => res.json())
+                .then(inventory => {
+                    // Check if the response is an object (inventory map)
+                    if (inventory && typeof inventory === 'object') {
+                        userInventory = inventory[currentItemId] || 0;
+                    } else {
+                        userInventory = 0;
+                    }
+                })
+                .catch(err => {
+                    console.error('Inventory fetch error:', err);
+                    userInventory = 0;
+                });
+        }
+
+        function renderProductInfo(itemId) {
+            const item = itemDatabase[itemId];
+            const container = document.getElementById('productHeader');
+            container.innerHTML = `
+                <div class="ph-left">
+                    <div class="ph-icon-wrapper">
+                        <img src="${item.icon}" class="ph-icon" alt="${item.name}">
+                    </div>
+                    <div class="ph-info">
+                        <h2 class="ph-name">${item.name}</h2>
+                        <p class="ph-desc">${item.desc}</p>
+                    </div>
+                </div>
+                <div class="market-stat-grid">
+                    <div class="market-stat-card">
+                        <i class="fas fa-tag" style="font-size: 0.8rem; color: #aaa;"></i>
+                        Ortalama: <span id="statAvgPrice">-- ₺</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function fetchListings(itemId) {
+            fetch(`/api/market/${itemId}?sort=${currentSort}`)
+                .then(res => {
+                    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                    return res.json();
+                })
+                .then(responseData => {
+                    const list = document.getElementById('listingsList');
+                    list.innerHTML = '';
+                    
+                    // Normalize data: Backend returns [listings], frontend expected {listings: []}
+                    // We will adapt to backend's array response
+                    let listings = [];
+                    if (Array.isArray(responseData)) {
+                        listings = responseData;
+                    } else if (responseData && responseData.listings) {
+                        listings = responseData.listings;
+                    }
+
+                    // Update stats elements
+                    const statAvg = document.getElementById('statAvgPrice');
+
+                    if (listings.length === 0) {
+                        document.getElementById('listingsTitle').innerText = 'SATIŞ İLANLARI (0)';
+                        list.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Satış ilanı mevcut değil.</div>';
+                        if(statAvg) statAvg.innerText = '-- ₺';
+                        return;
+                    }
+
+                    document.getElementById('listingsTitle').innerText = `SATIŞ İLANLARI (${listings.length})`;
+
+                    // Stats calculation
+                    if(statAvg) {
+                        const totalP = listings.reduce((acc, curr) => acc + curr.price, 0);
+                        const avg = Math.round(totalP / listings.length);
+                        statAvg.innerText = `${avg} ₺`;
+                    }
+
+                    listings.forEach(l => {
+                        const div = document.createElement('div');
+                        div.className = 'listing-card';
+                        
+                        // Kendi ilanımız ise sol çizgiyi yeşil yap
+                        if (l.seller_id == currentUserId) {
+                             div.style.borderLeftColor = 'var(--success)';
+                        }
+
+                        div.onclick = () => openBuyModal(l);
+                        
+                        const itemInfo = itemDatabase[currentItemId] || { name: 'Ürün', icon: 'img/icon.png' };
+                        const avatarUrl = l.seller_avatar || 'uploads/avatars/default.png';
+
+                        div.innerHTML = `
+                            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 12px;">
+                                <div class="lc-content">
+                                    <div style="width: 50px; height: 50px; background: rgba(255,255,255,0.03); border: 1px solid #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0;">
+                                        <img src="${itemInfo.icon}" style="width: 28px; height: 28px; object-fit: contain;">
+                                    </div>
+                                    <div class="lc-info-group">
+                                        <span style="color: #fff; font-size: 1rem; font-weight: 800; text-transform: uppercase;">${itemInfo.name}</span>
+                                        <div style="display: flex; align-items: center; gap: 5px;">
+                                            <span class="badge-stock" style="margin:0;"><i class="fas fa-cubes"></i> Stok: ${l.quantity} adet</span>
+                                            <div class="badge-price" style="margin: 0;">Birim Fiyat: ${l.price} ₺</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="lc-actions">
+                                    <i class="fas fa-chevron-right" style="color: #444; font-size: 0.8rem;"></i>
+                                </div>
+                            </div>
+
+                            <div class="city-card-footer">
+                                <div class="owner-info">
+                                    <img src="${avatarUrl}" class="seller-avatar-img">
+                                    <span>${l.seller_id} - ${l.seller_name || 'Gizli'}</span>
+                                </div>
+                                <div style="color: #888; font-size: 0.75rem; display: flex; align-items: center; gap: 5px;">
+                                    <i class="far fa-clock"></i>
+                                    <span class="expiry-timer" data-created="${l.created_at}">Hesaplanıyor...</span>
+                                </div>
+                            </div>
+                        `;
+                        list.appendChild(div);
+                    });
+
+                    updateTimers();
+                })
+                .catch(err => {
+                    console.error("Listings fetch error:", err);
+                    document.getElementById('listingsList').innerHTML = '<div style="text-align:center; color:red;">Veri hatası! (Sunucu ile iletişim kurulamadı)</div>';
+                });
+        }
+
+        function toggleSort() {
+            currentSort = currentSort === 'asc' ? 'desc' : 'asc';
+            const icon = document.getElementById('sortIcon');
+            
+            if (currentSort === 'asc') {
+                icon.className = 'fas fa-sort-amount-down';
+                toastr.info('Sıralama: Ucuzdan Pahalıya');
+            } else {
+                icon.className = 'fas fa-sort-amount-up';
+                toastr.info('Sıralama: Pahalıdan Ucuza');
+            }
+            
+            fetchListings(currentItemId);
+        }
+
+        function openBuyModal(listing) {
+            currentListing = listing;
+            const itemName = itemDatabase[currentItemId] ? itemDatabase[currentItemId].name : 'ÜRÜN';
+            
+            const avatarUrl = listing.seller_avatar || 'uploads/avatars/default.png';
+            document.getElementById('buyModalSellerAvatar').src = avatarUrl;
+
+            document.getElementById('buyModalTitle').innerText = `${itemName} SATIŞ İLANI`;
+            document.getElementById('buyModalSeller').innerText = `${listing.seller_id} - ${listing.seller_name || 'Gizli'}`;
+            document.getElementById('buyModal').style.display = 'flex';
+            document.getElementById('maxStock').innerText = listing.quantity;
+            document.getElementById('buyAmount').value = 1;
+            document.getElementById('buyAmount').max = listing.quantity;
+            calculateTotal();
+        }
+
+        function openSellModal() {
+            const itemName = itemDatabase[currentItemId] ? itemDatabase[currentItemId].name : 'ÜRÜN';
+            document.getElementById('sellModalTitle').innerText = `${itemName} SATIŞ İLANI OLUŞTUR`;
+            document.getElementById('sellModal').style.display = 'flex';
+            document.getElementById('userStock').innerText = userInventory;
+            document.getElementById('sellAmount').value = '';
+            document.getElementById('sellPrice').value = '';
+            document.getElementById('sellTotal').innerText = '0';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+            if(modalId === 'buyModal') currentListing = null;
+        }
+
+        function calculateTotal() {
+            if (!currentListing) return;
+            let amount = parseInt(document.getElementById('buyAmount').value) || 0;
+            if (amount > currentListing.quantity) {
+                amount = currentListing.quantity;
+                document.getElementById('buyAmount').value = amount;
+            }
+            if (amount < 0) amount = 0;
+            
+            const total = amount * currentListing.price;
+            document.getElementById('totalPrice').innerText = total.toLocaleString();
+        }
+
+        function calculateSellTotal() {
+            const amount = parseInt(document.getElementById('sellAmount').value) || 0;
+            const price = parseInt(document.getElementById('sellPrice').value) || 0;
+            const total = amount * price;
+            document.getElementById('sellTotal').innerText = total.toLocaleString();
+        }
+
+        function confirmBuy() {
+            if (!currentListing) return;
+            const amount = parseInt(document.getElementById('buyAmount').value);
+
+            if (!amount || amount <= 0) {
+                toastr.warning('Geçerli bir miktar giriniz.');
+                return;
+            }
+
+            // Check: Own Product
+            if (currentListing.seller_id === currentUserId) {
+                closeModal('buyModal');
+                document.getElementById('errorModal').style.display = 'flex';
+                return;
+            }
+
+            // Check: Insufficient Funds
+            const totalCost = amount * currentListing.price;
+            if (totalCost > userMoney) {
+                closeModal('buyModal');
+                document.getElementById('insufficientFundsModal').style.display = 'flex';
+                document.getElementById('chkRequired').innerText = totalCost.toLocaleString() + ' ₺';
+                document.getElementById('chkAvailable').innerText = userMoney.toLocaleString() + ' ₺';
+                return;
+            }
+
+            fetch('/api/market/buy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    listingId: currentListing.id,
+                    quantity: amount,
+                    buyerId: currentUserId
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    closeModal('buyModal');
+                    
+                    const itemName = itemDatabase[currentItemId] ? itemDatabase[currentItemId].name : 'ÜRÜN';
+                    const totalPrice = amount * currentListing.price;
+                    
+                    document.getElementById('successSeller').innerText = `${currentListing.seller_id} - ${currentListing.seller_name}`;
+                    document.getElementById('successPrice').innerText = `${totalPrice.toLocaleString()} ₺`;
+                    document.getElementById('successAmount').innerText = amount;
+                    document.getElementById('successItem').innerText = itemName;
+                    
+                    document.getElementById('purchaseSuccessModal').style.display = 'flex';
+                } else {
+                    toastr.error(data.message);
+                }
+            })
+            .catch(err => toastr.error('Bağlantı hatası!'));
+        }
+
+        function confirmSell() {
+            const amount = parseInt(document.getElementById('sellAmount').value);
+            const price = parseInt(document.getElementById('sellPrice').value);
+
+            if (!amount || amount <= 0 || !price || price <= 0) {
+                toastr.warning('Geçerli miktar ve fiyat giriniz.');
+                return;
+            }
+
+            if (amount > userInventory) {
+                toastr.error('Yetersiz stok!');
+                return;
+            }
+
+            fetch('/api/market/sell', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sellerId: currentUserId,
+                    itemId: currentItemId,
+                    quantity: amount,
+                    price: price
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    toastr.success('İlan başarıyla oluşturuldu!');
+                    closeModal('sellModal');
+                    fetchListings(currentItemId);
+                    fetchInventory();
+                } else {
+                    toastr.error('Hata: ' + data.message);
+                }
+            })
+            .catch(err => toastr.error('Bağlantı hatası!'));
+        }
+
+        function goBackToList() {
+            // Find which category this item belongs to
+            let foundCat = 'all';
+            const resourceList = ['iron','copper','stone','wood','sand','coal','oil','uranium','gold_nugget'];
+            const foodList = ['steak','salad','rice','canned_fruit','beef','honey','egg'];
+            const energyList = ['battery','solar_panel','wind_turbine','fossil_fuel'];
+            const industryList = ['cement','brick','steel','glass','plank'];
+            
+            if(resourceList.includes(currentItemId)) foundCat = 'resource';
+            if(foodList.includes(currentItemId)) foundCat = 'food';
+            if(energyList.includes(currentItemId)) foundCat = 'energy';
+            if(industryList.includes(currentItemId)) foundCat = 'industry';
+            
+            window.location.href = `market-list.html?cat=${foundCat}`;
+        }
+
+        function updateTimers() {
+            const timers = document.querySelectorAll('.expiry-timer');
+            timers.forEach(t => {
+                const createdStr = t.getAttribute('data-created');
+                const created = new Date(createdStr);
+                const now = new Date();
+                // 24 hours in ms
+                const expires = new Date(created.getTime() + 24 * 60 * 60 * 1000);
+                const diff = expires - now;
+
+                if (diff <= 0) {
+                    t.innerText = "Süresi Doldu";
+                    t.style.color = "#e74c3c";
+                } else {
+                    const h = Math.floor(diff / (1000 * 60 * 60));
+                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    t.innerText = `${h}s ${m}dk`;
+                }
+            });
+        }
+        
+        // Update timers every minute
+        setInterval(updateTimers, 60000);
+    </script>
+</body>
+</html>

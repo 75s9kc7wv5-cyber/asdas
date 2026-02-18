@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Sim of World - Mülk Yönetimi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0a0a0a; 
+            --bg-card: #141414; 
+            --bg-input: #1a1a1a;
+            --accent: #2ecc71; /* Emlak Teması: Yeşil */
+            --accent-cyan: #00e5ff;
+            --accent-gold: #ffd700;
+            --accent-red: #e74c3c;
+            --text-white: #ffffff; 
+            --text-muted: #888; 
+            --border-color: #222;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%; max-width: 450px; background-color: var(--bg-dark);
+            height: 100vh; display: flex; flex-direction: column; position: relative;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5); border-left: 1px solid #111; border-right: 1px solid #111;
+        }
+
+        /* HEADER */
+        header { background-color: rgba(10,10,10,0.9); backdrop-filter: blur(10px); padding: 10px; border-bottom: 1px solid var(--border-color); }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .logo { font-size: 1.2rem; font-weight: 700; }
+        .stat-box { background: var(--bg-input); padding: 5px 10px; border-radius: 4px; font-size: 0.9rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 5px; }
+        .status-bars { display: flex; gap: 5px; }
+        .bar-item { background: var(--bg-input); padding: 4px; border-radius: 15px; font-size: 0.75rem; flex: 1; text-align: center; font-weight: bold; }
+
+        /* MAIN */
+        main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
+
+        .page-header { 
+            margin-bottom: 25px; 
+            animation: fadeInDown 0.5s; 
+            display: flex; 
+            align-items: center; 
+            gap: 15px;
+        }
+        .back-btn {
+            background: var(--bg-card);
+            border: 1px solid #333;
+            color: var(--accent);
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+        .back-btn:hover {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+        }
+        .page-title { 
+            font-size: 1.4rem; 
+            font-weight: 800; 
+            letter-spacing: 2px; 
+            color: #fff; 
+            margin-bottom: 5px; 
+            text-transform: uppercase;
+            text-shadow: 0 0 15px rgba(46, 204, 113, 0.4);
+        }
+        .page-desc { 
+            font-size: 0.85rem; 
+            color: #999; 
+            font-weight: 500; 
+        }
+
+        /* TABS */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
+        .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: #777; font-family: 'Rajdhani'; font-weight: bold; cursor: pointer; border-radius: 6px; transition: all 0.3s; }
+        .tab-btn.active { background: #222; color: var(--accent); border: 1px solid var(--accent); box-shadow: 0 0 10px rgba(46, 204, 113, 0.2); }
+
+        /* İNŞAAT LİSTESİ */
+        .build-grid { display: flex; flex-direction: column; gap: 15px; animation: fadeIn 0.5s; }
+
+        .build-card {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 12px; padding: 15px; position: relative; overflow: hidden;
+            transition: transform 0.2s; display: flex; align-items: center; gap: 15px;
+            cursor: pointer;
+        }
+        .build-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+        .build-card.disabled { opacity: 0.6; cursor: not-allowed; }
+        .build-card.disabled:hover { transform: none; border-color: var(--border-color); }
+        
+        .bc-icon { 
+            width: 60px; height: 60px; background: rgba(46, 204, 113, 0.1); border-radius: 10px; 
+            display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--accent);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+        
+        .bc-info { flex: 1; }
+        .bc-name { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 2px; }
+        .bc-detail { font-size: 0.75rem; color: #aaa; display: flex; gap: 10px; margin-bottom: 5px; }
+        .bc-price { font-size: 1rem; color: var(--accent-gold); font-weight: bold; }
+
+        .btn-build {
+            padding: 8px 15px; background: var(--bg-input); border: 1px solid var(--accent); color: var(--accent);
+            border-radius: 6px; font-family: 'Rajdhani'; font-weight: bold; cursor: pointer; transition: 0.2s;
+        }
+        .btn-build:hover { background: var(--accent); color: #000; }
+
+        /* MÜLKLERİM (VERGİ TOPLAMA) */
+        .property-list { display: flex; flex-direction: column; gap: 15px; animation: slideUp 0.5s; }
+
+        .prop-card {
+            background: linear-gradient(135deg, var(--bg-card), #111);
+            border: 1px solid var(--border-color); border-left: 4px solid var(--accent);
+            border-radius: 10px; padding: 15px; position: relative;
+        }
+        .prop-card.expired { border-left-color: var(--accent-red); }
+
+        .pc-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .pc-name { font-weight: 700; font-size: 1.1rem; color: #fff; }
+        .pc-type { font-size: 0.75rem; color: #888; background: #222; padding: 2px 6px; border-radius: 4px; }
+
+        /* Badges */
+        .badge {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: #222;
+            color: #ccc;
+            border: 1px solid #333;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .badge-income { color: var(--accent-gold); border-color: rgba(255, 215, 0, 0.2); }
+        .badge-time { color: var(--accent-cyan); border-color: rgba(0, 229, 255, 0.2); }
+        .badge-life { color: var(--accent); border-color: rgba(46, 204, 113, 0.2); }
+
+        /* Ömür Barı */
+        .lifespan-container { margin-bottom: 15px; }
+        .ls-info { display: flex; justify-content: space-between; font-size: 0.75rem; color: #aaa; margin-bottom: 3px; }
+        .ls-bar-bg { width: 100%; height: 6px; background: #333; border-radius: 3px; overflow: hidden; }
+        .ls-bar-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
+        
+        .prop-actions { display: flex; justify-content: space-between; align-items: center; }
+        .tax-amount { font-size: 1.2rem; font-weight: 800; color: var(--accent-gold); }
+        
+        .btn-collect {
+            background: var(--accent); color: #000; border: none; padding: 8px 20px;
+            border-radius: 6px; font-weight: bold; font-family: 'Rajdhani'; cursor: pointer;
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.4); transition: transform 0.1s;
+        }
+        .btn-collect:active { transform: scale(0.95); }
+        .btn-collect:disabled { background: #333; color: #666; box-shadow: none; cursor: not-allowed; }
+
+        /* MODAL */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; display: none; justify-content: center; align-items: center; animation: fadeIn 0.3s; }
+        .modal-content { background: #181818; width: 90%; max-width: 400px; padding: 25px; border-radius: 10px; border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent); box-shadow: 0 0 30px rgba(46, 204, 113, 0.1); }
+        .m-title { font-size: 1.3rem; margin-bottom: 10px; color: #fff; font-weight: bold; }
+        .m-desc { color: #888; font-size: 0.9rem; margin-bottom: 15px; }
+        
+        .req-list { 
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            margin: 15px 0;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .info-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            transition: all 0.2s;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .info-list-item:last-child {
+            border-bottom: none;
+        }
+        .info-list-item:hover {
+            opacity: 0.8;
+        }
+        .info-left {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            flex: 1;
+        }
+        .info-left i {
+            width: 28px;
+            min-width: 28px;
+            text-align: left;
+            margin-right: 10px;
+            font-size: 1rem;
+        }
+        .info-left img {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            margin-right: 10px;
+        }
+        .info-label {
+            color: #aaa;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .info-value {
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: right;
+            margin-left: auto;
+        }
+        .upgrade-cost-status {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            margin-left: 15px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .upgrade-cost-status.ok {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(46, 204, 113, 0.1));
+            color: var(--accent);
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
+        }
+        .upgrade-cost-status.fail {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(231, 76, 60, 0.1));
+            color: var(--accent-red);
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.3);
+        }
+        .req-badge {
+            background: #333;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #ccc;
+            border: 1px solid #444;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .req-badge.ok { border-color: var(--accent); color: var(--accent); background: rgba(46, 204, 113, 0.1); }
+        .req-badge.fail { border-color: var(--accent-red); color: var(--accent-red); background: rgba(231, 76, 60, 0.1); }
+
+        .m-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 1rem; }
+        .btn-confirm { background: var(--accent); color: #000; }
+        .btn-cancel { background: #333; color: #fff; }
+        .btn-confirm:disabled { background: #444; color: #888; cursor: not-allowed; }
+
+        /* BOTTOM NAV */
+        .bottom-nav { position: absolute; bottom: 0; width: 100%; background: #0a0a0a; border-top: 1px solid #333; display: flex; justify-content: space-around; padding: 10px 0; z-index: 10; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 0.75rem; cursor: pointer; }
+        .nav-item i { font-size: 1.4rem; margin-bottom: 3px; }
+        .nav-item.active { color: var(--accent); }
+
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .arrow-indicator { font-size: 1.5rem; color: #444; transition: 0.3s; margin-left: auto; }
+        .build-card:hover .arrow-indicator, .prop-card:hover .arrow-indicator { color: var(--accent); transform: translateX(5px); }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+
+
+        <main>
+            <div class="page-header">
+                <button class="back-btn" onclick="window.location.href='home.html'">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div style="flex:1;">
+                    <div class="page-title">MÜLK YÖNETİMİ</div>
+                    <div class="page-desc">Mülk inşa et ve düzenli vergi geliri topla.</div>
+                </div>
+            </div>
+
+            <!-- SEKMELER (Sıra Değişti) -->
+            <div class="tabs">
+                <button class="tab-btn" onclick="switchTab('list')">MÜLKLERİM</button>
+                <button class="tab-btn active" onclick="switchTab('build')">İNŞA ET</button>
+            </div>
+
+            <!-- TAB 1: MÜLKLERİM (Varsayılan Gizli) -->
+            <div id="tab-list" style="display:none;">
+                <div class="property-list" id="propertyList">
+                    <!-- JS Dolduracak -->
+                </div>
+                <div id="emptyMsg" style="text-align:center; color:#666; margin-top:50px; display:none;">
+                    <i class="fas fa-city" style="font-size:3rem; margin-bottom:10px;"></i>
+                    <p>Henüz hiç mülkün yok.</p>
+                </div>
+            </div>
+
+            <!-- TAB 2: İNŞAAT ALANI (Varsayılan Açık) -->
+            <div id="tab-build">
+                <div class="build-grid" id="buildList">
+                    <!-- JS Dolduracak -->
+                </div>
+            </div>
+
+        </main>
+
+        <!-- ONAY MODALI -->
+        <div class="modal-overlay" id="buildModal">
+            <div class="modal-content">
+                <i class="fas fa-hammer" style="font-size:3rem; color:var(--accent); margin-bottom:10px;"></i>
+                <h3 class="m-title" id="mTitle">Apartman İnşa Et</h3>
+                <p class="m-desc">Bu mülkü inşa etmek için aşağıdaki gereksinimleri karşılamalısınız.</p>
+                
+                <div class="req-list" id="reqList">
+                    <!-- JS Dolduracak -->
+                </div>
+
+                <div class="m-btns">
+                    <button class="m-btn btn-cancel" onclick="closeModal()">İPTAL</button>
+                    <button class="m-btn btn-confirm" id="btnConfirmBuild" onclick="confirmBuild()">İNŞA ET</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLLECT MODAL -->
+        <div class="modal-overlay" id="collectModal">
+            <div class="modal-content">
+                <i class="fas fa-hand-holding-usd" style="font-size:3rem; color:var(--accent-gold); margin-bottom:10px;"></i>
+                <h3 class="m-title" id="cTitle">Kira Topla</h3>
+                <p class="m-desc">İşletmenizi çalıştırarak kazanç elde edin.</p>
+                
+                <div class="req-list" id="collectList">
+                    <!-- JS Dolduracak -->
+                </div>
+
+                <div class="m-btns">
+                    <button class="m-btn btn-cancel" onclick="closeCollectModal()">İPTAL</button>
+                    <button class="m-btn btn-confirm" id="btnConfirmCollect">KİRA TOPLA</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SUCCESS MODAL -->
+        <div class="modal-overlay" id="successModal">
+            <div class="modal-content" style="border-top: 3px solid var(--accent); box-shadow: 0 0 30px rgba(46, 204, 113, 0.2);">
+                <i class="fas fa-check-circle" style="font-size:3rem; color:var(--accent); margin-bottom:10px;"></i>
+                <h3 class="m-title">İNŞAAT TAMAMLANDI!</h3>
+                <p class="m-desc" id="successMsg">Mülkünüz başarıyla inşa edildi.</p>
+                <button class="m-btn btn-confirm" onclick="closeSuccessModal()" style="width:100%;">HARİKA</button>
+            </div>
+        </div>
+
+        <!-- ERROR MODAL -->
+        <div class="modal-overlay" id="errorModal">
+            <div class="modal-content" style="border-top: 3px solid var(--accent-red); box-shadow: 0 0 30px rgba(231, 76, 60, 0.2);">
+                <i class="fas fa-times-circle" style="font-size:3rem; color:var(--accent-red); margin-bottom:10px;"></i>
+                <h3 class="m-title">YETERSİZ BAKİYE!</h3>
+                <p class="m-desc" id="errorMsg">Gereksinimler karşılanmıyor.</p>
+                <button class="m-btn btn-cancel" onclick="closeErrorModal()" style="width:100%;">TAMAM</button>
+            </div>
+        </div>
+
+
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="js/loader-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+    <script src="js/header-manager.js"></script>
+
+    <script>
+        let user = JSON.parse(localStorage.getItem('simWorldUser'));
+        if (!user) window.location.href = 'login.html';
+
+        let propertyTypes = [];
+        let myProperties = [];
+        let licenseLevel = 0;
+        let selectedTypeId = null;
+        let userInventory = {};
+
+        const fmt = (n) => n.toLocaleString('tr-TR');
+
+        window.onload = () => {
+            fetchData();
+        };
+
+        function fetchData() {
+            // Fetch Properties & Types
+            fetch(`/api/properties?userId=${user.id}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        propertyTypes = data.types;
+                        myProperties = data.properties;
+                        licenseLevel = data.licenseLevel;
+                        
+                        fetchUser();
+                        renderBuildList();
+                        renderMyProperties();
+                    }
+                });
+
+            // Fetch Inventory
+            fetch(`/api/inventory/${user.id}`)
+                .then(res => res.json())
+                .then(data => {
+                    // API returns direct object { wood: 10, stone: 5 }
+                    userInventory = data || {};
+                });
+        }
+
+        function fetchUser() {
+             fetch('/api/login', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: user.username, password: user.password }) 
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.user) {
+                    user = data.user;
+                    localStorage.setItem('simWorldUser', JSON.stringify(user));
+                }
+            });
+        }
+
+        // --- TAB YÖNETİMİ ---
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.getElementById('tab-build').style.display = 'none';
+            document.getElementById('tab-list').style.display = 'none';
+            document.getElementById('tab-' + tab).style.display = 'block';
+        }
+
+        // --- RENDER: İNŞA LİSTESİ ---
+        function renderBuildList() {
+            const container = document.getElementById('buildList');
+            container.innerHTML = '';
+
+            const propColors = [
+                '#3498db', '#e67e22', '#9b59b6', '#2ecc71', '#e74c3c', 
+                '#f1c40f', '#1abc9c', '#34495e', '#d35400', '#c0392b'
+            ];
+
+            propertyTypes.forEach((p, index) => {
+                // Check if already built
+                const isBuilt = myProperties.some(mp => mp.property_type_id === p.id);
+
+                const color = propColors[index % propColors.length];
+                const card = document.createElement('div');
+                card.className = 'build-card' + (isBuilt ? ' disabled' : '');
+                
+                // Color Line
+                card.style.borderTop = `3px solid ${color}`;
+                if(isBuilt) card.style.borderColor = '#333';
+
+                if (!isBuilt) {
+                    card.onclick = () => openBuildModal(p.id);
+                }
+                
+                const imgName = p.image ? p.image.split('/').pop() : '';
+                const iconHtml = imgName 
+                    ? `<img src="icons/property-icon/${imgName}" style="width:100%; height:100%; object-fit:contain;">` 
+                    : `<i class="fas fa-building" style="color:${color}"></i>`;
+
+                card.innerHTML = `
+                    <div class="bc-icon" style="padding:5px; border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.03);">
+                        ${iconHtml}
+                    </div>
+                    <div class="bc-info">
+                        <div class="bc-name">${p.name}</div>
+                        <div class="bc-detail" style="font-size:0.8rem; color:#888;">${p.description || 'Bu mülkü inşa ederek düzenli kira geliri elde edebilirsiniz.'}</div>
+                    </div>
+                    <div class="arrow-indicator"><i class="fas fa-chevron-right"></i></div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+
+        let activeTimers = [];
+
+        // --- RENDER: MÜLKLERİM ---
+        function renderMyProperties() {
+            // Clear old timers
+            activeTimers.forEach(t => clearInterval(t));
+            activeTimers = [];
+
+            const list = document.getElementById('propertyList');
+            const emptyMsg = document.getElementById('emptyMsg');
+            list.innerHTML = '';
+
+            if(myProperties.length === 0) {
+                emptyMsg.style.display = 'block';
+                return;
+            }
+            emptyMsg.style.display = 'none';
+
+            myProperties.forEach(prop => {
+                const div = document.createElement('div');
+                div.className = `prop-card ${prop.isReady ? '' : 'expired'}`; 
+                div.style.display = 'flex';
+                div.style.alignItems = 'center';
+                div.style.gap = '15px';
+                
+                // Add click handler for the whole card if ready
+                if(prop.isReady) {
+                    div.style.cursor = 'pointer';
+                    div.onclick = () => openCollectModal(prop);
+                }
+
+                let actionHtml = '';
+                let actionId = `action-${prop.id}`;
+
+                if(prop.isReady) {
+                    actionHtml = `<span id="${actionId}" class="badge" style="width: fit-content; background:var(--accent); color:#000; font-weight:bold; padding:5px 10px;"><i class="fas fa-check-circle"></i> Kira Toplamaya Hazır</span>`;
+                } else {
+                    const next = new Date(prop.nextCollection);
+                    const now = new Date();
+                    let diff = Math.ceil((next - now) / 1000);
+                    
+                    const formatDiff = (d) => {
+                        if(d <= 0) return "Hazır";
+                        const h = Math.floor(d / 3600);
+                        const m = Math.floor((d % 3600) / 60);
+                        const s = d % 60;
+                        if(h > 0) return `${h}s ${m}dk ${s}sn`;
+                        if(m > 0) return `${m}dk ${s}sn`;
+                        return `${s}sn`;
+                    };
+
+                    actionHtml = `<span id="${actionId}" class="badge badge-time" style="width: fit-content;"><i class="fas fa-clock"></i> Kira toplamaya kalan süre: ${formatDiff(diff)}</span>`;
+
+                    // Start Timer
+                    const timer = setInterval(() => {
+                        const currentNow = new Date();
+                        const currentDiff = Math.ceil((next - currentNow) / 1000);
+                        const span = document.getElementById(actionId);
+
+                        if(currentDiff <= 0) {
+                            clearInterval(timer);
+                            // Enable Property
+                            div.classList.remove('expired');
+                            div.style.cursor = 'pointer';
+                            div.onclick = () => openCollectModal(prop);
+                            if(span) {
+                                span.className = "badge";
+                                span.style.background = "var(--accent)";
+                                span.style.color = "#000";
+                                span.style.fontWeight = "bold";
+                                span.style.padding = "5px 10px";
+                                span.innerHTML = `<i class="fas fa-check-circle"></i> Kira Toplamaya Hazır`;
+                            }
+                            // Also update prop object locally so if re-rendered it stays
+                            prop.isReady = true;
+                        } else {
+                             if(span) span.innerHTML = `<i class="fas fa-clock"></i> Kira toplamaya kalan süre: ${formatDiff(currentDiff)}`;
+                        }
+                    }, 1000);
+                    activeTimers.push(timer);
+                }
+
+                const imgName = prop.image ? prop.image.split('/').pop() : '';
+                const iconHtml = imgName 
+                    ? `<img src="icons/property-icon/${imgName}" style="width:100%; height:100%; object-fit:contain;">` 
+                    : `<i class="fas fa-building"></i>`;
+
+                div.innerHTML = `
+                    <div class="bc-icon" style="padding:5px;">
+                        ${iconHtml}
+                    </div>
+                    <div class="bc-info" style="flex:1;">
+                        <div class="pc-header" style="margin-bottom:5px;">
+                            <div class="pc-name">${prop.name} İşletmesi</div>
+                        </div>
+                        <div class="pc-action">
+                            ${actionHtml}
+                        </div>
+                    </div>
+                    <div class="arrow-indicator"><i class="fas fa-chevron-right"></i></div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        // --- MODAL ---
+        function openBuildModal(typeId) {
+            selectedTypeId = typeId;
+            const type = propertyTypes.find(t => t.id === typeId);
+            
+            document.getElementById('mTitle').innerText = type.name + " İnşa Et";
+            const reqList = document.getElementById('reqList');
+            reqList.innerHTML = '';
+
+            let canBuild = true;
+            let html = '';
+
+            // Format Time Helper
+            const formatTime = (seconds) => {
+                if(seconds < 60) return `${seconds}sn`;
+                if(seconds % 60 === 0) return `${seconds/60}dk`;
+                return `${Math.floor(seconds/60)}dk ${seconds%60}sn`;
+            };
+
+            // Helper to add item
+            const addItem = (icon, label, value, isOk, isGain = false) => {
+                if(!isGain && !isOk) canBuild = false;
+                
+                let valColor = '#fff';
+                let statusIcon = '';
+                
+                if(isGain) {
+                    valColor = 'var(--accent-gold)';
+                    statusIcon = ''; 
+                } else {
+                    valColor = isOk ? 'var(--accent)' : 'var(--accent-red)';
+                    statusIcon = `
+                    <div class="upgrade-cost-status ${isOk ? 'ok' : 'fail'}">
+                        <i class="fas ${isOk ? 'fa-check' : 'fa-times'}"></i>
+                    </div>`;
+                }
+
+                html += `
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            ${icon}
+                            <span class="info-label">${label}</span>
+                        </div>
+                        <span class="info-value" style="color:${valColor}">${value}</span>
+                        ${statusIcon}
+                    </div>
+                `;
+            };
+
+            // --- KAZANIMLAR (Gains) ---
+            html += `<div style="text-align:left; font-size:0.75rem; color:var(--accent-gold); font-weight:800; margin-bottom:5px; letter-spacing:1px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:5px;">KAZANIMLAR</div>`;
+
+            // Income
+             addItem(
+                '<i class="fas fa-coins" style="color:var(--accent-gold)"></i>',
+                'Kira Geliri',
+                `${fmt(type.tax_income)} ₺`,
+                true, true
+            );
+            
+            // Interval
+             addItem(
+                '<i class="fas fa-clock" style="color:var(--accent-cyan)"></i>',
+                'Kira Süresi',
+                formatTime(type.tax_interval),
+                true, true
+            );
+
+            // Lifespan (Always show default 100)
+             addItem(
+                '<i class="fas fa-repeat" style="color:var(--accent)"></i>',
+                'Kira Hakkı',
+                `${type.lifespan || type.life || 100} Kez`,
+                true, true
+            );
+            
+            html += `<div style="text-align:left; font-size:0.75rem; color:var(--accent-red); font-weight:800; margin:15px 0 5px 0; letter-spacing:1px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:5px;">GEREKSİNİMLER</div>`;
+
+            // 0. General License Limit
+            const currentCount = myProperties.length;
+            const requiredLevel = currentCount + 1; // İnşa sonrası toplam olacak mülk sayısı
+            const currentLevel = licenseLevel || 1;
+            const isLimitOk = currentLevel >= requiredLevel;
+            
+            addItem(
+                '<i class="fas fa-certificate" style="color: ' + (isLimitOk ? 'var(--accent)' : 'var(--accent-red)') + ';"></i>',
+                `${requiredLevel}. Seviye Mülk Lisansı`,
+                '',
+                isLimitOk
+            );
+
+            // 0.5 Unique Check
+            const alreadyHas = myProperties.some(p => p.property_type_id === typeId);
+            if(alreadyHas) {
+                addItem(
+                    '<i class="fas fa-ban" style="color: var(--accent-red);"></i>',
+                    'Tekrar İnşa',
+                    'Zaten Var',
+                    false
+                );
+            }
+
+            // 1. Money
+            if(type.cost_money > 0) {
+                const ok = user.money >= type.cost_money;
+                addItem(
+                    '<img src="icons/inventory-icon/money.png" alt="Para">',
+                    'Para',
+                    `${fmt(type.cost_money)} ₺`,
+                    ok
+                );
+            }
+            // 2. Gold
+            if(type.cost_gold > 0) {
+                const ok = user.gold >= type.cost_gold;
+                addItem(
+                    '<img src="icons/inventory-icon/gold.png" alt="Altın">',
+                    'Altın',
+                    `${type.cost_gold} Adet`,
+                    ok
+                );
+            }
+            // 3. Diamond
+            if(type.cost_diamond > 0) {
+                const ok = (user.diamond || 0) >= type.cost_diamond;
+                addItem(
+                    '<img src="icons/inventory-icon/diamond.png" alt="Elmas">',
+                    'Elmas',
+                    `${type.cost_diamond} Adet`,
+                    ok
+                );
+            }
+
+            // 4. License
+            if(type.req_license_level > 1) {
+                const curLic = licenseLevel || 1;
+                const ok = curLic >= type.req_license_level;
+                addItem(
+                    '<i class="fas fa-id-card" style="color: ' + (ok ? 'var(--accent)' : 'var(--accent-red)') + ';"></i>',
+                    'Mülk Lisansı',
+                    `Lv.${type.req_license_level}`,
+                    ok
+                );
+            }
+
+            // 5. Education
+            if(type.req_education_level > 0) {
+                const userEdu = user.education_skill || 0;
+                const ok = userEdu >= type.req_education_level;
+                addItem(
+                    '<i class="fas fa-graduation-cap" style="color: ' + (ok ? 'var(--accent)' : 'var(--accent-red)') + ';"></i>',
+                    'Eğitim Seviyesi',
+                    `Lv.${type.req_education_level}`,
+                    ok
+                );
+            }
+
+            // 6. Materials
+            let materials = {};
+            if (typeof type.req_materials === 'string') {
+                try { materials = JSON.parse(type.req_materials); } catch(e) { console.error("JSON Parse Error:", e); }
+            } else {
+                materials = type.req_materials || {};
+            }
+            
+            console.log("Materials for", type.name, materials);
+
+            const matNames = {
+                wood: 'Odun', stone: 'Taş', glass: 'Cam', concrete: 'Çimento',
+                brick: 'Tuğla', steel: 'Çelik', lumber: 'Tahta', gold: 'Altın',
+                uranium: 'Uranyum'
+            };
+
+            const matIcons = {
+                wood: 'icons/mine-icon/wood.png',
+                stone: 'icons/mine-icon/stone.png',
+                glass: 'icons/factory-icon/window.png',
+                concrete: 'icons/factory-icon/cement.png',
+                brick: 'icons/factory-icon/brick.png',
+                steel: 'icons/factory-icon/steel.png',
+                lumber: 'icons/factory-icon/wood-plank.png',
+                gold: 'icons/inventory-icon/gold.png',
+                uranium: 'icons/mine-icon/uranium.png'
+            };
+
+            for(let [key, val] of Object.entries(materials)) {
+                const name = matNames[key] || key.toUpperCase();
+                const userAmount = userInventory[key] || 0;
+                const ok = userAmount >= val;
+                const iconPath = matIcons[key] || 'icons/mine-icon/stone.png';
+                addItem(
+                    `<img src="${iconPath}" alt="${name}">`,
+                    name,
+                    `${val} Adet`,
+                    ok
+                );
+            }
+
+            reqList.innerHTML = html;
+            const btn = document.getElementById('btnConfirmBuild');
+            btn.disabled = !canBuild; 
+            btn.style.opacity = canBuild ? '1' : '0.5';
+            
+            document.getElementById('buildModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('buildModal').style.display = 'none';
+        }
+
+        function closeCollectModal() {
+            document.getElementById('collectModal').style.display = 'none';
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('successModal').style.display = 'none';
+        }
+
+        function closeErrorModal() {
+            document.getElementById('errorModal').style.display = 'none';
+        }
+
+        function showSuccess(msg) {
+            document.getElementById('successMsg').innerText = msg;
+            document.getElementById('successModal').style.display = 'flex';
+        }
+
+        function showError(msg) {
+            document.getElementById('errorMsg').innerText = msg;
+            document.getElementById('errorModal').style.display = 'flex';
+        }
+
+        // --- COLLECT MODAL FUNCTIONS ---
+        function openCollectModal(prop) {
+            document.getElementById('cTitle').innerText = prop.name + " İşletmesi";
+            
+            // Set Description
+            const desc = document.querySelector('#collectModal .m-desc');
+            desc.innerHTML = '<i class="fas fa-check-circle"></i> KİRA TOPLAMAYA HAZIR';
+            desc.style.color = 'var(--accent)';
+            desc.style.fontWeight = 'bold';
+
+            const list = document.getElementById('collectList');
+            list.innerHTML = '';
+
+            const addItem = (icon, label, value) => {
+                 list.innerHTML += `
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            ${icon}
+                            <span class="info-label">${label}</span>
+                        </div>
+                        <span class="info-value" style="color:#fff;">${value}</span>
+                    </div>`;
+            };
+
+            // Gains
+            addItem(
+                '<img src="icons/inventory-icon/money.png" style="width:24px; height:24px;">',
+                'Kira Kazancı',
+                `${fmt(prop.tax_income)} ₺`
+            );
+
+            // Remaining Life
+            addItem(
+                '<i class="fas fa-repeat" style="color:var(--accent)"></i>',
+                'Kira Toplama Hakkı',
+                `${prop.remaining_life || 100} Kez`
+            );
+
+            document.getElementById('btnConfirmCollect').onclick = () => processCollectTax(prop.id, prop.tax_income);
+            document.getElementById('collectModal').style.display = 'flex';
+        }
+
+        function processCollectTax(propId, income) {
+            fetch('/api/properties/collect-tax', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id, propertyId: propId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    closeCollectModal();
+                    // Show success with gain amount
+                    showSuccess(`${fmt(income)} ₺ nakit para kazandın!`);
+                    fetchData(); 
+                } else {
+                    closeCollectModal();
+                    showError(data.message);
+                }
+            })
+            .catch(err => {
+                 showError('Hata oluştu.');
+            });
+        }
+
+        // --- MANTIK: İNŞAAT ---
+        function confirmBuild() {
+             const type = propertyTypes.find(t => t.id === selectedTypeId);
+
+            fetch('/api/properties/build', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id, propertyTypeId: selectedTypeId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    closeModal();
+                    const propName = type ? type.name : 'Mülk';
+                    showSuccess(`${propName} başarıyla inşa ettin!`);
+                    fetchData(); 
+                    // document.querySelector('[data-tab="list"]').click(); // Selector hatası fix
+                    switchTab('list');
+                } else {
+                    showError(data.message);
+                }
+            })
+            .catch(err => {
+                 console.error(err);
+                 showError('Hata oluştu.');
+            });
+        }
+
+        // --- MANTIK: VERGİ TOPLAMA ---
+        // function collectTax(propId) { ... } // Replaced by processCollectTax and Modal
+
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Sim of World - Fabrikalar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-input: #1a1a1a;
+            --bg-card: #161616;
+            --text-muted: #999;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-gold: #ffd700;
+            --accent-red: #e74c3c;
+            --accent-purple: #9b59b6;
+            --text-white: #ffffff;
+            --border-color: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('img/world-map.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        main {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+
+        .header-badge {
+            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(20,20,20,0.95) 100%);
+            padding: 20px;
+            border-radius: 0 0 20px 20px;
+            margin: 0 0 25px 0;
+            border-top: 3px solid var(--accent-cyan);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+        }
+        .header-badge::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: radial-gradient(circle, var(--accent-cyan) 0%, transparent 100%);
+            opacity: 0.7;
+        }
+        .header-badge h1 {
+            font-size: 1.8rem;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .header-badge h1 i { color: var(--accent-cyan); }
+        .header-badge p {
+            font-size: 0.9rem;
+            color: #aaa;
+            font-weight: 500;
+        }
+
+        .page-header {
+            margin-bottom: 25px;
+            animation: fadeInDown 0.5s;
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        .back-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.2rem;
+        }
+        .back-btn:hover {
+            background: #2a2a2a;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+        }
+        .page-header-content {
+            flex: 1;
+            text-align: left;
+        }
+        .page-title {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .page-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.3;
+        }
+
+        /* TABS */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
+        .tab-btn { 
+            flex: 1; 
+            padding: 12px; 
+            border: none; 
+            background: transparent; 
+            color: #777; 
+            font-family: 'Rajdhani'; 
+            font-weight: bold; 
+            cursor: pointer; 
+            border-radius: 6px; 
+            transition: all 0.3s;
+            font-size: 0.95rem;
+        }
+        .tab-btn.active { 
+            background: #222; 
+            color: var(--accent-cyan); 
+            border: 1px solid var(--accent-cyan); 
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.15); 
+        }
+        .tab-btn:hover:not(.active) { background: #1a1a1a; color: #999; }
+        .tab-content { display: none; animation: fadeIn 0.4s; }
+        .tab-content.active { display: block; }
+
+        /* FACTORY CARD - Updated Style */
+        .mine-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(30,30,30,0.95);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            color: #fff;
+        }
+        .mine-card:hover {
+            transform: translateY(-2px);
+            border-color: #555;
+            background: rgba(40,40,40,0.95);
+        }
+        .mine-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: var(--accent-red);
+        }
+        .mine-card.owned::before {
+             background: var(--accent-green);
+        }
+        .mine-card.city-card::before {
+             background: var(--accent-gold);
+        }
+        
+        .mine-card.city-card.owned::before {
+             background: var(--accent-green);
+        }
+        
+        .mine-card.city-card {
+            flex-direction: column;
+            align-items: stretch;
+            padding: 0;
+            gap: 0;
+        }
+
+        .city-card-top {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            cursor: pointer;
+        }
+
+        .city-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 8px 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid #333;
+            font-size: 0.85rem;
+        }
+
+        .owner-info {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: #ccc;
+        }
+        .owner-info i { color: #ccc; font-size: 0.9rem; }
+
+        .level-stars {
+            display: flex;
+            gap: 2px;
+        }
+        .level-stars i { font-size: 0.7rem; color: #444; }
+        .level-stars i.active { color: var(--accent-gold); text-shadow: 0 0 5px rgba(255, 215, 0, 0.3); }
+
+        .mine-icon {
+            width: 50px; height: 50px;
+            background: #222;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+            border: 1px solid #444;
+            overflow: hidden;
+        }
+        .mine-icon img {
+            width: 60%;
+            height: 60%;
+            object-fit: contain;
+        }
+        
+        .mine-info { flex: 1; }
+        .mine-name { font-size: 1rem; font-weight: bold; color: #fff; }
+        .mine-desc { font-size: 0.8rem; color: #888; }
+        .mine-stats { font-size: 0.75rem; color: var(--accent-green); margin-top: 3px; }
+
+        .stat-badge {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #444;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 600;
+            color: #ddd;
+        }
+
+        .btn-action {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Rajdhani';
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+        .btn-buy { background: var(--accent-gold); color: #000; }
+        .btn-manage { background: var(--accent-cyan); color: #000; }
+        .btn-buy:hover { box-shadow: 0 0 10px rgba(255, 215, 0, 0.4); }
+        .btn-manage:hover { box-shadow: 0 0 10px rgba(0, 229, 255, 0.4); }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 2000;
+            display: none; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        .modal-overlay.active { display: flex; }
+        
+        .modal-content {
+            background: #181818; width: 90%; max-width: 400px; padding: 25px; border-radius: 10px;
+            border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-gold);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
+        }
+        
+        .req-list { 
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            margin: 15px 0;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .info-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            transition: all 0.2s;
+        }
+        .info-list-item:hover {
+            opacity: 0.8;
+        }
+        .info-left {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            flex: 1;
+        }
+        .info-left i {
+            width: 28px;
+            min-width: 28px;
+            text-align: left;
+            margin-right: 10px;
+            font-size: 1rem;
+        }
+        .info-left img {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            margin-right: 10px;
+        }
+        .info-label {
+            color: #aaa;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .info-value {
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: right;
+            margin-left: auto;
+        }
+        .req-badge {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 9px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #ccc;
+            border: 1px solid #444;
+            background: #1a1a1a;
+        }
+        .req-badge-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .req-badge-icon {
+            width: 20px;
+            text-align: center;
+        }
+        .req-badge-value {
+            margin-left: auto;
+            font-weight: bold;
+        }
+        .req-badge.ok { border-color: var(--accent-green); background: rgba(46, 204, 113, 0.05); }
+        .req-badge.ok .req-badge-icon { color: var(--accent-green); }
+        .req-badge.fail { border-color: var(--accent-red); background: rgba(231, 76, 60, 0.05); }
+        .req-badge.fail .req-badge-icon { color: var(--accent-red); }
+
+        .upgrade-cost-status {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            margin-left: 15px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .upgrade-cost-status.ok {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(46, 204, 113, 0.1));
+            color: var(--accent-green);
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
+        }
+        .upgrade-cost-status.fail {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(231, 76, 60, 0.1));
+            color: var(--accent-red);
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.3);
+        }
+
+        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; }
+        .btn-confirm { background: var(--accent-green); color: #000; }
+        .btn-cancel { background: #333; color: #fff; }
+        .btn-confirm:disabled { background: #444; color: #888; cursor: not-allowed; }
+
+        .count-badge { 
+            background: #222; padding: 3px 8px; border-radius: 4px; border: 1px solid #444;
+            display: inline-block; font-size: 0.7rem; color: #aaa; font-weight: 600;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Colors */
+        .color-wood { color: #2ecc71; }
+        .color-stone { color: #95a5a6; }
+        .color-iron { color: #e67e22; }
+        .color-coal { color: #34495e; }
+        .color-sand { color: #e1c699; }
+        .color-copper { color: #d35400; }
+        .color-gold { color: #f1c40f; }
+        .color-oil { color: #2c3e50; }
+        .color-uranium { color: #8e44ad; }
+        
+        /* Factory Colors */
+        .type-construction { color: #f1c40f; }
+        .type-farm { color: #2ecc71; }
+        .type-animal { color: #e67e22; }
+        .type-food { color: #00e5ff; }
+        .type-weapon { color: #e74c3c; }
+        .type-energy { color: #9b59b6; }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Header injected by header-manager.js -->
+
+        <main>
+        <div class="page-header">
+            <button class="back-btn" onclick="window.location.href='factory-category.html'">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="page-header-content">
+                <div class="page-title">
+                    FABRİKALAR
+                </div>
+                <div class="page-subtitle">Endüstriyel üretim ve yönetim merkezi</div>
+            </div>
+        </div>
+
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('city')">Şehirdeki Fabrikalar</button>
+                <button class="tab-btn" onclick="switchTab('my')">Fabrikalarım</button>
+            </div>
+
+            <!-- CITY FACTORIES TAB -->
+            <div id="tab-city" class="tab-content active">
+                <div id="cityMinesList">
+                    <!-- JS ile doldurulacak -->
+                </div>
+            </div>
+
+            <!-- MY FACTORIES TAB -->
+            <div id="tab-my" class="tab-content">
+                <div id="myMinesList">
+                    <!-- JS ile doldurulacak -->
+                </div>
+            </div>
+        </main>
+
+        <!-- BUY MODAL -->
+        <div class="modal-overlay" id="buyModal">
+            <div class="modal-content">
+                <h3 style="color:#fff; margin-bottom:10px;" id="mTitle">Fabrika Satın Al</h3>
+                <p style="color:#888; font-size:0.9rem;">Bu fabrikayı işletmek için gereksinimleri karşılamalısınız.</p>
+                
+                <div class="req-list" id="reqList">
+                    <!-- Requirements here -->
+                </div>
+
+                <div class="modal-btns">
+                    <button class="m-btn btn-cancel" onclick="closeModal()">İPTAL</button>
+                    <button class="m-btn btn-confirm" id="btnConfirmBuy" onclick="confirmBuy()">SATIN AL</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATUS MODAL -->
+        <div class="modal-overlay" id="statusModal" style="z-index: 2100;">
+            <div class="modal-content" id="statusModalContent">
+                <i class="fas" id="statusIcon" style="font-size:3rem; margin-bottom:10px;"></i>
+                <h3 class="m-title" id="statusTitle"></h3>
+                <p class="m-desc" id="statusMessage" style="color:#ccc; margin-bottom:20px;"></p>
+                <button class="m-btn" id="statusBtn" onclick="closeStatusModal()">TAMAM</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="js/loader-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+    <script src="js/header-manager.js"></script>
+
+    <script>
+        // Prevent loader from hiding automatically
+        window.holdingLoader = true;
+
+        toastr.options = { "positionClass": "toast-top-right", "timeOut": "3000" };
+
+        const factoryTypes = [
+            // Construction
+            { id: 'lumber', category: 'construction', name: 'Kereste Fabrikası', img: 'icons/factory-icon/wood-plank.png', color: 'type-construction', reqLevel: 5, costMoney: 5000, costGold: 0, costDiamond: 0 },
+            { id: 'brick', category: 'construction', name: 'Tuğla Fabrikası', img: 'icons/factory-icon/brick.png', color: 'type-construction', reqLevel: 8, costMoney: 8000, costGold: 0, costDiamond: 0 },
+            { id: 'glass', category: 'construction', name: 'Cam Fabrikası', img: 'icons/factory-icon/window.png', color: 'type-construction', reqLevel: 12, costMoney: 12000, costGold: 5, costDiamond: 0 },
+            { id: 'concrete', category: 'construction', name: 'Çimento Fabrikası', img: 'icons/factory-icon/cement.png', color: 'type-construction', reqLevel: 15, costMoney: 15000, costGold: 10, costDiamond: 0 },
+            { id: 'steel', category: 'construction', name: 'Çelik Fabrikası', img: 'icons/factory-icon/steel.png', color: 'type-construction', reqLevel: 20, costMoney: 25000, costGold: 20, costDiamond: 0 },
+            
+            // Food
+            { id: 'agricultural', category: 'food', name: 'Tarım Çiftliği', icon: 'fa-seedling', color: 'type-farm', reqLevel: 1, costMoney: 2000, costGold: 0, costDiamond: 0 },
+            { id: 'animal', category: 'food', name: 'Hayvan Çiftliği', icon: 'fa-paw', color: 'type-animal', reqLevel: 3, costMoney: 3000, costGold: 0, costDiamond: 0 },
+            { id: 'bakery', category: 'food', name: 'Fırın ve Unlu Mamuller Tesisi', img: 'icons/factory-icon/food-factory.png', color: 'type-food', reqLevel: 5, costMoney: 5000, costGold: 0, costDiamond: 0 },
+            { id: 'ready_food', category: 'food', name: 'Hazır Yemek Üretim Tesisi', img: 'icons/factory-icon/food-factory.png', color: 'type-food', reqLevel: 8, costMoney: 8000, costGold: 0, costDiamond: 0 },
+            { id: 'olive_oil', category: 'food', name: 'Zeytinyağı Üretim Tesisi', img: 'icons/factory-icon/food-factory.png', color: 'type-food', reqLevel: 10, costMoney: 10000, costGold: 5, costDiamond: 0 },
+            { id: 'sweets', category: 'food', name: 'Tatlı & Şekerleme Üretim Tesisi', img: 'icons/factory-icon/food-factory.png', color: 'type-food', reqLevel: 12, costMoney: 12000, costGold: 5, costDiamond: 0 },
+            
+            // Heavy
+            { id: 'weapon', category: 'heavy', name: 'Silah Fabrikası', icon: 'fa-crosshairs', color: 'type-weapon', reqLevel: 30, costMoney: 50000, costGold: 50, costDiamond: 10 },
+            { id: 'gold_factory', category: 'heavy', name: 'Altın Fabrikası', img: 'icons/inventory-icon/gold.png', color: 'type-weapon', reqLevel: 20, costMoney: 40000, costGold: 0, costDiamond: 5 },
+            { id: 'silicon', category: 'heavy', name: 'Silikon Fabrikası', img: 'icons/factory-icon/silikon.png', color: 'type-weapon', reqLevel: 25, costMoney: 30000, costGold: 25, costDiamond: 5 },
+            { id: 'plastic_factory', category: 'heavy', name: 'Plastik Fabrikası', img: 'icons/factory-icon/plastic.png', color: 'type-weapon', reqLevel: 15, costMoney: 15000, costGold: 10, costDiamond: 0 },
+            { id: 'tyre_factory', category: 'heavy', name: 'Lastik Fabrikası', img: 'icons/factory-icon/tire.png', color: 'type-weapon', reqLevel: 17, costMoney: 20000, costGold: 12, costDiamond: 0 },
+            { id: 'engine_factory', category: 'heavy', name: 'Motor Fabrikası', img: 'icons/factory-icon/car-engine.png', color: 'type-weapon', reqLevel: 19, costMoney: 25000, costGold: 15, costDiamond: 2 },
+            { id: 'car_factory', category: 'heavy', name: 'Otomotiv Fabrikası', img: 'icons/factory-icon/car-factory.png', color: 'type-weapon', reqLevel: 24, costMoney: 50000, costGold: 20, costDiamond: 5 },
+            { id: 'cable_factory', category: 'heavy', name: 'Kablo Fabrikası', img: 'icons/factory-icon/cable.png', color: 'type-weapon', reqLevel: 18, costMoney: 18000, costGold: 12, costDiamond: 0 },
+            { id: 'electronic_card_factory', category: 'heavy', name: 'Elektronik Kart Fabrikası', img: 'icons/factory-icon/electronic-board.png', color: 'type-weapon', reqLevel: 22, costMoney: 22000, costGold: 18, costDiamond: 2 },
+            { id: 'chip_factory', category: 'heavy', name: 'Çip Fabrikası', img: 'icons/factory-icon/chip.png', color: 'type-weapon', reqLevel: 35, costMoney: 45000, costGold: 40, costDiamond: 10 },
+            { id: 'gpu_factory', category: 'heavy', name: 'GPU Fabrikası', img: 'icons/factory-icon/video-card.png', color: 'type-weapon', reqLevel: 40, costMoney: 60000, costGold: 60, costDiamond: 15 },
+            // Energy
+            { id: 'coal_plant', category: 'energy', name: 'Kömür Enerji Santrali', img: 'icons/energy-factory-icon/fossil-fuel.png', color: 'type-energy', reqLevel: 20, costMoney: 30000, costGold: 15, costDiamond: 0 },
+            { id: 'nuclear_plant', category: 'energy', name: 'Nükleer Enerji Santrali', img: 'icons/energy-factory-icon/nuclear-plant.png', color: 'type-energy', reqLevel: 50, costMoney: 100000, costGold: 50, costDiamond: 10 }
+        ];
+
+        let userMines = [];
+        let userData = {};
+        let userLicenses = {};
+        let selectedMine = null;
+
+        // Get Category or Type from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const category = urlParams.get('category');
+        const typeFilter = urlParams.get('type');
+
+        // Update Title
+        if (typeFilter) {
+            const mType = factoryTypes.find(t => t.id === typeFilter);
+            if (mType) {
+                const pageTitle = document.querySelector('.page-title');
+                if(pageTitle) pageTitle.innerText = mType.name.toUpperCase();
+            }
+        } else if (category) {
+            const catNames = {
+                'construction': 'İNŞAAT MALZEMELERİ',
+                'food': 'GIDA ÜRETİM',
+                'heavy': 'AĞIR SANAYİ',
+                'energy': 'ENERJİ TESİSLERİ'
+            };
+            const title = catNames[category] || 'FABRİKALAR';
+            const pageTitle = document.querySelector('.page-title');
+            if(pageTitle) pageTitle.innerText = title;
+        }
+
+        async function initPage() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) { window.location.href = 'login.html'; return; }
+
+            try {
+                // Fetch User Data (Fresh)
+                const uRes = await fetch('/api/login', { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({ username: user.username, password: user.password }) 
+                });
+
+                let freshUser = user;
+                if (uRes.ok) {
+                    const loginData = await uRes.json();
+                    if (loginData.user) {
+                        freshUser = loginData.user;
+                        localStorage.setItem('simWorldUser', JSON.stringify(freshUser));
+                    }
+                }
+                
+                // Fetch Skill
+                const eduRes = await fetch(`/api/education/status/${freshUser.id}`);
+                const eduData = await eduRes.json();
+                userData = { ...freshUser, education_skill: eduData.skill }; // Merge skill
+
+                // Fetch Licenses
+                const licRes = await fetch(`/api/licenses/${user.id}`);
+                userLicenses = await licRes.json();
+
+                // Fetch My Mines (Factories are stored as mines)
+                const myMinesRes = await fetch(`/api/mines/my/${user.id}`);
+                const myMinesData = await myMinesRes.json();
+                userMines = Array.isArray(myMinesData) ? myMinesData : [];
+
+                // Fetch City Mines
+                const cityMinesRes = await fetch('/api/mines/city');
+                const cityMinesData = await cityMinesRes.json();
+                const cityMines = Array.isArray(cityMinesData) ? cityMinesData : [];
+
+                renderMyMines();
+                renderCityMines(cityMines);
+
+            } catch (e) {
+                console.error(e);
+                showStatusModal(false, 'Veri yüklenemedi.');
+            } finally {
+                window.holdingLoader = false;
+                if (window.hideLoader) window.hideLoader();
+            }
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+        }
+
+        function renderMyMines() {
+            const container = document.getElementById('myMinesList');
+            container.innerHTML = '';
+
+            // Filter factoryTypes based on category or type
+            let filteredTypes = factoryTypes;
+            if (typeFilter) {
+                filteredTypes = factoryTypes.filter(t => t.id === typeFilter);
+            } else if (category) {
+                filteredTypes = factoryTypes.filter(t => t.category === category);
+            }
+
+            filteredTypes.forEach(type => {
+                const owned = userMines.find(m => m.mine_type === type.id);
+                
+                const card = document.createElement('div');
+                card.className = `mine-card ${owned ? 'owned' : ''}`;
+                
+                // Click Action replacement for buttons
+                card.onclick = function() {
+                    if(owned) {
+                        let managePage = 'factory-management.html';
+                        if (type.id === 'agricultural') managePage = 'farm-management.html';
+                        else if (type.id === 'animal') managePage = 'ranch-management.html';
+                        location.href = `${managePage}?id=${owned.id}`;
+                    } else {
+                        openBuyModal(type.id);
+                    }
+                };
+
+                let iconHTML = '';
+                if (type.img) {
+                    iconHTML = `<img src="${type.img}" alt="${type.name}">`;
+                } else {
+                    iconHTML = `<i class="fas ${type.icon || 'fa-industry'}"></i>`;
+                }
+
+                let descHTML = '';
+                // if (owned) {
+                //    descHTML = '';
+                // } else {
+                //    descHTML = '';
+                // }
+
+                card.innerHTML = `
+                    <div class="mine-icon ${type.color}">
+                        ${iconHTML}
+                    </div>
+                    <div class="mine-info">
+                        <div class="mine-name">${type.name}</div>
+                        <div class="mine-desc">${owned ? 'Yönetim ve Üretim Paneli' : 'Satın almak için tıkla'}</div>
+                        <div class="mine-stats">${descHTML}</div>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color: #666; margin-left: auto;"></i>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderCityMines(mines) {
+            const container = document.getElementById('cityMinesList');
+            container.innerHTML = '';
+
+            // Filter mines based on category or type
+            let filteredMines = mines;
+            if (typeFilter) {
+                filteredMines = mines.filter(m => m.mine_type === typeFilter);
+            } else if (category) {
+                const allowedTypes = factoryTypes.filter(t => t.category === category).map(t => t.id);
+                filteredMines = mines.filter(m => allowedTypes.includes(m.mine_type));
+            }
+
+            // Sort: Owned first, then level
+            filteredMines.sort((a, b) => {
+                const aOwned = (String(a.user_id) === String(userData.id));
+                const bOwned = (String(b.user_id) === String(userData.id));
+                if (aOwned && !bOwned) return -1;
+                if (!aOwned && bOwned) return 1;
+                return (b.level || 1) - (a.level || 1);
+            });
+
+            if (filteredMines.length === 0) {
+                container.innerHTML = '<div style="text-align:center; color:#666; padding:20px;">Bu kategoride henüz fabrika yok.</div>';
+                return;
+            }
+
+            filteredMines.forEach(mine => {
+                const type = factoryTypes.find(t => t.id == mine.mine_type);
+                if (!type) return;
+
+                const isMine = (String(mine.user_id) === String(userData.id));
+                const card = document.createElement('div');
+                card.className = 'mine-card city-card';
+                if (isMine) card.classList.add('owned');
+                
+                let iconHTML = '';
+                if (type.img) {
+                    iconHTML = `<img src="${type.img}" alt="${type.name}">`;
+                } else {
+                    iconHTML = `<i class="fas ${type.icon}"></i>`;
+                }
+
+                let myBadge = '';
+                if (isMine) {
+                    myBadge = `<span class="stat-badge" style="border-color:var(--accent-green); color:var(--accent-green); background:rgba(46, 204, 113, 0.1);"><i class="fas fa-check-circle" style="color:var(--accent-green);"></i> İşletmem</span>`;
+                }
+
+                card.innerHTML = `
+                    <div class="city-card-top" onclick="location.href='factory-work.html?id=${mine.id}'">
+                        <div class="mine-icon ${type.color}">
+                            ${iconHTML}
+                        </div>
+                        <div class="mine-info">
+                            <div class="mine-name">${mine.name || type.name}</div>
+                            <div class="mine-stats" style="display: flex; gap: 5px; flex-wrap: wrap; align-items: center;">
+                                ${myBadge}
+                                <span class="stat-badge"><i class="fas fa-users" style="color: var(--accent-cyan);"></i> ${mine.current_workers || 0}/${mine.max_workers || 5}</span>
+                                <span class="stat-badge"><img src="icons/inventory-icon/money.png" style="width:14px; height:14px; margin-right:2px; vertical-align:middle;"> ${mine.salary || 0} ₺</span>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right" style="color: #666; margin-left: auto;"></i>
+                    </div>
+                    <div class="city-card-footer">
+                        <div class="owner-info">
+                            <img src="${mine.avatar || 'uploads/avatars/default.png'}" style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover; border: 1px solid #444; margin-right: 5px;">
+                            <a href="profile.html?id=${mine.user_id}" style="color: #ccc; text-decoration: none;">${mine.user_id} - ${mine.username || 'Bilinmiyor'}</a>
+                        </div>
+                        <div class="level-stars">
+                            ${Array(10).fill(0).map((_, i) => `<i class="fas fa-star ${i < (mine.level || 1) ? 'active' : ''}"></i>`).join('')}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function openBuyModal(mineId) {
+            selectedMine = factoryTypes.find(m => m.id === mineId);
+            if (!selectedMine) return;
+
+            document.getElementById('mTitle').innerText = selectedMine.name + " Satın Almayı Onaylıyor musun?";
+            
+            const hasLicense = userLicenses[mineId] > 0;
+            // const hasSkill = (userData.education_skill || 1) >= selectedMine.reqLevel;
+            const hasMoney = userData.money >= selectedMine.costMoney;
+            const hasGold = userData.gold >= selectedMine.costGold;
+            const hasDiamond = (userData.diamond || 0) >= selectedMine.costDiamond;
+
+            const canBuy = hasLicense && hasMoney && hasGold && hasDiamond;
+
+            let html = '';
+            
+            // Education REQUIRMENT REMOVED
+            /* 
+            html += `
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-graduation-cap" style="color: ${hasSkill ? 'var(--accent-green)' : 'var(--accent-red)'};"></i>
+                        <span class="info-label">Eğitim Seviyesi</span>
+                    </div>
+                    <span class="info-value">Lv. ${selectedMine.reqLevel}</span>
+                    <div class="upgrade-cost-status ${hasSkill ? 'ok' : 'fail'}">
+                        <i class="fas ${hasSkill ? 'fa-check' : 'fa-times'}"></i>
+                    </div>
+                </div>
+            `;
+            */
+            
+            // License
+            html += `
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-id-card" style="color: ${hasLicense ? 'var(--accent-green)' : 'var(--accent-red)'};"></i>
+                        <span class="info-label">1. Seviye ${selectedMine.name} Lisansı</span>
+                    </div>
+                    <span class="info-value">Gerekli</span>
+                    <div class="upgrade-cost-status ${hasLicense ? 'ok' : 'fail'}">
+                        <i class="fas ${hasLicense ? 'fa-check' : 'fa-times'}"></i>
+                    </div>
+                </div>
+            `;
+            
+            // Money
+            html += `
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <img src="icons/inventory-icon/money.png" alt="Para">
+                        <span class="info-label">Para</span>
+                    </div>
+                    <span class="info-value">${selectedMine.costMoney.toLocaleString('tr-TR')} ₺</span>
+                    <div class="upgrade-cost-status ${hasMoney ? 'ok' : 'fail'}">
+                        <i class="fas ${hasMoney ? 'fa-check' : 'fa-times'}"></i>
+                    </div>
+                </div>
+            `;
+            
+            // Gold
+            if (selectedMine.costGold > 0) {
+                html += `
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <img src="icons/inventory-icon/gold.png" alt="Altın">
+                            <span class="info-label">Altın</span>
+                        </div>
+                        <span class="info-value">${selectedMine.costGold.toLocaleString('tr-TR')}</span>
+                        <div class="upgrade-cost-status ${hasGold ? 'ok' : 'fail'}">
+                            <i class="fas ${hasGold ? 'fa-check' : 'fa-times'}"></i>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Diamond
+            if (selectedMine.costDiamond > 0) {
+                html += `
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <img src="icons/inventory-icon/diamond.png" alt="Elmas">
+                            <span class="info-label">Elmas</span>
+                        </div>
+                        <span class="info-value">${selectedMine.costDiamond.toLocaleString('tr-TR')}</span>
+                        <div class="upgrade-cost-status ${hasDiamond ? 'ok' : 'fail'}">
+                            <i class="fas ${hasDiamond ? 'fa-check' : 'fa-times'}"></i>
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('reqList').innerHTML = html;
+            document.getElementById('btnConfirmBuy').disabled = !canBuy;
+            document.getElementById('buyModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('buyModal').classList.remove('active');
+        }
+
+        function closeStatusModal() {
+            document.getElementById('statusModal').classList.remove('active');
+        }
+
+        function showStatusModal(success, message) {
+            const modal = document.getElementById('statusModal');
+            const content = document.getElementById('statusModalContent');
+            const icon = document.getElementById('statusIcon');
+            const title = document.getElementById('statusTitle');
+            const msg = document.getElementById('statusMessage');
+            const btn = document.getElementById('statusBtn');
+
+            // Reset styles
+            content.style.borderTop = '3px solid transparent';
+            
+            if (success) {
+                content.style.borderTopColor = 'var(--accent-green)';
+                icon.className = 'fas fa-check-circle';
+                icon.style.color = 'var(--accent-green)';
+                title.innerText = 'BAŞARILI';
+                btn.style.background = 'var(--accent-green)';
+                btn.style.color = '#000';
+                
+                // Reload on success close
+                btn.onclick = function() {
+                    closeStatusModal();
+                    location.reload();
+                };
+            } else {
+                content.style.borderTopColor = 'var(--accent-red)';
+                icon.className = 'fas fa-times-circle';
+                icon.style.color = 'var(--accent-red)';
+                title.innerText = 'HATA';
+                btn.style.background = '#333';
+                btn.style.color = '#fff';
+                
+                // Just close on error
+                btn.onclick = closeStatusModal;
+            }
+
+            msg.innerText = message;
+            modal.classList.add('active');
+        }
+
+        async function confirmBuy() {
+            if (!selectedMine) return;
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            
+            try {
+                const response = await fetch('/api/mines/buy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, mineType: selectedMine.id })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    closeModal();
+                    showStatusModal(true, result.message);
+                } else {
+                    showStatusModal(false, result.message);
+                }
+            } catch (e) {
+                console.error(e);
+                showStatusModal(false, 'İşlem başarısız.');
+            }
+        }
+
+        window.addEventListener('load', initPage);
+    </script>
+</body>
+</html>

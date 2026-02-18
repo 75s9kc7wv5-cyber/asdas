@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Sim of World - Ana Sayfa</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="js/loader-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #161616;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-gold: #ffd700;
+            --accent-red: #e74c3c;
+            --text-white: #ffffff;
+            --text-gray: #a0a0a0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+            touch-action: manipulation;
+            overflow: hidden;
+        }
+
+        html {
+            overflow: hidden;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            background-image: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.95)), url('img/world-map.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* MAIN CONTENT */
+        main {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            padding-bottom: 80px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        /* Welcome Section */
+        .welcome-section {
+            padding: 15px;
+            margin-bottom: 5px;
+            border-left: 3px solid var(--accent-cyan);
+            background: linear-gradient(90deg, rgba(0, 229, 255, 0.1), transparent);
+        }
+        .welcome-title { font-size: 1.2rem; font-weight: 800; color: #fff; margin-bottom: 3px; letter-spacing: 1px; }
+        .welcome-sub { font-size: 0.8rem; color: #aaa; }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        .dash-item {
+            background: rgba(30, 30, 30, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 15px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            text-decoration: none;
+            color: white;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            height: 110px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .dash-item::before {
+            content: '';
+            position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+            background: var(--item-color, #fff);
+            opacity: 0.3;
+            transition: 0.3s;
+        }
+        
+        .dash-item::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(circle at center, var(--item-color) 0%, transparent 70%);
+            opacity: 0;
+            transition: 0.3s;
+            z-index: 0;
+        }
+
+        .dash-item:hover { 
+            transform: translateY(-5px); 
+            border-color: var(--item-color); 
+            background: rgba(30, 30, 30, 0.8);
+            box-shadow: 0 10px 20px -10px var(--item-color);
+        }
+        
+        .dash-item:hover::before { opacity: 1; height: 3px; }
+        .dash-item:hover::after { opacity: 0.1; }
+        
+        .dash-icon { 
+            font-size: 1.8rem; 
+            color: var(--item-color); 
+            z-index: 1; 
+            filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
+            transition: 0.3s;
+        }
+        .dash-item:hover .dash-icon { transform: scale(1.1); filter: drop-shadow(0 0 8px var(--item-color)); }
+
+        .dash-label { 
+            font-size: 0.85rem; 
+            font-weight: 600; 
+            text-align: center; 
+            z-index: 1;
+            letter-spacing: 0.5px;
+            color: #ddd;
+        }
+        .dash-item:hover .dash-label { color: #fff; }
+
+        /* Kategori Başlıkları (Opsiyonel kullanım için) */
+        .grid-header { grid-column: span 3; color: #666; font-size: 0.75rem; font-weight: 800; letter-spacing: 2px; margin-top: 10px; margin-bottom: 5px; display: none; }
+
+        .news-section {
+            background: rgba(20, 20, 20, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            margin-top: 10px;
+        }
+        .news-title { 
+            font-size: 1rem; font-weight: 800; margin-bottom: 15px; 
+            border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;
+            display: flex; align-items: center; gap: 10px; color: #fff;
+        }
+        .news-title i { color: var(--accent-gold); }
+        
+        .news-item { 
+            font-size: 0.85rem; color: #aaa; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 10px; line-height: 1.4;
+        }
+        .news-item:last-child { margin-bottom: 0; }
+        .news-dot {
+            width: 6px; height: 6px; background: var(--accent-green); border-radius: 50%; margin-top: 6px; flex-shrink: 0;
+            box-shadow: 0 0 5px var(--accent-green);
+        }
+
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Header injected by header-manager.js -->
+
+        <main>
+            
+            <div class="welcome-section">
+                <div class="welcome-title">HOŞ GELDİN <span id="welcome-name" style="color:var(--accent-cyan);">BAŞKAN</span></div>
+                <div class="welcome-sub">Ekonomini yönet, servetini katla ve zirveye oyna!</div>
+            </div>
+
+            <div class="dashboard-grid">
+                
+                <!-- ÜRETİM -->
+                <a href="farm-category.html" class="dash-item" style="--item-color: #2ecc71;">
+                    <i class="fas fa-seedling dash-icon"></i>
+                    <span class="dash-label">TARLALAR</span>
+                </a>
+                <a href="ranch-category.html" class="dash-item" style="--item-color: #e67e22;">
+                    <i class="fas fa-horse-head dash-icon"></i>
+                    <span class="dash-label">ÇİFTLİKLER</span>
+                </a>
+                <a href="mines-category.html" class="dash-item" style="--item-color: #f1c40f;">
+                    <i class="fas fa-hammer dash-icon"></i>
+                    <span class="dash-label">MADENLER</span>
+                </a>
+                <a href="factory-category.html" class="dash-item" style="--item-color: #e67e22;">
+                    <i class="fas fa-industry dash-icon"></i>
+                    <span class="dash-label">FABRİKA</span>
+                </a>
+                
+                <!-- FİNANS & TİCARET -->
+                <a href="business-list.html" class="dash-item" style="--item-color: #00cec9;">
+                    <i class="fas fa-briefcase dash-icon"></i>
+                    <span class="dash-label">İŞLETMELER</span>
+                </a>
+                <a href="market-category.html" class="dash-item" style="--item-color: #e74c3c;">
+                    <i class="fas fa-shopping-cart dash-icon"></i>
+                    <span class="dash-label">MARKET</span>
+                </a>
+                <a href="bank-list.html" class="dash-item" style="--item-color: #27ae60;">
+                    <i class="fas fa-university dash-icon"></i>
+                    <span class="dash-label">BANKA</span>
+                </a>
+                <a href="daily-job.html" class="dash-item" style="--item-color: #d35400;">
+                    <i class="fas fa-calendar-check dash-icon"></i>
+                    <span class="dash-label">GÜNLÜK İŞ</span>
+                </a>
+                <a href="crypto-mining.html" class="dash-item" style="--item-color: #f7931a;">
+                    <i class="fab fa-bitcoin dash-icon"></i>
+                    <span class="dash-label">KRİPTO</span>
+                </a>
+                <a href="crypto-exchange.html" class="dash-item" style="--item-color: #2ecc71;">
+                    <i class="fas fa-chart-line dash-icon"></i>
+                    <span class="dash-label">BORSA</span>
+                </a>
+
+                <!-- GELİŞİM -->
+                <a href="education.html" class="dash-item" style="--item-color: #3498db;">
+                    <i class="fas fa-graduation-cap dash-icon"></i>
+                    <span class="dash-label">EĞİTİM</span>
+                </a>
+                <a href="research.html" class="dash-item" style="--item-color: #9b59b6;">
+                    <i class="fas fa-flask dash-icon"></i>
+                    <span class="dash-label">AR-GE</span>
+                </a>
+                <a href="hospital-list.html" class="dash-item" style="--item-color: #ff6b81;">
+                    <i class="fas fa-hospital dash-icon"></i>
+                    <span class="dash-label">HASTANE</span>
+                </a>
+                <a href="licence.html" class="dash-item" style="--item-color: #1abc9c;">
+                    <i class="fas fa-id-card dash-icon"></i>
+                    <span class="dash-label">LİSANSLAR</span>
+                </a>
+
+                <!-- YÖNETİM & SOSYAL -->
+                <a href="politics-list.html" class="dash-item" style="--item-color: #8e44ad;">
+                    <i class="fas fa-landmark dash-icon"></i>
+                    <span class="dash-label">PARTİLER</span>
+                </a>
+                <a href="elections.html" class="dash-item" style="--item-color: #9b59b6;">
+                    <i class="fas fa-vote-yea dash-icon"></i>
+                    <span class="dash-label">SEÇİM</span>
+                </a>
+                <a href="council.html" class="dash-item" style="--item-color: #95a5a6;">
+                    <i class="fas fa-users dash-icon"></i>
+                    <span class="dash-label">MECLİS</span>
+                </a>
+                <a href="chat.html" class="dash-item" style="--item-color: #00e5ff;">
+                    <i class="fas fa-comments dash-icon"></i>
+                    <span class="dash-label">SOHBET</span>
+                </a>
+                
+                <a href="social-media.html" class="dash-item" style="--item-color: #E1306C;">
+                    <i class="fas fa-share-alt dash-icon"></i>
+                    <span class="dash-label">SOSYAL</span>
+                </a>
+
+                <!-- KİŞİSEL -->
+                <a href="daily-reward.html" class="dash-item" style="--item-color: #ffd700;">
+                    <i class="fas fa-calendar-alt dash-icon"></i>
+                    <span class="dash-label">GÜNLÜK ÖDÜL</span>
+                </a>
+                <a href="inventory.html" class="dash-item" style="--item-color: #f39c12;">
+                    <i class="fas fa-box-open dash-icon"></i>
+                    <span class="dash-label">ENVANTER</span>
+                </a>
+                <a href="loot-box.html" class="dash-item" style="--item-color: #9b59b6;">
+                    <i class="fas fa-gift dash-icon"></i>
+                    <span class="dash-label">KUTU AÇILIMI</span>
+                </a>
+                <a href="referral.html" class="dash-item" style="--item-color: #00e5ff;">
+                    <i class="fas fa-users dash-icon"></i>
+                    <span class="dash-label">REFERANS</span>
+                </a>
+                <a href="profile.html" class="dash-item" style="--item-color: #ecf0f1;">
+                    <i class="fas fa-user-circle dash-icon"></i>
+                    <span class="dash-label">PROFİL</span>
+                </a>
+                <a href="bug-report.html" class="dash-item" style="--item-color: #e74c3c;">
+                    <i class="fas fa-bug dash-icon"></i>
+                    <span class="dash-label">HATA BİLDİR</span>
+                </a>
+                <a href="settings.html" class="dash-item" style="--item-color: #7f8c8d;">
+                    <i class="fas fa-cog dash-icon"></i>
+                    <span class="dash-label">AYARLAR</span>
+                </a>
+
+                 <!-- ADMİN (En sona isteğe bağlı, şimdilik dursun) -->
+                <a href="admin.html" class="dash-item" style="--item-color: #c0392b;">
+                    <i class="fas fa-user-shield dash-icon"></i>
+                    <span class="dash-label">ADMİN</span>
+                </a>
+
+            </div>
+
+            <div class="news-section">
+                <div class="news-title"><i class="fas fa-bullhorn"></i> SİSTEM DUYURULARI</div>
+                <div class="news-item"><div class="news-dot"></div> Tarla ve Çiftlik bölgeleri aktif edildi. Üretime hemen başla!</div>
+                <div class="news-item"><div class="news-dot"></div> Maden bölgesi arayüzü yenilendi, kapasite sorunları giderildi.</div>
+                <div class="news-item"><div class="news-dot" style="background:var(--accent-cyan); box-shadow:0 0 5px var(--accent-cyan);"></div> Sohbet sistemi güncellendi. Artık kanal seçimi yapabilirsin.</div>
+                <div class="news-item"><div class="news-dot"></div> Günlük işler sistemi yenilendi: Süreli çalışma ve eğitim şartı eklendi.</div>
+            </div>
+        </main>
+    </div>
+        </main>
+    </div>
+
+    <script>
+        window.addEventListener('load', () => {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            // Set Welcome Name
+            if(user.username) {
+                document.getElementById('welcome-name').innerText = user.username.toUpperCase();
+            }
+        });
+
+        // Prevent zoom via keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + Plus (zoom in)
+            if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '=')) {
+                e.preventDefault();
+            }
+            // Ctrl/Cmd + Minus (zoom out)
+            if ((e.ctrlKey || e.metaKey) && e.key === '-') {
+                e.preventDefault();
+            }
+            // Ctrl/Cmd + 0 (reset zoom)
+            if ((e.ctrlKey || e.metaKey) && e.key === '0') {
+                e.preventDefault();
+            }
+        });
+
+        // Prevent zoom via mouse wheel
+        document.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Prevent pinch zoom on touch devices
+        document.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    </script>
+    <script src="js/header-manager.js"></script>
+    <script src="js/menu-manager.js"></script>
+</body>
+</html>

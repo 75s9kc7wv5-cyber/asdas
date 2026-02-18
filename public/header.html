@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Header Component</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* TEMEL AYARLAR (Eğer sayfanda yoksa) */
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #161616;
+            --border-color: #333;
+            --text-white: #ffffff;
+            --font-main: 'Rajdhani', sans-serif;
+            
+            /* Renk Paleti */
+            --c-money: #2ecc71;   /* Yeşil */
+            --c-gold: #ffd700;    /* Altın */
+            --c-diamond: #00e5ff; /* Turkuaz/Elmas */
+            --c-energy: #f1c40f;  /* Sarı/Enerji */
+            --c-hunger: #e67e22;  /* Turuncu/Açlık */
+            --c-level: #9b59b6;   /* Mor/Level */
+        }
+
+        body {
+            margin: 0;
+            background-color: #000;
+            font-family: var(--font-main);
+            color: #fff;
+        }
+
+        /* HEADER STİLİ */
+        .game-header-v2 {
+            background-color: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            padding: 10px 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            max-width: 450px;
+            margin: 0 auto; /* Ortalamak için */
+            position: relative;
+        }
+
+        /* 1. SATIR: LOGO ve LEVEL */
+        .gh-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .gh-logo {
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            line-height: 1;
+        }
+        .gh-logo span { color: var(--border-color); font-weight: 400; font-size: 1rem; }
+        
+        .gh-level-badge {
+            background: rgba(155, 89, 182, 0.15);
+            border: 1px solid var(--c-level);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--c-level);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 0 10px rgba(155, 89, 182, 0.2);
+        }
+
+        /* 2. SATIR: PARA BİRİMLERİ (Para, Altın, Elmas) */
+        .gh-currencies {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .gh-curr-item {
+            background: #0a0a0a;
+            border: 1px solid #252525;
+            border-radius: 6px;
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .gh-curr-item i { font-size: 1rem; margin-bottom: 2px; }
+        .gh-curr-val { letter-spacing: 0.5px; }
+
+        /* Renk Sınıfları */
+        .gc-money { color: var(--c-money); text-shadow: 0 0 5px rgba(46, 204, 113, 0.3); }
+        .gc-gold { color: var(--c-gold); text-shadow: 0 0 5px rgba(255, 215, 0, 0.3); }
+        .gc-diamond { color: var(--c-diamond); text-shadow: 0 0 5px rgba(0, 229, 255, 0.3); }
+
+        /* 3. SATIR: DURUM BARI (Enerji, Açlık) */
+        .gh-stats {
+            display: flex;
+            gap: 10px;
+        }
+        .gh-stat-row {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #111;
+            padding: 4px 8px;
+            border-radius: 20px;
+            border: 1px solid #222;
+        }
+        .gh-stat-icon { font-size: 0.9rem; }
+        
+        /* Progress Bar Yapısı */
+        .gh-progress-bg {
+            flex: 1;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+        .gh-progress-fill {
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 3px;
+        }
+        .gh-stat-text { font-size: 0.75rem; font-weight: bold; width: 30px; text-align: right; }
+
+        /* Bar Renkleri */
+        .fill-hunger { background: var(--c-hunger); box-shadow: 0 0 8px var(--c-hunger); }
+        .icon-hunger { color: var(--c-hunger); }
+        
+        .fill-energy { background: var(--c-energy); box-shadow: 0 0 8px var(--c-energy); }
+        .icon-energy { color: var(--c-energy); }
+
+    </style>
+</head>
+<body>
+
+    <header class="game-header-v2">
+        
+        <div class="gh-top">
+            <div class="gh-logo">SIM <span>OF WORLD</span></div>
+            <div class="gh-level-badge">
+                <i class="fas fa-crown"></i>
+                <span id="headerLevel">Lv. 24</span>
+            </div>
+        </div>
+
+        <div class="gh-currencies">
+            <div class="gh-curr-item">
+                <img src="icons/inventory-icon/money.png" style="width: 24px; height: 24px; margin-bottom: 2px; object-fit: contain;" alt="Para">
+                <span class="gh-curr-val" id="headerMoney">...</span>
+            </div>
+            <div class="gh-curr-item">
+                <img src="icons/inventory-icon/gold.png" style="width: 24px; height: 24px; margin-bottom: 2px; object-fit: contain;" alt="Altın">
+                <span class="gh-curr-val" id="headerGold">...</span>
+            </div>
+            <div class="gh-curr-item">
+                <img src="icons/inventory-icon/diamond.png" style="width: 24px; height: 24px; margin-bottom: 2px; object-fit: contain;" alt="Elmas">
+                <span class="gh-curr-val" id="headerDiamond">0</span>
+            </div>
+        </div>
+
+        <div class="gh-stats">
+            <div class="gh-stat-row">
+                <i class="fas fa-hamburger gh-stat-icon icon-hunger"></i>
+                <div class="gh-progress-bg">
+                    <div class="gh-progress-fill fill-hunger" id="barHunger" style="width: 0%"></div>
+                </div>
+                <span class="gh-stat-text" id="textHunger">0%</span>
+            </div>
+            
+            <div class="gh-stat-row">
+                <i class="fas fa-bolt gh-stat-icon icon-energy"></i>
+                <div class="gh-progress-bg">
+                    <div class="gh-progress-fill fill-energy" id="barEnergy" style="width: 0%"></div>
+                </div>
+                <span class="gh-stat-text" id="textEnergy">0%</span>
+            </div>
+        </div>
+
+    </header>
+    <script>
+        // HEADER GÜNCELLEME SİSTEMİ
+        // Bu fonksiyonu oyunun herhangi bir yerinden çağırarak header'ı güncelleyebilirsin.
+        function updateHeader(data) {
+            // Sayı Formatlama (1.000.000 gibi)
+            const fmt = (num) => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+            // Değerleri DOM'a yazma
+            if(data.money !== undefined) document.getElementById('headerMoney').innerText = fmt(data.money) + " ₺";
+            if(data.gold !== undefined) document.getElementById('headerGold').innerText = fmt(data.gold);
+            if(data.diamond !== undefined) document.getElementById('headerDiamond').innerText = fmt(data.diamond);
+            if(data.level !== undefined) document.getElementById('headerLevel').innerText = "Lv. " + data.level;
+
+            // Barların güncellenmesi
+            if(data.hunger !== undefined) {
+                document.getElementById('barHunger').style.width = data.hunger + "%";
+                document.getElementById('textHunger').innerText = data.hunger + "%";
+            }
+            if(data.energy !== undefined) {
+                document.getElementById('barEnergy').style.width = data.energy + "%";
+                document.getElementById('textEnergy').innerText = data.energy + "%";
+            }
+        }
+
+        // ÖRNEK BAŞLANGIÇ VERİSİ
+        // Sayfa yüklendiğinde çalışır
+        window.addEventListener('load', () => {
+            const sampleData = {
+                money: 6979173,
+                gold: 1450,
+                diamond: 320,
+                level: 24,
+                hunger: 92,
+                energy: 45
+            };
+            
+            // Animasyonlu bir şekilde doldurmak için küçük bir gecikme
+            setTimeout(() => {
+                updateHeader(sampleData);
+            }, 100);
+        });
+
+        // Test etmek için konsola şunu yazabilirsin:
+        // updateHeader({ money: 100, gold: 50, diamond: 10, hunger: 100, energy: 100, level: 25 })
+    </script>
+</body>
+</html>

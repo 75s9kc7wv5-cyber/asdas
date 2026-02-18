@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World of Sim - Loader</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --accent-cyan: #00e5ff;
+            --text-white: #ffffff;
+            --font-main: 'Rajdhani', sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #111; /* Sayfa arka planı örneği */
+            font-family: var(--font-main);
+            color: #fff;
+        }
+
+        /* --- LOADER CSS BAŞLANGIÇ --- */
+        
+        /* 1. Tam Ekran Kaplayıcı */
+        #game-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-dark);
+            z-index: 99999; /* En üstte durması için */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        /* 2. Loader Gizlendiğinde (JS ile eklenecek sınıf) */
+        #game-loader.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        /* 3. Logo Alanı */
+        .loader-logo {
+            font-size: 2.5rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            margin-bottom: 40px;
+            animation: pulseLogo 2s infinite ease-in-out;
+        }
+        .loader-logo span { color: var(--accent-cyan); }
+
+        /* 4. Teknolojik Spinner (Dönen Halkalar) */
+        .spinner-container {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin-bottom: 30px;
+        }
+
+        .spinner-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            border-top-color: var(--accent-cyan);
+            animation: spin 1s linear infinite;
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.5);
+        }
+
+        .spinner-ring::before {
+            content: "";
+            position: absolute;
+            top: 5px; left: 5px; right: 5px; bottom: 5px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            border-top-color: rgba(255, 255, 255, 0.5);
+            animation: spinReverse 2s linear infinite;
+        }
+
+        .spinner-ring::after {
+            content: "";
+            position: absolute;
+            top: 15px; left: 15px; right: 15px; bottom: 15px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            border-top-color: var(--accent-cyan);
+            animation: spin 3s linear infinite;
+        }
+
+        /* 5. Yükleniyor Yazısı ve İpuçları */
+        .loading-text {
+            font-size: 1.2rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: var(--accent-cyan);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .loading-tip {
+            font-size: 0.8rem;
+            color: #777;
+            min-height: 20px; /* Titremeyi engellemek için sabit yükseklik */
+        }
+
+        /* Animasyonlar */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes spinReverse {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(-360deg); }
+        }
+        @keyframes pulseLogo {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+
+        /* --- LOADER CSS BİTİŞ --- */
+
+        /* Demo Amaçlı Sayfa İçeriği */
+        .content {
+            text-align: center;
+            margin-top: 100px;
+        }
+        .btn {
+            padding: 10px 20px;
+            background: var(--accent-cyan);
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="game-loader">
+        <div class="loader-logo">WORLD <span>OF SIM</span></div>
+        
+        <div class="spinner-container">
+            <div class="spinner-ring"></div>
+        </div>
+
+        <div class="loading-text">YÜKLENİYOR...</div>
+        <div class="loading-tip" id="loadingTip">Sunuculara bağlanılıyor...</div>
+    </div>
+
+
+    <div class="content">
+        <h1>SAYFA YÜKLENDİ</h1>
+        <p>Burası oyunun ana içeriği.</p>
+        <button class="btn" onclick="simulatePageChange()">Sayfa Değiştir (Test)</button>
+    </div>
+
+
+    <script>
+        // İPUÇLARI LİSTESİ (Simülasyon Hissi İçin)
+        const tips = [
+            "Sunuculara bağlanılıyor...",
+            "Kullanıcı verileri şifreleniyor...",
+            "Dünya haritası oluşturuluyor...",
+            "Piyasa verileri güncelleniyor...",
+            "Maden rezervleri kontrol ediliyor...",
+            "Varlıklarınız hesaplanıyor..."
+        ];
+
+        const tipElement = document.getElementById('loadingTip');
+        const loader = document.getElementById('game-loader');
+
+        // 1. İPUCU DEĞİŞTİRME DÖNGÜSÜ
+        let tipInterval = setInterval(() => {
+            const randomTip = tips[Math.floor(Math.random() * tips.length)];
+            tipElement.innerText = randomTip;
+        }, 800); // Her 800ms'de bir yazı değişir
+
+        // 2. LOADER'I GİZLEME FONKSİYONU
+        function hideLoader() {
+            clearInterval(tipInterval); // Yazı değişimini durdur
+            loader.classList.add('hidden'); // CSS class ile gizle
+        }
+
+        // 3. LOADER'I GÖSTERME FONKSİYONU (Sayfa geçişlerinde kullanılır)
+        function showLoader() {
+            loader.classList.remove('hidden');
+            // Yazı döngüsünü tekrar başlat
+            tipInterval = setInterval(() => {
+                const randomTip = tips[Math.floor(Math.random() * tips.length)];
+                tipElement.innerText = randomTip;
+            }, 800);
+        }
+
+        // SAYFA YÜKLENDİĞİNDE (DEMO)
+        window.addEventListener('load', () => {
+            // Gerçekçi görünmesi için 2 saniye bekletip açıyoruz
+            setTimeout(hideLoader, 2000);
+        });
+
+        // SAYFA GEÇİŞİ SİMÜLASYONU
+        function simulatePageChange() {
+            showLoader();
+            setTimeout(() => {
+                // Burada normalde window.location.href = 'yeni-sayfa.html' olur
+                hideLoader(); 
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

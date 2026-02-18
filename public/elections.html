@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Sim of World - Genel Seçimler</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/global-menu.css">
+    <script src="js/loader-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+    
+    <style>
+        :root {
+            --bg-dark: #0a0a0a; 
+            --bg-card: #141414; 
+            --bg-input: #1a1a1a;
+            --accent-gold: #ffd700;
+            --accent-purple: #9b59b6;
+            --accent-red: #e74c3c;
+            --accent-green: #2ecc71;
+            --text-white: #ffffff; 
+            --text-muted: #888; 
+            --border-color: #222;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+            overflow: hidden;
+        }
+
+        .game-container {
+            width: 100%; max-width: 450px; background-color: var(--bg-dark);
+            height: 100vh; display: flex; flex-direction: column; position: relative;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5); border-left: 1px solid #111; border-right: 1px solid #111;
+        }
+
+        /* HEADER */
+        main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
+
+        .page-header {
+            display: flex; align-items: flex-start; gap: 12px; margin-bottom: 25px;
+        }
+        .back-btn {
+            background: var(--bg-input); border: 1px solid var(--border-color); color: #fff;
+            width: 40px; height: 40px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            font-size: 1.2rem; transition: all 0.2s;
+        }
+        .back-btn:hover { background: var(--bg-card); border-color: var(--accent-purple); }
+        
+        .page-title { font-size: 1.5rem; font-weight: 800; color: var(--accent-purple); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
+        .page-desc { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* COUNTDOWN SECTION */
+        .countdown-card {
+            background: linear-gradient(135deg, rgba(155, 89, 182, 0.1), rgba(20, 20, 20, 0.9));
+            border: 1px solid var(--accent-purple);
+            border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 25px;
+            box-shadow: 0 0 15px rgba(155, 89, 182, 0.15);
+        }
+        .timer-label { font-size: 0.8rem; color: #aaa; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; }
+        .timer-val { font-size: 2.2rem; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; text-shadow: 0 0 10px rgba(155, 89, 182, 0.5); }
+        .total-votes { font-size: 0.9rem; color: var(--accent-gold); margin-top: 10px; font-weight: 600; }
+        
+        /* PARTY LIST */
+        .party-list { display: flex; flex-direction: column; gap: 15px; }
+        
+        .party-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+        .party-card:hover { transform: translateX(5px); border-color: #333; }
+        .party-card.voted-for { border-color: var(--accent-green); background: rgba(46, 204, 113, 0.05); }
+
+        /* Progress Bar Background */
+        .vote-progress-bg {
+            position: absolute; bottom: 0; left: 0; height: 3px; width: 100%; background: #222;
+        }
+        .vote-progress-fill {
+            height: 100%; background: var(--accent-purple); width: 0%; transition: width 1s ease-out;
+            box-shadow: 0 0 10px var(--accent-purple);
+        }
+
+        .party-logo {
+            width: 50px; height: 50px; border-radius: 50%; background: #000;
+            border: 2px solid #333; display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; color: #fff; flex-shrink: 0; z-index: 2;
+        }
+        
+        .party-info { flex: 1; z-index: 2; }
+        .party-name { font-size: 1.1rem; font-weight: 700; color: #fff; line-height: 1.2; }
+        .party-leader { font-size: 0.8rem; color: #777; margin-bottom: 4px; }
+        
+        .vote-stats { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: #ccc; }
+        .vote-percent { font-weight: 800; color: var(--accent-purple); }
+
+        .vote-btn {
+            background: transparent; border: 1px solid var(--accent-purple);
+            color: var(--accent-purple); padding: 8px 15px; border-radius: 6px;
+            font-family: inherit; font-weight: 700; cursor: pointer;
+            transition: all 0.2s; z-index: 2; font-size: 0.85rem;
+        }
+        .vote-btn:hover { background: var(--accent-purple); color: #fff; }
+        .vote-btn:disabled { opacity: 0.5; cursor: not-allowed; border-color: #444; color: #666; }
+        
+        .voted-badge {
+            background: var(--accent-green); color: #000; padding: 4px 10px;
+            border-radius: 4px; font-size: 0.75rem; font-weight: 800;
+            display: none; align-items: center; gap: 5px;
+        }
+        .party-card.voted-for .vote-btn { display: none; }
+        .party-card.voted-for .voted-badge { display: flex; }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        
+        <main>
+            <div class="page-header">
+                <button class="back-btn" onclick="window.location.href='politics-list.html'">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="page-title-box">
+                    <div class="page-title">GENEL SEÇİMLER</div>
+                    <div class="page-desc">Oyunu kullan, geleceğine karar ver</div>
+                </div>
+            </div>
+
+            <!-- COUNTDOWN -->
+            <div class="countdown-card">
+                <div class="timer-label">SANDIKLARIN KAPANMASINA KALAN SÜRE</div>
+                <div class="timer-val" id="electionTimer">00:00:00</div>
+                <div class="total-votes"><i class="fas fa-vote-yea"></i> Toplam Oy: <span id="totalVotes">12,450</span></div>
+            </div>
+
+            <!-- PARTIES -->
+            <div class="party-list" id="partyList">
+                <!-- Data will be injected here -->
+            </div>
+
+        </main>
+        
+        <div id="bottom-menu"></div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="js/header-manager.js"></script>
+    <script src="js/menu-manager.js"></script>
+
+    <script>
+        // MOCK DATA - Backend Integration Required
+        const electionData = {
+            endTime: new Date(new Date().getTime() + 24 * 60 * 60 * 1000), // 24 hours from now
+            totalVotes: 14582,
+            userVotedPartyId: null, // If null, user hasn't voted
+            parties: [
+                { id: 1, name: "Gelişim ve Kalkınma Partisi", leader: "Ahmet Yılmaz", color: "#f1c40f", icon: "fa-sun", votes: 4500 },
+                { id: 2, name: "Ulusal Birlik Partisi", leader: "Mehmet Demir", color: "#e74c3c", icon: "fa-flag", votes: 3200 },
+                { id: 3, name: "Gelecek Teknoloji Partisi", leader: "Ayşe Kaya", color: "#3498db", icon: "fa-microchip", votes: 6882 }
+            ]
+        };
+
+        $(document).ready(function() {
+            startTimer();
+            renderParties();
+        });
+
+        function formatTime(ms) {
+            const h = Math.floor(ms / (1000 * 60 * 60));
+            const m = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((ms % (1000 * 60)) / 1000);
+            return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        }
+
+        function startTimer() {
+            setInterval(() => {
+                const now = new Date().getTime();
+                const dist = electionData.endTime - now;
+                if(dist < 0) {
+                    $('#electionTimer').text("SEÇİM BİTTİ");
+                    $('.vote-btn').prop('disabled', true);
+                } else {
+                    $('#electionTimer').text(formatTime(dist));
+                }
+            }, 1000);
+        }
+
+        function renderParties() {
+            const container = $('#partyList');
+            container.empty();
+            
+            // Calculate percentages
+            const total = electionData.parties.reduce((sum, p) => sum + p.votes, 0);
+            $('#totalVotes').text(total.toLocaleString());
+
+            // Sort by votes desc
+            electionData.parties.sort((a,b) => b.votes - a.votes);
+
+            electionData.parties.forEach(party => {
+                const percent = total > 0 ? ((party.votes / total) * 100).toFixed(1) : 0;
+                const isVoted = electionData.userVotedPartyId === party.id;
+                
+                const card = `
+                    <div class="party-card ${isVoted ? 'voted-for' : ''}" onclick="">
+                        <div class="vote-progress-bg">
+                            <div class="vote-progress-fill" style="width: ${percent}%; background: ${party.color}; box-shadow: 0 0 10px ${party.color};"></div>
+                        </div>
+                        
+                        <div class="party-logo" style="color: ${party.color}; border-color: ${party.color}">
+                            <i class="fas ${party.icon}"></i>
+                        </div>
+                        
+                        <div class="party-info">
+                            <div class="party-name">${party.name}</div>
+                            <div class="party-leader">Başkan: ${party.leader}</div>
+                            <div class="vote-stats">
+                                <span class="vote-percent" style="color:${party.color}">${percent}%</span>
+                                <span>(${party.votes.toLocaleString()} oy)</span>
+                            </div>
+                        </div>
+
+                        ${isVoted 
+                            ? `<div class="voted-badge"><i class="fas fa-check"></i> OY VERİLDİ</div>` 
+                            : `<button class="vote-btn" style="border-color:${party.color}; color:${party.color}" onclick="castVote(${party.id})">OY VER</button>`
+                        }
+                    </div>
+                `;
+                container.append(card);
+            });
+        }
+
+        window.castVote = function(partyId) {
+            if(electionData.userVotedPartyId) return;
+            
+            // Simulation
+            electionData.userVotedPartyId = partyId;
+            const party = electionData.parties.find(p => p.id === partyId);
+            party.votes++;
+            electionData.totalVotes++;
+            
+            // Toast or visual feedback
+            const btn = event.target;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            setTimeout(() => {
+                renderParties();
+                // Alert or Toast
+                // toastr.success(' oyunuz başarıyla kullanıldı!');
+            }, 600);
+        }
+
+    </script>
+</body>
+</html>

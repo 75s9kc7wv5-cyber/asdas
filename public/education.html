@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Sim of World - Eğitim Merkezi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #161616;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-gold: #ffd700;
+            --accent-red: #e74c3c;
+            --accent-purple: #9b59b6;
+            --text-white: #ffffff;
+            --border-color: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('img/world-map.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        main {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+
+        .page-header { text-align: center; margin-bottom: 25px; animation: fadeInDown 0.6s ease; }
+        .header-badge {
+            display: inline-block;
+            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(10,10,10,0.95) 100%);
+            border: 1px solid #333;
+            border-top: 3px solid var(--accent-green);
+            padding: 15px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .header-badge::after {
+            content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+            width: 60%; height: 2px; background: radial-gradient(circle, var(--accent-green) 0%, transparent 100%);
+            opacity: 0.5;
+        }
+        .page-title { 
+            font-size: 1.4rem; font-weight: 800; letter-spacing: 2px; color: #fff; margin-bottom: 5px; 
+            text-transform: uppercase; display: flex; align-items: center; gap: 10px;
+            text-shadow: 0 0 15px rgba(46, 204, 113, 0.4);
+        }
+        .page-desc { font-size: 0.85rem; color: #999; font-weight: 500; }
+
+        /* ACTIVE EDUCATION CARD */
+        .active-edu-card {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.08) 0%, rgba(0, 229, 255, 0.04) 100%);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            border-radius: 10px;
+            padding: 12px 15px;
+            margin-bottom: 18px;
+            display: none;
+            animation: slideUp 0.5s ease;
+        }
+        .active-edu-card.active { display: block; }
+        
+        .ae-title { font-size: 0.9rem; font-weight: 600; color: var(--accent-green); letter-spacing: 0.5px; }
+        .ae-timer { font-size: 1.6rem; font-weight: 900; color: #fff; font-family: monospace; }
+        .ae-bar-bg { width: 100%; height: 5px; background: rgba(255, 255, 255, 0.08); border-radius: 2px; overflow: hidden; }
+        .ae-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan)); width: 0%; transition: width 1s linear; }
+
+        /* EDUCATION LIST */
+        .edu-list { display: flex; flex-direction: column; gap: 15px; }
+
+        /* --- NEW CARD STYLES (from licence.html) --- */
+        .r-top { display: flex; gap: 15px; }
+        
+        .r-icon-box {
+            width: 55px; height: 55px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.6rem;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            flex-shrink: 0;
+        }
+
+        .r-info { flex: 1; min-width: 0; }
+        .r-title { font-size: 1.1rem; font-weight: bold; color: #fff; display: flex; justify-content: space-between; align-items: flex-start; }
+        .r-desc { font-size: 0.8rem; color: #aaa; margin-top: 4px; line-height: 1.3; }
+
+        .r-action-icon {
+            font-size: 1.2rem;
+            color: #444; 
+            transition: 0.3s;
+            margin-left: auto;
+            align-self: center;
+        }
+        .edu-card:hover .r-action-icon {
+            transform: translateX(5px);
+        }
+
+        .edu-card {
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.3s;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .edu-card.locked {
+            opacity: 0.6;
+            filter: grayscale(0.8);
+            cursor: not-allowed;
+        }
+
+        .edu-card:not(.locked):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Overwriting old classes just in case */
+        .edu-icon, .edu-info, .edu-name, .edu-range, .edu-overlay { display: none; }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 1000;
+            display: none; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        .modal-overlay.active { display: flex; }
+        
+        .modal-content {
+            background: #181818; width: 85%; max-width: 400px; padding: 25px; border-radius: 10px;
+            border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-cyan);
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
+        }
+        
+        .m-icon { font-size: 3rem; color: var(--accent-cyan); margin-bottom: 10px; }
+        .m-title { font-size: 1.3rem; margin-bottom: 10px; color: #fff; font-weight: bold; }
+        .m-desc { color: #888; font-size: 0.9rem; margin-bottom: 15px; }
+        
+        .req-list { 
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            margin: 15px 0;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .info-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            transition: all 0.2s;
+            border-bottom: 1px solid #333;
+        }
+        .info-list-item:last-child {
+            border-bottom: none;
+        }
+        .info-list-item:hover {
+            opacity: 0.8;
+        }
+        .info-left {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            flex: 1;
+        }
+        .info-left i {
+            width: 28px;
+            min-width: 28px;
+            text-align: left;
+            margin-right: 10px;
+            font-size: 1rem;
+        }
+        .info-left img {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            margin-right: 10px;
+        }
+        .info-label {
+            color: #ccc;
+            font-size: 0.9rem;
+        }
+        .info-value {
+            color: #fff;
+            font-weight: bold;
+            margin-left: auto;
+        }
+        .upgrade-cost-status {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            margin-left: 15px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .upgrade-cost-status.ok {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(46, 204, 113, 0.1));
+            color: var(--accent-green);
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
+        }
+        .upgrade-cost-status.fail {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(231, 76, 60, 0.1));
+            color: var(--accent-red);
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.3);
+        }
+        
+        .modal-btns { display: flex; gap: 10px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 1rem; }
+        .btn-confirm { background: var(--accent-green); color: #000; }
+        .btn-cancel { background: var(--accent-red); color: #fff; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
+        }
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-cyan);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        .back-btn:hover {
+            background: #2a2a2a;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+        }
+        .page-header-content {
+            flex: 1;
+            text-align: left;
+        }
+        .page-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #fff;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .page-subtitle {
+            font-size: 0.85rem;
+            color: #999;
+            font-weight: 500;
+            text-align: left;
+        }
+
+        .current-edu-card {
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .current-edu-card:hover {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+        }
+        .current-edu-inline {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .current-edu-icon {
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+        .current-edu-label {
+            font-size: 0.85rem;
+            color: #ccc;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .current-edu-progress-wrapper {
+            flex: 1;
+            min-width: 100px;
+        }
+        .current-edu-progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .current-edu-progress-fill {
+            height: 100%;
+            background: var(--accent-cyan);
+            transition: width 0.3s;
+        }
+        .current-edu-value {
+            font-size: 1rem;
+            font-weight: bold;
+            color: var(--accent-cyan);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .current-edu-card .btn-start {
+            background: var(--accent-cyan);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Rajdhani';
+        }
+        .current-edu-card .btn-start:disabled {
+            background: #444;
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        .current-edu-description {
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 12px;
+            font-style: italic;
+            border-top: 1px solid #333;
+            padding-top: 12px;
+        }
+
+        .badge-blue {
+            display: inline-block;
+            background: rgba(0, 229, 255, 0.15);
+            color: var(--accent-cyan);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            margin-top: 4px;
+        }
+        .badge-green {
+            display: inline-block;
+            background: rgba(46, 204, 113, 0.15);
+            color: var(--accent-green);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            margin-top: 4px;
+        }
+
+        /* Reward Grid (from daily-job.html) */
+        .reward-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; text-align: left;}
+        .r-box { 
+            background: #222; padding: 10px; border-radius: 8px; 
+            border: 1px solid #333; transition: 0.3s;
+        }
+        .r-box:hover { transform: none; border-color: #444; }
+        .r-val { font-size: 1.1rem; font-weight: bold; color: #fff; display: block; margin-bottom: 2px; }
+        .r-lbl { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: normal; font-weight: bold; }
+        .m-sub { color: #888; font-size: 0.9rem; margin-bottom: 15px; line-height: normal; }
+
+
+        .arrow-indicator { 
+            font-size: 1.2rem; 
+            color: #444; 
+            transition: 0.3s; 
+            margin-left: auto; 
+        }
+        .edu-card:not(.locked):hover .arrow-indicator { 
+            color: var(--accent-cyan); 
+            transform: translateX(5px); 
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Header injected by header-manager.js -->
+
+        <main>
+            <div class="page-header">
+                <button class="back-btn" onclick="window.location.href='home.html'">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="page-header-content">
+                    <div class="page-title">EĞİTİM MERKEZİ</div>
+                    <div class="page-subtitle">Akademik kariyerini geliştir, yeni ufuklara yelken aç.</div>
+                </div>
+            </div>
+
+            <!-- Current Education Card -->
+            <div id="currentEduCard" class="current-edu-card">
+                <!-- JS ile doldurulacak -->
+            </div>
+
+            <!-- ACTIVE EDUCATION TIMER -->
+            <div class="active-edu-card" id="activeEduCard">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-book-open" style="color: var(--accent-green); font-size: 1rem;"></i>
+                        <span class="ae-title">Eğitim Devam Ediyor</span>
+                    </div>
+                    <span class="ae-timer" id="eduTimer" style="font-size: 1.4rem;">00:00</span>
+                </div>
+                
+                <div class="ae-bar-bg">
+                    <div class="ae-bar-fill" id="eduBar"></div>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.75rem;">
+                    <span style="color: #999;">Hedef: <span id="targetLevelDisplay" style="color: var(--accent-green); font-weight: 600;">Seviye X</span></span>
+                    <button id="btnSpeedUp" class="btn-edu" style="background: rgba(155, 89, 182, 0.8); color:#fff; padding: 5px 10px; font-size: 0.7rem; border: 1px solid rgba(155, 89, 182, 0.5);" onclick="speedUpEducation()">
+                        <i class="fas fa-bolt"></i> Hızlandır <span id="speedUpCost">0</span>💎
+                    </button>
+                </div>
+            </div>
+
+            <!-- EDUCATION LIST -->
+            <div class="edu-list" id="eduList">
+                <!-- JS ile doldurulacak -->
+            </div>
+        </main>
+
+        <!-- CONFIRM MODAL -->
+        <div class="modal-overlay" id="confirmModal">
+            <div class="modal-content">
+                <i class="fas fa-book-reader m-icon"></i>
+                <h3 class="m-title">Eğitime başlamayı onaylıyor musun?</h3>
+                <p class="m-desc">Bu eğitimi almak için aşağıdaki gereksinimleri karşılamalısınız.</p>
+                
+                <div class="req-list" id="reqList">
+                    <!-- JS Dolduracak -->
+                </div>
+
+                <div class="modal-btns">
+                    <button class="m-btn btn-cancel" onclick="closeModal()">İPTAL</button>
+                    <button class="m-btn btn-confirm" onclick="startEducation()">ONAYLA</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- COMPLETED MODAL -->
+        <div class="modal-overlay" id="rewardModal">
+            <div class="modal-content">
+                <i class="fas fa-trophy" style="font-size:3rem; color:var(--accent-gold); margin-bottom:10px;"></i>
+                <h3 class="m-title">EĞİTİM TAMAMLANDI!</h3>
+                <p class="m-sub" id="rewardMsg">Tebrikler, yeni bir seviyeye ulaştın.</p>
+                
+                <div class="reward-grid" id="rewardGrid">
+                    <!-- JS Dolduracak -->
+                </div>
+
+                <button class="m-btn btn-confirm" onclick="closeRewardModal()" style="width: 100%;">HARİKA!</button>
+            </div>
+        </div>
+
+        <!-- SPEEDUP CONFIRM MODAL -->
+        <div class="modal-overlay" id="speedupModal">
+            <div class="modal-content" style="border-top-color: var(--accent-purple);">
+                <i class="fas fa-bolt m-icon" style="color: var(--accent-purple);"></i>
+                <h3 class="m-title">Eğitimi Hızlandır</h3>
+                <p class="m-desc">Eğitimi anında tamamlamak için onaylayın.</p>
+                
+                <div class="req-list" id="speedReqList">
+                    <!-- JS Dolduracak -->
+                </div>
+
+                <div class="modal-btns">
+                    <button class="m-btn btn-cancel" onclick="closeSpeedupModal()">İPTAL</button>
+                    <button class="m-btn btn-confirm" id="btnConfirmSpeedup" style="background: var(--accent-purple); color:white;" onclick="confirmSpeedUp()">ONAYLA</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ERROR MODAL -->
+        <div class="modal-overlay" id="errorModal">
+            <div class="modal-content" style="border-top-color: var(--accent-red);">
+                <i class="fas fa-times-circle m-icon" style="color: var(--accent-red);"></i>
+                <h3 class="m-title" id="errTitle">BAŞARISIZ</h3>
+                <p class="m-desc" id="errMsg">Bir hata oluştu.</p>
+                <div class="modal-btns">
+                    <button class="m-btn btn-cancel" onclick="closeErrorModal()" style="width:100%;">TAMAM</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="js/loader-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+    <script src="js/header-manager.js"></script>
+    <script src="js/menu-manager.js"></script>
+
+    <script>
+        // Toastr Config
+        // toastr.options = { "positionClass": "toast-top-right", "timeOut": "3000" };
+
+        const eduStages = [
+            { min: 1, max: 10, name: 'İlkokul', icon: 'fa-shapes' },
+            { min: 11, max: 20, name: 'Ortaokul', icon: 'fa-book' },
+            { min: 21, max: 30, name: 'Lise', icon: 'fa-school' },
+            { min: 31, max: 40, name: 'Önlisans', icon: 'fa-certificate' },
+            { min: 41, max: 50, name: 'Lisans', icon: 'fa-user-graduate' },
+            { min: 51, max: 60, name: 'Yüksek Lisans', icon: 'fa-scroll' },
+            { min: 61, max: 70, name: 'Doktora', icon: 'fa-microscope' },
+            { min: 71, max: 80, name: 'Post-Doc', icon: 'fa-atom' },
+            { min: 81, max: 90, name: 'Doçentlik', icon: 'fa-chalkboard-teacher' },
+            { min: 91, max: 100, name: 'Profesörlük', icon: 'fa-brain' }
+        ];
+
+        let userSkill = 1;
+        let activeEdu = null;
+        let timerInterval = null;
+
+        async function initPage() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) { window.location.href = 'login.html'; return; }
+
+            try {
+                const response = await fetch(`/api/education/status/${user.id}`);
+                const data = await response.json();
+                
+                userSkill = data.skill;
+                activeEdu = data.activeEdu;
+                
+                renderList();
+                renderCurrentCard();
+                
+                if (activeEdu) {
+                    startTimer(activeEdu.end_time, activeEdu.target_level);
+                }
+            } catch (error) {
+                console.error(error);
+                // toastr.error('Veri yüklenemedi.');
+                showErrorModal('Hata', 'Veri yüklenemedi.');
+            }
+        }
+
+        function renderList() {
+            const container = document.getElementById('eduList');
+            container.innerHTML = '';
+
+            // Map standard levels 1-10 to colors
+            const levelColors = {
+                1: '#95a5a6',  // Gri
+                2: '#2ecc71',  // Yeşil
+                3: '#3498db',  // Mavi
+                4: '#9b59b6',  // Mor
+                5: '#e67e22',  // Turuncu
+                6: '#e74c3c',  // Kırmızı
+                7: '#1abc9c',  // Turkuaz
+                8: '#d35400',  // Bronz
+                9: '#ecf0f1',  // Platin
+                10: '#ffd700'  // Altın
+            };
+
+            // Find current stage
+            const currentStageIndex = eduStages.findIndex(s => userSkill >= s.min && userSkill <= s.max);
+            
+            eduStages.forEach((stage, index) => {
+                const isCompleted = userSkill > stage.max;
+                const isCurrent = index === currentStageIndex || (index === 0 && userSkill === 0);
+                const isLocked = !isCompleted && !isCurrent;
+                
+                // Color Logic
+                let borderColor = levelColors[index + 1] || '#95a5a6';
+                if (isCompleted) borderColor = '#2ecc71'; // Completed is aways green
+
+                let statusClass = 'locked';
+                if (isCompleted) statusClass = 'completed';
+                if (isCurrent) statusClass = 'current';
+
+                const card = document.createElement('div');
+                card.className = `edu-card ${statusClass}`;
+                
+                // Card Border Top Styling
+                card.style.borderTop = `3px solid ${borderColor}`;
+
+                let rangeText = '';
+                if (isCompleted) {
+                    rangeText = `<span style="color:${borderColor}"><i class="fas fa-check"></i> Tamamlandı</span>`;
+                } else {
+                    rangeText = `Seviye ${stage.min} - ${stage.max}`;
+                }
+
+                // Click Action
+                if (isCurrent && !activeEdu && userSkill < 100) {
+                    card.onclick = () => openModal();
+                    card.style.cursor = 'pointer';
+                } else if (!isLocked && !isCompleted) {
+                     // Maybe current but activeEdu exists
+                     // Or completed? No, completed shouldn't be clickable for "Start"
+                }
+
+                card.innerHTML = `
+                    <div class="r-top">
+                        <div class="r-icon-box" style="color:${borderColor}; border-color:${borderColor}; box-shadow:0 0 10px ${borderColor}4D;">
+                            <i class="fas ${stage.icon}"></i>
+                        </div>
+                        <div class="r-info">
+                            <div class="r-title">
+                                ${stage.name} Eğitimi
+                            </div>
+                            <div class="r-desc" style="color: #aaa;">${rangeText}</div>
+                        </div>
+                        <i class="fas fa-chevron-right r-action-icon" style="color:${borderColor}; opacity: ${isLocked ? 0 : 1}"></i>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        function renderCurrentCard() {
+            const card = document.getElementById('currentEduCard');
+            const progressPercent = (userSkill / 100) * 100;
+            
+            card.innerHTML = `
+                <div class="current-edu-inline">
+                    <img src="icons/icon-pack/education.png" alt="Eğitim" class="current-edu-icon">
+                    <span class="current-edu-label">Mevcut Eğitim Seviyesi</span>
+                    <div class="current-edu-progress-wrapper">
+                        <div class="current-edu-progress-bar">
+                            <div class="current-edu-progress-fill" style="width: ${progressPercent}%"></div>
+                        </div>
+                    </div>
+                    <span class="current-edu-value">${userSkill}/100</span>
+                </div>
+                <div class="current-edu-description">
+                    💡 Eğitimi başlatmak için aşağıdaki karta tıklayın
+                </div>
+            `;
+        }
+
+        async function openModal() {
+            const localUser = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!localUser) return;
+
+            try {
+                // Fetch fresh user data including stats
+                const response = await fetch(`/api/user-stats/${localUser.id}`);
+                if (!response.ok) throw new Error('API Error');
+                const userData = await response.json();
+                
+                // Use skill from DB if available, otherwise global local one
+                const currentSkill = userData.education_skill !== undefined ? userData.education_skill : userSkill;
+                
+                // Calculate Cost
+                let costMoney = Math.floor(1000 * Math.pow(1.1, currentSkill));
+                let costGold = 0;
+                let costDiamond = 0;
+                
+                if (currentSkill >= 30) costGold = Math.floor((currentSkill - 30) * 5) + 10;
+                if (currentSkill >= 60) costDiamond = Math.floor((currentSkill - 60) * 1) + 1;
+                
+                const reqList = document.getElementById('reqList');
+                reqList.innerHTML = '';
+
+                let canStart = true;
+
+                // Helper to add item
+                const addItem = (icon, label, required, current, isOk) => {
+                    if(!isOk) canStart = false;
+                    reqList.innerHTML += `
+                        <div class="info-list-item">
+                            <div class="info-left">
+                                ${icon}
+                                <span class="info-label">${label}</span>
+                            </div>
+                            <span class="info-value">${required}</span>
+                            <div class="upgrade-cost-status ${isOk ? 'ok' : 'fail'}">
+                                <i class="fas ${isOk ? 'fa-check' : 'fa-times'}"></i>
+                            </div>
+                        </div>
+                    `;
+                };
+
+                // Use data from API (ensure numbers)
+                // Remove dots just in case it's a formatted string, then parse
+                const parseVal = (val) => {
+                    if (typeof val === 'string') {
+                        return parseInt(val.replace(/\./g, '')) || 0;
+                    }
+                    return val || 0;
+                };
+
+                const userMoney = parseVal(userData.money);
+                const userGold = parseVal(userData.gold);
+                const userDiamond = parseVal(userData.diamond);
+
+                addItem(
+                    '<img src="icons/inventory-icon/money.png" alt="Para">',
+                    'Para',
+                    formatMoney(costMoney),
+                    formatMoney(userMoney),
+                    userMoney >= costMoney
+                );
+
+                if (costGold > 0) {
+                    addItem(
+                        '<img src="icons/inventory-icon/gold.png" alt="Altın">',
+                        'Altın',
+                        costGold,
+                        userGold,
+                        userGold >= costGold
+                    );
+                }
+
+                if (costDiamond > 0) {
+                    addItem(
+                        '<img src="icons/inventory-icon/diamond.png" alt="Elmas">',
+                        'Elmas',
+                        costDiamond,
+                        userDiamond,
+                        userDiamond >= costDiamond
+                    );
+                }
+
+                // Update button state
+                const confirmBtn = document.querySelector('#confirmModal .btn-confirm');
+                if (canStart) {
+                    confirmBtn.disabled = false;
+                    confirmBtn.style.opacity = '1';
+                    confirmBtn.style.cursor = 'pointer';
+                } else {
+                    confirmBtn.disabled = true;
+                    confirmBtn.style.opacity = '0.5';
+                    confirmBtn.style.cursor = 'not-allowed';
+                }
+
+                document.getElementById('confirmModal').classList.add('active');
+
+            } catch (error) {
+                console.error('Modal data fetch error:', error);
+                // toastr.error('Güncel veriler alınamadı.');
+                showErrorModal('Hata', 'Güncel veriler alınamadı.');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('confirmModal').classList.remove('active');
+        }
+
+        async function startEducation() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            closeModal();
+
+            try {
+                const response = await fetch('/api/education/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // toastr.success('Eğitim başladı!');
+                    activeEdu = { end_time: result.endTime, target_level: result.targetLevel };
+                    renderList();
+                    startTimer(result.endTime, result.targetLevel);
+                    
+                    // Update Header Stats if possible
+                    if(window.updateHeaderStats) window.updateHeaderStats();
+                } else {
+                    // toastr.error(result.message || 'Başlatılamadı.');
+                    showErrorModal('Başarısız', result.message || 'Başlatılamadı.');
+                }
+            } catch (error) {
+                console.error(error);
+                // toastr.error('Hata oluştu.');
+                showErrorModal('Hata', 'İşlem sırasında bir hata oluştu.');
+            }
+        }
+
+        function startTimer(endTime, targetLevel) {
+            const card = document.getElementById('activeEduCard');
+            const timerEl = document.getElementById('eduTimer');
+            const barEl = document.getElementById('eduBar');
+            const targetEl = document.getElementById('targetLevelDisplay');
+            
+            card.classList.add('active');
+            targetEl.innerText = `Seviye ${targetLevel}`;
+            
+            // Calculate Speed Up Cost
+            const diamondCost = Math.ceil(targetLevel / 5) + 2;
+            document.getElementById('speedUpCost').innerText = diamondCost;
+
+            // Calculate total duration roughly for bar (current time to end time is remaining, but we need total for percentage)
+            // Since we don't have start time here easily without another fetch, let's approximate or just use remaining.
+            // Better: Server sends start time too, but for now let's just countdown.
+            // Visual bar will just fill from 0 to 100 based on remaining time? No, that looks backwards.
+            // Let's just show text countdown.
+            
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                const now = Date.now();
+                const diff = endTime - now;
+                
+                if (diff <= 0) {
+                    clearInterval(timerInterval);
+                    timerEl.innerText = "00:00";
+                    completeEducation();
+                    return;
+                }
+                
+                timerEl.innerText = formatTime(Math.ceil(diff / 1000));
+            }, 1000);
+        }
+
+        async function speedUpEducation() {
+            const cost = parseInt(document.getElementById('speedUpCost').innerText) || 0;
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            
+            let userDiamond = 0;
+            
+            try {
+                // Fetch fresh data
+                const response = await fetch(`/api/user-stats/${user.id}`);
+                const userData = await response.json();
+                
+                const parseVal = (val) => {
+                    if (typeof val === 'string') {
+                        return parseInt(val.replace(/\./g, '')) || 0;
+                    }
+                    return val || 0;
+                };
+                userDiamond = parseVal(userData.diamond);
+            } catch (e) {
+                console.error(e);
+                // Fallback
+                userDiamond = parseInt(user.diamond) || 0;
+            }
+
+            const list = document.getElementById('speedReqList');
+            list.innerHTML = '';
+            
+            const isOk = userDiamond >= cost;
+            
+            list.innerHTML = `
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <img src="icons/inventory-icon/diamond.png" alt="Elmas">
+                            <span class="info-label">Gereken Elmas</span>
+                        </div>
+                        <span class="info-value">${cost}</span>
+                        <div class="upgrade-cost-status ${isOk ? 'ok' : 'fail'}">
+                            <i class="fas ${isOk ? 'fa-check' : 'fa-times'}"></i>
+                        </div>
+                    </div>
+            `;
+
+            const btn = document.getElementById('btnConfirmSpeedup');
+            if (isOk) {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            } else {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            }
+            
+            document.getElementById('speedupModal').classList.add('active');
+        }
+
+        function closeSpeedupModal() {
+            document.getElementById('speedupModal').classList.remove('active');
+        }
+
+        async function confirmSpeedUp() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            closeSpeedupModal();
+
+            try {
+                const response = await fetch('/api/education/speedup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // toastr.success(result.message);
+                    // Timer will handle completion naturally or we can force it
+                    // Since we updated end_time on server, next tick of timer might not catch it immediately if we rely on local endTime variable.
+                    // We should force complete or reload status.
+                    // Let's just call completeEducation immediately as server said it's done (time is past).
+                    completeEducation();
+                } else {
+                    // toastr.error(result.message);
+                    showErrorModal('Başarısız', result.message);
+                }
+            } catch (error) {
+                console.error(error);
+                // toastr.error('Hata oluştu.');
+                showErrorModal('Hata', 'Hızlandırma sırasında bir hata oluştu.');
+            }
+        }
+
+        async function completeEducation() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            
+            try {
+                const response = await fetch('/api/education/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // toastr.success(`Tebrikler! Seviye ${result.newLevel} oldunuz.`, 'Eğitim Tamamlandı');
+                    document.getElementById('activeEduCard').classList.remove('active');
+                    activeEdu = null;
+                    userSkill = result.newLevel;
+                    renderList();
+                    renderCurrentCard();
+                    
+                    showRewardModal(result.newLevel);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        function showRewardModal(level) {
+            const grid = document.getElementById('rewardGrid');
+            grid.innerHTML = '';
+            
+            // Show New Level in Grid
+            const div = document.createElement('div');
+            div.className = 'r-box';
+            div.style.gridColumn = "span 2"; // Center if single item
+            div.style.textAlign = "center";
+            div.innerHTML = `<span class="r-val" style="color:var(--accent-cyan); font-size:1.5rem;">Seviye ${level}</span><span class="r-lbl">YENİ EĞİTİM SEVİYESİ</span>`;
+            grid.appendChild(div);
+
+            document.getElementById('rewardMsg').innerText = `Başarıyla tamamladın ve Seviye ${level} oldun!`;
+            document.getElementById('rewardModal').classList.add('active'); // active uses flex
+        }
+
+        function closeRewardModal() {
+            document.getElementById('rewardModal').classList.remove('active');
+        }
+
+        function showErrorModal(title, message) {
+            document.getElementById('errTitle').innerText = title;
+            document.getElementById('errMsg').innerText = message;
+            document.getElementById('errorModal').classList.add('active');
+        }
+
+        function closeErrorModal() {
+            document.getElementById('errorModal').classList.remove('active');
+        }
+
+        function formatMoney(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        window.addEventListener('load', initPage);
+    </script>
+</body>
+</html>

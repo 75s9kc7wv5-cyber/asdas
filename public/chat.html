@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Sim of World - Sohbet</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <link rel="stylesheet" href="css/global-menu.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0a0a0a; 
+            --bg-card: #141414; 
+            --bg-input: #1a1a1a;
+            --accent: #00e5ff; 
+            --accent-green: #2ecc71; 
+            --accent-gold: #ffd700; 
+            --accent-red: #e74c3c;
+            --accent-purple: #9b59b6;
+            --text-white: #ffffff; 
+            --text-muted: #888; 
+            --border-color: #222;
+            
+            --msg-bg-other: #1f1f1f;
+            --msg-bg-me: rgba(0, 229, 255, 0.15);
+            --msg-border-me: rgba(0, 229, 255, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%; max-width: 450px; background-color: var(--bg-dark);
+            /* Fixed position to fill space between header and footer */
+            position: fixed; top: 0; bottom: 70px; height: auto;
+            display: flex; flex-direction: column; 
+            box-shadow: 0 0 40px rgba(0,0,0,0.5); border-left: 1px solid #111; border-right: 1px solid #111;
+        }
+
+        /* HEADER REMOVED - Handled by header-manager.js */
+
+        /* KANAL SEKMELERİ */
+        .chat-tabs {
+            display: flex; background: var(--bg-card); border-bottom: 1px solid var(--border-color);
+            overflow-x: auto; scrollbar-width: none; z-index: 15; flex-shrink: 0;
+            padding: 10px; gap: 10px; margin-top: 10px;
+        }
+        .chat-tabs::-webkit-scrollbar { display: none; }
+        
+        .c-tab {
+            flex: 1; padding: 8px 15px; text-align: center; font-size: 0.9rem; font-weight: 700;
+            color: var(--text-muted); cursor: pointer; 
+            border: 1px solid var(--border-color); border-radius: 5px; background: #222;
+            white-space: nowrap; transition: all 0.2s;
+        }
+        .c-tab:hover { color: #fff; background: #333; }
+        .c-tab.active { color: #000; background: var(--accent); border-color: var(--accent); }
+
+        /* SOHBET ALANI */
+        .chat-area {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            /* padding-bottom removed */
+            background-image: radial-gradient(circle at center, rgba(20,20,20,0) 0%, rgba(0,0,0,0.8) 100%);
+        }
+        
+        /* Scrollbar Özelleştirme */
+        .chat-area::-webkit-scrollbar { width: 4px; }
+        .chat-area::-webkit-scrollbar-track { background: #111; }
+        .chat-area::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+        /* MESAJ STİLLERİ */
+        .message { display: flex; gap: 10px; align-items: flex-start; animation: fadeIn 0.3s ease; }
+        
+        .msg-avatar {
+            width: 35px; height: 35px; border-radius: 50%; background: #222; flex-shrink: 0;
+            border: 1px solid #444; overflow: hidden;
+        }
+        .msg-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        .msg-content {
+            max-width: 80%;
+            background: var(--msg-bg-other);
+            padding: 10px 12px;
+            border-radius: 0 12px 12px 12px;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .msg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; gap: 10px; }
+        .msg-sender { font-size: 0.8rem; font-weight: 700; color: var(--accent-gold); display: flex; align-items: center; gap: 5px; }
+        .msg-rank { font-size: 0.65rem; padding: 1px 4px; border-radius: 3px; background: #333; color: #aaa; text-transform: uppercase; }
+        .msg-time { font-size: 0.65rem; color: #555; }
+        
+        .msg-text { font-size: 0.9rem; color: #ddd; line-height: 1.4; word-wrap: break-word; }
+
+        /* Kendi Mesajım */
+        .message.me { flex-direction: row-reverse; }
+        .message.me .msg-content { 
+            background: var(--msg-bg-me); 
+            border-color: var(--msg-border-me); 
+            border-radius: 12px 0 12px 12px; 
+        }
+        .message.me .msg-sender { color: var(--accent); justify-content: flex-end; }
+        
+        /* Sistem Mesajı */
+        .message.system { justify-content: center; margin: 10px 0; }
+        .message.system .msg-content { 
+            background: rgba(255, 215, 0, 0.05); border: 1px solid rgba(255, 215, 0, 0.2); 
+            border-radius: 20px; padding: 5px 15px; max-width: 90%; text-align: center;
+        }
+        .message.system .msg-text { font-size: 0.75rem; color: var(--accent-gold); font-weight: bold; }
+
+        /* INPUT ALANI (FLEX) */
+        .input-area {
+            width: 100%;
+            background: rgba(15, 15, 15, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 10px 15px;
+            border-top: 1px solid var(--border-color);
+            display: flex; gap: 10px; align-items: center;
+            z-index: 20;
+            flex-shrink: 0;
+        }
+
+        /* Hide spacer in chat page to prevent double gap */
+        .layout-spacer { display: none !important; }
+        
+        .chat-input {
+            flex: 1;
+            background: #000;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 10px 15px;
+            color: #fff;
+            font-family: 'Rajdhani';
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .chat-input:focus { border-color: var(--accent); }
+
+        .btn-send {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: var(--accent); border: none; color: #000;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; cursor: pointer; transition: transform 0.2s;
+        }
+        .btn-send:active { transform: scale(0.9); }
+
+        /* BOTTOM NAV REMOVED - Handled by menu-manager.js */
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- HEADER injected by header-manager.js -->
+
+        <!-- KANALLAR -->
+        <div class="chat-tabs">
+            <div class="c-tab active" onclick="switchTab('global', this)">GLOBAL</div>
+            <div class="c-tab" onclick="switchTab('trade', this)">TİCARET</div>
+            <div class="c-tab" onclick="switchTab('clan', this)">PARTİM</div>
+        </div>
+
+        <!-- KANAL BAŞLIĞI (Sadece Partim sekmesinde görünür) -->
+        <div id="channelHeader" style="display:none; background:#1a1a1a; padding:8px; text-align:center; font-size:0.9rem; color:#ffd700; border-bottom:1px solid #222;">
+            <span id="partyNameDisplay"></span> Sohbet Alanı
+        </div>
+
+        <!-- MESAJ LİSTESİ -->
+        <div class="chat-area" id="chatList">
+            <!-- JS ile doldurulacak -->
+        </div>
+
+        <!-- INPUT ALANI -->
+        <div class="input-area">
+            <input type="text" id="msgInput" class="chat-input" placeholder="Bir mesaj yaz..." maxlength="255">
+            <button class="btn-send" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <!-- REPORT MODAL -->
+    <div id="reportModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:100; justify-content:center; align-items:center;">
+        <div class="modal-content" style="background:#181818; width:300px; padding:20px; border-radius:10px; border:1px solid #444; text-align:center;">
+            <h3 style="color:#fff; margin-bottom:15px;">Raporla</h3>
+            <p style="color:#ccc; margin-bottom:20px;">Bu mesajı raporlamak istediğinize emin misiniz?</p>
+            <input type="hidden" id="reportMsgId">
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button onclick="closeReportModal()" style="padding:8px 15px; background:#444; color:#fff; border:none; border-radius:5px; cursor:pointer;">İptal</button>
+                <button onclick="confirmReport()" style="padding:8px 15px; background:#e74c3c; color:#fff; border:none; border-radius:5px; cursor:pointer;">Raporla</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/loader-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+    <script src="js/header-manager.js"></script>
+    <script src="js/menu-manager.js"></script>
+    <script>
+        let currentChannel = 'global';
+        let lastMessageId = 0;
+        let pollInterval;
+        let currentUser = null;
+        let lastMessageTime = 0; // Rate limit tracking
+
+        // BAŞLANGIÇ
+        window.onload = async () => {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            currentUser = user;
+            
+            // İlk yükleme
+            await fetchMessages();
+            scrollToBottom();
+
+            // Polling başlat
+            pollInterval = setInterval(fetchMessages, 3000);
+        };
+
+        async function fetchMessages() {
+            try {
+                const response = await fetch(`/api/chat/messages?channel=${currentChannel}&userId=${currentUser.id}`);
+                const messages = await response.json();
+                
+                renderMessages(messages);
+            } catch (error) {
+                console.error('Mesajlar yüklenemedi:', error);
+            }
+        }
+
+        function renderMessages(messages) {
+            const container = document.getElementById('chatList');
+            const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
+            
+            // container.innerHTML = ''; // REMOVED to prevent flickering
+
+            if (!messages || messages.length === 0) {
+                if (container.children.length === 0) {
+                    // Only show "No messages" if not in clan tab with no party
+                    // The clan tab logic handles its own "Not in party" message
+                    if (currentChannel !== 'clan' || (document.getElementById('channelHeader').style.display !== 'none')) {
+                         container.innerHTML = '<div class="message system" id="no-msg"><div class="msg-content"><div class="msg-text">Henüz mesaj yok.</div></div></div>';
+                    }
+                }
+                return;
+            }
+
+            // Remove "no messages" if present
+            const noMsg = document.getElementById('no-msg');
+            if (noMsg) noMsg.remove();
+
+            messages.forEach(msg => {
+                // Check existence
+                if (document.getElementById(`msg-${msg.id}`)) return;
+
+                const isMe = msg.user_id === currentUser.id;
+                const date = new Date(msg.created_at);
+                const timeStr = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
+                
+                let avatarUrl = msg.avatar ? msg.avatar : 'uploads/avatars/default.png';
+                
+                const level = msg.level || 1;
+                const role = msg.role ? msg.role.toLowerCase() : 'user';
+                
+                let title = getTitle(level);
+                let titleColor = getRankColor(level);
+
+                // Role Override
+                if (role === 'admin') {
+                    title = "ADMIN";
+                    titleColor = "#e74c3c"; // Red
+                } else if (role === 'moderator') {
+                    title = "MOD";
+                    titleColor = "#3498db"; // Blue
+                } else if (role === 'vip') {
+                    title = "VIP";
+                    titleColor = "#f1c40f"; // Gold
+                }
+
+                const userId = msg.user_id;
+
+                const div = document.createElement('div');
+                div.className = `message ${isMe ? 'me' : ''}`;
+                div.id = `msg-${msg.id}`; // Add ID
+                
+                // Report Button Logic
+                let reportBtn = '';
+                if (!isMe && !msg.is_deleted) {
+                    reportBtn = `<i class="fas fa-exclamation-circle" style="cursor:pointer; color:#e74c3c; font-size:0.8rem;" onclick="reportMessage(${msg.id})" title="Raporla"></i>`;
+                }
+
+                // JOB AD PARSING
+                let displayMessage = escapeHtml(msg.message);
+                if (msg.message && msg.message.startsWith(':::JOB_AD:::')) {
+                    try {
+                        const jsonStr = msg.message.replace(':::JOB_AD:::', '');
+                        const data = JSON.parse(jsonStr);
+                        // Blue (#3498db) and Bold link
+                        const link = `<a href="factory-work.html?id=${data.id}" class="job-link" style="color:#3498db; font-weight:800; text-decoration:none; border-bottom:1px dashed #3498db;">${escapeHtml(data.name)}</a>`;
+                        displayMessage = `${link} işletmesi işçi arıyor! Maaş <span style="color:#2ecc71; font-weight:bold;">${data.salary} TL</span>`;
+                    } catch (e) {
+                        // Fallback implies original parsing failed
+                    }
+                }
+
+                div.innerHTML = `
+                    <div class="msg-avatar" onclick="location.href='profile.html?id=${userId}'" style="cursor:pointer">
+                        <img src="${avatarUrl}" alt="${msg.username}">
+                    </div>
+                    <div class="msg-content">
+                        <div class="msg-header">
+                            <span class="msg-sender" onclick="location.href='profile.html?id=${userId}'" style="cursor:pointer; display:flex; align-items:center; gap:5px;">
+                                <span style="color:#3498db; font-weight:bold;">(#${userId}-${msg.username})</span>
+                                <span style="background:#222; border:1px solid #444; color:${getRankColor(level)}; padding:1px 6px; border-radius:4px; font-size:0.75em;">Lv. ${level}</span>
+                                <span style="background:#222; border:1px solid #444; color:${titleColor}; padding:1px 6px; border-radius:4px; font-size:0.75em; font-weight:bold;">${title}</span>
+                            </span>
+                            <div style="display:flex; gap:5px; align-items:center;">
+                                ${reportBtn}
+                                <span class="msg-time">${timeStr}</span>
+                            </div>
+                        </div>
+                        <div class="msg-text" style="${msg.is_deleted ? 'color:#888; font-style:italic;' : ''}">${displayMessage}</div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+
+            if (isAtBottom) {
+                scrollToBottom();
+            }
+        }
+
+        function reportMessage(msgId) {
+            document.getElementById('reportMsgId').value = msgId;
+            document.getElementById('reportModal').style.display = 'flex';
+        }
+
+        function closeReportModal() {
+            document.getElementById('reportModal').style.display = 'none';
+        }
+
+        async function confirmReport() {
+            const msgId = document.getElementById('reportMsgId').value;
+            closeReportModal();
+            
+            try {
+                const response = await fetch('/api/chat/report', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        messageId: msgId,
+                        reporterId: currentUser.id,
+                        reason: 'Uygunsuz içerik'
+                    })
+                });
+                
+                if (response.ok) {
+                    toastr.success('Mesaj raporlandı.');
+                } else {
+                    toastr.error('Rapor hatası.');
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function getTitle(level) {
+            if (level >= 100) return "Efsane";
+            if (level >= 50) return "Patron";
+            if (level >= 30) return "Usta";
+            if (level >= 10) return "Kalfa";
+            return "Çırak";
+        }
+
+        function getRankColor(level) {
+            if(level >= 50) return '#e74c3c'; // High level
+            if(level >= 20) return '#ffd700'; // Mid level
+            return '#aaa';
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('msgInput');
+            const text = input.value.trim();
+            
+            if(text) {
+                // Rate Limit Check (3 Seconds)
+                const now = Date.now();
+                if (now - lastMessageTime < 3000) {
+                    toastr.warning('Lütfen yavaşlayın! Mesaj göndermek için 3 saniye beklemelisiniz.');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/chat/send', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            userId: currentUser.id,
+                            message: text,
+                            channel: currentChannel
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        lastMessageTime = Date.now(); // Update last message time
+                        input.value = '';
+                        fetchMessages(); // Hemen güncelle
+                        scrollToBottom();
+                    } else {
+                        // Handle specific error messages (like mute)
+                        const data = await response.json();
+                        if (data.message) {
+                            toastr.error(data.message);
+                        } else {
+                            toastr.error('Mesaj gönderilemedi.');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Hata:', error);
+                    toastr.error('Bir hata oluştu.');
+                }
+            }
+        }
+
+        // Enter tuşu ile gönderme
+        document.getElementById('msgInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        function scrollToBottom() {
+            const area = document.getElementById('chatList');
+            area.scrollTop = area.scrollHeight;
+        }
+
+        async function switchTab(channel, btn) {
+            document.querySelectorAll('.c-tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            
+            currentChannel = channel;
+            document.getElementById('chatList').innerHTML = ''; // Clear for new channel
+            
+            const header = document.getElementById('channelHeader');
+            const inputArea = document.querySelector('.input-area');
+            
+            // Reset UI first
+            header.style.display = 'none';
+            inputArea.style.display = 'flex';
+
+            if (channel === 'clan') {
+                // Check Party Status
+                const partyInfo = await checkPartyStatus();
+                
+                if (partyInfo && partyInfo.inParty) {
+                    header.style.display = 'block';
+                    document.getElementById('partyNameDisplay').innerText = partyInfo.name;
+                    fetchMessages();
+                } else {
+                    inputArea.style.display = 'none';
+                    document.getElementById('chatList').innerHTML = 
+                        '<div class="message system"><div class="msg-content"><div class="msg-text">Herhangi bir partiye üye değilsiniz.</div></div></div>';
+                }
+            } else {
+                fetchMessages();
+            }
+        }
+
+        async function checkPartyStatus() {
+            try {
+                // Get User Info first
+                const userRes = await fetch(`/api/user/me?userId=${currentUser.id}`);
+                const userData = await userRes.json();
+                
+                if (userData.success && userData.user.party_id) {
+                    // Get Party Info
+                    const partyRes = await fetch(`/api/parties/${userData.user.party_id}`);
+                    const partyData = await partyRes.json();
+                    
+                    if (partyData) {
+                        return { inParty: true, name: partyData.name };
+                    }
+                }
+                return { inParty: false };
+            } catch (e) {
+                console.error(e);
+                return { inParty: false };
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return text;
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+    </script>
+</body>
+</html>

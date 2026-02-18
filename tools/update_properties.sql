@@ -1,0 +1,10 @@
+UPDATE property_types SET name = 'Arsa', image = 'icons/property-icon/tarla.png' WHERE id = 1;
+UPDATE property_types SET name = 'Ev', image = 'icons/property-icon/ev.png' WHERE id = 2;
+UPDATE property_types SET name = 'Apartman', image = 'icons/property-icon/apartman.png' WHERE id = 3;
+UPDATE property_types SET name = 'Kahve Dükkanı', image = 'icons/property-icon/kahve dükkanı.png' WHERE id = 4;
+UPDATE property_types SET name = 'Lunapark', image = 'icons/property-icon/lunapark.png' WHERE id = 5;
+UPDATE property_types SET name = 'Otopark', image = 'icons/property-icon/otopark.png' WHERE id = 6;
+UPDATE property_types SET name = 'Spor Salonu', image = 'icons/property-icon/spor-salon.png' WHERE id = 7;
+UPDATE property_types SET name = 'Ofis', image = 'icons/property-icon/ofis.png' WHERE id = 8;
+UPDATE property_types SET name = 'Otel', image = 'icons/property-icon/otel.png' WHERE id = 9;
+UPDATE property_types SET name = 'Alışveriş Merkezi', image = 'icons/property-icon/alısveris-merkezi.png' WHERE id = 10;

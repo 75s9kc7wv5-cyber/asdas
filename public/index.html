@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>World of Siim - Giriş</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-overlay: rgba(0, 0, 0, 0.7);
+            --glass-bg: rgba(15, 15, 20, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --accent-red: #ff3b30;
+            --accent-green: #34c759;
+            --accent-blue: #0a84ff;
+            --accent-gold: #ffd60a;
+            --text-white: #ffffff;
+            --text-gray: #8e8e93;
+            --font-main: 'Rajdhani', sans-serif;
+            --shadow-glow: 0 0 15px rgba(255, 255, 255, 0.05);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: var(--font-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: var(--text-white);
+        }
+
+        /* Arkaplan Görseli */
+        .bg-image {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            /* Daha modern şehir/strateji görseli */
+            background: linear-gradient(to bottom, rgba(0,0,0,0.3), #000 90%), 
+                        url('https://images.unsplash.com/photo-1605806616949-1e87b487bc2a?q=80&w=1000&auto=format&fit=crop') no-repeat center center/cover;
+            z-index: -1;
+            filter: saturate(1.2) brightness(0.5);
+            transform: scale(1.05); /* Kenneth burn effect simulation can be added here */
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 500px; /* Biraz daha geniş */
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 30px 20px;
+            background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8) 100%);
+            overflow-y: auto;
+        }
+
+        /* LOGO ALANI */
+        .logo-container {
+            margin-top: 20px;
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        
+        .game-logo {
+            font-size: 4rem;
+            font-weight: 900;
+            color: #ececec;
+            text-transform: uppercase;
+            line-height: 0.85;
+            letter-spacing: -1px;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            position: relative;
+            display: inline-block;
+        }
+        .game-logo::after {
+            content: 'ONLINE STRATEGY';
+            display: block;
+            font-size: 0.9rem;
+            letter-spacing: 6px;
+            color: var(--accent-gold);
+            margin-top: 5px;
+            font-weight: 600;
+            text-shadow: 0 0 5px rgba(255, 214, 10, 0.5);
+        }
+        .game-logo span { color: var(--accent-gold); }
+
+        /* İSTATİSTİK KARTLARI */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 12px 5px;
+            text-align: center;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s, background 0.2s;
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease backwards;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            background: rgba(40, 40, 50, 0.9);
+            border-color: rgba(255,255,255,0.2);
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        }
+        
+        .stat-card:nth-child(1) { animation-delay: 0.1s; }
+        .stat-card:nth-child(2) { animation-delay: 0.15s; }
+        .stat-card:nth-child(3) { animation-delay: 0.2s; }
+        .stat-card:nth-child(4) { animation-delay: 0.25s; }
+        .stat-card:nth-child(5) { animation-delay: 0.3s; }
+        .stat-card:nth-child(6) { animation-delay: 0.35s; }
+
+        .stat-icon { font-size: 1.2rem; margin-bottom: 6px; opacity: 0.8; }
+        .stat-value { font-size: 1.4rem; font-weight: 800; color: #fff; line-height: 1.1; }
+        .stat-label { font-size: 0.65rem; color: var(--text-gray); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+        /* İkon Renkleri */
+        .c-purple { color: #bf5af2; text-shadow: 0 0 10px rgba(191, 90, 242, 0.4); }
+        .c-blue { color: #0a84ff; text-shadow: 0 0 10px rgba(10, 132, 255, 0.4); }
+        .c-green { color: #32d74b; text-shadow: 0 0 10px rgba(50, 215, 75, 0.4); }
+
+        /* ÖZELLİKLER BÖLÜMÜ (YENİ) */
+        .features-container {
+            margin-bottom: 25px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            animation: fadeInUp 0.8s ease backwards 0.4s;
+        }
+        .feature-box {
+            background: linear-gradient(145deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .feature-box i {
+            color: var(--accent-gold);
+            font-size: 1.1rem;
+            width: 24px;
+            text-align: center;
+        }
+        .feature-text {
+            display: flex;
+            flex-direction: column;
+        }
+        .feature-title { font-size: 0.85rem; font-weight: 700; color: #eee; }
+        .feature-sub { font-size: 0.65rem; color: var(--text-gray); }
+
+        /* BUTONLAR */
+        .auth-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: auto;
+            margin-bottom: 20px;
+            animation: fadeInUp 0.8s ease backwards 0.5s;
+        }
+
+        .btn-main {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 6px; /* Daha keskin */
+            font-family: var(--font-main);
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #fff;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-login { 
+            background: linear-gradient(90deg, #34c759, #28a745);
+            box-shadow: 0 0 15px rgba(52, 199, 89, 0.4);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        .btn-login:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(52, 199, 89, 0.6);
+            filter: brightness(1.1);
+        }
+        
+        .btn-register { 
+            background: linear-gradient(90deg, #d50000, #b00000);
+            box-shadow: 0 0 15px rgba(213, 0, 0, 0.4);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        .btn-register:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(213, 0, 0, 0.6);
+            filter: brightness(1.1);
+        }
+
+        /* Animasyonlar */
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-image"></div>
+
+    <div class="game-container">
+        
+        <div class="logo-container">
+            <div class="game-logo">WORLD OF <span>SIM</span></div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <i class="fas fa-user stat-icon c-purple"></i>
+                <div class="stat-value count" data-target="23">0</div>
+                <div class="stat-label">OYUNCU</div>
+            </div>
+
+            <div class="stat-card">
+                <i class="fas fa-globe-americas stat-icon c-blue"></i>
+                <div class="stat-value count" data-target="28">0</div>
+                <div class="stat-label">NÜFUS</div>
+            </div>
+
+            <div class="stat-card">
+                <i class="fas fa-circle stat-icon c-green" style="font-size: 0.8rem; margin-top:5px;"></i>
+                <div class="stat-value count" data-target="5">0</div>
+                <div class="stat-label">ONLINE</div>
+            </div>
+
+            <div class="stat-card">
+                <i class="fas fa-users stat-icon c-white"></i>
+                <div class="stat-value count" data-target="55">0</div>
+                <div class="stat-label">ÜYELER</div>
+            </div>
+
+            <div class="stat-card">
+                <i class="fas fa-flag stat-icon c-white"></i>
+                <div class="stat-value count" data-target="239">0</div>
+                <div class="stat-label">PARTİLER</div>
+            </div>
+
+            <div class="stat-card">
+                <i class="fas fa-industry stat-icon c-white"></i>
+                <div class="stat-value count" data-target="490">0</div>
+                <div class="stat-label">İŞLETMELER</div>
+            </div>
+        </div>
+
+        <div class="game-desc-container" style="text-align: center; margin-bottom: 50px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px solid var(--glass-border);">
+            <div style="color: var(--accent-gold); font-weight: 700; margin-bottom: 8px; letter-spacing: 1px;">KENDİ DÜNYANI İNŞA ET</div>
+            <div style="color: #ddd; font-size: 0.9rem; line-height: 1.5;">
+                Şirketini kur, ekonomiye yön ver ve siyasette söz sahibi ol. Gerçekçi piyasa dinamikleri, stratejik savaşlar ve küresel diplomasi ile dolu bu dünyada yerini al. İmparatorluğunu kurmak için hemen başla!
+            </div>
+        </div>
+
+        <div class="auth-buttons" id="authButtons">
+            <button class="btn-main btn-login" onclick="window.location.href='login.html'">
+                <i class="fas fa-sign-in-alt"></i> GİRİŞ YAP
+            </button>
+            <button class="btn-main btn-register" onclick="window.location.href='register.html'">
+                <i class="fas fa-user-plus"></i> HESAP OLUŞTUR
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // Kullanıcı Kontrolü
+        const user = localStorage.getItem('simWorldUser');
+        if (user) {
+            const btnContainer = document.getElementById('authButtons');
+            btnContainer.style.marginTop = 'auto';
+            btnContainer.innerHTML = `
+                <button class="btn-main btn-register" style="background: linear-gradient(90deg, #34c759, #28a745);" onclick="window.location.href='home.html'">
+                    <i class="fas fa-play"></i> OYUNA DEVAM ET
+                </button>
+                <button class="btn-main btn-login" style="background: linear-gradient(45deg, #333, #444);" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> ÇIKIŞ YAP
+                </button>
+            `;
+        }
+
+        function logout() {
+            localStorage.removeItem('simWorldUser');
+            window.location.reload();
+        }
+
+        // İstatistikleri Çek
+        fetch('/api/stats')
+            .then(res => res.json())
+            .then(data => {
+                const userCountEl = document.querySelector('.stat-value[data-target="23"]'); // İlk kart (Kayıtlı Oyuncu)
+                if(userCountEl) {
+                    userCountEl.setAttribute('data-target', data.count);
+                    userCountEl.innerText = '0';
+                    runCounter(userCountEl);
+                }
+            })
+            .catch(err => console.error("Stats error:", err));
+
+
+        // Sayı Sayma Animasyonu (Sayaç)
+        function runCounter(counter) {
+            const speed = 200; // Animasyon hızı
+            const updateCount = () => {
+                const target = +counter.getAttribute('data-target');
+                const count = +counter.innerText;
+                
+                // Artış miktarı
+                const inc = Math.max(1, target / speed);
+
+                if (count < target) {
+                    counter.innerText = Math.ceil(count + inc);
+                    setTimeout(updateCount, 20);
+                } else {
+                    counter.innerText = target;
+                }
+            };
+            updateCount();
+        }
+
+        // Diğer sayaçları başlat (Statik olanlar)
+        document.querySelectorAll('.count').forEach(counter => {
+            // İlk kartı atla çünkü onu API'den güncelliyoruz
+            if(counter.getAttribute('data-target') !== "23") {
+                runCounter(counter);
+            }
+        });
+    </script>
+    <script src="js/loader-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+</body>
+</html>

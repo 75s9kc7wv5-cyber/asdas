@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Sim of World - Market</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="js/loader-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+    
+    <style>
+        :root {
+            --bg-main: #0a0a0a;
+            --bg-card: #141414;
+            --bg-input: #1a1a1a;
+            --accent: #ffd700; /* Pazar Teması: Altın */
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-red: #e74c3c;
+            --accent-purple: #9b59b6;
+            --text-primary: #ffffff;
+            --text-secondary: #888888;
+            --border-subtle: #222222;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-main);
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        .game-container {
+            width: 100%; max-width: 450px; background-color: var(--bg-main);
+            height: 100vh; display: flex; flex-direction: column; position: relative;
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.05); /* Altın gölge */
+            border-left: 1px solid #111; border-right: 1px solid #111;
+        }
+
+        /* HEADER */
+        /* header { 
+            padding: 15px 20px; 
+            border-bottom: 1px solid var(--border-subtle);
+            background: rgba(10,10,10,0.8);
+            backdrop-filter: blur(10px);
+        }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .logo { font-size: 1.1rem; font-weight: 800; letter-spacing: 1px; }
+        .logo span { color: var(--accent); }
+
+        .wallet-pill {
+            background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3);
+            padding: 6px 14px; border-radius: 20px; color: var(--accent);
+            font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;
+        }
+
+        .status-bars { display: flex; gap: 5px; height: 6px; }
+        .bar-segment { flex: 1; background: var(--bg-input); border-radius: 3px; overflow: hidden; }
+        .bar-fill { height: 100%; } */
+
+        /* MAIN */
+        main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
+
+        .page-header { text-align: center; margin-bottom: 25px; animation: fadeIn 0.5s; }
+        .header-badge {
+            display: inline-block;
+            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(10,10,10,0.95) 100%);
+            border: 1px solid #333;
+            border-top: 3px solid var(--accent);
+            padding: 15px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .header-badge::after {
+            content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+            width: 60%; height: 2px; background: radial-gradient(circle, var(--accent) 0%, transparent 100%);
+            opacity: 0.5;
+        }
+        .page-title { 
+            font-size: 1.4rem; font-weight: 800; letter-spacing: 2px; color: #fff; margin-bottom: 5px; 
+            text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 10px;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+        }
+        .page-desc { font-size: 0.85rem; color: #999; font-weight: 500; }
+        
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
+        }
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        .back-btn:hover {
+            background: #2a2a2a;
+            border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+        }
+        .page-header-content {
+            flex: 1;
+            text-align: left;
+        }
+        .header-title-text { 
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #fff;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .header-subtitle-text {
+            font-size: 0.85rem;
+            color: #999;
+            font-weight: 500;
+        }
+
+        /* CATEGORY GRID */
+        .section-title { 
+            font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); 
+            text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .section-line { flex: 1; height: 1px; background: var(--border-subtle); }
+
+        .cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; animation: fadeInUp 0.5s; }
+
+        .cat-card {
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            text-align: center;
+            position: relative;
+            height: auto;
+            min-height: 120px;
+            overflow: hidden;
+            border-top: 2px solid var(--hover-color);
+        }
+        .cat-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            border-color: var(--hover-color);
+        }
+
+        .f-icon-circle {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            background: #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0px;
+            margin-bottom: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            font-size: 1.5rem;
+            transition: 0.3s;
+        }
+
+        .cat-icon { 
+            width: 32px; 
+            height: 32px; 
+            object-fit: contain; 
+            filter: drop-shadow(0 0 3px rgba(0,0,0,0.5));
+            transition: 0.3s; 
+        }
+        .cat-card:hover .cat-icon { transform: scale(1.1); filter: drop-shadow(0 0 5px var(--hover-color)); }
+
+        .cat-name { 
+            font-size: 0.85rem; 
+            font-weight: 700; 
+            line-height: 1.2; 
+            margin-bottom: 0;
+            color: #fff;
+        }
+        .count-badge { 
+            background: #222;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            display: inline-block;
+            margin-top: 4px;
+            font-size: 0.7rem;
+            color: #fff;
+        }
+
+        /* BOTTOM NAV */
+        /* .bottom-nav { 
+            position: absolute; bottom: 0; width: 100%; height: 70px;
+            background: rgba(10,10,10,0.95); backdrop-filter: blur(10px);
+            bdiv class="page-header">
+                <div class="header-badge">
+                    <div class="page-title"><i class="fas fa-globe-americas" style="color:var(--accent)"></i> GLOBAL PAZAR</div>
+                    <div class="page-desc">Dünya çapında ticaret yap, ürün al ve sat.</div>
+                </div>
+            </divisplay: flex; flex-direction: column; align-items: center; color: var(--text-secondary); font-size: 0.7rem; cursor: pointer; transition: 0.3s; }
+        .nav-item i { font-size: 1.4rem; margin-bottom: 4px; }
+        .nav-item.active { color: var(--accent); text-shadow: 0 0 10px rgba(255, 215, 0, 0.4); }
+        .nav-item.active i { transform: translateY(-3px); } */
+
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- HEADER -->
+        <div id="header-container"></div>
+
+        <main>
+            <div class="page-header">
+                <button class="back-btn" onclick="window.location.href='home.html'">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="page-header-content">
+                    <div class="header-title-text">
+                        GLOBAL PAZAR
+                    </div>
+                    <div class="header-subtitle-text">Dünya çapında ticaret yap, ürün al ve sat.</div>
+                </div>
+            </div>
+
+            <div class="section-title">
+                <span>KATEGORİLER</span>
+                <div class="section-line"></div>
+            </div>
+
+            <!-- KATEGORİLER -->
+            <div class="cat-grid" style="grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                
+                <div class="cat-card" style="--hover-color: #d35400;" onclick="goToMarket('resource')">
+                    <div class="f-icon-circle">
+                        <img src="icons/mine-icon/iron.png" class="cat-icon" alt="Hammadde">
+                    </div>
+                    <span class="cat-name">Hammadde Ürünleri</span>
+                    <span id="badge-resource" class="count-badge">0 İlan</span>
+                </div>
+
+                <div class="cat-card" style="--hover-color: #f1c40f;" onclick="goToMarket('food')">
+                    <div class="f-icon-circle">
+                        <img src="icons/food-factory/steak-food.png" class="cat-icon" alt="Gıda">
+                    </div>
+                    <span class="cat-name">Gıda Ürünleri</span>
+                    <span id="badge-food" class="count-badge">0 İlan</span>
+                </div>
+
+                <div class="cat-card" style="--hover-color: #95a5a6;" onclick="goToMarket('industry')">
+                    <div class="f-icon-circle">
+                        <img src="icons/factory-icon/cement.png" class="cat-icon" alt="Sanayi">
+                    </div>
+                    <span class="cat-name">Sanayi Ürünleri</span>
+                    <span id="badge-industry" class="count-badge">0 İlan</span>
+                </div>
+
+            </div>
+
+        </main>
+
+        <div id="menu-container"></div>
+
+    </div>
+
+    <script src="js/header-manager.js"></script>
+    <script src="js/menu-manager.js"></script>
+    <script>
+        // Manually hold loader 
+        document.documentElement.classList.add('loading-state');
+        
+        window.addEventListener('load', () => {
+             // Simulate small delay for better UX
+            setTimeout(() => {
+                if(window.hideLoader) window.hideLoader();
+                // Fallback
+                document.documentElement.classList.remove('loading-state');
+                const l = document.getElementById('game-loader');
+                if(l) l.classList.add('hidden');
+            }, 500);
+        });
+
+        function goToMarket(category) {
+            // Redirect to market-list.html with category parameter
+            window.location.href = `market-list.html?cat=${category}`;
+        }
+
+        const categoryItems = {
+            'resource': ['iron', 'copper', 'stone', 'wood', 'sand', 'coal', 'oil', 'uranium', 'gold_nugget'],
+            'food': ['steak', 'salad', 'rice', 'canned_fruit', 'beef', 'honey', 'egg'],
+            'industry': ['cement', 'brick', 'steel', 'glass', 'plank']
+        };
+
+        // Fetch real ad counts
+        async function updateMarketCounts() {
+            try {
+                const res = await fetch('/api/market/stats');
+                if (!res.ok) return;
+                const stats = await res.json();
+                
+                Object.keys(categoryItems).forEach(cat => {
+                    const el = document.getElementById(`badge-${cat}`);
+                    if (el) {
+                        let total = 0;
+                        categoryItems[cat].forEach(itemId => {
+                            total += (stats[itemId] || 0);
+                        });
+                        el.innerText = `${total} İlan`;
+                    }
+                });
+            } catch (e) {
+                console.error("Market stats error:", e);
+            }
+        }
+        
+        // Call update on load
+        window.addEventListener('load', updateMarketCounts);
+    </script>
+</body>
+</html>

@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Sim of World - Hastane Sistemi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #161616;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-gold: #ffd700;
+            --accent-red: #e74c3c;
+            --accent-purple: #9b59b6;
+            --text-white: #ffffff;
+            --border-color: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('img/world-map.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        main {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+
+        .page-header { text-align: center; margin-bottom: 25px; animation: fadeIn 0.5s; }
+        .header-badge {
+            display: inline-block;
+            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(10,10,10,0.95) 100%);
+            border: 1px solid #333;
+            border-top: 3px solid var(--accent-red);
+            padding: 15px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .header-badge::after {
+            content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+            width: 60%; height: 2px; background: radial-gradient(circle, var(--accent-red) 0%, transparent 100%);
+            opacity: 0.5;
+        }
+        .page-title { 
+            font-size: 1.4rem; font-weight: 800; letter-spacing: 2px; color: #fff; margin-bottom: 5px; 
+            text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 10px;
+            text-shadow: 0 0 15px rgba(231, 76, 60, 0.4);
+        }
+        .page-desc { font-size: 0.85rem; color: #999; font-weight: 500; }
+
+        /* TABS */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
+        .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: #777; font-family: 'Rajdhani'; font-weight: bold; cursor: pointer; border-radius: 6px; transition: all 0.3s; }
+        .tab-btn.active { background: #222; color: var(--accent-cyan); border: 1px solid var(--accent-cyan); box-shadow: 0 0 10px rgba(0, 229, 255, 0.1); }
+        .tab-content { display: none; animation: fadeIn 0.4s; }
+        .tab-content.active { display: block; }
+
+        .farm-list-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(30,30,30,0.95);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            color: #fff;
+        }
+        .farm-list-card:hover {
+            transform: translateY(-2px);
+            border-color: #555;
+            background: rgba(40,40,40,0.95);
+        }
+        .farm-list-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: var(--accent-cyan); 
+        }
+        .farm-list-card.red-border::before { background: var(--accent-red); }
+        .farm-list-card.green-border::before { background: var(--accent-green); }
+
+        .farm-list-card.city-card {
+            flex-direction: column;
+            align-items: stretch;
+            padding: 0;
+            gap: 0;
+        }
+
+        .city-card-top {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            cursor: pointer;
+        }
+
+        .city-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 8px 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid #333;
+            font-size: 0.85rem;
+        }
+
+        .owner-info {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: #ccc;
+        }
+        .owner-info img {
+             width: 22px; height: 22px; border-radius: 50%; object-fit: cover; border: 1px solid #444;
+        }
+
+        .hospital-icon {
+            width: 50px; height: 50px;
+            background: #222;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid #444;
+            color: var(--accent-cyan);
+            flex-shrink: 0;
+        }
+
+        .hospital-info { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: row; 
+            align-items: center; 
+            justify-content: space-between; 
+            gap: 10px;
+            overflow: hidden;
+            min-width: 0;
+        }
+        
+        .hospital-name { 
+            font-size: 1rem; 
+            font-weight: bold; 
+            color: #fff; 
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .hospital-desc { font-size: 0.8rem; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .hospital-stats { 
+            font-size: 0.9rem; 
+            margin-top: 0; 
+            white-space: nowrap; 
+            display: flex; 
+            align-items: center; 
+            gap: 5px;
+            flex-shrink: 0; /* Prevent stats from shrinking */
+        }
+
+        .right-arrow {
+            color: #444;
+            font-size: 1.2rem;
+            margin-left: auto;
+            transition: color 0.2s;
+        }
+        .farm-list-card:hover .right-arrow {
+            color: #fff;
+        }
+
+
+        .btn-action {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Rajdhani';
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+        .btn-visit { background: var(--accent-cyan); color: #000; }
+        .btn-visit:hover { box-shadow: 0 0 10px rgba(0, 229, 255, 0.4); }
+
+        /* Geri Dön Butonu */
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-red);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        .back-btn:hover {
+            background: #2a2a2a;
+            border-color: var(--accent-red);
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.2);
+        }
+
+        /* Search & Filter (Simplified to match style) */
+        .search-box {
+            background: #181818; border: 1px solid #333; border-radius: 8px; padding: 10px;
+            display: flex; align-items: center; gap: 10px; margin-bottom: 15px;
+        }
+        .search-box input { background: transparent; border: none; color: #fff; width: 100%; font-family: 'Rajdhani'; outline: none; }
+
+        .filter-bar { display: flex; gap: 8px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
+        .filter-btn { 
+            background: #222; border: 1px solid #444; color: #888; padding: 6px 12px; 
+            border-radius: 20px; font-family: 'Rajdhani'; cursor: pointer; white-space: nowrap; font-size: 0.8rem;
+        }
+        .filter-btn.active { background: var(--accent-cyan); color: #000; border-color: var(--accent-cyan); font-weight: bold; }
+
+
+        /* BUY CARD (Adapted from Mine List) */
+        .buy-card {
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: transform 0.2s;
+        }
+        .buy-card:hover { transform: translateY(-2px); border-color: #555; }
+
+        .buy-icon {
+            width: 50px; height: 50px;
+            background: #222;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+            border: 1px solid #444;
+            color: var(--accent-red);
+        }
+        
+        .buy-info { flex: 1; }
+        .buy-name { font-size: 1.1rem; font-weight: bold; color: #fff; }
+        .buy-desc { font-size: 0.8rem; color: #888; }
+        .buy-stats { font-size: 0.9rem; color: var(--accent-green); margin-top: 5px; }
+
+        .btn-buy-action {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Rajdhani';
+            font-size: 0.9rem;
+            transition: 0.2s;
+            background: var(--accent-green); color: #000;
+        }
+        .btn-buy-action:hover { box-shadow: 0 0 10px rgba(46, 204, 113, 0.4); }
+
+        /* REQ BADGE - UPDATED TO MATCH BANK LIST STYLE */
+        .info-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            transition: all 0.2s;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: transparent;
+            border-radius: 0;
+            border: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 0;
+        }
+        .info-list-item:last-child { border-bottom: none; }
+        
+        .info-left { display: flex; align-items: center; gap: 0; flex: 1; }
+        .info-left img, .info-left i {
+            width: 24px; height: 24px; min-width: 24px; margin-right: 10px;
+            object-fit: contain; color: #aaa; text-align: center;
+        }
+        .info-left i { font-size: 1rem; width: 28px; min-width: 28px; text-align: left; }
+        
+        .info-label { color: #aaa; font-size: 0.9rem; font-weight: 500; }
+        .info-value { color: #fff; font-size: 0.9rem; font-weight: 700; text-align: right; margin-left: auto; }
+        
+        .upgrade-cost-status {
+            width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; margin-left: 15px; flex-shrink: 0;
+        }
+        .upgrade-cost-status.ok {
+            background: rgba(46, 204, 113, 0.2); color: var(--accent-green);
+        }
+        .upgrade-cost-status.fail {
+            background: rgba(231, 76, 60, 0.2); color: var(--accent-red);
+        }
+
+        .req-list { 
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            margin: 15px 0;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        /* Input Style */
+        .modal-input-group { margin-bottom: 15px; }
+        .modal-input-label { display: block; color: #888; margin-bottom: 5px; font-size: 0.9rem; }
+        .modal-input { 
+            width: 100%; background: #222; border: 1px solid #444; color: #fff; 
+            padding: 10px; border-radius: 5px; font-family: 'Rajdhani'; font-size: 1rem; outline: none;
+        }
+        .modal-input:focus { border-color: var(--accent-cyan); }
+
+        .btn-confirm:disabled { background: #444; color: #888; cursor: not-allowed; }
+
+        .stat-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #444;
+            font-size: 0.75rem;
+            color: #ddd;
+            margin-right: 5px;
+        }
+
+        .level-stars { display: flex; gap: 2px; }
+        .level-stars i { font-size: 0.7rem; color: #444; }
+        .level-stars i.active { color: var(--accent-gold); }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 2000;
+            display: none; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        .modal-overlay.active { display: flex; }
+        
+        .modal-content {
+            background: #181818; width: 90%; max-width: 400px; padding: 25px; border-radius: 10px;
+            border: 1px solid #333; position: relative;
+            border-top: 3px solid var(--accent-red);
+        }
+
+        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; }
+        .btn-confirm { background: var(--accent-green); color: #000; }
+        .btn-cancel { background: #333; color: #fff; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Header injected by header-manager.js -->
+
+        <div style="display: flex; align-items: center; gap: 15px; padding: 20px 20px 0 20px; margin-bottom: 20px;">
+            <button class="back-btn" onclick="window.location.href='home.html'">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div>
+                <h1 style="font-size: 1.5rem; font-weight: bold; margin: 0; line-height: 1.2;">SAĞLIK SİSTEMİ</h1>
+                <p style="font-size: 0.9rem; color: #888; margin: 0;">Sağlık ve hastane yönetimi</p>
+            </div>
+        </div>
+
+        <main>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('list')">ŞEHİR HASTANELERİ</button>
+                <button class="tab-btn" onclick="switchTab('buy')">HASTANEM</button>
+            </div>
+
+            <div id="tab-list" class="tab-content active">
+                
+                <div class="search-box">
+                    <i class="fas fa-search" style="color:#666;"></i>
+                    <input type="text" id="searchInput" placeholder="Hastane veya oyuncu adı ara..." onkeyup="filterHospitals()">
+                </div>
+
+                <div id="cityHospitalList">
+                    <!-- JS ile doldurulacak -->
+                </div>
+            </div>
+
+            <div id="tab-buy" class="tab-content">
+                <div id="myHospitalContainer">
+                    <!-- Dynamic Content -->
+                </div>
+            </div>
+
+        </main>
+
+        <div class="modal-overlay" id="confirmBuyModal">
+            <div class="modal-content">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="width: 60px; height: 60px; background: #222; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; border: 1px solid #444; color: var(--accent-red);">
+                        <img src="icons/hospital-icon/hospital.png" style="width:32px; height:32px; object-fit:contain;">
+                    </div>
+                    <h3 style="color:#fff; margin-bottom:5px; font-size: 1.4rem;">Yeni Hastane Kur</h3>
+                    <p style="color:#888; font-size:0.9rem;">Kendi hastaneni kur, işlet ve geliştir.</p>
+                </div>
+                
+                <div class="modal-input-group">
+                    <label class="modal-input-label">Hastane Adı <span style="color:#666; font-size:0.8rem;">(Min 3 - Max 30)</span></label>
+                    <input type="text" id="hospitalNameInput" class="modal-input" placeholder="Hastanenize bir isim verin..." maxlength="30" minlength="3">
+                </div>
+
+                <div class="req-list" id="reqList">
+                    <!-- Requirements here -->
+                </div>
+
+                <div class="modal-btns">
+                    <button class="m-btn btn-cancel" onclick="closeModal('confirmBuyModal')">İPTAL</button>
+                    <button class="m-btn btn-confirm" id="btnConfirmBuy" onclick="completePurchase()">SATIN AL</button>
+                </div>
+            </div>
+        </div>
+        
+
+
+        <!-- REWARD/SUCCESS MODAL -->
+        <div class="modal-overlay" id="rewardModal">
+            <div class="modal-content">
+                <i class="fas fa-check-circle m-icon" style="color:var(--accent-green); font-size: 3rem; margin-bottom: 20px;"></i>
+                <h3 class="m-title" style="color:#fff; margin-bottom:15px; font-size: 1.4rem; font-weight:bold;">İŞLEM BAŞARILI!</h3>
+                <p style="color:#888; font-size:1rem; margin-bottom:25px; line-height:1.5;" id="rewardMsg">Hastane başarıyla satın alındı.</p>
+                <div style="display:flex; justify-content:center;">
+                    <button class="m-btn btn-confirm" onclick="document.getElementById('rewardModal').classList.remove('active')" style="width:100%; max-width:200px; padding:12px; border-radius:8px;">HARİKA!</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ERROR MODAL -->
+        <div class="modal-overlay" id="errorModal">
+            <div class="modal-content" style="border-top: 3px solid var(--accent-red); box-shadow: 0 0 30px rgba(231, 76, 60, 0.2);">
+                <i class="fas fa-times-circle m-icon" style="color:var(--accent-red); font-size: 3rem; margin-bottom: 20px;"></i>
+                <h3 class="m-title" style="color:#fff; margin-bottom:15px; font-size: 1.4rem; font-weight:bold;">HATA!</h3>
+                <p style="color:#888; font-size:1rem; margin-bottom:25px; line-height:1.5;" id="errorMsg">İşlem başarısız.</p>
+                <div style="display:flex; justify-content:center;">
+                    <button class="m-btn btn-confirm" onclick="document.getElementById('errorModal').classList.remove('active')" style="width:100%; max-width:200px; padding:12px; border-radius:8px; background: var(--accent-red); color: white;">ANLAŞILDI</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="menu-container"></div>
+
+    </div>
+
+    <script src="js/loader-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+    <script src="js/menu-manager.js"></script>
+    <script src="js/header-manager.js"></script>
+    <script>
+        let cityHospitals = [];
+        let myHospital = null;
+
+        // Format
+        const fmt = (num) => num.toLocaleString('tr-TR');
+
+        async function initPage() {
+            await loadHospitals();
+            await checkMyHospital();
+        }
+
+        async function loadHospitals() {
+            try {
+                const response = await fetch('/api/hospitals');
+                cityHospitals = await response.json();
+                
+                // Sort by Level Descending (Highest Level First)
+                cityHospitals.sort((a, b) => (b.level || 1) - (a.level || 1));
+                
+                renderCityHospitals(cityHospitals);
+            } catch (error) {
+                console.error('Hata:', error);
+            }
+        }
+
+        async function checkMyHospital() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) return;
+
+            const container = document.getElementById('myHospitalContainer');
+            
+            // Render loading only if empty
+            if (container.children.length === 0) {
+                container.innerHTML = '<div style="color:#666; text-align:center;">Yükleniyor...</div>';
+            }
+
+            try {
+                const response = await fetch(`/api/hospitals/my/${user.id}`);
+                const result = await response.json();
+                
+                container.innerHTML = '';
+                
+                if (result.success && result.hasHospital) {
+                    myHospital = result.hospital;
+                    
+                    // OWNED STATE
+                    const card = document.createElement('div');
+                    card.className = 'farm-list-card city-card green-border';
+                    card.style.cursor = 'pointer';
+                    card.onclick = () => {
+                        window.location.href = 'hospital-management.html';
+                    };
+
+                    card.innerHTML = `
+                        <div class="city-card-top">
+                            <div class="hospital-icon">
+                                <img src="icons/hospital-icon/hospital.png" style="width:32px; height:32px; object-fit:contain;">
+                            </div>
+                            <div class="hospital-info">
+                                <div class="hospital-name">${myHospital.name || 'Hastaneniz'}</div>
+                                <div class="hospital-desc">Yönetim Paneli</div>
+                            </div>
+                            <i class="fas fa-chevron-right right-arrow"></i>
+                        </div>
+                    `;
+                    container.appendChild(card);
+
+                } else {
+                    myHospital = null;
+                     
+                    // NOT OWNED STATE
+                    const card = document.createElement('div');
+                    card.className = 'farm-list-card city-card red-border';
+                    card.style.cursor = 'pointer';
+                    card.onclick = () => {
+                        openBuyModal();
+                    };
+
+                    card.innerHTML = `
+                        <div class="city-card-top">
+                            <div class="hospital-icon" style="color:var(--accent-red); border-color:var(--accent-red);">
+                                <img src="icons/hospital-icon/hospital.png" style="width:32px; height:32px; object-fit:contain;">
+                            </div>
+                            <div class="hospital-info">
+                                <div class="hospital-name">Yeni Hastane Kur</div>
+                                <div class="hospital-desc">İşletme satın alıp para kazanabilirsin.</div>
+                            </div>
+                            <i class="fas fa-chevron-right right-arrow" style="color:var(--accent-red);"></i>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                }
+            } catch (error) {
+                console.error('Hastane kontrol hatası:', error);
+                container.innerHTML = '<div style="color:red; text-align:center;">Veri yüklenemedi.</div>';
+            }
+        }
+
+        async function openBuyModal() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) return;
+
+            const modal = document.getElementById('confirmBuyModal');
+            modal.style.display = 'flex'; // Ensure flex for centering
+            modal.classList.add('active'); // Add active class if used by CSS
+            
+            const reqList = document.getElementById('reqList');
+            reqList.innerHTML = '<div style="text-align:center; color:#888;">Veriler kontrol ediliyor...</div>';
+            document.getElementById('btnConfirmBuy').disabled = true;
+
+            try {
+                // Fetch user inventory and licenses
+                // Fetch User Stats for Money/Gold/Diamond and Inventory for Items
+                const [userStatsRes, invRes, licRes] = await Promise.all([
+                    fetch(`/api/user-stats/${user.id}`),
+                    fetch(`/api/inventory/${user.id}`),
+                    fetch(`/api/licenses/${user.id}`)
+                ]);
+                
+                const userStats = await userStatsRes.json();
+                const inventory = await invRes.json();
+                const licenses = await licRes.json();
+                
+                // Helper to find item amount
+                const getAmount = (key) => {
+                    if (Array.isArray(inventory)) {
+                        const item = inventory.find(i => i.item_key === key);
+                        return item ? (item.amount || item.quantity) : 0;
+                    } else {
+                        return inventory[key] || 0;
+                    }
+                };
+                
+                // Helper to check license
+                const hasLicense = (key, level) => {
+                    // Check against userStats.license_hospital_level etc first (from users table)
+                    if (key === 'hospital' && userStats.license_hospital_level >= level) return true;
+                    
+                    if (Array.isArray(licenses)) {
+                        // Check licenses table if array
+                        const found = licenses.find(l => l.mine_type === key || l.mine_type === key + '_license');
+                        return found && found.level >= level;
+                    } else {
+                        // If object { key: value }
+                        return (licenses[key] || licenses[key + '_license'] || 0) >= level;
+                    }
+                };
+
+                reqList.innerHTML = '';
+                let canBuy = true;
+
+                // Requirements
+                const reqs = [
+                    { label: 'Para', val: 50000, userVal: userStats.money || 0, type: 'money', icon: 'icons/inventory-icon/money.png' },
+                    { label: 'Altın', val: 500, userVal: userStats.gold || 0, type: 'gold', icon: 'icons/inventory-icon/gold.png' },
+                    { label: 'Elmas', val: 10, userVal: userStats.diamond || 0, type: 'diamond', icon: 'icons/inventory-icon/diamond.png' },
+                    { label: 'Tahta', val: 1000, userVal: getAmount('lumber'), type: 'item', icon: 'icons/factory-icon/wood-plank.png' },
+                    { label: 'Tuğla', val: 1000, userVal: getAmount('brick'), type: 'item', icon: 'icons/factory-icon/brick.png' },
+                    { label: 'Cam', val: 500, userVal: getAmount('glass'), type: 'item', icon: 'icons/factory-icon/window.png' },
+                    { label: 'Çimento', val: 500, userVal: getAmount('concrete'), type: 'item', icon: 'icons/factory-icon/cement.png' },
+                    { label: 'Çelik', val: 250, userVal: getAmount('steel'), type: 'item', icon: 'icons/factory-icon/steel.png' },
+                    { label: '1. Seviye Hastane Lisansı', val: 1, userVal: hasLicense('hospital', 1) ? 1 : 0, type: 'license', icon: 'icons/property-icon/ofis.png' }
+                ];
+
+                reqs.forEach(r => {
+                    const isOk = r.userVal >= r.val;
+                    if (!isOk) canBuy = false;
+                    
+                    let valText = fmt(r.val);
+                    if (r.type === 'license') valText = r.val > 0 ? (r.userVal >= 1 ? 'Var' : 'Yok') : 'Gerekli';
+
+                    let iconHtml = `<img src="${r.icon}">`;
+                    
+                    const statusIcon = `
+                        <div class="upgrade-cost-status ${isOk ? 'ok' : 'fail'}">
+                            <i class="fas ${isOk ? 'fa-check' : 'fa-times'}"></i>
+                        </div>`;
+                    
+                    const valColor = isOk ? 'var(--accent-green)' : 'var(--accent-red)';
+                    
+                    const div = document.createElement('div');
+                    div.className = 'info-list-item';
+                    div.innerHTML = `
+                        <div class="info-left">
+                            ${iconHtml}
+                            <span class="info-label">${r.label}</span>
+                        </div>
+                        <span class="info-value" style="color:${valColor}">${valText}</span>
+                        ${statusIcon}
+                    `;
+                    reqList.appendChild(div);
+                });
+
+                document.getElementById('btnConfirmBuy').disabled = !canBuy;
+                document.getElementById('hospitalNameInput').value = '';
+
+            } catch (error) {
+                console.error(error);
+                reqList.innerHTML = '<div style="color:red; text-align:center;">Veri hatası!</div>';
+            }
+        }
+
+        function showErrorModal(msg) {
+            const errorModal = document.getElementById('errorModal');
+            const errorMsg = document.getElementById('errorMsg');
+            if (errorMsg) errorMsg.innerText = msg;
+            if (errorModal) errorModal.classList.add('active');
+        }
+
+        async function completePurchase() {
+            const btn = document.getElementById('btnConfirmBuy');
+            const nameInput = document.getElementById('hospitalNameInput');
+            const hospitalName = nameInput.value.trim();
+
+            if (!hospitalName) {
+                showErrorModal('Lütfen bir hastane adı giriniz.');
+                return;
+            }
+
+            if (btn) btn.disabled = true;
+            btn.innerText = 'İŞLEM YAPILIYOR...';
+
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) return;
+
+            try {
+                const response = await fetch('/api/hospitals/buy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, name: hospitalName })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    closeModal('confirmBuyModal');
+                    const rewardModal = document.getElementById('rewardModal');
+                    const rewardMsg = document.getElementById('rewardMsg');
+                    if (rewardMsg) rewardMsg.innerText = result.message || 'Hastaneniz başarıyla satın alındı!';
+                    if (rewardModal) rewardModal.classList.add('active');
+                    
+                    await checkMyHospital();
+                    // Refetch list to show new hospital
+                    await loadHospitals();
+                    if (window.updateHeaderStats) window.updateHeaderStats();
+                } else {
+                    const errorModal = document.getElementById('errorModal');
+                    const errorMsg = document.getElementById('errorMsg');
+                    if (errorMsg) errorMsg.innerText = result.message || 'Satın alma işlemi başarısız oldu.';
+                    if (errorModal) errorModal.classList.add('active');
+                    
+                    if (result.message.includes('Zaten')) closeModal('confirmBuyModal');
+                }
+            } catch (error) {
+                console.error(error);
+                showErrorModal('Sunucu hatası. Lütfen tekrar deneyin.');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = 'SATIN AL';
+                }
+            }
+        }
+
+        // --- ŞEHİR HASTANELERİ LİSTELEME ---
+        function renderCityHospitals(data) {
+            const container = document.getElementById('cityHospitalList');
+            container.innerHTML = '';
+
+            if (data.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Şehirde henüz hastane yok.</div>';
+                return;
+            }
+
+            data.forEach(h => {
+                const active = h.active_patients || 0;
+                const capacity = h.capacity || 5;
+                const isFull = active >= capacity;
+                
+                // Duration Calculation
+                const duration = h.treatment_duration || 15;
+                
+                // Stars based on Level (Max 10)
+                const maxStars = 10;
+                const level = h.level || 1;
+                let starsHtml = '<div class="level-stars">';
+                for(let i=1; i<=maxStars; i++) {
+                    const activeClass = i <= level ? 'active' : '';
+                    starsHtml += `<i class="fas fa-star ${activeClass}"></i>`;
+                }
+                starsHtml += '</div>';
+
+                // Owner Visual Logic
+                let avatarHtml = '';
+                if (h.owner_avatar) {
+                    const avatarPath = h.owner_avatar.includes('uploads/') ? h.owner_avatar : `uploads/${h.owner_avatar}`;
+                    avatarHtml = `<img src="${avatarPath}" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(h.owner_name)}&background=random'" style="width:22px; height:22px; border-radius:50%; object-fit:cover; border:1px solid #444;">`;
+                } else {
+                    avatarHtml = `<div style="width:22px; height:22px; border-radius:50%; background:#333; display:flex; align-items:center; justify-content:center; border:1px solid #444;"><i class="fas fa-user" style="font-size:12px; color:#aaa;"></i></div>`;
+                }
+
+                const card = document.createElement('div');
+                card.className = 'farm-list-card city-card';
+                card.style.cursor = 'pointer';
+                
+                const hospitalId = h.id || 0;
+                card.onclick = (e) => {
+                    if (e.target.closest('a')) return;
+                    if (hospitalId) {
+                        window.location.href = `hospital-detail.html?id=${hospitalId}`;
+                    } else {
+                        console.error('Hastane ID eksik!', h);
+                        showErrorModal('Hastane detayına gidilemiyor.');
+                    }
+                };
+
+                card.innerHTML = `
+                    <div class="city-card-top">
+                        <div class="hospital-icon">
+                            <img src="icons/hospital-icon/hospital.png" style="width:32px; height:32px; object-fit:contain;">
+                        </div>
+                        <div class="hospital-info">
+                            <div class="hospital-name">${h.name}</div>
+                            <div class="hospital-stats">
+                                <span class="stat-badge" title="Kapasite">
+                                    <i class="fas fa-users" style="color:#888;"></i> 
+                                    <span style="color:${isFull ? 'var(--accent-red)' : 'var(--accent-green)'}; font-weight:bold;">${active}/${capacity}</span>
+                                </span>
+                                <span class="stat-badge" title="Süre">
+                                    <i class="fas fa-clock" style="color:#888;"></i> 
+                                    <span style="color:var(--accent-cyan); font-weight:bold;">${duration} dk</span>
+                                </span>
+                                <span class="stat-badge" title="Ücret">
+                                    <i class="fas fa-tag" style="color:#888;"></i> 
+                                    <span style="color:var(--accent-gold); font-weight:bold;">${fmt(h.price)} ₺</span>
+                                </span>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right right-arrow"></i>
+                    </div>
+
+                    <div class="city-card-footer">
+                        <div class="owner-info">
+                            ${avatarHtml}
+                            <span>${h.owner_id} - ${h.owner_name}</span>
+                        </div>
+                        <div style="display:flex; align-items:center;">
+                            ${starsHtml}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // --- FİLTRELEME VE ARAMA ---
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const val = e.target.value.toLowerCase();
+            const filtered = cityHospitals.filter(h => 
+                h.name.toLowerCase().includes(val) || h.owner_name.toLowerCase().includes(val)
+            );
+            renderCityHospitals(filtered);
+        });
+
+
+
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            if(el) {
+                el.classList.remove('active');
+                el.style.display = 'none'; // Fallback for some styles
+            }
+        }
+
+        // --- SEKME YÖNETİMİ ---
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+
+            if (tab === 'buy') {
+                // checkMyHospital(); // Already loaded in initPage
+            }
+        }
+
+        window.addEventListener('load', initPage);
+    </script>
+</body>
+</html>

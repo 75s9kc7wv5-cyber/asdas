@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim of World - Mobile UI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;       /* Ana Arkaplan */
+            --bg-header: #0a0a0a;     /* Header/Nav Arkaplan */
+            --border-color: #333;     /* Çizgiler */
+            --accent-cyan: #00e5ff;   /* Vurgu Rengi */
+            --text-muted: #7f8c8d;    /* Pasif Yazı */
+            --text-white: #ffffff;
+            --font-main: 'Rajdhani', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000; /* PC için dış arkaplan siyah */
+            font-family: var(--font-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+            overflow: hidden; /* Dış scroll'u engelle */
+        }
+
+        /* --- MOBİL KONTEYNER (TELEFON SİMÜLASYONU) --- */
+        .mobile-container {
+            width: 100%;
+            max-width: 450px; /* PC'de telefon genişliği sınırı */
+            height: 100vh;    /* Ekranı tam kapla */
+            background-color: var(--bg-dark);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 40px rgba(0, 229, 255, 0.1); /* Hafif neon gölge */
+            border-left: 1px solid #222;
+            border-right: 1px solid #222;
+        }
+
+        /* --- HEADER (ÜST KISIM) --- */
+        header {
+            background-color: var(--bg-header);
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0; /* Küçülmesini engelle */
+            z-index: 10;
+        }
+
+        .logo { font-size: 1.2rem; font-weight: 700; letter-spacing: 1px; }
+        .logo span { color: var(--accent-cyan); }
+        .header-money { 
+            background: #222; color: var(--accent-cyan); 
+            padding: 5px 10px; border-radius: 4px; font-size: 0.9rem; font-weight: bold;
+            border: 1px solid #333;
+        }
+
+        /* --- MAIN CONTENT (İÇERİK ALANI) --- */
+        main {
+            flex: 1; /* Kalan tüm boşluğu doldur */
+            overflow-y: auto; /* İçeriği kaydırılabilir yap */
+            padding: 20px;
+            padding-bottom: 80px; /* Alt menünün altında kalmaması için boşluk */
+        }
+
+        /* Kaydırma Çubuğu Tasarımı (Webkit) */
+        main::-webkit-scrollbar { width: 5px; }
+        main::-webkit-scrollbar-track { background: #111; }
+        main::-webkit-scrollbar-thumb { background: #333; border-radius: 5px; }
+
+        /* Örnek İçerik Kartları */
+        .content-card {
+            background: rgba(30, 30, 30, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .content-card h3 { color: var(--accent-cyan); margin-bottom: 5px; }
+        .content-card p { color: #aaa; font-size: 0.9rem; }
+
+        /* --- ALT MENÜ (FIXED BOTTOM NAV) --- */
+        .bottom-nav {
+            position: absolute; /* Konteynerin altına sabitle */
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 70px;
+            background-color: rgba(10, 10, 10, 0.95); /* Yarı saydam */
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around; /* Eşit dağılım */
+            align-items: center;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 25%; /* 4 eleman olduğu için */
+            height: 100%;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .nav-icon {
+            font-size: 1.4rem;
+            margin-bottom: 4px;
+            transition: transform 0.2s;
+        }
+
+        .nav-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* Aktif Durum */
+        .nav-item.active {
+            color: var(--accent-cyan);
+            border-top: 2px solid var(--accent-cyan); /* Üst çizgi */
+            background: linear-gradient(to bottom, rgba(0, 229, 255, 0.05), transparent);
+        }
+        .nav-item.active .nav-icon {
+            transform: translateY(-2px);
+            text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+        }
+
+        /* Responsive Ayar: Gerçek mobilde tam ekran */
+        @media (max-width: 480px) {
+            .mobile-container {
+                max-width: 100%;
+                height: 100vh;
+                border: none;
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-container">
+        
+        <header>
+            <div class="logo">SIM <span>OF WORLD</span></div>
+            <div class="header-money">
+                <i class="fas fa-wallet"></i> 6.979.173
+            </div>
+        </header>
+
+        <main id="mainContent">
+            <div class="content-card">
+                <h3><i class="fas fa-bullhorn"></i> DUYURULAR</h3>
+                <p>Sim of World v2.0 güncellemesi yayında! Yeni madenler eklendi.</p>
+            </div>
+            
+            <div class="content-card">
+                <h3><i class="fas fa-chart-line"></i> İSTATİSTİKLER</h3>
+                <p>Dünya Nüfusu: 120<br>Aktif Oyuncu: 45</p>
+            </div>
+
+            <div class="content-card">Test İçerik 1</div>
+            <div class="content-card">Test İçerik 2</div>
+            <div class="content-card">Test İçerik 3</div>
+            <div class="content-card">Test İçerik 4</div>
+            <div class="content-card">Test İçerik 5</div>
+        </main>
+
+        <nav class="bottom-nav">
+            <div class="nav-item active" onclick="menuClick(this)">
+                <i class="fas fa-chess-board nav-icon"></i>
+                <span class="nav-label">Meydan</span>
+            </div>
+
+            <div class="nav-item" onclick="menuClick(this)">
+                <i class="fas fa-user-tie nav-icon"></i>
+                <span class="nav-label">Yönetim</span>
+            </div>
+
+            <div class="nav-item" onclick="menuClick(this)">
+                <i class="fas fa-briefcase nav-icon"></i>
+                <span class="nav-label">Çanta</span>
+            </div>
+
+            <div class="nav-item" onclick="menuClick(this)">
+                <i class="fas fa-shopping-basket nav-icon"></i>
+                <span class="nav-label">Pazar</span>
+            </div>
+        </nav>
+
+    </div>
+
+    <script>
+        // Basit Menü Tıklama Efekti
+        function menuClick(element) {
+            // Hepsinden active sınıfını kaldır
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Tıklanana ekle
+            element.classList.add('active');
+
+            // İkon zıplama efekti için ufak bir animasyon (Opsiyonel JS)
+            const icon = element.querySelector('.nav-icon');
+            icon.style.transform = "scale(1.2)";
+            setTimeout(() => {
+                icon.style.transform = "scale(1) translateY(-2px)";
+            }, 200);
+        }
+    </script>
+
+</body>
+</html>

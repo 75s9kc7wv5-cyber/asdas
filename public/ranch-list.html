@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Sim of World - Çiftlikler</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-input: #1a1a1a;
+            --bg-card: #161616;
+            --text-muted: #999;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-gold: #ffd700;
+            --accent-red: #e74c3c;
+            --accent-purple: #9b59b6;
+            --text-white: #ffffff;
+            --border-color: #333;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('img/world-map.png');
+            background-size: cover;
+            background-position: center;
+        }
+        main {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+        .header-badge {
+            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(20,20,20,0.95) 100%);
+            padding: 20px;
+            border-radius: 0 0 20px 20px;
+            margin: 0 0 25px 0;
+            border-top: 3px solid var(--accent-gold);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+        }
+        .header-badge::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: radial-gradient(circle, var(--accent-gold) 0%, transparent 100%);
+            opacity: 0.7;
+        }
+        .header-badge h1 {
+            font-size: 1.8rem;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .header-badge h1 i { color: var(--accent-gold); }
+        .header-badge p {
+            font-size: 0.9rem;
+            color: #aaa;
+            font-weight: 500;
+        }
+
+        .page-header {
+            margin-bottom: 25px;
+            animation: fadeInDown 0.5s;
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        .back-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.2rem;
+        }
+        .back-btn:hover {
+            background: #2a2a2a;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+        }
+        .page-header-content {
+            flex: 1;
+            text-align: left;
+        }
+        .page-title {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .page-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.3;
+        }
+
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
+        .tab-btn { 
+            flex: 1; 
+            padding: 12px; 
+            border: none; 
+            background: transparent; 
+            color: #777; 
+            font-family: 'Rajdhani'; 
+            font-weight: bold; 
+            cursor: pointer; 
+            border-radius: 6px; 
+            transition: all 0.3s;
+            font-size: 0.95rem;
+        }
+        .tab-btn.active { 
+            background: #222; 
+            color: var(--accent-cyan); 
+            border: 1px solid var(--accent-cyan); 
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.15); 
+        }
+        .tab-btn:hover:not(.active) { background: #1a1a1a; color: #999; }
+        .tab-content { display: none; animation: fadeIn 0.4s; }
+        .tab-content.active { display: block; }
+        
+        /* New Ranch List Card Style (Synced with farm-list.html) */
+        .farm-list-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(30,30,30,0.95);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            color: #fff;
+        }
+        .farm-list-card:hover {
+            transform: translateY(-2px);
+            border-color: #555;
+            background: rgba(40,40,40,0.95);
+        }
+        .farm-list-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: var(--accent-red); /* Unowned/Default */
+        }
+        .farm-list-card.owned::before {
+             background: var(--accent-green);
+        }
+        .farm-list-card.city-card::before {
+             background: var(--accent-gold);
+        }
+        
+        .farm-list-card.city-card.owned::before {
+             background: var(--accent-green);
+        }
+        
+        .farm-list-card.city-card {
+            flex-direction: column;
+            align-items: stretch;
+            padding: 0;
+            gap: 0;
+        }
+
+        .city-card-top {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            cursor: pointer;
+        }
+
+        .city-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 8px 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid #333;
+            font-size: 0.85rem;
+        }
+
+        .owner-info {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: #ccc;
+        }
+        .owner-info i { color: #ccc; font-size: 0.9rem; }
+
+        .level-stars {
+            display: flex;
+            gap: 2px;
+        }
+        .level-stars i { font-size: 0.7rem; color: #444; }
+        .level-stars i.active { color: var(--accent-gold); text-shadow: 0 0 5px rgba(255, 215, 0, 0.3); }
+
+        .stat-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #444;
+            font-size: 0.75rem;
+            color: #ddd;
+            margin-right: 5px;
+        }
+        .stat-badge i { color: #aaa; }
+
+        .mine-icon {
+            width: 50px; height: 50px;
+            background: #222;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+            border: 1px solid #444;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .mine-icon img {
+            width: 60%;
+            height: 60%;
+            object-fit: contain;
+        }
+        .mine-info { flex: 1; }
+        .mine-name { font-size: 1rem; font-weight: bold; color: #fff; line-height: 1.2; }
+        .mine-desc { font-size: 0.8rem; color: #888; margin-top: 2px; }
+        
+        .right-arrow {
+            color: #444;
+            font-size: 1.2rem;
+            margin-left: auto;
+            transition: color 0.2s;
+        }
+        .farm-list-card:hover .right-arrow { color: #fff; }
+
+        .btn-action {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Rajdhani';
+            font-size: 0.85rem;
+            transition: 0.2s;
+        }
+        .btn-buy { background: var(--accent-gold); color: #000; }
+        .btn-buy:hover { box-shadow: 0 0 10px rgba(255, 215, 0, 0.4); }
+        
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 2000;
+            display: none; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: #181818; width: 90%; max-width: 400px; padding: 25px; border-radius: 10px;
+            border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-gold);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
+        }
+        .req-list { 
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            margin: 15px 0;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .info-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            transition: all 0.2s;
+        }
+        .info-list-item:hover {
+            opacity: 0.8;
+        }
+        .info-left {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            flex: 1;
+        }
+        .info-left i {
+            width: 28px;
+            min-width: 28px;
+            text-align: left;
+            margin-right: 10px;
+            font-size: 1rem;
+        }
+        .info-left img {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            margin-right: 10px;
+        }
+        .info-label {
+            color: #aaa;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .info-value {
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: right;
+            margin-left: auto;
+        }
+        .upgrade-cost-status {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            margin-left: 15px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .upgrade-cost-status.ok {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(46, 204, 113, 0.1));
+            color: var(--accent-green);
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
+        }
+        .upgrade-cost-status.fail {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(231, 76, 60, 0.1));
+            color: var(--accent-red);
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.3);
+        }
+        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; }
+        .btn-confirm { background: var(--accent-green); color: #000; }
+        .btn-cancel { background: #333; color: #fff; }
+        .btn-confirm:disabled { background: #444; color: #888; cursor: not-allowed; }
+        .count-badge { 
+            background: #222; padding: 3px 8px; border-radius: 4px; border: 1px solid #444;
+            display: inline-block; font-size: 0.7rem; color: #aaa; font-weight: 600;
+            margin-top: 4px;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Anti-FOUC (Flash of Unstyled Content) Prevention */
+        html.loading-state body { visibility: hidden !important; background-color: #000 !important; }
+        html.loading-state body #game-loader { visibility: visible !important; }
+    </style>
+    <script>
+        // Immediately trigger loading state
+        document.documentElement.classList.add('loading-state');
+    </script>
+</head>
+<body>
+    <script src="js/loader-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+    <div class="game-container">
+        <!-- Header injected by header-manager.js -->
+        <main>
+        <div class="page-header">
+            <button class="back-btn" onclick="window.location.href='ranch-category.html'">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="page-header-content">
+                <div class="page-title">
+                    ÇİFTLİKLER
+                </div>
+                <div class="page-subtitle">Hayvancılık ve üretim merkezi</div>
+            </div>
+        </div>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('city')">Şehirdeki Çiftlikler</button>
+                <button class="tab-btn" onclick="switchTab('my')">Çiftliklerim</button>
+            </div>
+            <!-- CITY RANCHES TAB -->
+            <div id="tab-city" class="tab-content active">
+                <div id="cityRanchList">
+                    <!-- JS ile doldurulacak -->
+                </div>
+            </div>
+            <!-- MY RANCHES TAB -->
+            <div id="tab-my" class="tab-content">
+                <div id="myRanchList">
+                    <!-- JS ile doldurulacak -->
+                </div>
+            </div>
+        </main>
+        <!-- BUY MODAL -->
+        <div class="modal-overlay" id="buyModal">
+            <div class="modal-content">
+                <h3 style="color:#fff; margin-bottom:10px; font-size:1.1rem;" id="mTitle">Çiftlik Satın Al</h3>
+                <p style="color:#888; font-size:0.85rem;">Bu çiftliği işletmek için gereksinimleri karşılamalısınız.</p>
+                <div class="req-list" id="reqList">
+                    <!-- Requirements here -->
+                </div>
+                <div class="modal-btns">
+                    <button class="m-btn btn-cancel" onclick="closeModal()">İPTAL</button>
+                    <button class="m-btn btn-confirm" id="btnConfirmBuy" onclick="confirmBuy()">SATIN AL</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATUS MODAL -->
+        <div class="modal-overlay" id="statusModal" style="z-index: 2100;">
+            <div class="modal-content" id="statusModalContent">
+                <i class="fas" id="statusIcon" style="font-size:3rem; margin-bottom:10px;"></i>
+                <h3 class="m-title" id="statusTitle"></h3>
+                <p class="m-desc" id="statusMessage" style="color:#ccc; margin-bottom:20px;"></p>
+                <button class="m-btn" id="statusBtn" onclick="closeStatusModal()">TAMAM</button>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="js/header-manager.js"></script>
+    <script>
+        toastr.options = { "positionClass": "toast-top-right", "timeOut": "3000" };
+        // Ranch types tanımı (örnek)
+        const ranchTypes = [
+            { id: 'chicken', name: 'Tavuk Kümesi', img: 'icons/ranch-icon/chicken.png', reqLevel: 1, costMoney: 10000, costGold: 0, costDiamond: 0 },
+            { id: 'sheep', name: 'Koyun Ağılı', img: 'icons/ranch-icon/sheep.png', reqLevel: 2, costMoney: 15000, costGold: 0, costDiamond: 0 },
+            { id: 'bee', name: 'Arı Kovanı', img: 'icons/ranch-icon/bee.png', reqLevel: 3, costMoney: 12000, costGold: 0, costDiamond: 0 },
+            { id: 'cow', name: 'İnek Çiftliği', img: 'icons/ranch-icon/cow.png', reqLevel: 5, costMoney: 25000, costGold: 5, costDiamond: 0 }
+        ];
+        let userRanches = [];
+        let userData = {};
+        let userLicenses = {};
+        let selectedRanch = null;
+        // Tab switch
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+        }
+        async function initPage() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) { window.location.href = 'login.html'; return; }
+            try {
+                // Kullanıcı verisi
+                const uRes = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username: user.username, password: user.password })
+                });
+                if (!uRes.ok) throw new Error('Kullanıcı doğrulanamadı');
+                let userJson = await uRes.json();
+                if (!userJson || userJson.error) throw new Error('Kullanıcı verisi alınamadı');
+                userData = userJson.user || userJson;
+
+                // Lisanslar
+                const licRes = await fetch(`/api/licenses/${user.id}`);
+                if (licRes.ok) {
+                    userLicenses = await licRes.json();
+                }
+
+                // Çiftliklerim
+                const myRanchesRes = await fetch(`/api/ranches/my/${user.id}`);
+                if (!myRanchesRes.ok) throw new Error('Çiftliklerim yüklenemedi');
+                let myRanchesJson = await myRanchesRes.json();
+                if (!Array.isArray(myRanchesJson)) {
+                    console.warn('Çiftliklerim API beklenmeyen veri:', myRanchesJson);
+                    showStatusModal(false, 'Çiftliklerim verisi beklenmedik formatta.');
+                    userRanches = [];
+                } else {
+                    userRanches = myRanchesJson;
+                }
+
+                // Şehirdeki çiftlikler
+                const cityRanchesRes = await fetch('/api/ranches/city');
+                if (!cityRanchesRes.ok) throw new Error('Şehirdeki çiftlikler yüklenemedi');
+                const cityRanches = await cityRanchesRes.json();
+
+                renderMyRanches();
+                renderCityRanches(cityRanches);
+            } catch (e) {
+                console.error(e);
+                showStatusModal(false, e.message || 'Veri yüklenemedi.');
+            }
+        }
+        function renderMyRanches() {
+            const container = document.getElementById('myRanchList');
+            container.innerHTML = '';
+            const filterType = new URLSearchParams(window.location.search).get('type');
+            ranchTypes.forEach(type => {
+                if (filterType && type.id !== filterType) return;
+                // Match via slug, not ID (ID is the instance unique ID, slug is the type)
+                const owned = userRanches.find(r => r.slug === type.id);
+                
+                const card = document.createElement('div');
+                card.className = `farm-list-card ${owned ? 'owned' : ''}`;
+                
+                // If owned, card click goes to management. If not, open buy modal.
+                card.onclick = (e) => {
+                     // Prevent click if button was clicked (event bubbling check not needed if no button inside)
+                     // But wait, if I put button inside, I should handle bubbling.
+                     // The new design uses whole card click or arrow.
+                     if (owned) {
+                        location.href = `ranch-management.html?id=${owned.ranch_id}`;
+                     } else {
+                        openBuyModal(type.id);
+                     }
+                };
+
+                let iconHTML = '';
+                if (type.img) {
+                    iconHTML = `<div class="mine-icon"><img src="${type.img}" alt="${type.name}"></div>`;
+                } else {
+                    iconHTML = `<div class="mine-icon"><i class="fas fa-cow"></i></div>`;
+                }
+                
+                let descHTML = '';
+                let statusHTML = '';
+                
+                if (owned) {
+                    descHTML = `<div style="color:#888; font-size:0.8rem;">Yönetim ve Üretim Paneli</div>`;
+                    statusHTML = ``;
+                } else {
+                    descHTML = `<div style="color:#888; font-size:0.8rem;">Satın almak için tıkla</div>`;
+                    statusHTML = ``;
+                }
+                
+                card.innerHTML = `
+                    ${iconHTML}
+                    <div style="flex:1;">
+                        <div class="mine-name">${type.name}</div>
+                        ${descHTML}
+                        ${statusHTML}
+                    </div>
+                    <i class="fas fa-chevron-right right-arrow"></i>
+                `;
+                container.appendChild(card);
+            });
+        }
+        function renderCityRanches(ranches) {
+            const container = document.getElementById('cityRanchList');
+            container.innerHTML = '';
+            if (!Array.isArray(ranches) || ranches.length === 0) {
+                container.innerHTML = '<div style="text-align:center; color:#888; padding:20px;">Şehirde hiç çiftlik bulunamadı.</div>';
+                return;
+            }
+            // Hata ayıklama için dönen veriyi konsola yaz
+            console.log('Şehirdeki çiftlikler API yanıtı:', ranches);
+
+            // Sort: Owned first, then level
+            ranches.sort((a, b) => {
+                const aOwned = (String(a.user_id) === String(userData.id));
+                const bOwned = (String(b.user_id) === String(userData.id));
+                if (aOwned && !bOwned) return -1;
+                if (!aOwned && bOwned) return 1;
+                return (b.level || 1) - (a.level || 1);
+            });
+
+            let foundAny = false;
+            const filterType = new URLSearchParams(window.location.search).get('type');
+            ranches.forEach(ranch => {
+                // API'den gelen veri id, type veya mine_type olabilir, hepsini kontrol et
+                let ranchTypeId = null;
+                if (typeof ranch.type === 'string') ranchTypeId = ranch.type;
+                else if (typeof ranch.mine_type === 'string') ranchTypeId = ranch.mine_type;
+                else if (typeof ranch.id === 'string') ranchTypeId = ranch.id;
+                else if (typeof ranch.type === 'number') ranchTypeId = String(ranch.type);
+                else if (typeof ranch.mine_type === 'number') ranchTypeId = String(ranch.mine_type);
+                else if (typeof ranch.id === 'number') ranchTypeId = String(ranch.id);
+
+                if (filterType && ranchTypeId !== filterType) return;
+
+                const type = ranchTypes.find(t => t.id === ranchTypeId);
+                if (!type) {
+                    // Hatalı veya bilinmeyen tipte veri varsa konsola yaz
+                    console.warn('Eşleşmeyen çiftlik tipi:', ranchTypeId, ranch);
+                    return;
+                }
+                foundAny = true;
+                
+                const card = document.createElement('div');
+                card.className = 'farm-list-card city-card';
+                // Oyuncun kendisine aitse owned class'ı ekle
+                const isOwned = String(ranch.user_id) === String(userData.id);
+                if (isOwned) {
+                    card.classList.add('owned');
+                }
+                
+                card.onclick = () => location.href = `ranch-work.html?id=${ranch.ranch_id}`;
+                
+                let iconHTML = '';
+                if (type.img) {
+                    iconHTML = `<div class="mine-icon" style="width:50px; height:50px;"><img src="${type.img}" alt="${type.name}"></div>`;
+                } else {
+                    iconHTML = `<div class="mine-icon" style="width:50px; height:50px;"><i class="fas fa-cow"></i></div>`;
+                }
+                
+                // Stars logic
+                const level = ranch.level || 1;
+                let starsHTML = '';
+                // 10 stars total
+                for(let i=1; i<=10; i++) { 
+                     // If level is large enough, star is yellow (active).
+                     // However, if we want to show 10 stars total, we can do it.
+                     const isActive = i <= level;
+                     starsHTML += `<i class="fas fa-star ${isActive ? 'active' : ''}"></i>`;
+                }
+
+                card.innerHTML = `
+                    <div class="city-card-top">
+                        ${iconHTML}
+                        <div style="flex:1;">
+                            <div class="mine-name" style="font-size:1rem;">
+                                ${ranch.name || type.name}
+                            </div>
+                            <div style="display:flex; margin-top:3px; align-items: center; flex-wrap: wrap; gap: 5px;">
+                                ${isOwned ? '<span class="stat-badge" style="border-color:var(--accent-green); color:var(--accent-green); background:rgba(46, 204, 113, 0.1);"><i class="fas fa-check-circle" style="color:var(--accent-green);"></i> İşletmem</span>' : ''}
+                                <span class="stat-badge"><i class="fas fa-users" style="color: var(--accent-cyan);"></i> ${ranch.current_workers || 0}/${ranch.max_workers || 5}</span>
+                                <span class="stat-badge"><img src="icons/inventory-icon/money.png" style="width:14px; height:14px; margin-right:2px; vertical-align:middle;"> ${ranch.salary || 0} ₺</span>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right right-arrow"></i>
+                    </div>
+                    <div class="city-card-footer">
+                        <div class="owner-info">
+                            <img src="${ranch.avatar || 'uploads/avatars/default.png'}" style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover; border: 1px solid #444;">&nbsp;${ranch.user_id} - ${ranch.username || '-'}
+                        </div>
+                        <div class="level-stars">
+                            ${starsHTML}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            if (!foundAny) {
+                container.innerHTML = '<div style="text-align:center; color:#e74c3c; padding:20px;">Hiçbir çiftlik tipi eşleşmedi. Lütfen yöneticinize başvurun.</div>';
+            }
+        }
+        function openBuyModal(ranchId) {
+            selectedRanch = ranchTypes.find(r => r.id === ranchId);
+            if (!selectedRanch) return;
+            
+            // Icon Logic
+            let iconHtml = '';
+            if (selectedRanch.img) {
+                iconHtml = `<div style="display:flex; justify-content:center; margin-bottom:15px;"><img src="${selectedRanch.img}" style="width:64px; height:64px; object-fit:contain;"></div>`;
+            } else {
+                iconHtml = `<div style="display:flex; justify-content:center; margin-bottom:15px; font-size:2.5rem; color:var(--accent-gold);"><i class="fas fa-warehouse"></i></div>`;
+            }
+
+            document.getElementById('mTitle').innerHTML = `${iconHtml}${selectedRanch.name} Satın Almayı Onaylıyor musun?`;
+            
+            const hasSkill = (userData.education_skill || 1) >= selectedRanch.reqLevel;
+            const hasMoney = userData.money >= selectedRanch.costMoney;
+            const hasGold = userData.gold >= selectedRanch.costGold;
+            const hasDiamond = (userData.diamond || 0) >= selectedRanch.costDiamond;
+            
+            // License Check
+            const licenseLevel = userLicenses[selectedRanch.id] || 0;
+            const hasLicense = licenseLevel >= 1;
+
+            const canBuy = hasSkill && hasMoney && hasGold && hasDiamond && hasLicense;
+            
+            const costMoneyFormatted = new Intl.NumberFormat('tr-TR').format(selectedRanch.costMoney);
+            
+            let html = '';
+            
+            // Eğitim Seviyesi
+            html += `
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-graduation-cap" style="color: var(--accent-purple);"></i>
+                        <div class="info-label">Eğitim Seviyesi</div>
+                    </div>
+                    <div class="info-value">Lv. ${selectedRanch.reqLevel}</div>
+                    <div class="upgrade-cost-status ${hasSkill ? 'ok' : 'fail'}">
+                        <i class="fas fa-${hasSkill ? 'check' : 'times'}"></i>
+                    </div>
+                </div>
+            `;
+            
+            // Para
+            html += `
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <img src="icons/inventory-icon/money.png">
+                        <div class="info-label">Para</div>
+                    </div>
+                    <div class="info-value">${costMoneyFormatted} ₺</div>
+                    <div class="upgrade-cost-status ${hasMoney ? 'ok' : 'fail'}">
+                        <i class="fas fa-${hasMoney ? 'check' : 'times'}"></i>
+                    </div>
+                </div>
+            `;
+            
+            // Altın
+            if (selectedRanch.costGold > 0) {
+                html += `
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <img src="icons/inventory-icon/gold.png">
+                            <div class="info-label">Altın</div>
+                        </div>
+                        <div class="info-value">${selectedRanch.costGold}</div>
+                        <div class="upgrade-cost-status ${hasGold ? 'ok' : 'fail'}">
+                            <i class="fas fa-${hasGold ? 'check' : 'times'}"></i>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Elmas
+            if (selectedRanch.costDiamond > 0) {
+                html += `
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <img src="icons/inventory-icon/diamond.png">
+                            <div class="info-label">Elmas</div>
+                        </div>
+                        <div class="info-value">${selectedRanch.costDiamond}</div>
+                        <div class="upgrade-cost-status ${hasDiamond ? 'ok' : 'fail'}">
+                            <i class="fas fa-${hasDiamond ? 'check' : 'times'}"></i>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Lisans
+            html += `
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-certificate" style="color: var(--accent-cyan);"></i>
+                        <div class="info-label">1. Seviye ${selectedRanch.name} Lisansı</div>
+                    </div>
+                    <div class="info-value">Gerekli</div>
+                    <div class="upgrade-cost-status ${hasLicense ? 'ok' : 'fail'}">
+                        <i class="fas fa-${hasLicense ? 'check' : 'times'}"></i>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('reqList').innerHTML = html;
+            document.getElementById('btnConfirmBuy').disabled = !canBuy;
+            document.getElementById('buyModal').classList.add('active');
+        }
+        function closeModal() {
+            document.getElementById('buyModal').classList.remove('active');
+        }
+        function closeStatusModal() {
+            document.getElementById('statusModal').classList.remove('active');
+        }
+
+        function showStatusModal(success, message) {
+            const modal = document.getElementById('statusModal');
+            const content = document.getElementById('statusModalContent');
+            const icon = document.getElementById('statusIcon');
+            const title = document.getElementById('statusTitle');
+            const msg = document.getElementById('statusMessage');
+            const btn = document.getElementById('statusBtn');
+
+            content.style.borderTop = '3px solid transparent';
+            
+            if (success) {
+                content.style.borderTopColor = 'var(--accent-green)';
+                icon.className = 'fas fa-check-circle';
+                icon.style.color = 'var(--accent-green)';
+                title.innerText = 'BAŞARILI';
+                btn.style.background = 'var(--accent-green)';
+                btn.style.color = '#000';
+                
+                btn.onclick = function() {
+                    closeStatusModal();
+                    location.reload();
+                };
+            } else {
+                content.style.borderTopColor = 'var(--accent-red)';
+                icon.className = 'fas fa-times-circle';
+                icon.style.color = 'var(--accent-red)';
+                title.innerText = 'HATA';
+                btn.style.background = '#333';
+                btn.style.color = '#fff';
+                
+                btn.onclick = closeStatusModal;
+            }
+
+            msg.innerText = message;
+            modal.classList.add('active');
+        }
+
+        async function confirmBuy() {
+            if (!selectedRanch) return;
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            try {
+                const response = await fetch('/api/ranches/buy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, ranchType: selectedRanch.id })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    closeModal();
+                    showStatusModal(true, result.message || 'Satın alma başarılı!');
+                } else {
+                    showStatusModal(false, result.message);
+                }
+            } catch (e) {
+                console.error(e);
+                showStatusModal(false, 'İşlem başarısız.');
+            }
+        }
+        window.addEventListener('load', initPage);
+    </script>
+</body>
+</html>

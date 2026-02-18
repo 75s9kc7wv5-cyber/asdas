@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Sim of World - Maden Bölgeleri</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <link rel="stylesheet" href="css/global-menu.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-header: #0a0a0a;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-red: #e74c3c;
+            --accent-gold: #ffd700;
+            --accent-orange: #e67e22;
+            --accent-purple: #9b59b6;
+            --text-white: #ffffff;
+            --text-muted: #888;
+            --card-bg: rgba(30, 30, 30, 0.95);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('img/world-map.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* MAIN */
+        main { flex: 1; padding: 15px; overflow-y: auto; padding-bottom: 80px; }
+
+        /* TABS */
+        .tabs-container { display: flex; gap: 10px; margin-bottom: 20px; background: #111; padding: 5px; border-radius: 8px; border: 1px solid #333; }
+        .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: #777; font-family: 'Rajdhani'; font-weight: bold; cursor: pointer; border-radius: 6px; transition: all 0.3s; }
+        .tab-btn.active { background: #222; color: var(--accent-cyan); box-shadow: 0 0 10px rgba(0, 229, 255, 0.1); }
+
+        /* PAGE TITLE */
+        .section-header { text-align: center; margin-bottom: 25px; animation: fadeIn 0.5s; }
+        .header-badge {
+            display: inline-block;
+            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(10,10,10,0.95) 100%);
+            border: 1px solid #333;
+            border-top: 3px solid var(--accent-purple);
+            padding: 15px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .header-badge::after {
+            content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+            width: 60%; height: 2px; background: radial-gradient(circle, var(--accent-purple) 0%, transparent 100%);
+            opacity: 0.5;
+        }
+        .section-title { 
+            font-size: 1.4rem; font-weight: 800; letter-spacing: 2px; color: #fff; margin-bottom: 5px; 
+            text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 10px;
+            text-shadow: 0 0 15px rgba(155, 89, 182, 0.4);
+        }
+        .section-desc { font-size: 0.85rem; color: #999; font-weight: 500; }
+
+        .page-header {
+            margin-bottom: 25px;
+            animation: fadeInDown 0.5s;
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        .back-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.2rem;
+        }
+        .back-btn:hover {
+            background: #2a2a2a;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+        }
+        .page-header-content {
+            flex: 1;
+        }
+        .page-title {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .page-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.3;
+        }
+
+        /* MINE GRID */
+        .mine-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; animation: slideUp 0.6s ease; }
+
+        .mine-card {
+            background: var(--card-bg);
+            border: 1px solid #333;
+            border-top: 3px solid var(--accent-red);
+            border-radius: 8px;
+            padding: 15px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            text-decoration: none;
+            color: #fff;
+            text-align: center;
+            position: relative;
+            height: auto;
+            min-height: 120px;
+        }
+        .mine-card:hover { transform: translateY(-3px); border-color: var(--accent-cyan); background: rgba(40,40,40,0.95); }
+
+        .m-icon-circle {
+            width: 50px; height: 50px; border-radius: 8px; background: #222;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 0px; box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            font-size: 1.5rem;
+        }
+
+        .m-name {
+            font-size: 0.85rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 0;
+        }
+        .m-count { font-size: 0.7rem; color: #aaa; margin-top: 2px; }
+        .count-badge { 
+            background: #222;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            display: inline-block;
+            margin-top: 4px;
+            font-size: 0.7rem;
+            color: #fff;
+        }
+
+        /* Kart Stilleri */
+        /* .type-basic { border-top: none; } */
+        /* .type-industrial { border-top: none; } */
+        /* .type-precious { border-top: none; } */
+
+        .type-basic .m-icon-circle { color: var(--accent-green); box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); }
+        .type-industrial .m-icon-circle { color: var(--accent-orange); box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); }
+        .type-precious .m-icon-circle { color: var(--accent-purple); box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); }
+
+        /* New Categories CSS */
+        .category-header { 
+            font-size: 1rem; color: var(--accent-cyan); margin-bottom: 10px; margin-top: 20px;
+            border-bottom: 1px solid #333; padding-bottom: 5px; font-weight: 700; letter-spacing: 1px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .category-title { font-size: 1rem; color: inherit; font-weight: 700; display: flex; align-items: center; gap: 10px; margin: 0; }
+        
+        /* Colors for headers */
+        .h-basic { color: var(--accent-green); }
+        .h-industrial { color: var(--accent-orange); }
+        .h-precious { color: var(--accent-purple); }
+
+        /* LIST VIEW STYLES */
+        .mine-list-view { display: flex; flex-direction: column; gap: 10px; }
+        .mine-list-card {
+            background: var(--card-bg);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: transform 0.2s, border-color 0.2s;
+            text-decoration: none;
+            color: #fff;
+        }
+        .mine-list-card:hover { transform: translateX(5px); border-color: var(--accent-cyan); background: rgba(40,40,40,0.95); }
+        .mine-list-card .m-icon-circle { width: 50px; height: 50px; margin-bottom: 0; flex-shrink: 0; }
+        .mine-list-card .m-info { flex: 1; text-align: left; }
+        .mine-list-card .m-name { font-size: 0.85rem; font-weight: 700; line-height: 1.2; margin-bottom: 0; }
+        .mine-list-card .m-desc { font-size: 0.8rem; color: #888; margin-top: 4px; }
+        .mine-list-card .action-btn { width: auto; padding: 8px 20px; margin-top: 0; }
+
+        /* ÜRETİM MODALI */
+        .modal-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 100;
+            display: none; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        .modal-content {
+            background: #151515; width: 90%; padding: 20px; border-radius: 10px;
+            border: 1px solid #444; position: relative; text-align: center;
+        }
+        .modal-close { position: absolute; top: 10px; right: 15px; color: #aaa; cursor: pointer; }
+        
+        .prod-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; }
+        .prod-icon-lg { font-size: 3rem; margin-bottom: 10px; }
+        .prod-title { font-size: 1.4rem; color: #fff; }
+        
+        /* Reçete Alanı */
+        .recipe-box {
+            background: #222; padding: 15px; border-radius: 6px; margin-bottom: 20px;
+            display: flex; align-items: center; justify-content: space-around; border: 1px solid #333;
+        }
+        .res-item { display: flex; flex-direction: column; align-items: center; font-size: 0.8rem; color: #ccc; }
+        .res-arrow { color: var(--accent-cyan); font-size: 1.2rem; }
+        .res-img { font-size: 1.5rem; margin-bottom: 5px; }
+
+        /* Progress Bar */
+        .progress-area { margin-bottom: 20px; display: none; }
+        .p-bar-bg { width: 100%; height: 10px; background: #333; border-radius: 5px; overflow: hidden; }
+        .p-bar-fill { height: 100%; width: 0%; background: var(--accent-cyan); transition: width 0.1s linear; }
+        .p-text { font-size: 0.8rem; margin-top: 5px; color: var(--accent-cyan); }
+
+        .action-btn { width: 100%; padding: 12px; border: none; border-radius: 5px; font-family: 'Rajdhani'; font-weight: bold; font-size: 1rem; cursor: pointer; }
+        .btn-start { background: var(--accent-green); color: #000; }
+        .btn-working { background: #333; color: #fff; cursor: wait; }
+
+        /* BOTTOM NAV */
+        .bottom-nav {
+            position: absolute; bottom: 0; width: 100%; background: #0a0a0a;
+            border-top: 1px solid #333; display: flex; justify-content: space-around;
+            padding: 10px 0; z-index: 10;
+        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 0.75rem; cursor: pointer; }
+        .nav-item i { font-size: 1.4rem; margin-bottom: 3px; }
+        .nav-item.active { color: var(--accent-cyan); }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 2000;
+            display: none; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: #181818; width: 90%; max-width: 400px; padding: 25px; border-radius: 10px;
+            border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-gold);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
+        }
+        .req-list { 
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            margin: 15px 0;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .info-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            transition: all 0.2s;
+            border-bottom: 1px solid #333;
+        }
+        .info-list-item:last-child {
+            border-bottom: none;
+        }
+        .info-list-item:hover {
+            opacity: 0.8;
+        }
+        .info-left {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            flex: 1;
+        }
+        .info-left i {
+            width: 28px;
+            min-width: 28px;
+            text-align: left;
+            margin-right: 10px;
+            font-size: 1rem;
+        }
+        .info-left img {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            margin-right: 10px;
+        }
+        .info-label {
+            color: #aaa;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .info-value {
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: right;
+            margin-left: auto;
+        }
+        .upgrade-cost-status {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            margin-left: 15px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .upgrade-cost-status.ok {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(46, 204, 113, 0.1));
+            color: var(--accent-green);
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
+        }
+        .upgrade-cost-status.fail {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(231, 76, 60, 0.1));
+            color: var(--accent-red);
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.3);
+        }
+        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; }
+        .btn-confirm { background: var(--accent-green); color: #000; }
+        .btn-cancel { background: #333; color: #fff; }
+        .btn-confirm:disabled { background: #444; color: #888; cursor: not-allowed; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Header removed, injected by header-manager.js -->
+
+        <main>
+            <div class="page-header">
+                <button class="back-btn" onclick="window.history.back()">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="page-header-content">
+                    <div class="page-title">
+                        MADEN BÖLGELERİ
+                    </div>
+                    <div class="page-subtitle">Maden kategorilerini inceleyebilir veya sahip olduğun madenleri görebilirsin.</div>
+                </div>
+            </div>
+            <div class="tabs-container">
+                <button class="tab-btn active" onclick="switchTab('categories')">MADEN KATEGORİLERİ</button>
+                <button class="tab-btn" onclick="switchTab('my-mines')">MADENLERİM</button>
+            </div>
+
+            <div id="tab-categories">
+
+                <div id="minesContainer">
+                    <!-- JS ile doldurulacak -->
+                    <div style="text-align:center; padding:20px; color:#666;">Yükleniyor...</div>
+                </div>
+            </div>
+
+            <div id="tab-my-mines" style="display:none;">
+                <div id="myMinesList"></div>
+            </div>
+
+            <!-- BUY MODAL -->
+            <div class="modal-overlay" id="buyModal">
+                <div class="modal-content">
+                    <div id="mIconContainer" style="display: flex; justify-content: center; margin-bottom: 15px;"></div>
+                    <h3 style="color:#fff; margin-bottom:10px;" id="mTitle">Maden Satın Al</h3>
+                    <p style="color:#888; font-size:0.9rem;">Bu madeni işletmek için gereksinimleri karşılamalısınız.</p>
+                    
+                    <div class="req-list" id="reqList">
+                        <!-- Requirements here -->
+                    </div>
+
+                    <div class="modal-btns">
+                        <button class="m-btn btn-cancel" onclick="closeModal()">İPTAL</button>
+                        <button class="m-btn btn-confirm" id="btnConfirmBuy" onclick="confirmBuy()">SATIN AL</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUCCESS MODAL -->
+            <div class="modal-overlay" id="successModal">
+                <div class="modal-content" style="border-top: 3px solid var(--accent-green); box-shadow: 0 0 30px rgba(46, 204, 113, 0.2);">
+                    <div style="font-size: 3rem; color: var(--accent-green); margin-bottom: 20px;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h3 style="color:#fff; margin-bottom:10px;">TEBRİKLER!</h3>
+                    <p id="successMsg" style="color:#aaa; font-size:0.9rem; margin-bottom: 20px;">
+                        <!-- JS fills this -->
+                    </p>
+                    <button class="m-btn btn-confirm" onclick="closeSuccessModal()">TAMAM</button>
+                </div>
+            </div>
+
+        </main>
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        toastr.options = { "positionClass": "toast-top-right", "timeOut": "3000" };
+
+        // Veriler (Fiyatlar mine-list.html ile aynı)
+        const mineTypes = [
+            { id: 'wood', category: 'basic', name: 'Odun Kampı', img: 'icons/mine-icon/wood.png', color: 'type-basic', reqLevel: 1, costMoney: 1000, costGold: 0, costDiamond: 0 },
+            { id: 'stone', category: 'basic', name: 'Taş Ocağı', img: 'icons/mine-icon/stone.png', color: 'type-basic', reqLevel: 5, costMoney: 2000, costGold: 0, costDiamond: 0 },
+            { id: 'sand', category: 'basic', name: 'Kum Madeni', img: 'icons/mine-icon/sand.png', color: 'type-basic', reqLevel: 25, costMoney: 9000, costGold: 25, costDiamond: 0 },
+            
+            { id: 'iron', category: 'industrial', name: 'Demir Madeni', img: 'icons/mine-icon/iron.png', color: 'type-industrial', reqLevel: 15, costMoney: 5000, costGold: 10, costDiamond: 0 },
+            { id: 'coal', category: 'industrial', name: 'Kömür Madeni', img: 'icons/mine-icon/coal.png', color: 'type-industrial', reqLevel: 20, costMoney: 8000, costGold: 20, costDiamond: 0 },
+            { id: 'copper', category: 'industrial', name: 'Bakır Madeni', img: 'icons/mine-icon/copper.png', color: 'type-industrial', reqLevel: 30, costMoney: 10000, costGold: 30, costDiamond: 0 },
+            
+            { id: 'gold', category: 'precious', name: 'Altın Madeni', img: 'icons/mine-icon/gold-nugget.png', color: 'type-precious', reqLevel: 40, costMoney: 25000, costGold: 50, costDiamond: 5 },
+            { id: 'oil', category: 'precious', name: 'Petrol Kuyusu', img: 'icons/mine-icon/oil-barrel.png', color: 'type-precious', reqLevel: 50, costMoney: 15000, costGold: 40, costDiamond: 10 },
+            { id: 'uranium', category: 'precious', name: 'Uranyum Madeni', img: 'icons/mine-icon/uranium.png', color: 'type-precious', reqLevel: 80, costMoney: 50000, costGold: 100, costDiamond: 20 }
+        ];
+
+        const categories = [
+            { id: 'basic', name: 'TEMEL KAYNAKLAR', icon: 'fa-cubes', color: 'h-basic' },
+            { id: 'industrial', name: 'ENDÜSTRİYEL', icon: 'fa-industry', color: 'h-industrial' },
+            { id: 'precious', name: 'DEĞERLİ & ENERJİ', icon: 'fa-gem', color: 'h-precious' }
+        ];
+
+        let userData = {};
+        let userLicenses = {};
+        let userMines = [];
+        let selectedMine = null;
+
+        async function fetchUserData(userId) {
+             try {
+                const res = await fetch(`/api/profile/${userId}`);
+                if (res.ok) {
+                    const json = await res.json();
+                    userData = json.user || json;
+                }
+            } catch (e) { console.error(e); }
+        }
+        
+        async function fetchUserLicenses(userId) {
+             try {
+                const res = await fetch(`/api/licenses/${userId}`);
+                if (res.ok) {
+                    userLicenses = await res.json();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadMines() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) return;
+
+            try {
+                await Promise.all([
+                    fetchUserData(user.id),
+                    fetchUserLicenses(user.id)
+                ]);
+
+                // Fetch all city mines to count them
+                const res = await fetch('/api/mines/city');
+                const allMines = await res.json();
+
+                // Fetch My Mines
+                const mRes = await fetch(`/api/mines/my/${user.id}`);
+                userMines = await mRes.json();
+
+                // Count mines by type
+                const counts = {};
+                mineTypes.forEach(t => counts[t.id] = 0);
+                
+                allMines.forEach(m => {
+                    if (counts[m.mine_type] !== undefined) {
+                        counts[m.mine_type]++;
+                    }
+                });
+
+                renderPage(counts);
+
+            } catch (e) {
+                console.error(e);
+                document.getElementById('minesContainer').innerHTML = '<div style="text-align:center; color:red;">Veri yüklenemedi.</div>';
+            }
+        }
+
+        function renderPage(counts) {
+            const container = document.getElementById('minesContainer');
+            container.innerHTML = '';
+
+            categories.forEach(cat => {
+                // Create Section
+                const section = document.createElement('div');
+                section.className = 'cat-section';
+                section.style.marginBottom = '25px';
+                
+                const header = document.createElement('div');
+                header.className = `category-header ${cat.color}`;
+                header.innerHTML = `<h3 class="category-title"><i class="fas ${cat.icon}"></i> ${cat.name}</h3>`;
+                section.appendChild(header);
+
+                // Create Grid
+                const grid = document.createElement('div');
+                grid.className = 'mine-grid';
+
+                // Filter mines for this category
+                const mines = mineTypes.filter(m => m.category === cat.id);
+                
+                mines.forEach(mine => {
+                    const count = counts[mine.id] || 0;
+                    
+                    const card = document.createElement('div');
+                    card.className = `mine-card ${mine.color}`;
+                    card.onclick = () => location.href = `mine-list.html?type=${mine.id}`;
+                    
+                    let iconHtml = '';
+                    if (mine.img) {
+                        iconHtml = `<img src="${mine.img}" alt="${mine.name}" style="width: 32px; height: 32px; object-fit: contain;">`;
+                    } else {
+                        iconHtml = `<i class="fas ${mine.icon}"></i>`;
+                    }
+
+                    card.innerHTML = `
+                        <div class="m-icon-circle">${iconHtml}</div>
+                        <div class="m-name">${mine.name}</div>
+                        <div class="count-badge">
+                            ${count} Adet İşletme
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+
+                section.appendChild(grid);
+                container.appendChild(section);
+            });
+        }
+
+        // Modal Logic
+        function openBuyModal(mineId) {
+            const mine = mineTypes.find(m => m.id === mineId);
+            if (!mine) return;
+            selectedMine = mine;
+
+            // Icon Setup
+            let iconHtml = '';
+            // Kare badge stili
+            const badgeStyle = 'display:flex; align-items:center; justify-content:center; width:70px; height:70px; background:#222; border:1px solid #444; border-radius:12px; margin:0 auto 15px;';
+
+            if (mine.img) {
+                iconHtml = `<div style="${badgeStyle}"><img src="${mine.img}" alt="${mine.name}" style="width: 50px; height: 50px; object-fit: contain;"></div>`;
+            } else {
+                iconHtml = `<div style="${badgeStyle}"><i class="fas ${mine.icon}" style="font-size: 30px; color: var(--accent-cyan);"></i></div>`;
+            }
+            document.getElementById('mIconContainer').innerHTML = iconHtml;
+
+            document.getElementById('mTitle').innerText = `${mine.name} Satın Almayı Onaylıyor musun?`;
+            const reqList = document.getElementById('reqList');
+            reqList.innerHTML = '';
+
+            let canBuy = true;
+
+            // 1. Money
+            const userMoney = userData.money || 0;
+            const moneyOk = userMoney >= mine.costMoney;
+            if (!moneyOk) canBuy = false;
+
+            reqList.innerHTML += `
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <img src="icons/inventory-icon/money.png" style="width: 24px; height: 24px;">
+                        <span class="info-label">Para</span>
+                    </div>
+                    <span class="info-value">${mine.costMoney.toLocaleString()} ₺</span>
+                    <div class="upgrade-cost-status ${moneyOk ? 'ok' : 'fail'}">
+                        <i class="fas ${moneyOk ? 'fa-check' : 'fa-times'}"></i>
+                    </div>
+                </div>
+            `;
+
+            // 2. Gold
+            if (mine.costGold > 0) {
+                const userGold = userData.gold || 0;
+                const goldOk = userGold >= mine.costGold;
+                if (!goldOk) canBuy = false;
+                
+                reqList.innerHTML += `
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <img src="icons/inventory-icon/gold.png" style="width: 24px; height: 24px;">
+                            <span class="info-label">Altın</span>
+                        </div>
+                        <span class="info-value">${mine.costGold}</span>
+                        <div class="upgrade-cost-status ${goldOk ? 'ok' : 'fail'}">
+                            <i class="fas ${goldOk ? 'fa-check' : 'fa-times'}"></i>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 3. Diamond
+            if (mine.costDiamond > 0) {
+                const userDiamond = userData.diamond || 0;
+                const diaOk = userDiamond >= mine.costDiamond;
+                if (!diaOk) canBuy = false;
+
+                reqList.innerHTML += `
+                    <div class="info-list-item">
+                        <div class="info-left">
+                            <img src="icons/inventory-icon/diamond.png" style="width: 24px; height: 24px;">
+                            <span class="info-label">Elmas</span>
+                        </div>
+                        <span class="info-value">${mine.costDiamond}</span>
+                        <div class="upgrade-cost-status ${diaOk ? 'ok' : 'fail'}">
+                            <i class="fas ${diaOk ? 'fa-check' : 'fa-times'}"></i>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 4. Education Skill (Level) - REMOVED
+            /* 
+            const userLevel = userData.education_skill || 1;
+            const levelOk = userLevel >= mine.reqLevel;
+            if (!levelOk) canBuy = false;
+
+            reqList.innerHTML += `
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-graduation-cap" style="color: var(--accent-purple);"></i>
+                        <span class="info-label">Eğitim Seviyesi</span>
+                    </div>
+                    <span class="info-value">Seviye ${mine.reqLevel}</span>
+                    <div class="upgrade-cost-status ${levelOk ? 'ok' : 'fail'}">
+                        <i class="fas ${levelOk ? 'fa-check' : 'fa-times'}"></i>
+                    </div>
+                </div>
+            `;
+            */
+
+            // 5. License
+            const licLevel = userLicenses[mine.id] || 0;
+            const licOk = licLevel >= 1;
+            if (!licOk) canBuy = false;
+
+            reqList.innerHTML += `
+                <div class="info-list-item">
+                    <div class="info-left">
+                        <i class="fas fa-certificate" style="color: var(--accent-orange);"></i>
+                        <span class="info-label">1. Seviye ${mine.name} Lisansı</span>
+                    </div>
+                    <div class="upgrade-cost-status ${licOk ? 'ok' : 'fail'}">
+                        <i class="fas ${licOk ? 'fa-check' : 'fa-times'}"></i>
+                    </div>
+                </div>
+            `;
+
+            // Button State Logic
+            const btnConfirm = document.getElementById('btnConfirmBuy');
+            if (canBuy) {
+                btnConfirm.disabled = false;
+                btnConfirm.style.opacity = '1';
+                btnConfirm.style.cursor = 'pointer';
+            } else {
+                btnConfirm.disabled = true;
+                btnConfirm.style.opacity = '0.5';
+                btnConfirm.style.cursor = 'not-allowed';
+            }
+
+            document.getElementById('buyModal').classList.add('active');
+            document.getElementById('buyModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('buyModal').classList.remove('active');
+            document.getElementById('buyModal').style.display = 'none';
+            selectedMine = null;
+        }
+
+        async function confirmBuy() {
+            if (!selectedMine) return;
+            
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) return;
+
+            const btn = document.getElementById('btnConfirmBuy');
+            btn.disabled = true;
+            btn.innerText = 'İşleniyor...';
+
+            try {
+                const res = await fetch('/api/mines/buy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: user.id,
+                        mineType: selectedMine.id
+                    })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    const boughtMineName = selectedMine.name; // İsim kaybolmadan al
+                    closeModal(); // Close buy modal (sets selectedMine to null)
+                    
+                    // Show success modal
+                    document.getElementById('successMsg').innerHTML = `
+                        <strong>${boughtMineName}</strong> işletmesi satın alındı.<br>
+                        "Madenlerim" sekmesinden yönetebilirsin.
+                    `;
+                    document.getElementById('successModal').classList.add('active');
+                    document.getElementById('successModal').style.display = 'flex';
+
+                    // Refresh safely
+                    try {
+                        await loadMines();
+                        // If My Mines tab is active, refresh it too
+                        if (document.getElementById('tab-my-mines').style.display !== 'none') {
+                            loadMyMines();
+                        }
+                        if(window.updateHeader) window.updateHeader();
+                    } catch (refreshErr) {
+                        console.error('Refresh error:', refreshErr);
+                    }
+                } else {
+                    toastr.error(data.message);
+                }
+            } catch (error) {
+                console.error(error);
+                toastr.error('Satın alma hatası.');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'SATIN AL';
+            }
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('successModal').classList.remove('active');
+            document.getElementById('successModal').style.display = 'none';
+        }
+
+        // Tab Değiştirme
+        function switchTab(tabName) {
+            // Update Buttons
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('active');
+                if (tabName === 'categories' && b.innerText.includes('KATEGORİ')) b.classList.add('active');
+                if (tabName === 'my-mines' && b.innerText.includes('MADENLERİM')) b.classList.add('active');
+            });
+
+            document.getElementById('tab-categories').style.display = 'none';
+            document.getElementById('tab-my-mines').style.display = 'none';
+
+            document.getElementById(`tab-${tabName}`).style.display = 'block';
+
+            if (tabName === 'my-mines') {
+                loadMyMines();
+            }
+        }
+
+        async function loadMyMines() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) return;
+
+            const container = document.getElementById('myMinesList');
+            container.innerHTML = '<div style="text-align:center; padding:20px;">Yükleniyor...</div>';
+
+            try {
+                // We already have userMines from loadMines() if it was called.
+                // But to be safe, let's use what we have or fetch if empty (though loadMines is called on load)
+                
+                // In farm-category.html, "My Farms" lists ALL types and shows status.
+                // Let's do the same here.
+                
+                container.innerHTML = '';
+                const list = document.createElement('div');
+                list.className = 'mine-list-view';
+
+                mineTypes.forEach(mine => {
+                    const owned = userMines.find(um => um.mine_type === mine.id);
+                    
+                    const card = document.createElement('div');
+                    card.className = `mine-list-card ${mine.color}`;
+                    
+                    // Sahiplik durumuna göre sol kenarlık rengi
+                    if (owned) {
+                        card.style.borderLeft = '5px solid var(--accent-green)';
+                    } else {
+                        card.style.borderLeft = '5px solid var(--accent-red)';
+                    }
+
+                    let iconHtml = '';
+                    if (mine.img) {
+                        iconHtml = `<img src="${mine.img}" alt="${mine.name}" style="width: 30px; height: 30px; object-fit: contain;">`;
+                    } else {
+                        iconHtml = `<i class="fas ${mine.icon}"></i>`;
+                    }
+
+                    card.innerHTML = `
+                        <div class="m-icon-circle">${iconHtml}</div>
+                        <div class="m-info">
+                            <div class="m-name">${mine.name}</div>
+                            <div class="m-desc">
+                                ${owned ? 'Yönetim ve üretim paneli' : 'Satın alıp üretim yapabilirsin'}
+                            </div>
+                        </div>
+                        <div style="margin-left:auto; color: #fff; padding-right: 5px; font-size: 1.2rem;">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    `;
+
+                    // Button yerine karta tıklama olayı
+                    card.style.cursor = 'pointer';
+                    card.onclick = () => {
+                        if (owned) {
+                            location.href = `mine-management.html?id=${owned.id}`;
+                        } else {
+                            openBuyModal(mine.id);
+                        }
+                    };
+
+                    list.appendChild(card);
+                });
+                container.appendChild(list);
+
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = '<div style="text-align:center; color:red;">Hata oluştu.</div>';
+            }
+        }
+
+        // Load on start
+        window.addEventListener('load', () => {
+            loadMines();
+        });
+    </script>
+    <script src="js/loader-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+    <script src="js/header-manager.js"></script>
+</body>
+</html>

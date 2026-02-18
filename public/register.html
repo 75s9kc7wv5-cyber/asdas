@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>World of Sim - Kayıt Ol</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #161616;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-red: #e74c3c;
+            --text-white: #ffffff;
+            --text-gray: #a0a0a0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+            background-image: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 400px;
+            background-color: rgba(22, 22, 22, 0.95);
+            padding: 40px;
+            border-radius: 10px;
+            border: 1px solid #333;
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.1);
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            color: var(--text-white);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .logo span { color: var(--accent-cyan); }
+
+        .form-group {
+            margin-bottom: 12px;
+            text-align: left;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--text-gray);
+            font-size: 0.9rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 5px;
+            color: #fff;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+        }
+
+        .phone-group {
+            display: flex;
+            gap: 10px;
+        }
+        .phone-group select {
+            width: 120px;
+            padding: 12px;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 5px;
+            color: #fff;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem;
+        }
+        .phone-group input {
+            flex: 1;
+        }
+        
+        .hint-text {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .btn-auth {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent-green);
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-auth:hover {
+            background: #27ae60;
+            transform: translateY(-2px);
+        }
+
+        .auth-footer {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: var(--text-gray);
+        }
+
+        .auth-link {
+            color: var(--accent-cyan);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .auth-link:hover { text-decoration: underline; }
+
+        .error-msg {
+            color: var(--accent-red);
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .success-msg {
+            color: var(--accent-green);
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .kvkk-link {
+            display: inline-block;
+            margin-top: 15px;
+            color: var(--accent-cyan);
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: #161616;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            border-radius: 10px;
+            border: 1px solid var(--accent-cyan);
+            padding: 30px;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #888;
+        }
+        .modal-close:hover { color: #fff; }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .modal-text {
+            color: #ccc;
+            line-height: 1.6;
+            font-size: 0.9rem;
+        }
+
+        .modal-text h3 {
+            color: var(--accent-cyan);
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        /* Cookie Banner */
+        .cookie-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(13, 13, 13, 0.98);
+            border-top: 2px solid var(--accent-cyan);
+            padding: 20px;
+            z-index: 10000;
+            display: none;
+        }
+
+        .cookie-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .cookie-text {
+            flex: 1;
+            color: #ccc;
+            font-size: 0.9rem;
+        }
+
+        .cookie-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-cookie {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-accept {
+            background: var(--accent-green);
+            color: #000;
+        }
+
+        .btn-reject {
+            background: #333;
+            color: #fff;
+        }
+
+        .btn-cookie:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        <div class="logo">World of <span>Sim</span></div>
+        
+        <div class="error-msg" id="errorMsg">Kayıt başarısız!</div>
+        <div class="success-msg" id="successMsg">Kayıt başarılı! Yönlendiriliyorsunuz...</div>
+
+        <form id="registerForm" onsubmit="handleRegister(event)">
+            <div class="form-group">
+                <label class="form-label">Kullanıcı Adı</label>
+                <input type="text" class="form-input" id="username" required minlength="3" maxlength="20">
+                <div class="hint-text">3-20 karakter arasında olmalı</div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">E-posta</label>
+                <input type="email" class="form-input" id="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Telefon Numarası</label>
+                <div class="phone-group">
+                    <select id="countryCode" class="form-input">
+                        <option value="+90">+90 (TR)</option>
+                        <option value="+1">+1 (US)</option>
+                        <option value="+44">+44 (UK)</option>
+                        <option value="+49">+49 (DE)</option>
+                        <option value="+33">+33 (FR)</option>
+                        <option value="+39">+39 (IT)</option>
+                        <option value="+34">+34 (ES)</option>
+                        <option value="+7">+7 (RU)</option>
+                        <option value="+86">+86 (CN)</option>
+                        <option value="+91">+91 (IN)</option>
+                        <option value="+81">+81 (JP)</option>
+                        <option value="+82">+82 (KR)</option>
+                        <option value="+55">+55 (BR)</option>
+                        <option value="+52">+52 (MX)</option>
+                        <option value="+61">+61 (AU)</option>
+                        <option value="+971">+971 (AE)</option>
+                        <option value="+966">+966 (SA)</option>
+                    </select>
+                    <input type="tel" class="form-input" id="phone" required placeholder="5xx xxx xx xx">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Şifre</label>
+                <input type="password" class="form-input" id="password" required minlength="6">
+                <div class="hint-text">En az 6 karakter, 1 büyük ve 1 küçük harf içermeli</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Referans Kimliği (İsteğe Bağlı)</label>
+                <input type="number" class="form-input" id="referralCode" placeholder="Örn: 10523">
+            </div>
+
+            <button type="submit" class="btn-auth">KAYIT OL</button>
+        </form>
+
+        <div class="kvkk-link" onclick="openKVKKModal()">KVKK Aydınlatma Metni</div>
+
+        <div class="auth-footer">
+            Zaten hesabın var mı? <a href="login.html" class="auth-link">Giriş Yap</a>
+        </div>
+    </div>
+
+    <!-- KVKK Modal -->
+    <div class="modal-overlay" id="kvkkModal">
+        <div class="modal-content">
+            <i class="fas fa-times modal-close" onclick="closeKVKKModal()"></i>
+            <div class="modal-title">KİŞİSEL VERİLERİN KORUNMASI AYDINLATMA METNİ</div>
+            <div class="modal-text">
+                <h3>1. Veri Sorumlusu</h3>
+                <p>World of Sim olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca veri sorumlusu sıfatıyla, kişisel verilerinizi aşağıda açıklanan kapsamda işlemekteyiz.</p>
+                
+                <h3>2. İşlenen Kişisel Veriler</h3>
+                <p>Kayıt işlemi sırasında toplanan veriler:</p>
+                <ul>
+                    <li>Kullanıcı adı</li>
+                    <li>E-posta adresi</li>
+                    <li>Telefon numarası</li>
+                    <li>IP adresi</li>
+                    <li>Kayıt tarihi</li>
+                </ul>
+                
+                <h3>3. Kişisel Verilerin İşlenme Amacı</h3>
+                <p>Kişisel verileriniz aşağıdaki amaçlarla işlenmektedir:</p>
+                <ul>
+                    <li>Oyun hesabınızın oluşturulması ve yönetimi</li>
+                    <li>Kimlik doğrulama işlemleri</li>
+                    <li>İletişim faaliyetleri</li>
+                    <li>Güvenlik ve dolandırıcılık önleme</li>
+                    <li>Yasal yükümlülüklerin yerine getirilmesi</li>
+                </ul>
+                
+                <h3>4. Kişisel Verilerin Aktarımı</h3>
+                <p>Kişisel verileriniz, yukarıda belirtilen amaçların gerçekleştirilmesi doğrultusunda iş ortaklarımıza ve yasal zorunluluklar çerçevesinde yetkili kamu kurum ve kuruluşlarına aktarılabilir.</p>
+                
+                <h3>5. Kişisel Veri Toplamanın Yöntemi ve Hukuki Sebebi</h3>
+                <p>Kişisel verileriniz, elektronik ortamda kayıt formları aracılığıyla toplanmaktadır. Hukuki sebebi, hizmet sunumu için sözleşmenin kurulması ve ifası ile yasal yükümlülüklerin yerine getirilmesidir.</p>
+                
+                <h3>6. Kişisel Veri Sahibinin Hakları</h3>
+                <p>KVKK'nın 11. maddesi uyarınca, aşağıdaki haklara sahipsiniz:</p>
+                <ul>
+                    <li>Kişisel verilerinizin işlenip işlenmediğini öğrenme</li>
+                    <li>İşlenmişse buna ilişkin bilgi talep etme</li>
+                    <li>İşlenme amacını ve amacına uygun kullanılıp kullanılmadığını öğrenme</li>
+                    <li>Yurt içinde/yurt dışında aktarıldığı 3. kişileri bilme</li>
+                    <li>Eksik veya yanlış işlenmişse düzeltilmesini isteme</li>
+                    <li>KVKK'da öngörülen şartlar çerçevesinde silinmesini isteme</li>
+                    <li>Aktarıldığı 3. kişilere yukarıdaki değişikliklerin bildirilmesini isteme</li>
+                    <li>Münhasıran otomatik sistemler ile analiz edilmesi nedeniyle aleyhinize sonuç doğmasına itiraz etme</li>
+                    <li>Kanuna aykırı işlenmesi sebebiyle zarara uğramanız halinde zararın giderilmesini talep etme</li>
+                </ul>
+                
+                <p style="margin-top: 20px;">Bu haklarınızı kullanmak için bizimle iletişime geçebilirsiniz.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Modal -->
+    <div class="modal-overlay" id="notificationModal" style="z-index: 10001;">
+        <div class="modal-content" style="max-width: 400px; text-align: center; border-top: 3px solid var(--accent-cyan);">
+            <i class="fas" id="notifIcon" style="font-size: 3rem; margin-bottom: 20px;"></i>
+            <h3 class="modal-title" id="notifTitle" style="margin-bottom: 10px;">BAŞLIK</h3>
+            <p class="modal-text" id="notifMessage" style="text-align: center; margin-bottom: 25px; font-size: 1rem;">Mesaj içeriği</p>
+            <button class="btn-auth" id="notifBtn" onclick="closeNotificationModal()">TAMAM</button>
+        </div>
+    </div>
+
+    <!-- Cookie Banner -->
+    <div class="cookie-banner" id="cookieBanner">
+        <div class="cookie-content">
+            <div class="cookie-text">
+                <strong>🍪 Çerez Politikası</strong><br>
+                Web sitemizde deneyiminizi geliştirmek için çerezler kullanıyoruz. Çerezleri kabul ederek sitemizin daha iyi çalışmasına yardımcı olursunuz.
+            </div>
+            <div class="cookie-buttons">
+                <button class="btn-cookie btn-reject" onclick="rejectCookies()">Reddet</button>
+                <button class="btn-cookie btn-accept" onclick="acceptCookies()">Kabul Et</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sayfa yüklendiğinde çerez bannerını kontrol et
+        window.addEventListener('load', () => {
+            const cookieConsent = localStorage.getItem('cookieConsent');
+            if (!cookieConsent) {
+                document.getElementById('cookieBanner').style.display = 'block';
+            }
+        });
+
+        function openKVKKModal() {
+            document.getElementById('kvkkModal').style.display = 'flex';
+        }
+
+        function closeKVKKModal() {
+            document.getElementById('kvkkModal').style.display = 'none';
+        }
+
+        async function acceptCookies() {
+            localStorage.setItem('cookieConsent', 'accepted');
+            document.getElementById('cookieBanner').style.display = 'none';
+            
+            // Sunucuya çerez onayını gönder
+            try {
+                await fetch('/api/cookie-consent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        consent: true,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+            } catch (err) {
+                console.error('Cookie consent error:', err);
+            }
+        }
+
+        function rejectCookies() {
+            localStorage.setItem('cookieConsent', 'rejected');
+            document.getElementById('cookieBanner').style.display = 'none';
+        }
+
+        let isSuccess = false;
+
+        function showNotification(type, title, message) {
+            const modal = document.getElementById('notificationModal');
+            const icon = document.getElementById('notifIcon');
+            const titleEl = document.getElementById('notifTitle');
+            const msgEl = document.getElementById('notifMessage');
+            const btn = document.getElementById('notifBtn');
+            const content = modal.querySelector('.modal-content');
+
+            modal.style.display = 'flex';
+            titleEl.innerText = title;
+            msgEl.innerText = message;
+            
+            if (type === 'success') {
+                isSuccess = true;
+                icon.className = 'fas fa-check-circle';
+                icon.style.color = 'var(--accent-green)';
+                titleEl.style.color = 'var(--accent-green)';
+                content.style.borderColor = 'var(--accent-green)';
+                btn.style.background = 'var(--accent-green)';
+                btn.innerText = "GİRİŞE YÖNLENDİR";
+                
+                // Otomatik yönlendirme (2 saniye sonra)
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+            } else {
+                isSuccess = false;
+                icon.className = 'fas fa-times-circle';
+                icon.style.color = 'var(--accent-red)';
+                titleEl.style.color = 'var(--accent-red)';
+                content.style.borderColor = 'var(--accent-red)';
+                btn.style.background = 'var(--accent-red)';
+                btn.innerText = "TAMAM";
+            }
+        }
+
+        function closeNotificationModal() {
+            document.getElementById('notificationModal').style.display = 'none';
+            if(isSuccess) {
+                window.location.href = 'login.html';
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const countryCode = document.getElementById('countryCode').value;
+            const phone = document.getElementById('phone').value.trim();
+            const password = document.getElementById('password').value;
+            const referralCode = document.getElementById('referralCode').value.trim();
+            const errorMsg = document.getElementById('errorMsg');
+            const successMsg = document.getElementById('successMsg');
+
+            // Validasyonlar
+            if (username.length < 3 || username.length > 20) {
+                showNotification('error', 'Hata', 'Kullanıcı adı 3-20 karakter arasında olmalı!');
+                return;
+            }
+
+            if (password.length < 6) {
+                showNotification('error', 'Hata', 'Şifre en az 6 karakter olmalı!');
+                return;
+            }
+
+            // Şifrede büyük ve küçük harf kontrolü
+            const hasUpperCase = /[A-Z]/.test(password);
+            const hasLowerCase = /[a-z]/.test(password);
+            if (!hasUpperCase || !hasLowerCase) {
+                showNotification('error', 'Hata', 'Şifre en az 1 büyük ve 1 küçük harf içermeli!');
+                return;
+            }
+
+            // Telefon format kontrolü (sadece rakam)
+            if (!/^\d+$/.test(phone)) {
+                showNotification('error', 'Hata', 'Telefon numarası sadece rakamlardan oluşmalı!');
+                return;
+            }
+
+            const fullPhone = countryCode + phone;
+
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        username, 
+                        email,
+                        phone: fullPhone,
+                        password,
+                        referralCode
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showNotification('success', 'Kayıt Başarılı!', 'Hesabınız başarıyla oluşturuldu. Giriş sayfasına yönlendiriliyorsunuz.');
+                } else {
+                    showNotification('error', 'Kayıt Başarısız', data.message || 'Bir hata oluştu.');
+                }
+            } catch (err) {
+                console.error(err);
+                showNotification('error', 'Sunucu Hatası', 'Sunucu ile bağlantı kurulamadı.');
+            }
+        }
+    </script>
+    <script src="js/loader-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+</body>
+</html>

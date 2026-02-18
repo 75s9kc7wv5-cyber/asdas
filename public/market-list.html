@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Sim of World - Pazar Listesi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="js/loader-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+    
+    <style>
+        :root {
+            --bg-main: #0a0a0a;
+            --bg-card: #141414;
+            --bg-input: #1a1a1a;
+            --accent: #ffd700;
+            --text-primary: #ffffff;
+            --text-secondary: #888888;
+            --border-subtle: #222222;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-main);
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        .game-container {
+            width: 100%; max-width: 450px; background-color: var(--bg-main);
+            height: 100vh; display: flex; flex-direction: column; position: relative;
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.05);
+            border-left: 1px solid #111; border-right: 1px solid #111;
+        }
+
+        main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
+        }
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        .back-btn:hover {
+            background: #2a2a2a;
+            border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+        }
+        .page-header-content {
+            flex: 1;
+            text-align: left;
+        }
+        .header-title-text { 
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #fff;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .header-subtitle-text {
+            font-size: 0.85rem;
+            color: #999;
+            font-weight: 500;
+        }
+
+        /* PRODUCT LIST */
+        .product-list { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 10px; 
+            animation: fadeInUp 0.5s;
+        }
+
+        .product-card {
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 10px 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            text-align: center;
+            position: relative;
+            height: auto;
+            min-height: 100px;
+            overflow: hidden;
+            border-top: 2px solid var(--accent);
+        }
+        .product-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            border-color: #fff;
+        }
+
+        .pc-icon-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            transition: 0.3s;
+        }
+
+        .pc-icon { 
+            width: 24px; 
+            height: 24px; 
+            object-fit: contain; 
+            filter: drop-shadow(0 0 3px rgba(0,0,0,0.5));
+            transition: 0.3s; 
+            background: transparent; 
+            padding: 0; 
+            border-radius: 0; 
+        }
+        .product-card:hover .pc-icon { transform: scale(1.1); filter: drop-shadow(0 0 5px var(--accent)); }
+
+        .pc-name { 
+            font-size: 0.85rem; 
+            font-weight: 700; 
+            line-height: 1.2; 
+            margin-bottom: 0;
+            color: #fff;
+            text-transform: uppercase;
+        }
+
+        .count-badge { 
+            background: #222; 
+            padding: 2px 6px; 
+            border-radius: 4px; 
+            border: 1px solid #444; 
+            display: inline-block; 
+            margin-top: 2px; 
+            font-size: 0.7rem; 
+            color: #fff;
+        }
+        
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="header-container"></div>
+
+        <main>
+            <div class="page-header">
+                <button class="back-btn" onclick="window.location.href='market-category.html'">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="page-header-content">
+                    <div class="header-title-text" id="categoryTitle">
+                        ÜRÜNLER
+                    </div>
+                    <div class="header-subtitle-text">Pazar yeri ve ticaret</div>
+                </div>
+            </div>
+
+            <div class="product-list" id="productList">
+                <!-- JS ile doldurulacak -->
+            </div>
+        </main>
+
+        <div id="menu-container"></div>
+    </div>
+
+    <script src="js/header-manager.js"></script>
+    <script src="js/menu-manager.js"></script>
+    <script>
+        const itemDatabase = {
+            'resource': [
+                { id: 'iron', name: 'Demir', icon: 'icons/mine-icon/iron.png', desc: 'Sanayi hammaddesi' },
+                { id: 'copper', name: 'Bakır', icon: 'icons/mine-icon/copper.png', desc: 'Elektronik bileşeni' },
+                { id: 'stone', name: 'Taş', icon: 'icons/mine-icon/stone.png', desc: 'İnşaat malzemesi' },
+                { id: 'wood', name: 'Odun', icon: 'icons/mine-icon/wood.png', desc: 'Temel yapı malzemesi' },
+                { id: 'sand', name: 'Kum', icon: 'icons/mine-icon/sand.png', desc: 'Cam yapımında kullanılır' },
+                { id: 'coal', name: 'Kömür', icon: 'icons/mine-icon/coal.png', desc: 'Enerji kaynağı' },
+                { id: 'oil', name: 'Petrol', icon: 'icons/mine-icon/oil-barrel.png', desc: 'Sıvı altın' },
+                { id: 'uranium', name: 'Uranyum', icon: 'icons/mine-icon/uranium.png', desc: 'Nükleer yakıt' },
+                { id: 'gold_nugget', name: 'Altın Parçası', icon: 'icons/mine-icon/gold-nugget.png', desc: 'Değerli maden' }
+            ],
+            'food': [
+                { id: 'steak', name: 'Et', icon: 'icons/food-factory/steak-food.png', desc: 'Yüksek protein' },
+                { id: 'salad', name: 'Salata', icon: 'icons/food-factory/salad.png', desc: 'Sağlıklı öğün' },
+                { id: 'rice', name: 'Pirinç', icon: 'icons/food-factory/rice.png', desc: 'Temel gıda' },
+                { id: 'canned_fruit', name: 'Konserve', icon: 'icons/food-factory/fruit-canned.png', desc: 'Uzun ömürlü' },
+                { id: 'beef', name: 'Sığır Eti', icon: 'icons/ranch-icon/beef.png', desc: 'Çiftlik ürünü' },
+                { id: 'honey', name: 'Bal', icon: 'icons/ranch-icon/honey.png', desc: 'Doğal tatlandırıcı' },
+                { id: 'egg', name: 'Yumurta', icon: 'icons/ranch-icon/egg.png', desc: 'Kahvaltılık' }
+            ],
+            'energy': [
+                { id: 'electricity', name: 'Elektrik', icon: 'icons/energy-factory-icon/battery.png', desc: 'Enerji depolama' },
+                { id: 'fossil_fuel', name: 'Fosil Yakıt', icon: 'icons/energy-factory-icon/fossil-fuel.png', desc: 'Geleneksel yakıt' }
+            ],
+            'industry': [
+                { id: 'cement', name: 'Çimento', icon: 'icons/factory-icon/cement.png', desc: 'Yapı harcı' },
+                { id: 'brick', name: 'Tuğla', icon: 'icons/factory-icon/brick.png', desc: 'Duvar malzemesi' },
+                { id: 'steel', name: 'Çelik', icon: 'icons/factory-icon/steel.png', desc: 'Güçlendirilmiş metal' },
+                { id: 'glass', name: 'Cam', icon: 'icons/factory-icon/window.png', desc: 'Şeffaf yapı' },
+                { id: 'lumber', name: 'Kereste', icon: 'icons/factory-icon/wood-plank.png', desc: 'İşlenmiş odun' },
+                { id: 'copper_cable', name: 'Bakır Kablo', icon: 'icons/factory-icon/copper-cable.png', desc: 'Elektrik iletimi' },
+                { id: 'gold_cable', name: 'Altın Kablo', icon: 'icons/factory-icon/gold-cable.png', desc: 'Hızlı veri iletimi' }
+            ],
+            'luxury': [
+                { id: 'gold', name: 'Altın', icon: 'icons/inventory-icon/gold.png', desc: 'Yatırım aracı' },
+                { id: 'diamond', name: 'Elmas', icon: 'icons/inventory-icon/diamond.png', desc: 'En değerli taş' }
+            ],
+            'weapon': [
+                 { id: 'weapon_basic', name: 'Mühimmat', icon: 'icons/mine-icon/uranium.png', desc: 'Askeri malzeme' }
+            ]
+        };
+
+        const categoryNames = {
+            'resource': 'HAMMADDE PAZARI',
+            'food': 'GIDA PAZARI',
+            'energy': 'ENERJİ PAZARI',
+            'industry': 'SANAYİ PAZARI',
+            'luxury': 'LÜKS PAZARI',
+            'weapon': 'SİLAH PAZARI',
+            'all': 'TÜM ÜRÜNLER'
+        };
+
+        window.onload = async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const category = urlParams.get('cat') || 'all';
+            
+            document.getElementById('categoryTitle').innerText = categoryNames[category] || 'PAZAR';
+
+            let stats = {};
+            try {
+                const res = await fetch('/api/market/stats');
+                if (res.ok) stats = await res.json();
+            } catch (e) {
+                console.error("Pazar istatistikleri alınamadı:", e);
+            }
+
+            renderProducts(category, stats);
+        };
+
+        function renderProducts(category, stats = {}) {
+            const container = document.getElementById('productList');
+            container.innerHTML = '';
+
+            let products = [];
+            if (category === 'all') {
+                Object.values(itemDatabase).forEach(list => products.push(...list));
+            } else {
+                products = itemDatabase[category] || [];
+            }
+
+            if (products.length === 0) {
+                container.innerHTML = '<div style="text-align:center; color:#666; margin-top:20px;">Bu kategoride ürün bulunamadı.</div>';
+                return;
+            }
+
+            products.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'product-card';
+                div.onclick = () => window.location.href = `market-detail.html?id=${p.id}`;
+                
+                // Get real listing count
+                const count = stats[p.id] || 0;
+
+                div.innerHTML = `
+                    <div class="pc-icon-circle">
+                        <img src="${p.icon}" class="pc-icon" alt="${p.name}">
+                    </div>
+                    <span class="pc-name">${p.name}</span>
+                    <span class="count-badge">${count} İlan</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>

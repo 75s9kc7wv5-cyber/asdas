@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Sim of World - Envanter</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/global-menu.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #161616;
+            --bg-lighter: #222;
+            --accent-cyan: #00e5ff;
+            --accent-green: #2ecc71;
+            --accent-gold: #ffd700;
+            --accent-red: #e74c3c;
+            --accent-purple: #9b59b6;
+            --text-white: #ffffff;
+            --text-muted: #a0a0a0;
+            --border-color: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+            overflow: hidden;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('img/world-map.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* MAIN CONTENT */
+        main {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 160px; /* Bottom nav boşluğu */
+        }
+
+        /* PROFİL KARTI (Yeni Tasarım - Üst Kısım) */
+        .profile-card {
+            background: var(--bg-card);
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .profile-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+        .profile-info { display: flex; align-items: center; gap: 10px; }
+        .profile-img { width: 50px; height: 50px; border-radius: 8px; border: 2px solid var(--accent-cyan); background: #333; /* Placeholder */ }
+        .profile-details h3 { font-size: 1.1rem; margin-bottom: 2px; }
+        .profile-details p { font-size: 0.85rem; color: var(--accent-cyan); }
+        .notif-btn { position: relative; font-size: 1.4rem; color: var(--text-muted); cursor: pointer; }
+        .notif-badge { position: absolute; top: -5px; right: -5px; background: var(--accent-red); color: #fff; font-size: 0.7rem; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid var(--bg-card); }
+
+        .currency-bar { display: flex; gap: 10px; }
+        .curr-item { flex: 1; background: var(--bg-lighter); padding: 8px; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 0.85rem; font-weight: bold; border: 1px solid var(--border-color); }
+        .c-gold { color: var(--accent-gold); }
+        .c-cyan { color: var(--accent-cyan); }
+        
+        /* Geri Dön Butonu */
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-cyan);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        .back-btn:hover {
+            background: #2a2a2a;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+        }
+
+        /* Override Body Padding for this page to remove gap */
+        body { padding-top: 0 !important; }
+
+        .header-badge {
+            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(20,20,20,0.95) 100%);
+            padding: 20px;
+            border-radius: 0 0 20px 20px;
+            margin: 0 0 25px 0;
+            border-top: 3px solid var(--accent-gold);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+        }
+        .header-badge::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: radial-gradient(circle, var(--accent-gold) 0%, transparent 100%);
+            opacity: 0.7;
+        }
+        .header-badge h1 {
+            font-size: 1.8rem;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .header-badge h1 i { color: var(--accent-gold); }
+        .header-badge p {
+            font-size: 0.9rem;
+            color: #aaa;
+            font-weight: 500;
+        }
+
+        /* SEKMELER (TABS) */
+        .tabs-container {
+            display: flex; 
+            gap: 10px; 
+            margin: 0 15px 15px 15px; 
+            background: #111; 
+            padding: 5px; 
+            border-radius: 8px; 
+            border: 1px solid #333;
+        }
+        .tab-btn {
+            flex: 1; 
+            padding: 10px; 
+            border: none; 
+            background: transparent; 
+            color: #777; 
+            font-family: 'Rajdhani'; 
+            font-weight: bold; 
+            cursor: pointer; 
+            border-radius: 6px; 
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+        .tab-btn i { font-size: 1rem; }
+        .tab-btn.active { 
+            background: #222; 
+            color: var(--accent-cyan); 
+            border: 1px solid var(--accent-cyan); 
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2); 
+        }
+
+        /* ENVANTER GRID LİSTESİ */
+        .inventory-list {
+            padding: 15px;
+            padding-bottom: 100px; /* Extra space for bottom menu */
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 3 Sütun */
+            gap: 10px;
+        }
+
+        .inv-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-top: 3px solid var(--accent-gold);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .inv-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 4px 15px rgba(0, 229, 255, 0.1);
+        }
+        /* Hafif parlama efekti */
+        .inv-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
+            background: var(--accent-cyan); opacity: 0; transition: opacity 0.2s;
+        }
+        .inv-card:hover::before { opacity: 1; }
+
+        /* İkon Kutusu Güncelleme */
+        .inv-icon-box {
+            width: 50px; height: 50px;
+            background: var(--bg-lighter);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid var(--border-color);
+            flex-shrink: 0;
+            padding: 5px;
+        }
+        .inv-icon-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
+        }
+        .inv-icon-box i {
+            font-size: 1.5rem;
+        }
+        .inv-info h4 { font-size: 0.95rem; margin-bottom: 3px; }
+        .inv-info p { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
+
+        /* İkon Renkleri (FontAwesome için) */
+        .ic-wood { color: #d35400; }
+        .ic-stone { color: #95a5a6; }
+        .ic-iron { color: #bdc3c7; }
+        .ic-coal { color: #2c3e50; }
+        .ic-oil { color: #f39c12; }
+        .ic-diamond { color: #3498db; }
+        .ic-gold { color: var(--accent-gold); }
+        .ic-copper { color: #e67e22; }
+        .ic-uranium { color: #27ae60; }
+        .ic-sand { color: #e1c699; }
+
+        /* MODAL */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; display: none; justify-content: center; align-items: center; animation: fadeIn 0.3s; }
+        .modal-content { background: #181818; width: 85%; max-width: 350px; padding: 25px; border-radius: 12px; border: 1px solid #444; text-align: center; border-top: 3px solid var(--accent-cyan); position: relative; }
+        .m-close { position: absolute; top: 10px; right: 15px; color: #666; font-size: 1.2rem; cursor: pointer; }
+        .m-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 15px; color: #fff; }
+        .m-desc { color: #aaa; font-size: 0.9rem; margin-bottom: 20px; }
+        .m-energy-val { font-size: 1.5rem; font-weight: 800; color: var(--accent-green); margin: 10px 0; }
+        .m-btns { display: flex; gap: 10px; }
+        .m-btn { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 0.9rem; }
+        .btn-confirm { background: var(--accent-green); color: #fff; }
+        .btn-cancel { background: #333; color: #fff; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Header removed, injected by header-manager.js -->
+        
+        <div style="display: flex; align-items: center; gap: 15px; padding: 20px 20px 0 20px; margin-bottom: 20px;">
+            <button class="back-btn" onclick="window.history.back()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div>
+                <h1 style="font-size: 1.5rem; font-weight: bold; margin: 0; line-height: 1.2;">ENVANTER</h1>
+                <p style="font-size: 0.9rem; color: #888; margin: 0;">Varlık ve kaynak yönetimi</p>
+            </div>
+        </div>
+
+        <div class="tabs-container">
+            <button class="tab-btn active" onclick="switchTab('kaynaklar', this)">
+                <i class="fas fa-cubes"></i> KAYNAKLAR
+            </button>
+            <button class="tab-btn" onclick="switchTab('gidalar', this)">
+                <i class="fas fa-utensils"></i> GIDALAR
+            </button>
+            <button class="tab-btn" onclick="switchTab('diger', this)">
+                <i class="fas fa-box-open"></i> DİĞER
+            </button>
+        </div>
+
+        <main>
+            <!-- Profile Card Removed -->
+
+            <div class="inventory-list" id="inventoryList">
+            </div>
+        </main>
+
+        <!-- FOOD MODAL -->
+        <div class="modal-overlay" id="foodModal">
+            <div class="modal-content">
+                <div class="m-close" onclick="closeFoodModal()"><i class="fas fa-times"></i></div>
+                <div id="foodModalContent">
+                    <!-- Dynamic Content -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+
+    <script>
+        toastr.options = { "positionClass": "toast-top-right", "timeOut": "3000" };
+
+        // Konfigürasyon - Veritabanından çekilecek
+        let itemConfig = {};
+        let currentInventory = {};
+
+        // Veritabanından item verilerini çek
+        async function loadItemsConfig() {
+            try {
+                const res = await fetch('/api/items');
+                const data = await res.json();
+                
+                if (data.success && data.items) {
+                    // Convert array to object format
+                    data.items.forEach(item => {
+                        itemConfig[item.item_key] = {
+                            name: item.name,
+                            image: item.image_path,
+                            icon: item.icon,
+                            color: item.icon_color,
+                            tab: item.category,
+                            energy: item.energy_value,
+                            isConsumable: item.is_consumable
+                        };
+                    });
+                    console.log('✅ Items loaded from database:', Object.keys(itemConfig).length);
+                } else {
+                    console.error('❌ Failed to load items from database');
+                }
+            } catch (error) {
+                console.error('❌ Error loading items:', error);
+            }
+        }
+
+        // Verileri Çek
+        async function fetchInventory() {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                // Parallel Fetch: Items + User Data (Balance, Gold, etc.)
+                const [invRes, userRes] = await Promise.all([
+                    fetch(`/api/inventory/${user.id}`),
+                    fetch(`/api/user/me?userId=${user.id}`)
+                ]);
+
+                const invData = await invRes.json();
+                const userDataWrapper = await userRes.json();
+                
+                // If user fetch successful, use that data
+                if (userDataWrapper.success && userDataWrapper.user) {
+                    const freshUser = userDataWrapper.user;
+                    
+// Override Inventory Data with User Attributes (currencies stored in users table)
+            invData['money'] = freshUser.money;
+            // invData['gold'] = freshUser.gold; // REMOVED: 'gold' is an inventory item, not a currency
+            invData['diamond'] = freshUser.diamond || freshUser.diamonds || 0;
+            invData['btc'] = freshUser.btc || 0;
+            // gold and gold_nugget are stored in inventory table, not in users table - don't override
+                    localStorage.setItem('simWorldUser', JSON.stringify(freshUser));
+                }
+
+                currentInventory = invData;
+                
+                // İlk açılışta aktif sekmeyi render et
+                const activeTab = document.querySelector('.tab-btn.active');
+                if (activeTab) {
+                    const tabName = activeTab.getAttribute('onclick').match(/'([^']+)'/)[1];
+                    renderItems(tabName);
+                }
+            } catch (error) {
+                console.error('Envanter yüklenemedi:', error);
+            }
+        }
+
+        // Sekme Değiştirme
+        function switchTab(tabName, element) {
+            // Aktif sınıfını güncelle
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+
+            // Listeyi render et
+            renderItems(tabName);
+        }
+
+        function formatNumber(num, key) {
+            if (key === 'btc') return parseFloat(num).toFixed(8) + ' BTC';
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + ' Adet';
+        }
+
+        // Listeyi Render Etme
+        function renderItems(tabName) {
+            const list = document.getElementById('inventoryList');
+            list.innerHTML = ''; // Temizle
+
+            let hasItems = false;
+
+            Object.keys(itemConfig).forEach(key => {
+                const config = itemConfig[key];
+                if (config.tab === tabName) {
+                    const qty = currentInventory[key] || 0;
+                    
+                    // Sadece elimizde olanları göster (0 dan büyükse) - İPTAL: Kullanıcı her şeyi görmek istiyor.
+                    // if (parseFloat(qty) <= 0) return;
+
+                    const card = document.createElement('div');
+                    card.className = 'inv-card';
+                    
+                    // Add click handler if it has energy
+                    if (config.energy) {
+                        card.onclick = () => openFoodModal(key);
+                    }
+
+                    let iconHtml = '';
+                    if (config.image) {
+                        iconHtml = `<img src="${config.image}" alt="${config.name}">`;
+                    } else {
+                        iconHtml = `<i class="fas ${config.icon} ${config.color}"></i>`;
+                    }
+
+                    let consumableBadge = '';
+                    if (config.energy) {
+                        consumableBadge = '<span style="font-size: 0.65rem; color: var(--accent-green); display: block; margin-top: 2px;">(Tüketilebilir)</span>';
+                    }
+
+                    card.innerHTML = `
+                        <div class="inv-icon-box">
+                            ${iconHtml}
+                        </div>
+                        <div class="inv-info">
+                            <h4>${config.name}</h4>
+                            <p>${formatNumber(qty, key)}</p>
+                            ${consumableBadge}
+                        </div>
+                    `;
+                    list.appendChild(card);
+                    hasItems = true;
+                }
+            });
+            
+            if (!hasItems) {
+                list.innerHTML = '<div style="grid-column: span 2; text-align: center; color: #666; padding: 20px;">Bu kategoride eşya yok.</div>';
+            }
+        }
+
+        // --- FOOD MODAL LOGIC ---
+        let selectedFoodKey = null;
+
+        function openFoodModal(key) {
+            const config = itemConfig[key];
+            if (!config || !config.energy) return;
+            
+            const qty = currentInventory[key] || 0;
+            if (qty <= 0) {
+                toastr.warning('Envanterinizde bu üründen yok.');
+                return;
+            }
+
+            selectedFoodKey = key;
+            const modal = document.getElementById('foodModal');
+            const content = document.getElementById('foodModalContent');
+            
+            let iconHtml = '';
+            if (config.image) {
+                iconHtml = `<img src="${config.image}" alt="${config.name}" style="width:60px; height:60px; margin-bottom:10px;">`;
+            } else {
+                iconHtml = `<i class="fas ${config.icon} ${config.color}" style="font-size:3rem; margin-bottom:10px;"></i>`;
+            }
+
+            content.innerHTML = `
+                ${iconHtml}
+                <h3 class="m-title">${config.name.toUpperCase()}</h3>
+                <p class="m-desc">Bu besini tüketerek enerji kazanabilirsiniz.</p>
+                <div class="m-energy-val">+${config.energy} ENERJİ</div>
+                <p style="color:#888; font-size:0.8rem; margin-bottom:15px;">Stok: ${qty}</p>
+                
+                <div class="m-btns">
+                    <button class="m-btn btn-cancel" onclick="closeFoodModal()">İPTAL</button>
+                    <button class="m-btn btn-confirm" onclick="consumeFood()">YE</button>
+                </div>
+            `;
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeFoodModal() {
+            document.getElementById('foodModal').style.display = 'none';
+            selectedFoodKey = null;
+        }
+
+        async function consumeFood() {
+            if (!selectedFoodKey) return;
+            
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) return;
+
+            try {
+                const res = await fetch('/api/user/consume', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, itemKey: selectedFoodKey })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    toastr.success(data.message);
+                    
+                    // Update Local Inventory
+                    if (currentInventory[selectedFoodKey]) {
+                        currentInventory[selectedFoodKey]--;
+                    }
+                    
+                    // Refresh Modal or Close if 0
+                    if (currentInventory[selectedFoodKey] > 0) {
+                        openFoodModal(selectedFoodKey); // Refresh UI (stock count)
+                    } else {
+                        closeFoodModal();
+                    }
+                    
+                    // Refresh List
+                    const activeTab = document.querySelector('.tab-btn.active');
+                    if (activeTab) {
+                        const tabName = activeTab.getAttribute('onclick').match(/'([^']+)'/)[1];
+                        renderItems(tabName);
+                    }
+
+                } else {
+                    toastr.error(data.message);
+                }
+            } catch (e) {
+                console.error(e);
+                toastr.error('Bir hata oluştu.');
+            }
+        }
+
+        // İlk açılışta kaynakları yükle
+        // İlk açılışta items config ve inventory'yi yükle
+        window.onload = async () => {
+            await loadItemsConfig(); // Önce ürün verilerini yükle
+            await fetchInventory();  // Sonra envanteri yükle
+        }
+    </script>
+    <script src="js/loader-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+    <script src="js/header-manager.js"></script>
+    <script src="js/menu-manager.js"></script>
+    <script>
+        // Tab Geçişleri
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tabName = this.getAttribute('onclick').match(/'([^']+)'/)[1];
+                switchTab(tabName, this);
+            });
+        });
+    </script>
+</body>
+</html>
