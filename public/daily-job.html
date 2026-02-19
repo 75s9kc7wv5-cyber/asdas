@@ -278,6 +278,7 @@
         @keyframes slideDown { from { opacity: 0; height: 0; margin: 0; } to { opacity: 1; height: auto; margin-bottom: 20px; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.4); } }
 
     </style>
 </head>
@@ -516,7 +517,8 @@
                 .then(data => {
                     if (data.success) {
                         user.completedJobs = data.completedJobs;
-                        user.cooldowns = data.cooldowns || []; 
+                        // cooldowns: [{ jobId, remainingSeconds }]
+                        user.cooldowns = data.cooldowns || [];
                         
                         if (data.activeJob) {
                             activeJob = {
@@ -582,50 +584,31 @@
                 const isActive = activeJob && activeJob.job_id === job.id;
                 const isWorkingOther = activeJob && activeJob.job_id !== job.id;
                 
-                // Cooldown Check
+                // Cooldown Check - server returns remainingSeconds directly
                 const cooldownObj = user.cooldowns ? user.cooldowns.find(c => c.jobId === job.id) : null;
-                const isCooldown = !!cooldownObj;
-                let remainingCooldown = 0;
-                
-                if (isCooldown) {
-                    const completedTime = new Date(cooldownObj.completedAt).getTime();
-                    const availableTime = completedTime + (24 * 60 * 60 * 1000);
-                    const now = new Date().getTime();
-                    remainingCooldown = Math.max(0, Math.floor((availableTime - now) / 1000));
-                }
-                
-                // Eğer cooldown bitmişse ancak status güncellenmemişse, isCooldown'u false yap (ancak refresh gerekebilir)
-                if (isCooldown && remainingCooldown <= 0) {
-                     // Aslında burada UI'da açık gösterip tıklayınca backend'in 'zamanı geldi' demesi daha doğru
-                     // Şimdilik client-side kilitli gösterimi kaldıralım eğer süre bittiyse:
-                     // (Backend zaten kontrol edecek)
-                }
+                const remainingCooldown = cooldownObj ? cooldownObj.remainingSeconds : 0;
+                const isCooldown = remainingCooldown > 0;
 
                 const reqEdu = job.reqEducation || 0;
                 const userEdu = user.education_skill || 0;
-                const isEduLocked = userEdu < reqEdu;
-                
-                const isLocked = isEduLocked;
+                const isEduInsufficient = userEdu < reqEdu;
 
                 // Color Selection
-                let jobColor = isActive ? '#e74c3c' : '#2ecc71';
-                if(isLocked) jobColor = '#555';
+                let jobColor = isActive ? '#00e5ff' : '#2ecc71';
                 if(isCooldown && remainingCooldown > 0) jobColor = '#888';
 
                 let cardStyle = `border-left: 4px solid ${jobColor};`;
+                if(isActive) cardStyle += ` box-shadow: 0 0 15px rgba(0,229,255,0.12); border-color: rgba(0,229,255,0.4);`;
                 let cardClass = "job-card";
                 let clickEvent = "";
 
-                if (isLocked) {
-                    cardClass += " locked";
-                    cardStyle = `border-left: 4px solid #444; border-color: #333;`; 
-                } else if (isActive) {
+                if (isActive) {
                     cardClass += " active-job-card";
                 } else if (isCooldown && remainingCooldown > 0) {
                     cardStyle += " cursor: not-allowed; opacity: 0.6; filter: grayscale(0.5); border-color: #333; pointer-events: none;";
                 }
 
-                if (!isLocked && !isActive && !isWorkingOther && (!isCooldown || remainingCooldown <= 0)) {
+                if (!isActive && !isWorkingOther && (!isCooldown || remainingCooldown <= 0)) {
                     cardStyle += " cursor: pointer;";
                     clickEvent = `onclick="openJobConfirmation(${job.id})"`;
                 } else if (isWorkingOther) {
@@ -635,12 +618,9 @@
                 // Badges Style (Black bg, White text)
                 const commonBadgeStyle = "background: #080808; color: #fff; font-size: 0.7rem; padding: 4px 8px; border-radius: 4px; display: flex; align-items: center; gap: 5px; border: 1px solid #222;";
 
-                let eduBadge = '';
-                if(reqEdu > 0) {
-                     const eduIconColor = userEdu >= reqEdu ? '#2ecc71' : '#e74c3c';
-                     const eduName = getEducationNameByReq(reqEdu);
-                     eduBadge = `<span style="${commonBadgeStyle}"><i class="fas fa-graduation-cap" style="color:${eduIconColor}"></i> ${eduName}</span>`;
-                }
+                const eduIconColor = isEduInsufficient ? '#e74c3c' : '#2ecc71';
+                const eduName = reqEdu > 0 ? getEducationNameByReq(reqEdu) : 'Eğitimsiz';
+                let eduBadge = `<span style="${commonBadgeStyle} border-color: ${isEduInsufficient ? 'rgba(231,76,60,0.4)' : '#333'};"><i class="fas fa-graduation-cap" style="color:${eduIconColor}"></i> ${eduName}</span>`;
 
                 let healthBadge = '';
                 if(job.costH > 0) {
@@ -694,13 +674,48 @@
                 }
                 
                 let descContent = job.description || "Günde bir kez bu işte çalışarak ek gelir elde et.";
-                if (isCooldown && remainingCooldown > 0) {
-                     const h = Math.floor(remainingCooldown / 3600);
-                     const m = Math.floor((remainingCooldown % 3600) / 60);
-                     const s = remainingCooldown % 60;
-                     const timeStr = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-                     
-                     descContent = `<span style="color:var(--accent-red); font-weight:bold;">YENİ GÖREV SÜRESİ: <span class="cooldown-timer" data-seconds="${remainingCooldown}" style="color:#fff;">${timeStr}</span></span>`;
+                if (isActive) {
+                    let initText = "00:00";
+                    if (activeJob && activeJob.remainingTime) {
+                        const r = activeJob.remainingTime;
+                        const mm = Math.floor(r / 60);
+                        const ss = Math.floor(r % 60);
+                        initText = `${mm<10?'0':''}${mm}:${ss<10?'0':''}${ss}`;
+                    }
+                    const elapsed = activeJob ? (activeJob.totalTime - activeJob.remainingTime) : 0;
+                    const pct = activeJob ? Math.max(0, Math.min(100, (elapsed / activeJob.totalTime) * 100)) : 0;
+                    descContent = `
+                        <div style="margin-top:6px; background:rgba(0,229,255,0.05); border:1px solid rgba(0,229,255,0.15); border-radius:8px; padding:8px 10px;">
+                            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--accent); box-shadow:0 0 6px var(--accent); animation: pulse-dot 1.2s ease-in-out infinite;"></span>
+                                    <span style="color:#888; font-size:0.7rem; font-weight:600; letter-spacing:0.5px; text-transform:uppercase;">Çalışılıyor</span>
+                                </div>
+                                <span style="color:var(--accent); font-weight:800; font-size:1.05rem; font-family:monospace; letter-spacing:3px; text-shadow:0 0 12px rgba(0,229,255,0.5);" id="jobTimer-${job.id}">${initText}</span>
+                            </div>
+                            <div style="width:100%; height:5px; background:rgba(255,255,255,0.07); border-radius:10px; overflow:hidden;">
+                                <div id="jobProgress-${job.id}" style="height:100%; width:${pct}%; background:linear-gradient(90deg, rgba(0,229,255,0.6), #00e5ff); border-radius:10px; transition:width 0.1s linear; box-shadow:0 0 8px rgba(0,229,255,0.4);"></div>
+                            </div>
+                        </div>`;
+                } else if (isCooldown && remainingCooldown > 0) {
+                     descContent = `<span style="color:#666; font-size:0.75rem;">Bugün bu işi tamamladın. Yarın tekrar çalışabilirsin.</span>`;
+                }
+
+                // Determine badge row content based on card state
+                let badgeRowHtml = '';
+                if (isActive) {
+                    // Active: timer in descContent, no badge row needed
+                    badgeRowHtml = '';
+                } else if (isCooldown && remainingCooldown > 0) {
+                    // Cooldown: show 24h countdown badge
+                    const ch = Math.floor(remainingCooldown / 3600);
+                    const cm = Math.floor((remainingCooldown % 3600) / 60);
+                    const cs = remainingCooldown % 60;
+                    const cStr = `${ch.toString().padStart(2,'0')}:${cm.toString().padStart(2,'0')}:${cs.toString().padStart(2,'0')}`;
+                    badgeRowHtml = `<span style="${commonBadgeStyle} border-color:rgba(231,76,60,0.5);"><i class="fas fa-history" style="color:#e74c3c;"></i> <span class="cooldown-timer" data-seconds="${remainingCooldown}">${cStr}</span></span>`;
+                } else {
+                    // Normal: edu badge + time badge
+                    badgeRowHtml = `${eduBadge}${timeBadge}`;
                 }
 
                 const html = `
@@ -713,6 +728,7 @@
                             <div class="jc-desc" style="font-size: 0.75rem; color: #888; margin-top:2px; line-height: 1.2;">
                                 ${descContent}
                             </div>
+                            ${badgeRowHtml ? `<div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;">${badgeRowHtml}</div>` : ''}
                         </div>
                         <div class="arrow-indicator">${rightIcon}</div>
                     </div>
@@ -831,18 +847,17 @@
             let reqHtml = '';
             let canStart = true;
 
-            // 1. Min Eğitim (Varsa) - EN ÜSTTE GÖSTER
+            // 1. Eğitim - Her zaman göster
             const eduMet = (user.education_skill || 0) >= (job.reqEducation || 0);
-            if((job.reqEducation || 0) > 0) {
-                 if(!eduMet) canStart = false;
-                 const eduName = getEducationName(job.reqEducation); 
-                 reqHtml += getReqItemHtml(
-                     '<img src="icons/icon-pack/education.png" style="width:24px;">',
-                     `Gerekli Eğitim (${eduName})`, 
-                     eduMet ? 'Tamamlandı' : 'Yetersiz',
-                     eduMet
-                 );
-            }
+            if(!eduMet) canStart = false;
+            const requiredEduName = (job.reqEducation || 0) > 0 ? getEducationNameByReq(job.reqEducation) : 'Eğitimsiz';
+            const userEduName = getEducationName(user.education_skill || 0);
+            reqHtml += getReqItemHtml(
+                '<img src="icons/icon-pack/education.png" style="width:24px;">',
+                `Eğitim <span style="color:#666; font-size:0.75rem;">(Sende: ${userEduName})</span>`,
+                requiredEduName,
+                eduMet
+            );
 
             // 0. Süre (Gereksinimlerde Göster)
             reqHtml += getReqItemHtml(
@@ -898,8 +913,10 @@
             rewardGrid.innerHTML = rHtml;
 
             // Buton Logiği
-            startBtn.disabled = false; 
-            startBtn.onclick = () => confirmStartJob(job.id);
+            startBtn.disabled = !canStart;
+            startBtn.style.opacity = canStart ? '1' : '0.5';
+            startBtn.style.cursor = canStart ? 'pointer' : 'not-allowed';
+            startBtn.onclick = canStart ? () => confirmStartJob(job.id) : null;
 
             // Modalı Aç
             document.getElementById('jobConfirmModal').style.display = 'flex';

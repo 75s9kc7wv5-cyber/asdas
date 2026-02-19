@@ -54,7 +54,7 @@
             font-weight: 900;
             letter-spacing: 2px;
             margin-bottom: 40px;
-            animation: pulseLogo 2s infinite ease-in-out;
+            /* animation: pulseLogo 2s infinite ease-in-out; */
         }
         .loader-logo span { color: var(--accent-cyan); }
 
@@ -181,25 +181,31 @@
         const loader = document.getElementById('game-loader');
 
         // 1. İPUCU DEĞİŞTİRME DÖNGÜSÜ
-        let tipInterval = setInterval(() => {
-            const randomTip = tips[Math.floor(Math.random() * tips.length)];
-            tipElement.innerText = randomTip;
-        }, 800); // Her 800ms'de bir yazı değişir
+
+        let tipInterval = null;
+        let loaderLocked = false; // Yönlendirme sırasında loader tekrar gösterilmesin
+
+        function startTipInterval() {
+            if (tipInterval) clearInterval(tipInterval);
+            tipInterval = setInterval(() => {
+                const randomTip = tips[Math.floor(Math.random() * tips.length)];
+                tipElement.innerText = randomTip;
+            }, 800);
+        }
+        startTipInterval();
 
         // 2. LOADER'I GİZLEME FONKSİYONU
         function hideLoader() {
             clearInterval(tipInterval); // Yazı değişimini durdur
             loader.classList.add('hidden'); // CSS class ile gizle
+            loaderLocked = true;
         }
 
         // 3. LOADER'I GÖSTERME FONKSİYONU (Sayfa geçişlerinde kullanılır)
         function showLoader() {
+            if (loaderLocked) return; // Yönlendirme sonrası tekrar gösterme
             loader.classList.remove('hidden');
-            // Yazı döngüsünü tekrar başlat
-            tipInterval = setInterval(() => {
-                const randomTip = tips[Math.floor(Math.random() * tips.length)];
-                tipElement.innerText = randomTip;
-            }, 800);
+            startTipInterval();
         }
 
         // SAYFA YÜKLENDİĞİNDE (DEMO)
@@ -210,11 +216,12 @@
 
         // SAYFA GEÇİŞİ SİMÜLASYONU
         function simulatePageChange() {
+            loaderLocked = false;
             showLoader();
             setTimeout(() => {
-                // Burada normalde window.location.href = 'yeni-sayfa.html' olur
-                hideLoader(); 
-            }, 2000);
+                hideLoader();
+                // window.location.href = 'yeni-sayfa.html';
+            }, 1800);
         }
     </script>
 </body>

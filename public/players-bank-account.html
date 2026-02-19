@@ -313,9 +313,9 @@
                 <div class="ab-icon"><i class="fas fa-hand-holding-dollar"></i></div>
                 <span class="ab-text">KREDİ TEKLİFLERİ</span>
             </div>
-            <div class="action-btn" onclick="openMevduatModal()">
+            <div class="action-btn" onclick="openMevduatModal()" id="btnMevduat">
                 <div class="ab-icon"><i class="fas fa-piggy-bank"></i></div>
-                <span class="ab-text">MEVDUAT FAİZİ</span>
+                <span class="ab-text">MEVDUAT HESABI</span>
             </div>
             <div class="action-btn" onclick="openCloseAccountModal()" style="border-color:var(--danger);">
                 <div class="ab-icon" style="color:var(--danger); background:rgba(231, 76, 60, 0.1);"><i class="fas fa-ban"></i></div>
@@ -365,7 +365,7 @@
                     <option value="120">2 Saat</option>
                     <option value="360">6 Saat</option>
                     <option value="720">12 Saat</option>
-                    <option value="1440">24 Saat</option>
+                    <option value="1">1 Dakika (Test)</option>
                 </select>
 
                 <div class="info-row" style="background:#222; padding:10px; border-radius:8px;">
@@ -1032,13 +1032,28 @@
         
         if (!activeDep) {
             card.style.display = 'none';
+            // Enable Open Button
+            const btn = document.querySelector('.action-btn[onclick="openMevduatModal()"]') || document.querySelector('.action-btn[onclick*="openMevduatModal"]');
+            if(btn) {
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'all';
+                btn.onclick = openMevduatModal;
+            }
             if (mainDepositInterval) clearInterval(mainDepositInterval);
             return;
         }
 
+        // Disable Open Button
+        const btn = document.querySelector('.action-btn[onclick="openMevduatModal()"]') || document.querySelector('.action-btn[onclick*="openMevduatModal"]');
+        
+        if(btn) {
+            btn.style.opacity = '0.5';
+            btn.style.pointerEvents = 'none'; // prevent click
+        }
+
         card.style.display = 'block';
         document.getElementById('depPrincipal').innerText = fmt(activeDep.amount) + ' ₺';
-        document.getElementById('depTotalReturn').innerText = fmt(activeDep.amount + activeDep.interest_amount) + ' ₺';
+        document.getElementById('depTotalReturn').innerText = fmt(parseFloat(activeDep.amount) + parseFloat(activeDep.interest_amount)) + ' ₺'; // Revert back to Total
         
         // Calculate duration in minutes (approx)
         const start = new Date(activeDep.start_time).getTime();

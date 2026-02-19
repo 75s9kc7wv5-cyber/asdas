@@ -356,6 +356,7 @@
         .c-cyan { color: var(--accent-cyan); }
         .c-green { color: var(--accent-green); }
         .c-gold { color: var(--accent-gold); }
+        .c-red { color: var(--accent-red); }
         .bg-cyan-low { background: rgba(0, 229, 255, 0.1); color: var(--accent-cyan); }
         .bg-green-low { background: rgba(46, 204, 113, 0.1); color: var(--accent-green); }
         .bg-gold-low { background: rgba(255, 215, 0, 0.1); color: var(--accent-gold); }
@@ -454,7 +455,7 @@
                     <div class="modal-list-item">
                         <div class="modal-item-left">
                             <div class="modal-item-icon bg-cyan-low">
-                                <i class="fas fa-clock"></i>
+                                <img src="icons/inventory-icon/clock.png" style="width:22px;height:22px;object-fit:contain;">
                             </div>
                             <div class="modal-item-text">
                                 <span class="modal-item-label">TEDAVİ SÜRESİ</span>
@@ -470,7 +471,7 @@
                     <div class="modal-list-item">
                         <div class="modal-item-left">
                             <div class="modal-item-icon bg-gold-low">
-                                <i class="fas fa-coins"></i>
+                                <img src="icons/inventory-icon/money.png" style="width:22px;height:22px;object-fit:contain;">
                             </div>
                             <div class="modal-item-text">
                                 <span class="modal-item-label">TEDAVİ ÜCRETİ</span>
@@ -478,7 +479,7 @@
                             </div>
                         </div>
                         <div class="modal-item-right">
-                            <span class="modal-item-value c-gold" id="modalPrice">100 ₺</span>
+                            <span class="modal-item-value c-green" id="modalPrice">100 ₺</span>
                         </div>
                     </div>
 
@@ -486,7 +487,7 @@
                     <div class="modal-list-item">
                         <div class="modal-item-left">
                             <div class="modal-item-icon bg-green-low">
-                                <i class="fas fa-heart"></i>
+                                <img src="icons/inventory-icon/heart.png" style="width:22px;height:22px;object-fit:contain;">
                             </div>
                             <div class="modal-item-text">
                                 <span class="modal-item-label">SAĞLIK KAZANIMI</span>
@@ -494,7 +495,7 @@
                             </div>
                         </div>
                         <div class="modal-item-right">
-                            <span class="modal-item-value c-green" id="modalGain">+100 CAN</span>
+                            <span class="modal-item-value c-red" id="modalGain">+100 CAN</span>
                         </div>
                     </div>
                 </div>
@@ -508,14 +509,14 @@
 
         <!-- RESULT MODAL -->
         <div class="modal-overlay" id="resultModal" style="z-index: 1001;">
-            <div class="modal-content">
+            <div class="modal-content" id="resultModalContent" style="border: none; border-top: 3px solid var(--accent-red);">
                 <div style="margin-bottom: 15px;">
                     <i id="resultIcon" class="fas" style="font-size: 3rem;"></i>
                 </div>
                 <div class="m-title" id="resultTitle">SONUÇ</div>
                 <div class="m-text" id="resultMessage"></div>
                 <div class="m-btns">
-                    <button class="m-btn btn-confirm" onclick="closeResultModal()">TAMAM</button>
+                    <button class="m-btn btn-confirm" style="background:var(--accent-green); color:#000;" onclick="closeResultModal()">TAMAM</button>
                 </div>
             </div>
         </div>
@@ -616,14 +617,11 @@
             activeTreatments.forEach(t => {
                 // Use time_left_seconds from server if available
                 let timeLeftSeconds = t.time_left_seconds;
-                
-                console.log(`Treatment for user ${t.user_id}: Server says ${timeLeftSeconds} seconds left.`);
 
                 // Fallback if not available (though it should be)
                 if (timeLeftSeconds === undefined || timeLeftSeconds === null) {
                     const endTime = new Date(t.end_time).getTime();
                     timeLeftSeconds = (endTime - now) / 1000;
-                    console.log(`Fallback calculation: ${timeLeftSeconds} seconds left.`);
                 }
 
                 if (timeLeftSeconds > 0) {
@@ -671,7 +669,7 @@
                          slotEl.onclick = null;
                          slotEl.innerHTML = `
                             <img src="${avatarUrl}" class="slot-avatar" style="width:40px; height:40px; border-radius:50%; margin-bottom:5px; border:2px solid ${borderCol};">
-                            <div class="slot-text" style="font-size:0.8rem; font-weight:bold; color:#fff; margin-bottom:2px;">#${treatment.user_id} - ${treatment.username}</div>
+                            <div class="slot-text" style="font-size:0.8rem; font-weight:bold; color:#fff; margin-bottom:2px;">${treatment.user_id} - ${treatment.username}</div>
                             <div class="slot-timer-text bed-timer" id="timer-bed-${i}" data-end="${endTime}">${timeStr}</div>
                         `;
                     } else {
@@ -763,7 +761,7 @@
                     <div class="log-item">
                         <img src="${avatar}" class="log-avatar">
                         <div class="log-text">
-                            <a href="profile.html?id=${userId}" class="log-user-link">#${userId} - ${item.patient_name}</a>
+                            <a href="profile.html?id=${userId}" class="log-user-link">${userId} - ${item.patient_name}</a>
                             <span class="log-highlight">tedavi oldu</span>
                         </div>
                         <div class="log-time">${dateStr} ${timeStr}</div>
@@ -835,16 +833,19 @@
             const title = document.getElementById('resultTitle');
             const desc = document.getElementById('resultMessage');
 
+            const modalContent = document.getElementById('resultModalContent');
             if (isSuccess) {
                 icon.className = 'fas fa-check-circle';
                 icon.style.color = 'var(--accent-green)';
                 title.innerText = 'BAŞARILI';
                 title.style.color = 'var(--accent-green)';
+                if (modalContent) modalContent.style.borderTopColor = 'var(--accent-green)';
             } else {
                 icon.className = 'fas fa-times-circle';
                 icon.style.color = 'var(--accent-red)';
                 title.innerText = 'BAŞARISIZ';
                 title.style.color = 'var(--accent-red)';
+                if (modalContent) modalContent.style.borderTopColor = 'var(--accent-red)';
             }
 
             desc.innerText = message;

@@ -1,229 +1,225 @@
-"use strict";
 
-require("dotenv").config();
-const express = require("express");
-const mysql = require("mysql2");
-const bodyParser = require("body-parser");
-const path = require("path");
-const multer = require("multer");
-const fs = require("fs");
-const sharp = require("sharp");
-
-const app = express();
-
-// ✅ tek port değişkeni
-const PORT = Number(process.env.PORT) || 3000;
-
-// -------------------- MIDDLEWARE --------------------
-app.use(bodyParser.json({ limit: "10mb" }));
-app.use(bodyParser.urlencoded({ extended: true, limit: "10mb" }));
-
-console.log("DEBUG: Reached Middleware setup");
-
-// -------------------- MULTER --------------------
+// Multer Config (Memory Storage for Processing)
 const storage = multer.memoryStorage();
 
-const upload = multer({
-  storage: storage,
-    limits: { fileSize: 3 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const filetypes = /jpeg|jpg|png|gif/;
-    const mimetype = filetypes.test(file.mimetype);
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    if (mimetype && extname) return cb(null, true);
-    cb(new Error("Sadece resim dosyaları (jpeg, jpg, png, gif) yüklenebilir!"));
-  },
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // Increased limit to 5MB since we compress it anyway
+    fileFilter: (req, file, cb) => {
+        const filetypes = /jpeg|jpg|png|gif/;
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+        if (mimetype && extname) {
+            return cb(null, true);
+        }
+        cb(new Error('Sadece resim dosyaları (jpeg, jpg, png, gif) yüklenebilir!'));
+    }
 });
 
-// (İstersen uploads klasörünü servis et)
-const UPLOAD_DIR = path.join(__dirname, "uploads");
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-app.use("/uploads", express.static(UPLOAD_DIR));
-
-// -------------------- DB --------------------
 const db = mysql.createConnection({
-  host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "simuser",
-  password: process.env.DB_PASSWORD || "password",
-  database: process.env.DB_NAME || "simworld",
+    host: 'localhost',
+    user: 'simuser',
+    password: 'password',
+    database: 'simworld'
 });
 
 db.connect((err) => {
-  if (err) {
-    console.error("Database connection failed:", err);
-    return;
-  }
+    if (err) {
+        console.error('Database connection failed:', err);
+    } else {
+        console.log('Connected to database: simworld');
+        
+        // Create Notifications Table
+        const createNotifTable = `CREATE TABLE IF NOT EXISTS notifications (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            title VARCHAR(255) NOT NULL,
+            message TEXT,
+            type VARCHAR(50),
+            is_read BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )`;
+        
+        db.query(createNotifTable, (err) => {
+            if (err) console.error('Error creating notifications table:', err);
+            else console.log('Notifications table ready');
+        });
 
-  console.log("Connected to database:", db.config.database);
+        // Create Toxic Logs Table
+        const createToxicLogsTable = `CREATE TABLE IF NOT EXISTS toxic_logs (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            original_message TEXT,
+            filtered_message TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )`;
 
-  const createNotifTable = `CREATE TABLE IF NOT EXISTS notifications (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id INT NOT NULL,
-      title VARCHAR(255) NOT NULL,
-      message TEXT,
-      type VARCHAR(50),
-      is_read BOOLEAN DEFAULT FALSE,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-  )`;
-  db.query(createNotifTable, (e) => (e ? console.error("Error creating notifications table:", e) : console.log("Notifications table ready")));
+        db.query(createToxicLogsTable, (err) => {
+            if (err) console.error('Error creating toxic_logs table:', err);
+            else console.log('Toxic Logs table ready');
+        });
 
-  const createToxicLogsTable = `CREATE TABLE IF NOT EXISTS toxic_logs (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id INT NOT NULL,
-      original_message TEXT,
-      filtered_message TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-  )`;
-  db.query(createToxicLogsTable, (e) => (e ? console.error("Error creating toxic_logs table:", e) : console.log("Toxic Logs table ready")));
+        // Create Profile Visits Table
+        const createProfileVisitsTable = `CREATE TABLE IF NOT EXISTS profile_visits (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            profile_id INT NOT NULL,
+            visitor_id INT NOT NULL,
+            visited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (profile_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (visitor_id) REFERENCES users(id) ON DELETE CASCADE
+        )`;
 
-  const createProfileVisitsTable = `CREATE TABLE IF NOT EXISTS profile_visits (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      profile_id INT NOT NULL,
-      visitor_id INT NOT NULL,
-      visited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (profile_id) REFERENCES users(id) ON DELETE CASCADE,
-      FOREIGN KEY (visitor_id) REFERENCES users(id) ON DELETE CASCADE
-  )`;
-  db.query(createProfileVisitsTable, (e) => (e ? console.error("Error creating profile_visits table:", e) : console.log("Profile Visits table ready")));
+        db.query(createProfileVisitsTable, (err) => {
+            if (err) console.error('Error creating profile_visits table:', err);
+            else console.log('Profile Visits table ready');
+        });
 
-  const createUserBusinessTable = `CREATE TABLE IF NOT EXISTS user_business (
-      user_id INT NOT NULL PRIMARY KEY,
-      rent_a_car_balance DECIMAL(15,2) DEFAULT 0,
-      level INT DEFAULT 1,
-      upgrade_end_time DATETIME,
-      real_estate_balance DECIMAL(15,2) DEFAULT 0,
-      real_estate_level INT DEFAULT 1,
-      real_estate_upgrade_end_time DATETIME,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-  )`;
-  db.query(createUserBusinessTable, (e) => (e ? console.error("Error creating user_business table:", e) : console.log("user_business table ready")));
+        // Create user_business Table
+        const createUserBusinessTable = `CREATE TABLE IF NOT EXISTS user_business (
+            user_id INT NOT NULL PRIMARY KEY,
+            rent_a_car_balance DECIMAL(15,2) DEFAULT 0,
+            level INT DEFAULT 1,
+            upgrade_end_time DATETIME,
+            real_estate_balance DECIMAL(15,2) DEFAULT 0,
+            real_estate_level INT DEFAULT 1,
+            real_estate_upgrade_end_time DATETIME,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )`;
+        
+        db.query(createUserBusinessTable, (err) => {
+            if (err) console.error('Error creating user_business table:', err);
+            else console.log('user_business table ready');
+        });
 
-  const createUserBusinessesTable = `CREATE TABLE IF NOT EXISTS user_businesses (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id INT NOT NULL,
-      business_type VARCHAR(50) NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE KEY unique_user_biz (user_id, business_type),
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-  )`;
-  db.query(createUserBusinessesTable, (e) => (e ? console.error("Error creating user_businesses table:", e) : console.log("user_businesses table ready")));
+        // Create user_businesses Table (Ownership tracking)
+        const createUserBusinessesTable = `CREATE TABLE IF NOT EXISTS user_businesses (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            business_type VARCHAR(50) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_user_biz (user_id, business_type),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )`;
+        
+        db.query(createUserBusinessesTable, (err) => {
+            if (err) console.error('Error creating user_businesses table:', err);
+            else console.log('user_businesses table ready');
+        });
 
-  const createUserGarageTable = `CREATE TABLE IF NOT EXISTS user_garage (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id INT NOT NULL,
-      slot_id INT NOT NULL,
-      car_type VARCHAR(50) NOT NULL,
-      durability INT DEFAULT 100,
-      last_collection_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE KEY unique_user_slot (user_id, slot_id),
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-  )`;
-  db.query(createUserGarageTable, (e) => (e ? console.error("Error creating user_garage table:", e) : console.log("user_garage table ready")));
+        // Create user_garage Table
+        const createUserGarageTable = `CREATE TABLE IF NOT EXISTS user_garage (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            slot_id INT NOT NULL,
+            car_type VARCHAR(50) NOT NULL,
+            durability INT DEFAULT 100,
+            last_collection_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_user_slot (user_id, slot_id),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )`;
+        
+        db.query(createUserGarageTable, (err) => {
+            if (err) console.error('Error creating user_garage table:', err);
+            else console.log('user_garage table ready');
+        });
 
-  const createPropertyTypesTable = `CREATE TABLE IF NOT EXISTS property_types (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      name VARCHAR(255) NOT NULL,
-      image VARCHAR(255),
-      income INT DEFAULT 100,
-      duration_hours INT DEFAULT 24,
-      price DECIMAL(15,2) NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  )`;
-  db.query(createPropertyTypesTable, (e) => (e ? console.error("Error creating property_types table:", e) : console.log("property_types table ready")));
+        // Create property_types Table
+        const createPropertyTypesTable = `CREATE TABLE IF NOT EXISTS property_types (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            image VARCHAR(255),
+            income INT DEFAULT 100,
+            duration_hours INT DEFAULT 24,
+            price DECIMAL(15,2) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`;
+        
+        db.query(createPropertyTypesTable, (err) => {
+            if (err) console.error('Error creating property_types table:', err);
+            else console.log('property_types table ready');
+        });
 
-  const createUserPropertiesTable = `CREATE TABLE IF NOT EXISTS user_properties (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id INT NOT NULL,
-      property_type_id INT NOT NULL,
-      last_collection_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-      purchase_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-      FOREIGN KEY (property_type_id) REFERENCES property_types(id) ON DELETE CASCADE
-  )`;
-  db.query(createUserPropertiesTable, (e) => (e ? console.error("Error creating user_properties table:", e) : console.log("user_properties table ready")));
+        // Create user_properties Table
+        const createUserPropertiesTable = `CREATE TABLE IF NOT EXISTS user_properties (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            property_type_id INT NOT NULL,
+            last_collection_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+            purchase_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (property_type_id) REFERENCES property_types(id) ON DELETE CASCADE
+        )`;
+        
+        db.query(createUserPropertiesTable, (err) => {
+            if (err) console.error('Error creating user_properties table:', err);
+            else console.log('user_properties table ready');
+        });
 
-  const createFactoryInventoryTable = `CREATE TABLE IF NOT EXISTS factory_inventory (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      mine_id INT NOT NULL,
-      item_key VARCHAR(100) NOT NULL,
-      amount INT DEFAULT 0,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE KEY unique_inventory (mine_id, item_key),
-      FOREIGN KEY (mine_id) REFERENCES player_mines(id) ON DELETE CASCADE
-  )`;
-  db.query(createFactoryInventoryTable, (e) => (e ? console.error("Error creating factory_inventory table:", e) : console.log("factory_inventory table ready")));
+        // Create factory_inventory Table
+        const createFactoryInventoryTable = `CREATE TABLE IF NOT EXISTS factory_inventory (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            mine_id INT NOT NULL,
+            item_key VARCHAR(100) NOT NULL,
+            amount INT DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_inventory (mine_id, item_key),
+            FOREIGN KEY (mine_id) REFERENCES player_mines(id) ON DELETE CASCADE
+        )`;
+        
+        db.query(createFactoryInventoryTable, (err) => {
+            if (err) console.error('Error creating factory_inventory table:', err);
+            else console.log('factory_inventory table ready');
+        });
 
-  const createMineSettingsTable = `CREATE TABLE IF NOT EXISTS mine_settings (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      mine_type VARCHAR(100) NOT NULL UNIQUE,
-      production_time INT DEFAULT 60,
-      salary INT DEFAULT 100,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  )`;
-  db.query(createMineSettingsTable, (e) => (e ? console.error("Error creating mine_settings table:", e) : console.log("mine_settings table ready")));
+        // Create mine_settings Table (if doesn't exist)
+        const createMineSettingsTable = `CREATE TABLE IF NOT EXISTS mine_settings (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            mine_type VARCHAR(100) NOT NULL UNIQUE,
+            production_time INT DEFAULT 60,
+            salary INT DEFAULT 100,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`;
+        
+        db.query(createMineSettingsTable, (err) => {
+            if (err) console.error('Error creating mine_settings table:', err);
+            else console.log('mine_settings table ready');
+        });
 
-  const createArgeLevelsTable = `CREATE TABLE IF NOT EXISTS arge_levels (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id INT NOT NULL,
-      mine_type VARCHAR(100) NOT NULL,
-      level INT DEFAULT 0,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE KEY unique_user_arge (user_id, mine_type),
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-  )`;
-  db.query(createArgeLevelsTable, (e) => {
-    if (e) console.error("Error creating arge_levels table:", e);
-    else console.log("arge_levels table ready");
-
-    const addCryptoSlotsColumn = `ALTER TABLE users ADD COLUMN crypto_slots INT DEFAULT 1`;
-    db.query(addCryptoSlotsColumn, (e2) => {
-      if (e2 && !String(e2.message || "").includes("Duplicate column")) console.error("Error adding crypto_slots column:", e2);
-      else if (!e2) console.log("crypto_slots column added");
-    });
-  });
+        // Create arge_levels Table (if doesn't exist)
+        const createArgeLevelsTable = `CREATE TABLE IF NOT EXISTS arge_levels (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            mine_type VARCHAR(100) NOT NULL,
+            level INT DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_user_arge (user_id, mine_type),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )`;
+        
+        db.query(createArgeLevelsTable, (err) => {
+            if (err) console.error('Error creating arge_levels table:', err);
+            else console.log('arge_levels table ready');
+            
+            // Add crypto_slots column if not exists
+            const addCryptoSlotsColumn = `ALTER TABLE users ADD COLUMN crypto_slots INT DEFAULT 1`;
+            db.query(addCryptoSlotsColumn, (err) => {
+                if (err && !err.message.includes('Duplicate column')) {
+                    console.error('Error adding crypto_slots column:', err);
+                } else if (!err) {
+                    console.log('crypto_slots column added');
+                }
+            });
+        });
+    }
 });
-
-  db.query(`CREATE TABLE IF NOT EXISTS market_listings (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    seller_id INT NOT NULL,
-    item_id VARCHAR(100) NOT NULL,
-    quantity INT NOT NULL,
-    price DECIMAL(15,2) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
-  )`, (e) => (e ? console.error('Error creating market_listings table:', e) : console.log('market_listings table ready')));
-
-// -------------------- ROUTES (örnek) --------------------
-app.get("/health", (req, res) => res.json({ ok: true }));
-
-// -------------------- ✅ LISTEN (EN ALTTA) --------------------
-console.log("DEBUG: Before app.listen on port " + PORT);
-
-const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running at http://0.0.0.0:${PORT}`);
-});
-
-server.on("error", (e) => {
-  if (e.code === "EADDRINUSE") {
-    console.error("Address in use (PORT=" + PORT + "), retrying...");
-    setTimeout(() => {
-      server.close();
-      server.listen(PORT, '0.0.0.0');
-    }, 1000);
-  } else {
-    console.error("Server error:", e);
-  }
-});
-
 
 // Middleware
 console.log('DEBUG: Reached Middleware setup');
-
 process.on('exit', (code) => {
     console.log(`Process exiting with code: ${code}`);
 });
@@ -1521,10 +1517,11 @@ app.post('/api/arge/start', (req, res) => {
                             });
                         });
                     });
-                }); // End License Query
+                // }); // End License Query
             });
         });
     });
+});
 
 // Finish Research
 app.post('/api/arge/finish', (req, res) => {
@@ -3151,7 +3148,7 @@ app.get('/api/bank-accounts/:userId/:bankId', (req, res) => {
     const { userId, bankId } = req.params;
     const query = `
         SELECT ba.*, b.name as bank_name, b.interest_rate, b.loan_rate, b.transfer_fee, b.level,
-        u.username as owner_name, b.id as bank_id, b.owner_id,
+        u.username as owner_name,
         customer.education_skill
         FROM bank_accounts ba
         JOIN banks b ON ba.bank_id = b.id
@@ -3467,8 +3464,8 @@ app.post('/api/bank-accounts/transfer', (req, res) => {
 
             if (sender.balance < totalDeduct) return db.rollback(() => res.json({ success: false, message: 'Yetersiz bakiye (Transfer + Ücret).' }));
 
-            // Find Target Account with Username
-            db.query('SELECT ba.id, ba.user_id, ba.bank_id, u.username FROM bank_accounts ba JOIN users u ON ba.user_id = u.id WHERE ba.iban = ?', [targetIban], (err, targets) => {
+            // Find Target Account
+            db.query('SELECT id, user_id, bank_id FROM bank_accounts WHERE iban = ?', [targetIban], (err, targets) => {
                 if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Target search error' }));
                 if (targets.length === 0) return db.rollback(() => res.json({ success: false, message: 'Alıcı IBAN bulunamadı.' }));
 
@@ -3491,8 +3488,7 @@ app.post('/api/bank-accounts/transfer', (req, res) => {
                             const logSender = 'INSERT INTO bank_transactions (user_id, bank_id, bank_account_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?, ?)';
                             const logTarget = 'INSERT INTO bank_transactions (user_id, bank_id, bank_account_id, transaction_type, amount, description) VALUES (?, ?, ?, ?, ?, ?)';
 
-                            // Description format: "Transfer Sent to (ID - Username)" so frontend can parse it easily
-                            db.query(logSender, [userId, bankId, senderAccountId, 'transfer_out', totalDeduct, `Transfer: (${target.user_id} - ${target.username})`], (err) => {
+                            db.query(logSender, [userId, bankId, senderAccountId, 'transfer_out', totalDeduct, `Transfer: ${targetIban}`], (err) => {
                                 if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Log sender error' }));
                                 
                                 db.query(logTarget, [target.user_id, target.bank_id, targetAccountId, 'transfer_in', amount, `Gelen Transfer (${userId} - ${sender.username})`], (err) => {
@@ -3580,8 +3576,8 @@ app.post('/api/bank-accounts/loan', (req, res) => {
                 const totalDebt = amount + interest;
 
                 // Update Account (Add Balance, Set Debt, Set Loan Taken Time)
-                db.query('UPDATE bank_accounts SET balance = balance + ?, loan_debt = ?, initial_loan_debt = ?, loan_taken_at = NOW() WHERE id = ?', 
-                    [amount, totalDebt, totalDebt, accountId], (err) => {
+                db.query('UPDATE bank_accounts SET balance = balance + ?, loan_debt = ?, loan_taken_at = NOW() WHERE id = ?', 
+                    [amount, totalDebt, accountId], (err) => {
                         if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Account update error', error: err.message }));
 
                         // Log (No Score Increase on Take)
@@ -3788,7 +3784,6 @@ app.post('/api/bank-accounts/deposit-create', (req, res) => {
                                                     });
                                                 });
                                         });
-                                    }); // End credit_score UPDATE callback
                                 });
                             });
                         });
@@ -4080,9 +4075,6 @@ db.query(createHospitalsTable, (err) => {
         checkAndAddColumn('balance', 'INT DEFAULT 0');
         checkAndAddColumn('price', 'INT DEFAULT 100');
         checkAndAddColumn('total_treatments', 'INT DEFAULT 0');
-        checkAndAddColumn('treatment_duration', 'INT DEFAULT 15');
-        checkAndAddColumn('upgrade_end_time', 'DATETIME NULL DEFAULT NULL');
-        checkAndAddColumn('is_upgrading', 'TINYINT DEFAULT 0');
     }
 });
 
@@ -4124,11 +4116,11 @@ db.query(createHospitalActiveTreatmentsTable, (err) => {
 // Get All Hospitals
 app.get('/api/hospitals', (req, res) => {
     const query = `
-        SELECT h.*, u.id as owner_id, u.username as owner_name, u.avatar as owner_avatar,
+        SELECT h.*, u.username as owner_name,
         (SELECT COUNT(*) FROM hospital_active_treatments WHERE hospital_id = h.id) as active_patients
         FROM hospitals h 
         JOIN users u ON h.user_id = u.id 
-        ORDER BY h.level DESC
+        ORDER BY h.quality DESC
     `;
     db.query(query, (err, results) => {
         if (err) return res.status(500).json({ success: false, error: err });
@@ -4186,80 +4178,6 @@ app.get('/api/hospitals/my/:userId', (req, res) => {
     });
 });
 
-// Check Hospital Buy Requirements
-app.get('/api/hospitals/buy-check/:userId', (req, res) => {
-    const userId = req.params.userId;
-
-    const requirements = [
-        { key: 'money',    label: 'Para',     amount: 50000, source: 'users' },
-        { key: 'gold',     label: 'Altın',    amount: 500,   source: 'users' },
-        { key: 'diamond',  label: 'Elmas',    amount: 10,    source: 'users' },
-        { key: 'lumber',   label: 'Tahta',    amount: 1000,  source: 'inventory' },
-        { key: 'brick',    label: 'Tuğla',    amount: 1000,  source: 'inventory' },
-        { key: 'glass',    label: 'Cam',      amount: 500,   source: 'inventory' },
-        { key: 'concrete', label: 'Çimento',  amount: 500,   source: 'inventory' },
-        { key: 'steel',    label: 'Çelik',    amount: 250,   source: 'inventory' },
-    ];
-
-    const inventoryKeys = requirements.filter(r => r.source === 'inventory').map(r => r.key);
-
-    db.query('SELECT money, gold, diamond, license_hospital_level FROM users WHERE id = ?', [userId], (err, users) => {
-        if (err || users.length === 0) return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' });
-        const user = users[0];
-
-        db.query(
-            `SELECT item_key, quantity FROM inventory WHERE user_id = ? AND item_key IN (${inventoryKeys.map(() => '?').join(',')})`,
-            [userId, ...inventoryKeys],
-            (err, invRows) => {
-                if (err) return res.status(500).json({ success: false, message: 'Envanter hatası.' });
-
-                const invMap = {};
-                invRows.forEach(r => { invMap[r.item_key] = r.quantity; });
-
-                db.query(
-                    'SELECT * FROM licenses WHERE user_id = ? AND (mine_type = ? OR mine_type = ?) AND level >= 1',
-                    [userId, 'hospital', 'hospital_license'],
-                    (err, licenses) => {
-                        if (err) return res.status(500).json({ success: false, message: 'Lisans hatası.' });
-
-                        const hasLicense = (user.license_hospital_level || 0) >= 1 || licenses.length > 0;
-
-                        db.query('SELECT id FROM hospitals WHERE user_id = ?', [userId], (err, hospitals) => {
-                            if (err) return res.status(500).json({ success: false, message: 'DB Error.' });
-
-                            const alreadyOwns = hospitals.length > 0;
-
-                            const items = requirements.map(r => {
-                                const userVal = r.source === 'users' ? (user[r.key] || 0) : (invMap[r.key] || 0);
-                                return {
-                                    key: r.key,
-                                    label: r.label,
-                                    required: r.amount,
-                                    userVal,
-                                    ok: userVal >= r.amount
-                                };
-                            });
-
-                            // Add license row
-                            items.push({
-                                key: 'hospital_license',
-                                label: '1. Seviye Hastane Lisansı',
-                                required: 1,
-                                userVal: hasLicense ? 1 : 0,
-                                ok: hasLicense
-                            });
-
-                            const canBuy = !alreadyOwns && items.every(i => i.ok);
-
-                            res.json({ success: true, items, canBuy, alreadyOwns });
-                        });
-                    }
-                );
-            }
-        );
-    });
-});
-
 // Buy Hospital
 app.post('/api/hospitals/buy', (req, res) => {
     const { userId, name } = req.body;
@@ -4269,7 +4187,7 @@ app.post('/api/hospitals/buy', (req, res) => {
     const costGold = 500;
     const costDiamond = 10;
     
-    // Item Costs (inventory materials only; gold/diamond deducted from users table)
+    // Item Costs
     const items = [
         { key: 'lumber', amount: 1000 },
         { key: 'brick', amount: 1000 },
@@ -4281,13 +4199,13 @@ app.post('/api/hospitals/buy', (req, res) => {
     db.beginTransaction(err => {
         if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
 
-        // 1. Check User (Money, Gold, Diamond from users table)
+        // 1. Check User (Money, Gold, Diamond)
         db.query('SELECT money, gold, diamond, license_hospital_level FROM users WHERE id = ?', [userId], (err, users) => {
             if (err || users.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' }));
             const user = users[0];
 
             if (user.money < costMoney) return db.rollback(() => res.json({ success: false, message: 'Yetersiz Para!' }));
-            if ((user.gold || 0) < costGold) return db.rollback(() => res.json({ success: false, message: 'Yetersiz Altın!' }));
+            if (user.gold < costGold) return db.rollback(() => res.json({ success: false, message: 'Yetersiz Altın!' }));
             if ((user.diamond || 0) < costDiamond) return db.rollback(() => res.json({ success: false, message: 'Yetersiz Elmas!' }));
 
             // 2. Check License
@@ -4324,7 +4242,7 @@ app.post('/api/hospitals/buy', (req, res) => {
                             }
                         }
 
-                        // 5. Deduct Money, Gold, Diamond from users table
+                        // 5. Deduct Money, Gold, Diamond
                         db.query('UPDATE users SET money = money - ?, gold = gold - ?, diamond = diamond - ? WHERE id = ?', 
                             [costMoney, costGold, costDiamond, userId], (err) => {
                             if (err) {
@@ -4510,10 +4428,11 @@ app.get('/api/hospital/:id/details', (req, res) => {
 
             // Get History
             const historyQuery = `
-                SELECT * 
-                FROM hospital_treatments 
-                WHERE hospital_id = ? 
-                ORDER BY created_at DESC LIMIT 20
+                SELECT ht.*, u.avatar 
+                FROM hospital_treatments ht 
+                LEFT JOIN users u ON ht.user_id = u.id 
+                WHERE ht.hospital_id = ? 
+                ORDER BY ht.created_at DESC LIMIT 20
             `;
             db.query(historyQuery, [id], (err, history) => {
                 if (err) return res.status(500).json({ success: false, error: err });
@@ -4589,62 +4508,74 @@ app.post('/api/hospital/withdraw', (req, res) => {
     });
 });
 
-// Deposit money into Hospital vault
-app.post('/api/hospital/deposit', (req, res) => {
-    const { userId, amount } = req.body;
-
-    if (!userId || !amount || amount <= 0) return res.json({ success: false, message: 'Geçersiz miktar.' });
-
-    db.beginTransaction(err => {
-        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
-
-        // 1. Check User Balance
-        db.query('SELECT money FROM users WHERE id = ?', [userId], (err, results) => {
-            if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Veritabanı hatası.' }));
-            if (results.length === 0) return db.rollback(() => res.json({ success: false, message: 'Kullanıcı bulunamadı.' }));
-
-            if (results[0].money < amount) {
-                return db.rollback(() => res.json({ success: false, message: 'Yetersiz bakiye.' }));
-            }
-
-            // 2. Deduct from User
-            db.query('UPDATE users SET money = money - ? WHERE id = ?', [amount, userId], (err) => {
-                if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kullanıcı bakiyesi güncellenemedi.' }));
-
-                // 3. Add to Hospital vault
-                db.query('UPDATE hospitals SET balance = balance + ? WHERE user_id = ?', [amount, userId], (err, result) => {
-                    if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Kasa güncellenemedi.' }));
-                    if (result.affectedRows === 0) return db.rollback(() => res.json({ success: false, message: 'Hastane bulunamadı.' }));
-
-                    db.commit(err => {
-                        if (err) return db.rollback(() => res.status(500).json({ success: false, message: 'Commit error' }));
-                        res.json({ success: true, message: `${amount.toLocaleString('tr-TR')} ₺ kasaya yatırıldı.` });
-                    });
-                });
-            });
-        });
-    });
-});
-
 // Update Hospital Settings
 app.post('/api/hospital/update', (req, res) => {
     const { userId, name, price } = req.body;
-
+    const COST = 10000;
+    
     console.log(`[Hospital Update] Request for UserID: ${userId}, Name: ${name}, Price: ${price}`);
 
     if (!name || name.length < 3) return res.json({ success: false, message: 'İsim en az 3 karakter olmalı.' });
     if (isNaN(price) || price < 0 || price > 10000) return res.json({ success: false, message: 'Fiyat 0-10000 arası olmalı.' });
 
-    db.query('UPDATE hospitals SET name = ?, price = ? WHERE user_id = ?', [name, price, userId], (err, result) => {
-        if (err) {
-            console.error("[Hospital Update] SQL Error:", err);
-            return res.status(500).json({ success: false, message: 'Veritabanı hatası.' });
-        }
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ success: false, message: 'Hastane bulunamadı.' });
-        }
-        console.log("[Hospital Update] Success");
-        res.json({ success: true, message: 'Ayarlar başarıyla güncellendi.' });
+    db.beginTransaction(err => {
+        if (err) return res.status(500).json({ success: false, message: 'Transaction error' });
+
+        // 1. Check User Money
+        db.query('SELECT money FROM users WHERE id = ?', [userId], (err, results) => {
+            if (err) {
+                return db.rollback(() => {
+                    res.status(500).json({ success: false, message: 'Veritabanı hatası.' });
+                });
+            }
+            if (results.length === 0) {
+                return db.rollback(() => {
+                    res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' });
+                });
+            }
+
+            const userMoney = results[0].money;
+            if (userMoney < COST) {
+                return db.rollback(() => {
+                    res.json({ success: false, message: 'Yetersiz bakiye. İşlem ücreti: 10.000 ₺' });
+                });
+            }
+
+            // 2. Deduct Money
+            db.query('UPDATE users SET money = money - ? WHERE id = ?', [COST, userId], (err) => {
+                if (err) {
+                    return db.rollback(() => {
+                        res.status(500).json({ success: false, message: 'Para düşülemedi.' });
+                    });
+                }
+
+                // 3. Update Hospital
+                db.query('UPDATE hospitals SET name = ?, price = ? WHERE user_id = ?', [name, price, userId], (err, result) => {
+                    if (err) {
+                        return db.rollback(() => {
+                            console.error("[Hospital Update] SQL Error:", err);
+                            res.status(500).json({ success: false, message: 'Veritabanı hatası: ' + err.sqlMessage });
+                        });
+                    }
+                    if (result.affectedRows === 0) {
+                        return db.rollback(() => {
+                            console.warn("[Hospital Update] No hospital found for user:", userId);
+                            res.status(404).json({ success: false, message: 'Hastane bulunamadı.' });
+                        });
+                    }
+
+                    db.commit(err => {
+                        if (err) {
+                            return db.rollback(() => {
+                                res.status(500).json({ success: false, message: 'Commit error' });
+                            });
+                        }
+                        console.log("[Hospital Update] Success");
+                        res.json({ success: true, message: 'Ayarlar güncellendi. (Ücret: 10.000 ₺)' });
+                    });
+                });
+            });
+        });
     });
 });
 
@@ -4931,7 +4862,6 @@ app.get('/api/daily-jobs', (req, res) => {
             icon: job.icon,
             time: job.time,
             minLevel: job.minLevel,
-            reqEducation: job.reqEducation || 0,
             costH: job.costH,
             costE: job.costE,
             reward: {
@@ -4956,13 +4886,6 @@ app.get('/api/daily-jobs/status/:userId', (req, res) => {
         
         const completedIds = completed.map(c => c.job_id);
 
-        // Build cooldowns: seconds until midnight for each completed job today
-        const now = new Date();
-        const midnight = new Date(now);
-        midnight.setHours(24, 0, 0, 0);
-        const secondsUntilMidnight = Math.max(0, Math.floor((midnight - now) / 1000));
-        const cooldowns = completed.map(c => ({ jobId: c.job_id, remainingSeconds: secondsUntilMidnight }));
-
         // 2. Get Active Job
         db.query('SELECT * FROM active_daily_jobs WHERE user_id = ?', [userId], (err, active) => {
             if (err) return res.status(500).json({ success: false, error: err });
@@ -4970,9 +4893,11 @@ app.get('/api/daily-jobs/status/:userId', (req, res) => {
             let activeJobData = null;
             if (active.length > 0) {
                 const aj = active[0];
+                const now = new Date();
                 const end = new Date(aj.end_time);
-                const remaining = Math.max(0, (end - now) / 1000);
+                const remaining = Math.max(0, (end - now) / 1000); // seconds
 
+                // Get Job Name
                 db.query('SELECT name, time FROM daily_jobs WHERE id = ?', [aj.job_id], (err, jobInfo) => {
                     if (!err && jobInfo.length > 0) {
                         activeJobData = {
@@ -4982,10 +4907,10 @@ app.get('/api/daily-jobs/status/:userId', (req, res) => {
                             remainingTime: remaining
                         };
                     }
-                    res.json({ success: true, completedJobs: completedIds, activeJob: activeJobData, cooldowns });
+                    res.json({ success: true, completedJobs: completedIds, activeJob: activeJobData });
                 });
             } else {
-                res.json({ success: true, completedJobs: completedIds, activeJob: null, cooldowns });
+                res.json({ success: true, completedJobs: completedIds, activeJob: null });
             }
         });
     });
@@ -5014,12 +4939,12 @@ app.post('/api/daily-jobs/start', (req, res) => {
                     if (err || jobs.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'İş bulunamadı.' }));
                     const job = jobs[0];
 
-                    db.query('SELECT health, energy, level, education_skill FROM users WHERE id = ?', [userId], (err, users) => {
+                    db.query('SELECT health, energy, level FROM users WHERE id = ?', [userId], (err, users) => {
                         if (err || users.length === 0) return db.rollback(() => res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' }));
                         const user = users[0];
 
                         // Checks
-                        if ((user.education_skill || 0) < (job.reqEducation || 0)) return db.rollback(() => res.json({ success: false, message: 'Eğitim seviyeniz bu iş için yetersiz.' }));
+                        if (user.level < job.minLevel) return db.rollback(() => res.json({ success: false, message: 'Seviyen yetersiz.' }));
                         if (user.health < job.costH) return db.rollback(() => res.json({ success: false, message: 'Sağlığın yetersiz.' }));
                         if (user.energy < job.costE) return db.rollback(() => res.json({ success: false, message: 'Enerjin yetersiz.' }));
 
@@ -8002,21 +7927,12 @@ app.post('/api/referral/claim', (req, res) => {
 
 // --- DUPLICATE REMOVED ---
 
-
-
-
-// SERVER ALREADY STARTED AT TOP OF FILE
-// const PORT = process.env.PORT || 3000;
-// console.log('DEBUG: Before app.listen on port ' + PORT);
-/*
-const server = app.listen(PORT, '0.0.0.0', () => {
+const PORT = 3000;
+console.log('DEBUG: Before app.listen on port ' + PORT);
+console.log('Attempting to start server on port ' + PORT);
+app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
 });
-server.on('error', (e) => {
-   console.error('Server error:', e);
-});
-*/
-
 
 
 // --- PARTY MANAGEMENT ENDPOINTS ---
@@ -10573,114 +10489,4 @@ app.post('/api/business/buy', (req, res) => {
     });
 });
 
-// ==================== MARKET API ====================
-
-// GET /api/market/stats - ilan sayısı özeti
-app.get('/api/market/stats', (req, res) => {
-    db.query('SELECT item_id, SUM(quantity) as total FROM market_listings WHERE quantity > 0 GROUP BY item_id', (err, rows) => {
-        if (err) return res.json({});
-        const stats = {};
-        rows.forEach(r => { stats[r.item_id] = Number(r.total); });
-        res.json(stats);
-    });
 });
-
-// GET /api/market/:itemId?sort=asc|desc - ürüne ait ilanlar
-app.get('/api/market/:itemId', (req, res) => {
-    const { itemId } = req.params;
-    const sort = req.query.sort === 'desc' ? 'DESC' : 'ASC';
-    const sql = `
-        SELECT ml.id, ml.seller_id, ml.item_id, ml.quantity, ml.price, ml.created_at,
-               u.username AS seller_name,
-               COALESCE(u.avatar, 'uploads/avatars/default.png') AS seller_avatar
-        FROM market_listings ml
-        JOIN users u ON u.id = ml.seller_id
-        WHERE ml.item_id = ? AND ml.quantity > 0
-        ORDER BY ml.price ${sort}
-    `;
-    db.query(sql, [itemId], (err, rows) => {
-        if (err) { console.error(err); return res.status(500).json([]); }
-        res.json(rows);
-    });
-});
-
-// POST /api/market/sell - ilan oluştur
-app.post('/api/market/sell', (req, res) => {
-    const { sellerId, itemId, quantity, price } = req.body;
-    if (!sellerId || !itemId || !quantity || !price || quantity <= 0 || price <= 0)
-        return res.json({ success: false, message: 'Geçersiz parametreler.' });
-
-    db.query('SELECT quantity FROM inventory WHERE user_id = ? AND item_key = ?', [sellerId, itemId], (err, rows) => {
-        if (err) return res.json({ success: false, message: 'Sunucu hatası.' });
-        const available = rows.length > 0 ? rows[0].quantity : 0;
-        if (available < quantity)
-            return res.json({ success: false, message: 'Envanterde yeterli ürün yok.' });
-
-        db.beginTransaction(err => {
-            if (err) return res.json({ success: false, message: 'İşlem başlatılamadı.' });
-
-            db.query('UPDATE inventory SET quantity = quantity - ? WHERE user_id = ? AND item_key = ?',
-                [quantity, sellerId, itemId], (err) => {
-                    if (err) return db.rollback(() => res.json({ success: false, message: 'Envanter güncellenemedi.' }));
-
-                    db.query('INSERT INTO market_listings (seller_id, item_id, quantity, price) VALUES (?, ?, ?, ?)',
-                        [sellerId, itemId, quantity, price], (err) => {
-                            if (err) return db.rollback(() => res.json({ success: false, message: 'İlan oluşturulamadı.' }));
-
-                            db.commit(err => {
-                                if (err) return db.rollback(() => res.json({ success: false, message: 'İşlem tamamlanamadı.' }));
-                                res.json({ success: true, message: 'İlan oluşturuldu.' });
-                            });
-                        });
-                });
-        });
-    });
-});
-
-// POST /api/market/buy - satın al
-app.post('/api/market/buy', (req, res) => {
-    const { listingId, quantity, buyerId } = req.body;
-    if (!listingId || !quantity || !buyerId || quantity <= 0)
-        return res.json({ success: false, message: 'Geçersiz parametreler.' });
-
-    db.beginTransaction(err => {
-        if (err) return res.json({ success: false, message: 'İşlem başlatılamadı.' });
-
-        db.query('SELECT * FROM market_listings WHERE id = ? AND quantity >= ? FOR UPDATE', [listingId, quantity], (err, rows) => {
-            if (err || rows.length === 0)
-                return db.rollback(() => res.json({ success: false, message: 'İlan bulunamadı veya stok yetersiz.' }));
-
-            const listing = rows[0];
-            if (listing.seller_id == buyerId)
-                return db.rollback(() => res.json({ success: false, message: 'Kendi ilanınızı satın alamazsınız.' }));
-
-            const totalCost = listing.price * quantity;
-
-            db.query('UPDATE users SET money = money - ? WHERE id = ? AND money >= ?', [totalCost, buyerId, totalCost], (err, result) => {
-                if (err || result.affectedRows === 0)
-                    return db.rollback(() => res.json({ success: false, message: 'Yetersiz bakiye.' }));
-
-                db.query('UPDATE users SET money = money + ? WHERE id = ?', [totalCost, listing.seller_id], (err) => {
-                    if (err) return db.rollback(() => res.json({ success: false, message: 'Satıcıya ödeme yapılamadı.' }));
-
-                    db.query('UPDATE market_listings SET quantity = quantity - ? WHERE id = ?', [quantity, listingId], (err) => {
-                        if (err) return db.rollback(() => res.json({ success: false, message: 'Stok güncellenemedi.' }));
-
-                        db.query(`INSERT INTO inventory (user_id, item_key, quantity) VALUES (?, ?, ?)
-                            ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)`,
-                            [buyerId, listing.item_id, quantity], (err) => {
-                                if (err) return db.rollback(() => res.json({ success: false, message: 'Envanter güncellenemedi.' }));
-
-                                db.commit(err => {
-                                    if (err) return db.rollback(() => res.json({ success: false, message: 'İşlem tamamlanamadı.' }));
-                                    res.json({ success: true, message: 'Satın alma başarılı.' });
-                                });
-                            });
-                    });
-                });
-            });
-        });
-    });
-});
-
-// ==================== /MARKET API ====================

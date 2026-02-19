@@ -149,16 +149,20 @@
             background: var(--accent-green);
         }
         
+        .farm-list-card.owned::before {
+            background: var(--accent-green);
+        }
+
+        .farm-list-card.owned {
+            /* border: 1px solid var(--accent-green);  <-- Removed per request */
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.15);
+        }
+
         .farm-list-card.city-card {
             flex-direction: column;
             align-items: stretch;
             padding: 0;
             gap: 0;
-        }
-
-        .farm-list-card.city-card.owned {
-            border: 1px solid var(--accent-green);
-            box-shadow: 0 0 15px rgba(46, 204, 113, 0.15);
         }
 
         .city-card-top {
@@ -611,12 +615,19 @@
         function renderBanks(banks) {
             const container = document.getElementById('cityBankList');
             container.innerHTML = '';
+            
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            const userId = user ? user.id : 0;
 
-            // Sort: Owned accounts first
+            // Sort: 1. User's OWN bank, 2. Banks with accounts
             banks.sort((a, b) => {
-                const aOwned = a.has_account > 0 ? 1 : 0;
-                const bOwned = b.has_account > 0 ? 1 : 0;
-                return bOwned - aOwned;
+                const aIsMyBank = a.owner_id === userId ? 1 : 0;
+                const bIsMyBank = b.owner_id === userId ? 1 : 0;
+                if (aIsMyBank !== bIsMyBank) return bIsMyBank - aIsMyBank;
+
+                const aHasAccount = a.has_account > 0 ? 1 : 0;
+                const bHasAccount = b.has_account > 0 ? 1 : 0;
+                return bHasAccount - aHasAccount;
             });
 
             if (banks.length === 0) {
@@ -626,9 +637,12 @@
 
             banks.forEach(b => {
                 const hasAccount = b.has_account > 0;
+                const isMyBank = b.owner_id === userId;
                 let clickAction = '';
                 
-                if (hasAccount) {
+                if (isMyBank) {
+                     clickAction = `openAccountPage(${b.id})`;
+                } else if (hasAccount) {
                     clickAction = `openAccountPage(${b.id})`;
                 } else if (userHasAccount) {
                     // User has account in another bank
@@ -650,7 +664,10 @@
                 const level = b.level || 1;
 
                 const card = document.createElement('div');
-                card.className = `farm-list-card city-card ${hasAccount ? 'owned' : ''}`;
+                // Add 'owned' class if it is the user's bank OR if they have an account (for green border)
+                // However, user specifically asked for "oyuncunun bankası varsa... yeşil olsun". 
+                // Existing logic used 'owned' for hasAccount. Let's start by applying it for isMyBank too.
+                card.className = `farm-list-card city-card ${hasAccount || isMyBank ? 'owned' : ''}`;
                 
                 // Top part with onclick action
                 card.innerHTML = `
@@ -704,7 +721,7 @@
                 if (result.success && result.hasBank) {
                     const b = result.bank;
                     container.innerHTML = `
-                        <div class="farm-list-card owned" onclick="window.location.href='bank-management.html'">
+                        <div class="farm-list-card owned" onclick="window.location.href='bank-management.html'" style="display:flex;">
                             <div class="bank-icon" style="width: 50px; height: 50px; background: #222; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; border: 1px solid #444; color: var(--accent-green);">
                                 <img src="icons/bank-icon/bank.png" style="width:32px; height:32px; object-fit:contain;">
                             </div>
@@ -717,7 +734,7 @@
                     `;
                 } else {
                     container.innerHTML = `
-                        <div class="farm-list-card" onclick="openCreateBankModal()">
+                        <div class="farm-list-card" onclick="openCreateBankModal()" style="display:flex;">
                             <div class="bank-icon" style="width: 50px; height: 50px; background: #222; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; border: 1px solid #444; color: #666;">
                                 <img src="icons/bank-icon/bank.png" style="width:32px; height:32px; object-fit:contain; filter: grayscale(100%);">
                             </div>

@@ -468,8 +468,8 @@
 
         <!-- REWARD/SUCCESS MODAL -->
         <div class="modal-overlay" id="rewardModal">
-            <div class="modal-content">
-                <i class="fas fa-check-circle m-icon" style="color:var(--accent-green); font-size: 3rem; margin-bottom: 20px;"></i>
+            <div class="modal-content" style="text-align: center;">
+                <i class="fas fa-check-circle m-icon" style="color:var(--accent-green); font-size: 3rem; margin-bottom: 20px; display:block;"></i>
                 <h3 class="m-title" style="color:#fff; margin-bottom:15px; font-size: 1.4rem; font-weight:bold;">İŞLEM BAŞARILI!</h3>
                 <p style="color:#888; font-size:1rem; margin-bottom:25px; line-height:1.5;" id="rewardMsg">Hastane başarıyla satın alındı.</p>
                 <div style="display:flex; justify-content:center;">
@@ -480,8 +480,8 @@
 
         <!-- ERROR MODAL -->
         <div class="modal-overlay" id="errorModal">
-            <div class="modal-content" style="border-top: 3px solid var(--accent-red); box-shadow: 0 0 30px rgba(231, 76, 60, 0.2);">
-                <i class="fas fa-times-circle m-icon" style="color:var(--accent-red); font-size: 3rem; margin-bottom: 20px;"></i>
+            <div class="modal-content" style="border-top: 3px solid var(--accent-red); box-shadow: 0 0 30px rgba(231, 76, 60, 0.2); text-align: center;">
+                <i class="fas fa-times-circle m-icon" style="color:var(--accent-red); font-size: 3rem; margin-bottom: 20px; display: block;"></i>
                 <h3 class="m-title" style="color:#fff; margin-bottom:15px; font-size: 1.4rem; font-weight:bold;">HATA!</h3>
                 <p style="color:#888; font-size:1rem; margin-bottom:25px; line-height:1.5;" id="errorMsg">İşlem başarısız.</p>
                 <div style="display:flex; justify-content:center;">
@@ -508,6 +508,8 @@
         async function initPage() {
             await loadHospitals();
             await checkMyHospital();
+            // Re-render after myHospital is known so badge and sorting work correctly
+            renderCityHospitals(cityHospitals);
         }
 
         async function loadHospitals() {
@@ -557,7 +559,7 @@
                             <div class="hospital-icon">
                                 <img src="icons/hospital-icon/hospital.png" style="width:32px; height:32px; object-fit:contain;">
                             </div>
-                            <div class="hospital-info">
+                            <div class="hospital-info" style="flex-direction: column; align-items: flex-start;">
                                 <div class="hospital-name">${myHospital.name || 'Hastaneniz'}</div>
                                 <div class="hospital-desc">Yönetim Paneli</div>
                             </div>
@@ -582,7 +584,7 @@
                             <div class="hospital-icon" style="color:var(--accent-red); border-color:var(--accent-red);">
                                 <img src="icons/hospital-icon/hospital.png" style="width:32px; height:32px; object-fit:contain;">
                             </div>
-                            <div class="hospital-info">
+                            <div class="hospital-info" style="flex-direction: column; align-items: flex-start;">
                                 <div class="hospital-name">Yeni Hastane Kur</div>
                                 <div class="hospital-desc">İşletme satın alıp para kazanabilirsin.</div>
                             </div>
@@ -602,97 +604,64 @@
             if (!user) return;
 
             const modal = document.getElementById('confirmBuyModal');
-            modal.style.display = 'flex'; // Ensure flex for centering
-            modal.classList.add('active'); // Add active class if used by CSS
+            modal.style.display = 'flex';
+            modal.classList.add('active');
             
             const reqList = document.getElementById('reqList');
             reqList.innerHTML = '<div style="text-align:center; color:#888;">Veriler kontrol ediliyor...</div>';
             document.getElementById('btnConfirmBuy').disabled = true;
 
             try {
-                // Fetch user inventory and licenses
-                // Fetch User Stats for Money/Gold/Diamond and Inventory for Items
-                const [userStatsRes, invRes, licRes] = await Promise.all([
-                    fetch(`/api/user-stats/${user.id}`),
-                    fetch(`/api/inventory/${user.id}`),
-                    fetch(`/api/licenses/${user.id}`)
-                ]);
-                
-                const userStats = await userStatsRes.json();
-                const inventory = await invRes.json();
-                const licenses = await licRes.json();
-                
-                // Helper to find item amount
-                const getAmount = (key) => {
-                    if (Array.isArray(inventory)) {
-                        const item = inventory.find(i => i.item_key === key);
-                        return item ? (item.amount || item.quantity) : 0;
-                    } else {
-                        return inventory[key] || 0;
-                    }
-                };
-                
-                // Helper to check license
-                const hasLicense = (key, level) => {
-                    // Check against userStats.license_hospital_level etc first (from users table)
-                    if (key === 'hospital' && userStats.license_hospital_level >= level) return true;
-                    
-                    if (Array.isArray(licenses)) {
-                        // Check licenses table if array
-                        const found = licenses.find(l => l.mine_type === key || l.mine_type === key + '_license');
-                        return found && found.level >= level;
-                    } else {
-                        // If object { key: value }
-                        return (licenses[key] || licenses[key + '_license'] || 0) >= level;
-                    }
+                const res = await fetch(`/api/hospitals/buy-check/${user.id}`);
+                const data = await res.json();
+
+                if (!data.success) {
+                    reqList.innerHTML = `<div style="color:red; text-align:center;">${data.message || 'Veri hatası!'}</div>`;
+                    return;
+                }
+
+                if (data.alreadyOwns) {
+                    reqList.innerHTML = '<div style="color:var(--accent-gold); text-align:center;">Zaten bir hastaneniz var.</div>';
+                    return;
+                }
+
+                const icons = {
+                    money:            'icons/inventory-icon/money.png',
+                    gold:             'icons/inventory-icon/gold.png',
+                    diamond:          'icons/inventory-icon/diamond.png',
+                    lumber:           'icons/factory-icon/wood-plank.png',
+                    brick:            'icons/factory-icon/brick.png',
+                    glass:            'icons/factory-icon/window.png',
+                    concrete:         'icons/factory-icon/cement.png',
+                    steel:            'icons/factory-icon/steel.png',
+                    hospital_license: 'icons/property-icon/ofis.png'
                 };
 
                 reqList.innerHTML = '';
-                let canBuy = true;
+                data.items.forEach(item => {
+                    const icon = icons[item.key] || 'icons/inventory-icon/money.png';
+                    const isLicense = item.key === 'hospital_license';
+                    const valText = isLicense ? (item.ok ? 'Var' : 'Yok') : fmt(item.required);
+                    const valColor = item.ok ? 'var(--accent-green)' : 'var(--accent-red)';
+                    const statusClass = item.ok ? 'ok' : 'fail';
+                    const statusIcon = item.ok ? 'fa-check' : 'fa-times';
 
-                // Requirements
-                const reqs = [
-                    { label: 'Para', val: 50000, userVal: userStats.money || 0, type: 'money', icon: 'icons/inventory-icon/money.png' },
-                    { label: 'Altın', val: 500, userVal: userStats.gold || 0, type: 'gold', icon: 'icons/inventory-icon/gold.png' },
-                    { label: 'Elmas', val: 10, userVal: userStats.diamond || 0, type: 'diamond', icon: 'icons/inventory-icon/diamond.png' },
-                    { label: 'Tahta', val: 1000, userVal: getAmount('lumber'), type: 'item', icon: 'icons/factory-icon/wood-plank.png' },
-                    { label: 'Tuğla', val: 1000, userVal: getAmount('brick'), type: 'item', icon: 'icons/factory-icon/brick.png' },
-                    { label: 'Cam', val: 500, userVal: getAmount('glass'), type: 'item', icon: 'icons/factory-icon/window.png' },
-                    { label: 'Çimento', val: 500, userVal: getAmount('concrete'), type: 'item', icon: 'icons/factory-icon/cement.png' },
-                    { label: 'Çelik', val: 250, userVal: getAmount('steel'), type: 'item', icon: 'icons/factory-icon/steel.png' },
-                    { label: '1. Seviye Hastane Lisansı', val: 1, userVal: hasLicense('hospital', 1) ? 1 : 0, type: 'license', icon: 'icons/property-icon/ofis.png' }
-                ];
-
-                reqs.forEach(r => {
-                    const isOk = r.userVal >= r.val;
-                    if (!isOk) canBuy = false;
-                    
-                    let valText = fmt(r.val);
-                    if (r.type === 'license') valText = r.val > 0 ? (r.userVal >= 1 ? 'Var' : 'Yok') : 'Gerekli';
-
-                    let iconHtml = `<img src="${r.icon}">`;
-                    
-                    const statusIcon = `
-                        <div class="upgrade-cost-status ${isOk ? 'ok' : 'fail'}">
-                            <i class="fas ${isOk ? 'fa-check' : 'fa-times'}"></i>
-                        </div>`;
-                    
-                    const valColor = isOk ? 'var(--accent-green)' : 'var(--accent-red)';
-                    
                     const div = document.createElement('div');
                     div.className = 'info-list-item';
                     div.innerHTML = `
                         <div class="info-left">
-                            ${iconHtml}
-                            <span class="info-label">${r.label}</span>
+                            <img src="${icon}">
+                            <span class="info-label">${item.label}</span>
                         </div>
                         <span class="info-value" style="color:${valColor}">${valText}</span>
-                        ${statusIcon}
+                        <div class="upgrade-cost-status ${statusClass}">
+                            <i class="fas ${statusIcon}"></i>
+                        </div>
                     `;
                     reqList.appendChild(div);
                 });
 
-                document.getElementById('btnConfirmBuy').disabled = !canBuy;
+                document.getElementById('btnConfirmBuy').disabled = !data.canBuy;
                 document.getElementById('hospitalNameInput').value = '';
 
             } catch (error) {
@@ -772,7 +741,16 @@
                 return;
             }
 
-            data.forEach(h => {
+            // Sort: owned hospital first
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            const sorted = [...data].sort((a, b) => {
+                const aOwned = myHospital && a.id === myHospital.id ? -1 : 0;
+                const bOwned = myHospital && b.id === myHospital.id ? 1 : 0;
+                return aOwned + bOwned;
+            });
+
+            sorted.forEach(h => {
+                const isOwned = myHospital && h.id === myHospital.id;
                 const active = h.active_patients || 0;
                 const capacity = h.capacity || 5;
                 const isFull = active >= capacity;
@@ -800,7 +778,7 @@
                 }
 
                 const card = document.createElement('div');
-                card.className = 'farm-list-card city-card';
+                card.className = `farm-list-card city-card${isOwned ? ' green-border' : ''}`;
                 card.style.cursor = 'pointer';
                 
                 const hospitalId = h.id || 0;
@@ -819,20 +797,21 @@
                         <div class="hospital-icon">
                             <img src="icons/hospital-icon/hospital.png" style="width:32px; height:32px; object-fit:contain;">
                         </div>
-                        <div class="hospital-info">
+                        <div class="hospital-info" style="flex-direction: column; align-items: flex-start;">
                             <div class="hospital-name">${h.name}</div>
                             <div class="hospital-stats">
+                                ${isOwned ? '<span class="stat-badge" style="border-color:var(--accent-green); background:rgba(46,204,113,0.1);"><i class="fas fa-check-circle" style="color:var(--accent-green);"></i><span style="color:var(--accent-green); font-weight:bold;">İŞLETMEM</span></span>' : ''}
                                 <span class="stat-badge" title="Kapasite">
-                                    <i class="fas fa-users" style="color:#888;"></i> 
-                                    <span style="color:${isFull ? 'var(--accent-red)' : 'var(--accent-green)'}; font-weight:bold;">${active}/${capacity}</span>
+                                    <i class="fas fa-users" style="color:${isFull ? 'var(--accent-red)' : 'var(--accent-green)'};"></i> 
+                                    <span style="color:#fff; font-weight:bold;">${active}/${capacity}</span>
                                 </span>
                                 <span class="stat-badge" title="Süre">
-                                    <i class="fas fa-clock" style="color:#888;"></i> 
-                                    <span style="color:var(--accent-cyan); font-weight:bold;">${duration} dk</span>
+                                    <i class="fas fa-clock" style="color:var(--accent-cyan);"></i> 
+                                    <span style="color:#fff; font-weight:bold;">${duration} dk</span>
                                 </span>
                                 <span class="stat-badge" title="Ücret">
-                                    <i class="fas fa-tag" style="color:#888;"></i> 
-                                    <span style="color:var(--accent-gold); font-weight:bold;">${fmt(h.price)} ₺</span>
+                                    <img src="icons/inventory-icon/money.png" style="width:14px; height:14px; object-fit:contain; vertical-align:middle;">
+                                    <span style="color:#fff; font-weight:bold;">${fmt(h.price)} ₺</span>
                                 </span>
                             </div>
                         </div>

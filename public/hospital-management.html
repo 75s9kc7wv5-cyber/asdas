@@ -259,6 +259,65 @@
         .info-item .info-label { flex: 1; font-size: 0.8rem; color: #aaa; }
         .info-item .info-value { font-size: 0.8rem; font-weight: bold; color: #fff; text-align: right; }
 
+        /* STATS GRID */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .stat-item { background: rgba(255,255,255,0.03); border: 1px solid #333; border-radius: 8px; padding: 12px; text-align: center; }
+        .si-val { font-size: 1rem; font-weight: 800; color: #fff; margin-bottom: 4px; }
+        .si-lbl { font-size: 0.7rem; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* ACCORDION */
+        :root {
+            --border: #333;
+            --text-secondary: #aaa;
+            --accent: #00e5ff;
+        }
+        .accordion-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .accordion-header {
+            padding: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.02);
+            transition: background 0.2s;
+        }
+        .accordion-header:hover { background: rgba(255, 255, 255, 0.05); }
+        .accordion-header.active {
+            border-bottom: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .accordion-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .accordion-icon {
+            color: #666;
+            transition: transform 0.3s ease;
+        }
+        .accordion-header.active .accordion-icon {
+            transform: rotate(180deg);
+            color: var(--accent-cyan);
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease-out;
+        }
+        .accordion-body { padding: 15px; }
+
         /* TABS */
         .tabs {
             display: flex;
@@ -292,12 +351,12 @@
                 </div>
             </div>
             <!-- İŞLETME KARTI -->
-            <div class="business-card" style="background: linear-gradient(135deg, rgba(0, 229, 255, 0.1), var(--bg-card)); border: 1px solid var(--accent-cyan); border-radius: 15px; padding: 15px; margin-bottom: 25px; display: flex; align-items: center; gap: 15px; position: relative; overflow: hidden;">
-                <div class="business-icon-wrapper" style="width: 65px; height: 65px; flex-shrink: 0; background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(0, 229, 255, 0.05)); border: 2px solid var(--accent-cyan); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                    <img src="icons/hospital-icon/hospital.png" class="business-icon" style="width: 60px; height: 60px; object-fit: contain;">
+            <div class="business-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 15px; padding: 15px; margin-bottom: 25px; display: flex; align-items: center; gap: 15px; position: relative; overflow: hidden;">
+                <div class="business-icon-wrapper" style="position: relative; width: 65px; height: 65px; flex-shrink: 0; background: rgba(0,0,0,0.3); border: 1px solid #333; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+                    <img src="icons/hospital-icon/hospital.png" class="business-icon" style="width: 50px; height: 50px; object-fit: contain;">
                 </div>
-                <div class="business-info">
-                    <div class="business-name" id="hNameDisplay" style="font-size: 1.2rem; font-weight: 800; color: #fff; text-transform: uppercase;">Yükleniyor...</div>
+                <div class="business-info" style="flex: 1; text-align: left;">
+                    <div class="business-name" id="hNameDisplay" style="font-size: 1rem; font-weight: 800; color: #fff; text-transform: uppercase; text-align: left;">Yükleniyor...</div>
                 </div>
             </div>
 
@@ -311,140 +370,194 @@
 
             <!-- TAB: INFO (UPGRADE & LOGS) -->
             <div id="tab-info" class="tab-content active">
-                
-                <div class="info-list">
-                    <div class="info-list-header">
-                        <i class="fas fa-info-circle"></i> HASTANE BİLGİLERİ
-                    </div>
-                    <div class="info-item">
-                        <i class="fas fa-user-tie" style="color:var(--accent-cyan)"></i>
-                        <span class="info-label">İşletme Sahibi</span>
-                        <span class="info-value" id="hOwnerDisplay">...</span>
-                    </div>
-                    <div class="info-item">
-                        <i class="fas fa-layer-group" style="color:var(--accent-gold)"></i>
-                        <span class="info-label">Seviye</span>
-                        <span class="info-value" id="statLevel">1</span>
-                    </div>
-                    <div class="info-item">
-                        <i class="fas fa-clock" style="color:var(--accent-gold)"></i>
-                        <span class="info-label">Tedavi Süresi</span>
-                        <span class="info-value" id="statDuration">15 Dk</span>
-                    </div>
-                    <div class="info-item">
-                        <i class="fas fa-heart" style="color:var(--accent-red)"></i>
-                        <span class="info-label">Sağlık Yenileme</span>
-                        <span class="info-value">%<span id="statRegen">100</span></span>
-                    </div>
-                    <div class="info-item">
-                        <i class="fas fa-tag" style="color:var(--accent-green)"></i>
-                        <span class="info-label">Tedavi Ücreti</span>
-                        <span class="info-value"><span id="statPriceDisplay">0</span> ₺</span>
-                    </div>
-                    <div class="info-item">
-                        <i class="fas fa-bed" style="color:var(--accent-purple)"></i>
-                        <span class="info-label">Kapasite</span>
-                        <span class="info-value" id="statCapacity">0/5</span>
-                    </div>
-                </div>
 
-                <div class="settings-card">
-                    <div class="info-list-header">
-                        <i class="fas fa-chart-line"></i> GENEL İSTATİSTİKLER
+                <!-- HASTANE BİLGİLERİ -->
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <div class="accordion-title"><i class="fas fa-info-circle"></i> HASTANE BİLGİLERİ</div>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
-                    <div class="info-list" style="margin-top:0; background:none; border:none; padding:0;">
-                        <div class="info-item">
-                            <i class="fas fa-procedures" style="color:var(--accent-cyan)"></i>
-                            <span class="info-label">Toplam Tedavi Sayısı</span>
-                            <span class="info-value" id="statTotalTreatments">0</span>
-                        </div>
-                        <div class="info-item">
-                            <i class="fas fa-coins" style="color:var(--accent-gold)"></i>
-                            <span class="info-label">Toplam Kazanç</span>
-                            <span class="info-value" id="statTotalEarnings">0 ₺</span>
+                    <div class="accordion-content" style="max-height: 2000px;">
+                        <div class="accordion-body">
+                            <div class="info-item">
+                                <i class="fas fa-user-tie" style="color:var(--accent-cyan)"></i>
+                                <span class="info-label">İşletme Sahibi</span>
+                                <span class="info-value" id="hOwnerDisplay">...</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-layer-group" style="color:var(--accent-gold)"></i>
+                                <span class="info-label">Seviye</span>
+                                <span class="info-value" id="statLevel">1</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-clock" style="color:var(--accent-gold)"></i>
+                                <span class="info-label">Tedavi Süresi</span>
+                                <span class="info-value" id="statDuration">15 Dk</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-heart" style="color:var(--accent-red)"></i>
+                                <span class="info-label">Sağlık Yenileme</span>
+                                <span class="info-value">%<span id="statRegen">100</span></span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-tag" style="color:var(--accent-green)"></i>
+                                <span class="info-label">Tedavi Ücreti</span>
+                                <span class="info-value"><span id="statPriceDisplay">0</span> ₺</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-bed" style="color:var(--accent-purple)"></i>
+                                <span class="info-label">Kapasite</span>
+                                <span class="info-value" id="statCapacity">0/5</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-
-
-                <!-- LOGS CARD (Updated to match Hospital Detail History Style) -->
-                <div class="settings-card">
-                    <div class="info-list-header">
-                        <i class="fas fa-history"></i> SON İŞLEMLER (LOG)
+                <!-- GENEL İSTATİSTİKLER -->
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <div class="accordion-title"><i class="fas fa-chart-line"></i> GENEL İSTATİSTİKLER</div>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
-                    <div id="logsTableBody" style="display: flex; flex-direction: column; gap: 10px; max-height: 200px; overflow-y: auto;">
-                        <div style="text-align:center; color:#666;">Kayıt yok.</div>
+                    <div class="accordion-content" style="max-height: 2000px;">
+                        <div class="accordion-body">
+                            <div class="info-item">
+                                <i class="fas fa-procedures" style="color:var(--accent-cyan)"></i>
+                                <span class="info-label">Toplam Tedavi Sayısı</span>
+                                <span class="info-value" id="statTotalTreatments">0</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                <!-- SON İŞLEMLER -->
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <div class="accordion-title"><i class="fas fa-history"></i> SON İŞLEMLER (LOG)</div>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
+                    </div>
+                    <div class="accordion-content" style="max-height: 2000px;">
+                        <div class="accordion-body">
+                            <div id="logsTableBody" style="display: flex; flex-direction: column; gap: 10px; max-height: 200px; overflow-y: auto;">
+                                <div style="text-align:center; color:#666;">Kayıt yok.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             <!-- TAB: SETTINGS (RENAME/PRICE) -->
             <div id="tab-settings" class="tab-content">
-                <div class="settings-card">
-                    <div class="info-list-header">
-                        <i class="fas fa-edit"></i> BİLGİLERİ DÜZENLE
+
+                <!-- BİLGİLERİ DÜZENLE -->
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <div class="accordion-title"><i class="fas fa-edit"></i> BİLGİLERİ DÜZENLE</div>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Hastane Adı (5-30 Karakter)</label>
-                        <input type="text" id="hNameInput" class="form-input" value="" autocomplete="off" data-lpignore="true" maxlength="30">
+                    <div class="accordion-content" style="max-height: 2000px;">
+                        <div class="accordion-body">
+                            <div class="form-group">
+                                <label class="form-label">Hastane Adı (5-30 Karakter)</label>
+                                <input type="text" id="hNameInput" class="form-input" value="" autocomplete="off" data-lpignore="true" maxlength="30">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Tedavi Ücreti (100 - 5.000 ₺)</label>
+                                <input type="number" id="hPriceInput" class="form-input" value="" autocomplete="off" data-lpignore="true" min="100" max="5000">
+                            </div>
+                            <button class="btn-save" onclick="openSettingsModal()">KAYDET</button>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Tedavi Ücreti (100 - 5.000 ₺)</label>
-                        <input type="number" id="hPriceInput" class="form-input" value="" autocomplete="off" data-lpignore="true" min="100" max="5000">
-                    </div>
-                    <button class="btn-save" onclick="openSettingsModal()">KAYDET</button>
                 </div>
 
-                <div class="settings-card upgrade-card">
-                    <div class="card-title" style="border-color:var(--accent-gold); color:var(--accent-gold);">HASTANE SEVİYESİ</div>
-                    
-                    <div class="upgrade-info">
-                        <div class="u-col">
-                            <h4>MEVCUT</h4>
-                            <p id="currentLevel">Seviye 1</p>
-                            <small style="color:#aaa" id="currentCap">5 Yatak</small>
-                        </div>
-                        <div class="u-arrow"><i class="fas fa-arrow-right" style="color:var(--accent-gold)"></i></div>
-                        <div class="u-col">
-                            <h4>SONRAKİ</h4>
-                            <p id="nextLevel">Seviye 2</p>
-                            <small style="color:var(--accent-green)" id="nextCap">55 Yatak</small>
-                        </div>
+                <!-- HASTANE SEVİYESİ -->
+                <div class="accordion-card" style="border-color: var(--accent-gold);">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)" style="border-bottom-color: var(--accent-gold);">
+                        <div class="accordion-title" style="color: var(--accent-gold);"><i class="fas fa-arrow-circle-up"></i> HASTANE SEVİYESİ</div>
+                        <i class="fas fa-chevron-down accordion-icon" style="color: var(--accent-gold);"></i>
                     </div>
-
-                    <button id="upgradeBtn" class="btn-upgrade" onclick="openUpgradeModal()">
-                        <i class="fas fa-arrow-circle-up"></i> GELİŞTİR
-                    </button>
-
-                    <div id="upgradeProgress" class="upgrade-progress-container">
-                        <div class="u-progress-bg">
-                            <div id="uBar" class="u-progress-fill"></div>
+                    <div class="accordion-content" style="max-height: 2000px;">
+                        <div class="accordion-body">
+                            <div class="upgrade-info">
+                                <div class="u-col">
+                                    <h4>MEVCUT</h4>
+                                    <p id="currentLevel">Seviye 1</p>
+                                    <small style="color:#aaa" id="currentCap">5 Yatak</small>
+                                </div>
+                                <div class="u-arrow"><i class="fas fa-arrow-right" style="color:var(--accent-gold)"></i></div>
+                                <div class="u-col">
+                                    <h4>SONRAKİ</h4>
+                                    <p id="nextLevel">Seviye 2</p>
+                                    <small style="color:var(--accent-green)" id="nextCap">55 Yatak</small>
+                                </div>
+                            </div>
+                            <button id="upgradeBtn" class="btn-upgrade" onclick="openUpgradeModal()">
+                                <i class="fas fa-arrow-circle-up"></i> GELİŞTİR
+                            </button>
+                            <div id="upgradeProgress" class="upgrade-progress-container">
+                                <div class="u-progress-bg">
+                                    <div id="uBar" class="u-progress-fill"></div>
+                                </div>
+                                <div id="uTimer" class="u-timer-text">Geliştiriliyor... 10s</div>
+                            </div>
                         </div>
-                        <div id="uTimer" class="u-timer-text">Geliştiriliyor... 10s</div>
                     </div>
                 </div>
+
             </div>
 
             <!-- TAB: VAULT (KASA) -->
             <div id="tab-vault" class="tab-content">
-                <!-- KASA YÖNETİMİ (Updated to match Mine Management Style) -->
-                <div class="settings-card" style="border-color:var(--accent-cyan)">
-                    <div class="info-list-header">
-                        <img src="icons/inventory-icon/money.png" style="width:20px;height:20px;object-fit:contain;"> KASA YÖNETİMİ
+
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <span class="accordion-title"><i class="fas fa-vault"></i> HASTANE KASASI</span>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Kasa Bakiyesi</label>
-                        <div style="font-size:1.2rem; font-weight:bold; color:#fff; margin-bottom:10px;" id="hospitalBalance">0 ₺</div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Para Çek</label>
-                        <div style="display:flex; gap:10px;">
-                            <input type="number" id="withdrawAmount" class="form-input" placeholder="Miktar" autocomplete="off" data-lpignore="true">
-                            <button class="btn-save" style="width:auto; background:var(--accent-cyan); color:#000; border:none;" onclick="openWithdrawModal()">ÇEK</button>
+                    <div class="accordion-content" style="max-height: 2000px;">
+                        <div class="accordion-body">
+
+                            <!-- Bakiye Kısmı -->
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                <div style="font-size: 0.9rem; color: #888; margin-bottom: 5px;">MEVCUT BAKİYE</div>
+                                <div id="fVault" style="font-size: 2.2rem; font-weight: 800; color: var(--accent-gold); letter-spacing: 2px; margin-bottom: 8px;">0</div>
+                                <!-- Progress Bar -->
+                                <div style="width: 100%; height: 6px; background: #222; border-radius: 3px; margin: 10px 0; overflow: hidden; border: 1px solid #333;">
+                                    <div id="vaultProgressBar" style="width: 100%; height: 100%; background: var(--accent-gold); transition: width 0.5s ease;"></div>
+                                </div>
+                            </div>
+
+                            <!-- İşlem Kısmı -->
+                            <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border: 1px solid #333;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                    <div style="font-size: 0.85rem; color: #aaa;">İşlem Miktarı:</div>
+                                    <div style="text-align: right; font-size: 0.75rem; color: #888;">
+                                        <span style="margin-right: 10px;">Max Yatır: <span id="maxVaultDeposit" style="color:var(--accent-green); cursor:pointer; font-weight:bold;" onclick="setMaxAmount('deposit')">0</span> ₺</span>
+                                        <span>Max Çek: <span id="maxVaultWithdraw" style="color:var(--accent-red); cursor:pointer; font-weight:bold;" onclick="setMaxAmount('withdraw')">0</span> ₺</span>
+                                    </div>
+                                </div>
+
+                                <div style="position: relative; margin-bottom: 15px;">
+                                    <input type="number" id="vaultInput" class="form-input" placeholder="0" style="text-align: center; font-size: 1.5rem; color: var(--accent-gold); font-weight: bold; padding-right: 40px; border-color: #444;" autocomplete="off" data-lpignore="true">
+                                    <span style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #666; font-weight: bold;">₺</span>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <button onclick="confirmAction('vault','add',null,null)" style="background: var(--accent-green); color: #000; border: none; width:100%; padding:12px; border-radius:5px; font-weight:bold; cursor:pointer; font-family:'Rajdhani'; font-size:1rem;">
+                                        <i class="fas fa-arrow-down"></i> YATIR
+                                    </button>
+                                    <button onclick="confirmAction('vault','withdraw',null,null)" style="background: #e74c3c; color: #fff; border: 1px solid #c0392b; width:100%; padding:12px; border-radius:5px; font-weight:bold; cursor:pointer; font-family:'Rajdhani'; font-size:1rem;">
+                                        <i class="fas fa-arrow-up"></i> ÇEK
+                                    </button>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
+
+
             </div>
 
         </main>
@@ -482,6 +595,20 @@
             </div>
         </div>
 
+        <!-- DEPOSIT MODAL -->
+        <div class="modal-overlay" id="depositModal">
+            <div class="modal-content" style="border-top-color: var(--accent-green);">
+                <i class="fas fa-arrow-down" style="font-size:3rem; color:var(--accent-green); margin-bottom:10px;"></i>
+                <h3 style="color:#fff; margin-bottom:5px;">Para Yatır</h3>
+                <p style="color:#aaa; font-size:0.9rem; margin-bottom:20px;">Kasaya <span id="dAmountDisplay" style="color:#fff; font-weight:bold;">0</span> ₺ yatırmak istediğinize emin misiniz?</p>
+                
+                <div class="m-btns">
+                    <button class="m-btn" style="background:#333; color:#fff;" onclick="closeModal('depositModal')">İPTAL</button>
+                    <button class="m-btn" style="background:var(--accent-green); color:#000;" onclick="confirmDeposit()">ONAYLA</button>
+                </div>
+            </div>
+        </div>
+
         <!-- WITHDRAW MODAL -->
         <div class="modal-overlay" id="withdrawModal">
             <div class="modal-content" style="border-top-color: var(--accent-green);">
@@ -496,12 +623,32 @@
             </div>
         </div>
 
+        <!-- SUCCESS MODAL -->
+        <div class="modal-overlay" id="resultSuccessModal">
+            <div class="modal-content" style="border-top-color: var(--accent-green);">
+                <i class="fas fa-check-circle" style="font-size:3rem; color:var(--accent-green); margin-bottom:10px;"></i>
+                <h3 style="color:#fff; margin-bottom:10px;">Başarılı</h3>
+                <p id="resultSuccessMsg" style="color:#aaa; font-size:0.9rem; margin-bottom:20px;"></p>
+                <button class="m-btn" style="background:var(--accent-green); color:#000; width:100%;" onclick="closeModal('resultSuccessModal')">TAMAM</button>
+            </div>
+        </div>
+
+        <!-- ERROR MODAL -->
+        <div class="modal-overlay" id="resultErrorModal">
+            <div class="modal-content" style="border-top-color: var(--accent-red);">
+                <i class="fas fa-times-circle" style="font-size:3rem; color:var(--accent-red); margin-bottom:10px;"></i>
+                <h3 style="color:#fff; margin-bottom:10px;">Hata</h3>
+                <p id="resultErrorMsg" style="color:#aaa; font-size:0.9rem; margin-bottom:20px;"></p>
+                <button class="m-btn" style="background:var(--accent-red); color:#fff; width:100%;" onclick="closeModal('resultErrorModal')">TAMAM</button>
+            </div>
+        </div>
+
         <!-- SETTINGS MODAL -->
         <div class="modal-overlay" id="settingsModal">
             <div class="modal-content" style="border-top-color: var(--accent-cyan);">
                 <i class="fas fa-cogs" style="font-size:3rem; color:var(--accent-cyan); margin-bottom:10px;"></i>
                 <h3 style="color:#fff; margin-bottom:5px;">Ayarları Kaydet</h3>
-                <p style="color:#aaa; font-size:0.9rem; margin-bottom:20px;">Hastane bilgilerini güncellemek istediğinize emin misiniz?<br><span style="color:var(--accent-red); font-weight:bold;">İşlem Ücreti: 10.000 ₺</span></p>
+                <p style="color:#aaa; font-size:0.9rem; margin-bottom:20px;">Hastane bilgilerini güncellemek istediğinize emin misiniz?</p>
                 
                 <div class="m-btns">
                     <button class="m-btn" style="background:#333; color:#fff;" onclick="closeModal('settingsModal')">İPTAL</button>
@@ -565,15 +712,16 @@
             document.getElementById('statCapacity').innerText = (hospital.active_patients || 0) + " / " + hospital.capacity;
             document.getElementById('statPriceDisplay').innerText = fmt(hospital.price || 0);
             document.getElementById('statTotalTreatments').innerText = fmt(hospital.total_treatments || 0);
-            document.getElementById('statTotalEarnings').innerText = fmt(hospital.balance || 0) + " ₺"; // Using balance as proxy
             document.getElementById('statDuration').innerText = (hospital.treatment_duration || 15) + " Dk";
             document.getElementById('statRegen').innerText = (hospital.health_regen || 100);
             
             // New Fields
             document.getElementById('hNameDisplay').innerText = hospital.name;
-            document.getElementById('hOwnerDisplay').innerHTML = `<a href="profile.html?id=${hospital.user_id}" style="color:var(--accent-cyan); text-decoration:none;">${hospital.owner_name || user.username}</a>`;
+            document.getElementById('hOwnerDisplay').innerHTML = `<a href="profile.html?id=${hospital.user_id}" style="color:var(--accent-cyan); text-decoration:none;">${hospital.user_id} - ${hospital.owner_name || user.username}</a>`;
 
-            document.getElementById('hospitalBalance').innerText = fmt(hospital.balance || 0) + " ₺";
+            document.getElementById('fVault').innerText = fmt(hospital.balance || 0) + " ₺";
+            document.getElementById('maxVaultWithdraw').innerText = fmt(hospital.balance || 0);
+            if (document.getElementById('maxVaultDeposit')) document.getElementById('maxVaultDeposit').innerText = fmt(user.money || 0);
             document.getElementById('hNameInput').value = hospital.name;
             document.getElementById('hPriceInput').value = hospital.price;
             
@@ -590,12 +738,9 @@
             } else {
                 hospitalLogs.forEach(log => {
                     const date = new Date(log.created_at);
-                    const dateStr = date.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                    const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    const avatar = log.avatar || 'uploads/avatars/default.png'; // Assuming avatar is available in log or need to join
-                    // Note: The current API for logs might not return avatar. Let's check server.js or assume default for now.
-                    // If avatar is not in log, we might need to update backend query.
-                    // For now, let's use a generic icon or try to use what we have.
+                    const dateStr = date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+                    const timeStr = date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                    const avatar = log.avatar || 'uploads/avatars/default.png';
                     
                     const row = `
                         <div class="log-item">
@@ -604,7 +749,7 @@
                                 <span class="log-user-link">#${log.user_id} - ${log.patient_name}</span> 
                                 <span class="log-highlight">tedavi oldu</span>
                             </div>
-                            <div class="log-time">${dateStr} ${timeStr}</div>
+                            <div class="log-time">${dateStr} - ${timeStr}</div>
                         </div>
                     `;
                     tbody.innerHTML += row;
@@ -696,18 +841,78 @@
             upgradeInterval = setInterval(updateTimer, 1000);
         }
 
-        // --- WITHDRAW ---
+        // --- VAULT ---
+        function setMaxAmount(type) {
+            if (type === 'deposit') {
+                document.getElementById('vaultInput').value = user.money || 0;
+            } else {
+                document.getElementById('vaultInput').value = hospital.balance || 0;
+            }
+        }
+
+        function confirmAction(area, action, id, extra) {
+            if (area === 'vault' && action === 'withdraw') {
+                const amount = parseInt(document.getElementById('vaultInput').value);
+                if (!amount || amount <= 0) return toastr.warning('Geçerli miktar giriniz.');
+                if (amount > (hospital.balance || 0)) return toastr.warning('Yetersiz kasa bakiyesi.');
+                document.getElementById('wAmountDisplay').innerText = fmt(amount);
+                document.getElementById('withdrawModal').style.display = 'flex';
+            } else if (area === 'vault' && action === 'add') {
+                const amount = parseInt(document.getElementById('vaultInput').value);
+                if (!amount || amount <= 0) return toastr.warning('Geçerli miktar giriniz.');
+                if (amount > (user.money || 0)) return toastr.warning('Yetersiz bakiye.');
+                document.getElementById('dAmountDisplay').innerText = fmt(amount);
+                document.getElementById('depositModal').style.display = 'flex';
+            }
+        }
+
+        function showResultModal(success, message) {
+            if (success) {
+                document.getElementById('resultSuccessMsg').innerText = message;
+                document.getElementById('resultSuccessModal').style.display = 'flex';
+            } else {
+                document.getElementById('resultErrorMsg').innerText = message;
+                document.getElementById('resultErrorModal').style.display = 'flex';
+            }
+        }
+
+        async function confirmDeposit() {
+            const amount = parseInt(document.getElementById('vaultInput').value);
+            closeModal('depositModal');
+            try {
+                const res = await fetch('/api/hospital/deposit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, amount })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    hospital.balance = (hospital.balance || 0) + amount;
+                    document.getElementById('vaultInput').value = '';
+                    const userRes = await fetch(`/api/user-stats/${userId}`);
+                    user = await userRes.json();
+                    if (window.updateHeader) window.updateHeader(user);
+                    updateUI();
+                    showResultModal(true, data.message);
+                } else {
+                    showResultModal(false, data.message);
+                }
+            } catch (e) {
+                showResultModal(false, 'Bağlantı hatası oluştu.');
+            }
+        }
+
         function openWithdrawModal() {
-            const amount = parseInt(document.getElementById('withdrawAmount').value);
+            const amount = parseInt(document.getElementById('vaultInput') ? document.getElementById('vaultInput').value : document.getElementById('withdrawAmount').value);
             if (!amount || amount <= 0) return toastr.warning('Geçerli miktar giriniz.');
             if (amount > (hospital.balance || 0)) return toastr.warning('Yetersiz bakiye.');
-
             document.getElementById('wAmountDisplay').innerText = fmt(amount);
             document.getElementById('withdrawModal').style.display = 'flex';
         }
 
         async function confirmWithdraw() {
-            const amount = parseInt(document.getElementById('withdrawAmount').value);
+            const inputEl = document.getElementById('vaultInput') || document.getElementById('withdrawAmount');
+            const amount = parseInt(inputEl.value);
             closeModal('withdrawModal');
 
             try {
@@ -719,20 +924,21 @@
                 const data = await res.json();
                 
                 if (data.success) {
-                    toastr.success(data.message);
                     hospital.balance -= amount;
-                    document.getElementById('withdrawAmount').value = '';
+                    const inputEl = document.getElementById('vaultInput') || document.getElementById('withdrawAmount');
+                    if (inputEl) inputEl.value = '';
                     updateUI();
                     
                     // Refresh user stats
                     const userRes = await fetch(`/api/user-stats/${userId}`);
                     user = await userRes.json();
                     if (window.updateHeader) window.updateHeader(user);
+                    showResultModal(true, data.message);
                 } else {
-                    toastr.error(data.message);
+                    showResultModal(false, data.message);
                 }
             } catch (e) {
-                toastr.error('Hata oluştu.');
+                showResultModal(false, 'Bağlantı hatası oluştu.');
             }
         }
 
@@ -746,17 +952,13 @@
             const price = parseInt(document.getElementById('hPriceInput').value);
             
             if (!name || name.length < 5 || name.length > 30) {
-                toastr.warning('Hastane adı 5-30 karakter arasında olmalıdır.');
+                closeModal('settingsModal');
+                showResultModal(false, 'Hastane adı 5-30 karakter arasında olmalıdır.');
                 return;
             }
             if (isNaN(price) || price < 100 || price > 5000) {
-                toastr.warning('Fiyat 100 ile 5.000 arasında olmalıdır.');
-                return;
-            }
-
-            if (user.money < 10000) {
-                toastr.error('Yetersiz bakiye. İşlem ücreti: 10.000 ₺');
                 closeModal('settingsModal');
+                showResultModal(false, 'Fiyat 100 ile 5.000 arasında olmalıdır.');
                 return;
             }
 
@@ -771,21 +973,20 @@
                 const data = await res.json();
                 
                 if (data.success) {
-                    toastr.success(data.message);
                     hospital.name = name;
                     hospital.price = price;
-                    
                     updateUI();
                     
                     // Refresh user stats
                     const userRes = await fetch(`/api/user-stats/${userId}`);
                     user = await userRes.json();
                     if (window.updateHeader) window.updateHeader(user);
+                    showResultModal(true, data.message);
                 } else {
-                    toastr.error(data.message);
+                    showResultModal(false, data.message);
                 }
             } catch (e) {
-                toastr.error('Hata oluştu.');
+                showResultModal(false, 'Hata oluştu.');
             }
         }
 
@@ -1025,6 +1226,18 @@
                 console.error(err);
                 toastr.error("Bir hata oluştu.");
             });
+        }
+
+        // --- ACCORDION ---
+        function toggleAccordion(header) {
+            const content = header.nextElementSibling;
+            const isActive = header.classList.contains('active');
+            header.classList.toggle('active');
+            if (isActive) {
+                content.style.maxHeight = '0';
+            } else {
+                content.style.maxHeight = content.scrollHeight + 'px';
+            }
         }
 
         // --- TABS ---

@@ -96,73 +96,67 @@
         }
 
         .product-card {
-            background: rgba(30, 30, 30, 0.95);
-            border: 1px solid #333;
-            border-radius: 8px;
-            padding: 10px 5px;
+            background: #141414;
+            border: 1px solid #2a2a2a;
+            border-top: 2px solid #333;
+            border-radius: 10px;
+            padding: 14px 8px 12px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: 5px;
+            gap: 6px;
             cursor: pointer;
-            transition: transform 0.2s, border-color 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s;
             text-align: center;
-            position: relative;
-            height: auto;
-            min-height: 100px;
-            overflow: hidden;
-            border-top: 2px solid var(--accent);
         }
         .product-card:hover { 
-            transform: translateY(-5px); 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            border-color: #fff;
+            transform: translateY(-4px); 
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            border-color: #444;
         }
 
         .pc-icon-circle {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            background: #222;
+            width: 52px;
+            height: 52px;
+            border-radius: 10px;
+            background: #0d0d0d;
+            border: 1px solid #2a2a2a;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            flex-shrink: 0;
             transition: 0.3s;
+        }
+        .product-card:hover .pc-icon-circle {
+            transform: scale(1.08);
+            border-color: #444;
         }
 
         .pc-icon { 
-            width: 24px; 
-            height: 24px; 
-            object-fit: contain; 
-            filter: drop-shadow(0 0 3px rgba(0,0,0,0.5));
-            transition: 0.3s; 
-            background: transparent; 
-            padding: 0; 
-            border-radius: 0; 
+            width: 45px; 
+            height: 45px; 
+            object-fit: contain;
         }
-        .product-card:hover .pc-icon { transform: scale(1.1); filter: drop-shadow(0 0 5px var(--accent)); }
+        .product-card:hover .pc-icon {
+            transform: scale(1.1);
+        }
 
         .pc-name { 
-            font-size: 0.85rem; 
+            font-size: 0.78rem; 
             font-weight: 700; 
             line-height: 1.2; 
-            margin-bottom: 0;
             color: #fff;
             text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
 
         .count-badge { 
-            background: #222; 
-            padding: 2px 6px; 
+            background: rgba(255,255,255,0.05);
+            padding: 2px 8px; 
             border-radius: 4px; 
-            border: 1px solid #444; 
-            display: inline-block; 
-            margin-top: 2px; 
-            font-size: 0.7rem; 
-            color: #fff;
+            border: 1px solid #333; 
+            font-size: 0.68rem; 
+            color: #888;
         }
         
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -199,56 +193,67 @@
     <script src="js/menu-manager.js"></script>
     <script>
         const itemDatabase = {
-            'resource': [
-                { id: 'iron', name: 'Demir', icon: 'icons/mine-icon/iron.png', desc: 'Sanayi hammaddesi' },
-                { id: 'copper', name: 'Bakır', icon: 'icons/mine-icon/copper.png', desc: 'Elektronik bileşeni' },
-                { id: 'stone', name: 'Taş', icon: 'icons/mine-icon/stone.png', desc: 'İnşaat malzemesi' },
-                { id: 'wood', name: 'Odun', icon: 'icons/mine-icon/wood.png', desc: 'Temel yapı malzemesi' },
-                { id: 'sand', name: 'Kum', icon: 'icons/mine-icon/sand.png', desc: 'Cam yapımında kullanılır' },
-                { id: 'coal', name: 'Kömür', icon: 'icons/mine-icon/coal.png', desc: 'Enerji kaynağı' },
-                { id: 'oil', name: 'Petrol', icon: 'icons/mine-icon/oil-barrel.png', desc: 'Sıvı altın' },
-                { id: 'uranium', name: 'Uranyum', icon: 'icons/mine-icon/uranium.png', desc: 'Nükleer yakıt' },
-                { id: 'gold_nugget', name: 'Altın Parçası', icon: 'icons/mine-icon/gold-nugget.png', desc: 'Değerli maden' }
+            'farm': [
+                { id: 'corn',   name: 'Mısır',   icon: 'icons/farm-icon/corn.png' },
+                { id: 'wheat',  name: 'Buğday',  icon: 'icons/farm-icon/wheat.png' },
+                { id: 'olive',  name: 'Zeytin',  icon: 'icons/farm-icon/olive.png' },
+                { id: 'fruit',  name: 'Meyve',   icon: 'icons/farm-icon/fruit.png' },
+                { id: 'grain',  name: 'Tahıl',   icon: 'icons/farm-icon/grain.png' }
             ],
-            'food': [
-                { id: 'steak', name: 'Et', icon: 'icons/food-factory/steak-food.png', desc: 'Yüksek protein' },
-                { id: 'salad', name: 'Salata', icon: 'icons/food-factory/salad.png', desc: 'Sağlıklı öğün' },
-                { id: 'rice', name: 'Pirinç', icon: 'icons/food-factory/rice.png', desc: 'Temel gıda' },
-                { id: 'canned_fruit', name: 'Konserve', icon: 'icons/food-factory/fruit-canned.png', desc: 'Uzun ömürlü' },
-                { id: 'beef', name: 'Sığır Eti', icon: 'icons/ranch-icon/beef.png', desc: 'Çiftlik ürünü' },
-                { id: 'honey', name: 'Bal', icon: 'icons/ranch-icon/honey.png', desc: 'Doğal tatlandırıcı' },
-                { id: 'egg', name: 'Yumurta', icon: 'icons/ranch-icon/egg.png', desc: 'Kahvaltılık' }
+            'livestock': [
+                { id: 'beef',    name: 'Et',      icon: 'icons/ranch-icon/beef.png' },
+                { id: 'egg',     name: 'Yumurta', icon: 'icons/ranch-icon/egg.png' },
+                { id: 'honey',   name: 'Bal',     icon: 'icons/ranch-icon/honey.png' },
+                { id: 'chicken', name: 'Tavuk',   icon: 'icons/ranch-icon/chicken.png' },
+                { id: 'milk',    name: 'Süt',     icon: 'icons/ranch-icon/milk.png' }
             ],
-            'energy': [
-                { id: 'electricity', name: 'Elektrik', icon: 'icons/energy-factory-icon/battery.png', desc: 'Enerji depolama' },
-                { id: 'fossil_fuel', name: 'Fosil Yakıt', icon: 'icons/energy-factory-icon/fossil-fuel.png', desc: 'Geleneksel yakıt' }
+            'mining': [
+                { id: 'iron',       name: 'Demir',       icon: 'icons/mine-icon/iron.png' },
+                { id: 'copper',     name: 'Bakır',       icon: 'icons/mine-icon/copper.png' },
+                { id: 'coal',       name: 'Kömür',       icon: 'icons/mine-icon/coal.png' },
+                { id: 'gold_nugget',name: 'Altın',       icon: 'icons/mine-icon/gold-nugget.png' },
+                { id: 'uranium',    name: 'Uranyum',     icon: 'icons/mine-icon/uranium.png' },
+                { id: 'stone',      name: 'Taş',         icon: 'icons/mine-icon/stone.png' },
+                { id: 'sand',       name: 'Kum',         icon: 'icons/mine-icon/sand.png' },
+                { id: 'oil',        name: 'Petrol',      icon: 'icons/mine-icon/oil-barrel.png' }
             ],
             'industry': [
-                { id: 'cement', name: 'Çimento', icon: 'icons/factory-icon/cement.png', desc: 'Yapı harcı' },
-                { id: 'brick', name: 'Tuğla', icon: 'icons/factory-icon/brick.png', desc: 'Duvar malzemesi' },
-                { id: 'steel', name: 'Çelik', icon: 'icons/factory-icon/steel.png', desc: 'Güçlendirilmiş metal' },
-                { id: 'glass', name: 'Cam', icon: 'icons/factory-icon/window.png', desc: 'Şeffaf yapı' },
-                { id: 'lumber', name: 'Kereste', icon: 'icons/factory-icon/wood-plank.png', desc: 'İşlenmiş odun' },
-                { id: 'copper_cable', name: 'Bakır Kablo', icon: 'icons/factory-icon/copper-cable.png', desc: 'Elektrik iletimi' },
-                { id: 'gold_cable', name: 'Altın Kablo', icon: 'icons/factory-icon/gold-cable.png', desc: 'Hızlı veri iletimi' }
+                { id: 'steel',   name: 'Çelik',   icon: 'icons/factory-icon/steel.png' },
+                { id: 'glass',   name: 'Cam',     icon: 'icons/factory-icon/window.png' },
+                { id: 'plastic', name: 'Plastik', icon: 'icons/factory-icon/plastic.png' },
+                { id: 'cement',  name: 'Çimento', icon: 'icons/factory-icon/cement.png' }
             ],
-            'luxury': [
-                { id: 'gold', name: 'Altın', icon: 'icons/inventory-icon/gold.png', desc: 'Yatırım aracı' },
-                { id: 'diamond', name: 'Elmas', icon: 'icons/inventory-icon/diamond.png', desc: 'En değerli taş' }
+            'construction': [
+                { id: 'brick', name: 'Tuğla',   icon: 'icons/factory-icon/brick.png' },
+                { id: 'plank', name: 'Tahta',   icon: 'icons/factory-icon/wood-plank.png' },
+                { id: 'beam',  name: 'Kiriş',   icon: 'icons/factory-icon/beam.png' },
+                { id: 'wood',  name: 'Odun',    icon: 'icons/mine-icon/wood.png' }
             ],
-            'weapon': [
-                 { id: 'weapon_basic', name: 'Mühimmat', icon: 'icons/mine-icon/uranium.png', desc: 'Askeri malzeme' }
+            'vehicles': [
+                { id: 'Noventis', name: 'Noventis', icon: 'icons/car-icon/Noventis.png' },
+                { id: 'Rugnar',   name: 'Rugnar',   icon: 'icons/car-icon/Rugnar.png' },
+                { id: 'Stradeo',  name: 'Stradeo',  icon: 'icons/car-icon/Stradeo.png' },
+                { id: 'Veltrano', name: 'Veltrano', icon: 'icons/car-icon/Veltrano.png' },
+                { id: 'Zentaro',  name: 'Zentaro',  icon: 'icons/car-icon/Zentaro.png' }
+            ],
+            'hardware': [
+                { id: 'GX-100',   name: 'GX-100',   icon: 'icons/video-card/GX-100.png' },
+                { id: 'GX-300',   name: 'GX-300',   icon: 'icons/video-card/GX-300.png' },
+                { id: 'GX-700',   name: 'GX-700',   icon: 'icons/video-card/GX-700.png' },
+                { id: 'GX-800',   name: 'GX-800',   icon: 'icons/video-card/GX-800.png' },
+                { id: 'GX-Titan', name: 'GX-Titan', icon: 'icons/video-card/GX-Titan.png' }
             ]
         };
 
         const categoryNames = {
-            'resource': 'HAMMADDE PAZARI',
-            'food': 'GIDA PAZARI',
-            'energy': 'ENERJİ PAZARI',
-            'industry': 'SANAYİ PAZARI',
-            'luxury': 'LÜKS PAZARI',
-            'weapon': 'SİLAH PAZARI',
-            'all': 'TÜM ÜRÜNLER'
+            'farm':         'TARIM ÜRÜNLERİ',
+            'livestock':    'HAYVANSAL ÜRÜNLER',
+            'mining':       'MADENCİLİK',
+            'industry':     'ENDÜSTRİYEL ÜRÜNLER',
+            'construction': 'YAPI MALZEMELERİ',
+            'vehicles':     'ARAÇ SATIŞ MERKEZİ',
+            'hardware':     'DONANIM MARKETİ',
+            'all':          'TÜM ÜRÜNLER'
         };
 
         window.onload = async () => {
@@ -267,6 +272,22 @@
 
             renderProducts(category, stats);
         };
+
+        const categoryColors = {
+            'farm':         '#2ecc71',
+            'livestock':    '#e67e22',
+            'mining':       '#95a5a6',
+            'industry':     '#3498db',
+            'construction': '#e74c3c',
+            'vehicles':     '#f39c12',
+            'hardware':     '#9b59b6'
+        };
+
+        // Build a reverse map: itemId → category
+        const itemCategoryMap = {};
+        Object.entries(itemDatabase).forEach(([cat, items]) => {
+            items.forEach(p => { itemCategoryMap[p.id] = cat; });
+        });
 
         function renderProducts(category, stats = {}) {
             const container = document.getElementById('productList');
@@ -289,6 +310,12 @@
                 div.className = 'product-card';
                 div.onclick = () => window.location.href = `market-detail.html?id=${p.id}`;
                 
+                // Category color top border
+                const cat = category === 'all' ? itemCategoryMap[p.id] : category;
+                const color = categoryColors[cat] || '#444';
+                div.style.borderTop = `2px solid ${color}`;
+                div.style.boxShadow = `0 -1px 8px ${color}18`;
+
                 // Get real listing count
                 const count = stats[p.id] || 0;
 

@@ -3,21 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
-    <title>Sim of World - Ayarlar</title>
+    <title>Sim of World - Ana Sayfa</title>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
-    <link rel="stylesheet" href="css/global-menu.css">
+    <script src="js/loader-manager.js"></script>
+    <script src="js/zoom-prevention.js"></script>
+    
     <style>
+                        /* RESULT MODAL CUSTOM STYLE */
+                        #resultModal .modal-content {
+                            background: var(--bg-card);
+                            width: 90%;
+                            max-width: 400px;
+                            padding: 30px;
+                            border-top: 3px solid #e74c3c;
+                            border-radius: 12px;
+                            border-left: 1px solid #444;
+                            border-right: 1px solid #444;
+                        }
+                /* ACCORDION */
+                .accordion-card {
+                    background: var(--bg-card);
+                    border: 1px solid var(--border-color);
+                    border-radius: 10px;
+                    margin-bottom: 10px;
+                    overflow: hidden;
+                    transition: all 0.3s ease;
+                }
+                .accordion-header {
+                    padding: 15px;
+                    cursor: pointer;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    background: rgba(255, 255, 255, 0.02);
+                    transition: background 0.2s;
+                }
+                .accordion-header:hover {
+                    background: rgba(255, 255, 255, 0.05);
+                }
+                .accordion-header.active {
+                     border-bottom: 1px solid var(--border-color);
+                     background: rgba(255, 255, 255, 0.05);
+                }
+                .accordion-title {
+                    font-size: 0.9rem;
+                    font-weight: 700;
+                    color: var(--accent-gold);
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+                .accordion-icon {
+                    color: #666;
+                    transition: transform 0.3s ease;
+                }
+                .accordion-header.active .accordion-icon {
+                    transform: rotate(180deg);
+                    color: var(--accent-gold);
+                }
+                .accordion-content {
+                    max-height: 0;
+                    overflow: hidden;
+                    transition: max-height 0.3s ease-out;
+                }
+                .accordion-content.open {
+                    max-height: 1000px; /* Yaklasik bir deger */
+                }
+                .accordion-body {
+                    padding: 15px;
+                }
+
+                @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+                @keyframes workPulse { 
+                    0% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 2px var(--accent-gold)); } 
+                    50% { transform: scale(1.1); opacity: 0.9; filter: drop-shadow(0 0 8px var(--accent-gold)); } 
+                    100% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 2px var(--accent-gold)); } 
+                }
         :root {
             --bg-dark: #0d0d0d;
             --bg-card: #161616;
             --accent-cyan: #00e5ff;
-            --accent-red: #e74c3c;
             --accent-green: #2ecc71;
+            --accent-gold: #ffd700;
+            --accent-red: #e74c3c;
             --text-white: #ffffff;
             --text-gray: #a0a0a0;
-            --border-color: #333;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -25,305 +96,361 @@
         body {
             background-color: #000;
             font-family: 'Rajdhani', sans-serif;
-            color: var(--text-white);
             display: flex;
             justify-content: center;
+            align-items: center;
             min-height: 100vh;
+            color: var(--text-white);
+            touch-action: manipulation;
+            overflow: hidden;
+        }
+
+        html {
+            overflow: hidden;
         }
 
         .game-container {
             width: 100%;
             max-width: 450px;
             background-color: var(--bg-dark);
-            min-height: 100vh;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
             position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            background-image: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.95)), url('img/world-map.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* MAIN CONTENT */
+        main {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
             padding-bottom: 80px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+
+            flex-direction: column;
+            gap: 25px;
         }
 
-        .header-badge {
-            background: linear-gradient(180deg, rgba(30,30,30,0.9) 0%, rgba(20,20,20,0.95) 100%);
-            padding: 20px;
-            border-radius: 0 0 20px 20px;
-            margin: 0 0 25px 0;
-            border-top: 3px solid var(--accent-cyan);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            position: relative;
-            overflow: hidden;
-            text-align: center;
-        }
-        .header-badge::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: radial-gradient(circle, var(--accent-cyan) 0%, transparent 100%);
-            opacity: 0.7;
-        }
-        .header-badge h1 {
-            font-size: 1.8rem;
-            color: #fff;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 5px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        .header-badge h1 i { color: var(--accent-cyan); }
-        .header-badge p {
-            font-size: 0.9rem;
-            color: #aaa;
-            font-weight: 500;
-        }
-        .back-btn {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: #fff;
-            font-size: 1.2rem;
-            cursor: pointer;
-            text-decoration: none;
-            z-index: 10;
-        }
-
-        .settings-section {
-            padding: 20px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .section-title {
-            font-size: 1rem;
-            color: var(--text-gray);
-            text-transform: uppercase;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-
-        /* FORM ELEMENTS */
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 0.9rem;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 12px;
-            background: #222;
-            border: 1px solid #444;
-            color: #fff;
-            border-radius: 5px;
-            font-family: 'Rajdhani';
-            font-size: 1rem;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: var(--accent-cyan);
-        }
-
-        .btn-save {
-            width: 100%;
-            padding: 12px;
-            background: var(--accent-cyan);
-            color: #000;
-            border: none;
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-            font-family: 'Rajdhani';
-            font-size: 1rem;
-            transition: 0.2s;
-        }
-
-        .btn-save:hover {
-            opacity: 0.9;
-        }
-
-        /* TOGGLES */
-        .setting-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-        }
-
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 24px;
-        }
-
-        .switch input { opacity: 0; width: 0; height: 0; }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #333;
-            transition: .4s;
-            border-radius: 24px;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .slider {
-            background-color: var(--accent-cyan);
-        }
-
-        input:checked + .slider:before {
-            transform: translateX(26px);
-        }
-
-        /* DANGER ZONE */
-        .btn-logout {
-            width: 100%;
-            padding: 12px;
-            background: transparent;
-            border: 1px solid var(--accent-red);
-            color: var(--accent-red);
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-            font-family: 'Rajdhani';
-            font-size: 1rem;
-            margin-top: 10px;
-        }
-
-        .btn-logout:hover {
-            background: var(--accent-red);
-            color: #fff;
-        }
-
+        
     </style>
 </head>
 <body>
 
     <div class="game-container">
-        <div class="header-badge">
-            <a href="javascript:history.back()" class="back-btn"><i class="fas fa-arrow-left"></i></a>
-            <h1><i class="fas fa-cog"></i> Ayarlar</h1>
-            <p>Hesap ve oyun tercihleri</p>
-        </div>
+                <div class="page-header" style="padding: 22px 20px 0 20px; display: flex; align-items: center; gap: 15px;">
+                    <button class="back-btn" onclick="window.location.href='home.html'" style="background: #222; border: 1px solid #333; color: #fff; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.2rem;">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div class="page-header-content" style="display: flex; flex-direction: column; justify-content: center; align-items: flex-start;">
+                        <div class="page-title" style="font-size:1.13rem; font-weight:900; text-transform:uppercase; color:#fff; margin-bottom:4px;">AYARLAR</div>
+                        <div class="page-subtitle" style="font-size:0.8rem; color:#a0a0a0; line-height:1.3;">Hesap bilgilerini ve oyun tercihlerini buradan düzenleyebilirsin.</div>
+                    </div>
+                </div>
+                   
+        <!-- Header injected by header-manager.js -->
 
-        <!-- AVATAR SETTINGS -->
-        <div class="settings-section">
-            <div class="section-title">Avatar Değiştir</div>
-            <div style="text-align:center; margin-bottom:15px;">
-                <img id="currentAvatar" src="https://ui-avatars.com/api/?name=User" style="width:100px; height:100px; border-radius:50%; border:2px solid var(--accent-cyan); object-fit:cover;">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Yeni Avatar (Max 2MB - JPG, PNG, GIF)</label>
-                <input type="file" id="avatarInput" accept="image/*" class="form-input" style="padding:8px;">
-            </div>
-            <button class="btn-save" onclick="uploadAvatar()">AVATARI GÜNCELLE</button>
-        </div>
-
-        <!-- USERNAME SETTINGS -->
-        <div class="settings-section">
-            <div class="section-title">Kullanıcı Adı Değiştir</div>
-            <div style="margin-bottom:10px; color:var(--accent-cyan); font-size:0.9rem;">
-                <img src="icons/inventory-icon/diamond.png" style="width:16px;height:16px;vertical-align:middle;"> Ücret: 100 Elmas
-            </div>
-            <div class="form-group">
-                <label class="form-label">Yeni Kullanıcı Adı</label>
-                <input type="text" class="form-input" id="newUsername" placeholder="Yeni adınız...">
-            </div>
-            <button class="btn-save" onclick="changeUsername()">İSMİ DEĞİŞTİR</button>
-        </div>
-
-        <!-- ACCOUNT SECURITY -->
-        <div class="settings-section">
-            <div class="section-title">Şifre Değiştir</div>
+        <main>
             
-            <div class="form-group">
-                <label class="form-label">Mevcut Şifre</label>
-                <input type="password" class="form-input" id="currentPass" placeholder="******">
+
+            <!-- Avatar Update Accordion Card -->
+            <div class="accordion-card" style="background: var(--bg-card); border-radius: 10px; margin-bottom: 20px; overflow: hidden; border: 1px solid #232323; transition: all 0.3s ease;">
+                <div class="accordion-header active" onclick="toggleAccordion(this)" style="padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02);">
+                    <div class="accordion-title" style="font-size: 0.9rem; font-weight: 700; color: var(--accent-cyan); display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-user-circle"></i> Avatar Güncelle
+                    </div>
+                    <i class="fas fa-chevron-down accordion-icon" style="color: #666;"></i>
+                </div>
+                <div class="accordion-content open">
+                    <div class="accordion-body" style="padding: 20px;">
+                        <div style="text-align:center; margin-bottom:15px;">
+                            <img id="currentAvatar" src="uploads/avatars/default.png" style="width:100px; height:100px; border-radius:50%; object-fit:cover;">
+                        </div>
+                        <div class="form-group" style="margin-bottom:15px;">
+                            <label class="form-label" style="display:block; margin-bottom:5px; font-size:0.9rem;">Yeni Avatar (Max 5MB - JPG, PNG, GIF)</label>
+                            <input type="file" id="avatarInput" accept="image/*" class="form-input" style="width:100%; padding:8px; background:#222; border:1px solid #444; color:#fff; border-radius:5px; font-family:'Rajdhani'; font-size:1rem;">
+                        </div>
+                        <button class="btn-save" onclick="uploadAvatar()" style="width:100%; padding:12px; background:var(--accent-green); color:#000; border:none; border-radius:5px; font-weight:bold; cursor:pointer; font-family:'Rajdhani'; font-size:1rem; transition:0.2s;">AVATARI GÜNCELLE</button>
+                    </div>
+                </div>
+            </div>
+
+                <!-- Gmail Onay Kartı -->
+                <div class="accordion-card" style="background: var(--bg-card); border-radius: 10px; margin-bottom: 20px; overflow: hidden; border: 1px solid #232323; transition: all 0.3s ease;">
+                    <div class="accordion-header" onclick="toggleAccordion(this)" style="padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02);">
+                        <div class="accordion-title" style="font-size: 0.9rem; font-weight: 700; color: var(--accent-cyan); display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-envelope"></i> Gmail Onay
+                        </div>
+                        <i class="fas fa-chevron-down accordion-icon" style="color: #666;"></i>
+                    </div>
+                    <div class="accordion-content open">
+                        <div class="accordion-body" style="padding: 20px;">
+                        
+                            <div style="margin-bottom:15px; text-align:center; color:var(--text-gray); font-size:0.98rem;">
+                                Gmail adresini aşağıda görebilirsin. Onaylamak için butona tıkla.
+                            </div>
+                            <div class="form-group" style="margin-bottom:18px;">
+                                <label for="gmailInput" style="display:block; margin-bottom:5px; font-size:0.9rem; color:var(--accent-gold);">Gmail Adresi</label>
+                                <input type="email" id="gmailInput" class="form-input" style="width:100%; padding:8px; background:#222; border:1px solid #444; color:#fff; border-radius:5px; font-family:'Rajdhani'; font-size:1rem;" readonly>
+                            </div>
+                            <div style="display:flex; justify-content:center;">
+                                <button class="btn-gmail-verify" onclick="gmailVerify()" style="width:100%; padding:12px 0; background:var(--accent-green); color:#000; border:none; border-radius:5px; font-weight:bold; font-family:'Rajdhani'; font-size:1rem; cursor:pointer;">Gmail Onayla</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                
+                                      
+
+                     <!-- Şifre Sıfırlama Kartı -->
+                    <div class="accordion-card" style="background: var(--bg-card); border-radius: 10px; margin-bottom: 10px; overflow: hidden; border: 1px solid #232323; transition: all 0.3s ease;">
+                        <div class="accordion-header" onclick="toggleAccordion(this)" style="padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02);">
+                            <div class="accordion-title" style="font-size: 0.9rem; font-weight: 700; color: var(--accent-cyan); display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-key"></i> Şifre Sıfırla
+                            </div>
+                            <i class="fas fa-chevron-down accordion-icon" style="color: #666;"></i>
+                        </div>
+                        <div class="accordion-content open">
+                            <div class="accordion-body" style="padding: 20px;">
+                                <div style="margin-bottom:15px; text-align:center; color:var(--text-gray); font-size:0.98rem;">
+                                    Şifreni değiştirmek için aşağıdaki alanları doldur.
+                                </div>
+                                <div class="form-group" style="margin-bottom:12px;">
+                                    <label for="oldPassword" style="display:block; margin-bottom:5px; font-size:0.9rem; color:var(--accent-gold);">Eski Şifre</label>
+                                    <input type="password" id="oldPassword" class="form-input" style="width:100%; padding:8px; background:#222; border:1px solid #444; color:#fff; border-radius:5px; font-family:'Rajdhani'; font-size:1rem;">
+                                </div>
+                                <div class="form-group" style="margin-bottom:12px;">
+                                    <label for="newPassword" style="display:block; margin-bottom:5px; font-size:0.9rem; color:var(--accent-gold);">Yeni Şifre</label>
+                                    <input type="password" id="newPassword" class="form-input" style="width:100%; padding:8px; background:#222; border:1px solid #444; color:#fff; border-radius:5px; font-family:'Rajdhani'; font-size:1rem;">
+                                </div>
+                                <div class="form-group" style="margin-bottom:18px;">
+                                    <label for="confirmPassword" style="display:block; margin-bottom:5px; font-size:0.9rem; color:var(--accent-gold);">Yeni Şifre (Onay)</label>
+                                    <input type="password" id="confirmPassword" class="form-input" style="width:100%; padding:8px; background:#222; border:1px solid #444; color:#fff; border-radius:5px; font-family:'Rajdhani'; font-size:1rem;">
+                                </div>
+                                <div style="display:flex; justify-content:space-between; gap:18px;">
+                                    <button class="btn-update-password" onclick="updatePassword()" style="flex:1; padding:12px 0; background:var(--accent-green); color:#000; border:none; border-radius:5px; font-weight:bold; cursor:pointer; font-family:'Rajdhani'; font-size:1rem; transition:0.2s;">Şifre Güncelle</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+  <!-- Sosyal Medya Hesapları Kartı -->
+                                        <div class="accordion-card" style="background: var(--bg-card); border-radius: 10px; margin-bottom: 10px; overflow: hidden; border: 1px solid #232323; transition: all 0.3s ease;">
+                                            <div class="accordion-header" onclick="toggleAccordion(this)" style="padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02);">
+                                                <div class="accordion-title" style="font-size: 0.9rem; font-weight: 700; color: var(--accent-cyan); display: flex; align-items: center; gap: 8px;">
+                                                    <i class="fas fa-share-alt"></i> Sosyal Medya Hesapları
+                                                </div>
+                                                <i class="fas fa-chevron-down accordion-icon" style="color: #666;"></i>
+                                            </div>
+                                            <div class="accordion-content open">
+                                                <div class="accordion-body" style="padding: 20px;">
+                                                    <div style="text-align:center; margin-bottom:15px;">
+                                                        <i class="fab fa-telegram" style="font-size:2rem; color:#229ED9; margin:0 8px;"></i>
+                                                        <i class="fab fa-instagram" style="font-size:2rem; color:#e1306c; margin:0 8px;"></i>
+                                                        <i class="fab fa-discord" style="font-size:2rem; color:#5865F2; margin:0 8px;"></i>
+                                                    </div>
+                                                    <div style="margin-bottom:15px; text-align:center; color:var(--text-gray); font-size:0.98rem;">
+                                                        Telegram, Instagram ve Discord kullanıcı adlarını girip kaydedebilirsin.
+                                                    </div>
+                                                    <div class="form-group" style="margin-bottom:12px;">
+                                                        <label for="telegramInput" style="display:block; margin-bottom:5px; font-size:0.9rem; color:var(--accent-gold);">Telegram</label>
+                                                        <input type="text" id="telegramInput" class="form-input" placeholder="Telegram kullanıcı adı" style="width:100%; padding:8px; background:#222; border:1px solid #444; color:#fff; border-radius:5px; font-family:'Rajdhani'; font-size:1rem;">
+                                                    </div>
+                                                    <div class="form-group" style="margin-bottom:12px;">
+                                                        <label for="instagramInput" style="display:block; margin-bottom:5px; font-size:0.9rem; color:var(--accent-gold);">Instagram</label>
+                                                        <input type="text" id="instagramInput" class="form-input" placeholder="Instagram kullanıcı adı" style="width:100%; padding:8px; background:#222; border:1px solid #444; color:#fff; border-radius:5px; font-family:'Rajdhani'; font-size:1rem;">
+                                                    </div>
+                                                    <div class="form-group" style="margin-bottom:18px;">
+                                                        <label for="discordInput" style="display:block; margin-bottom:5px; font-size:0.9rem; color:var(--accent-gold);">Discord</label>
+                                                        <input type="text" id="discordInput" class="form-input" placeholder="Discord kullanıcı adı" style="width:100%; padding:8px; background:#222; border:1px solid #444; color:#fff; border-radius:5px; font-family:'Rajdhani'; font-size:1rem;">
+                                                    </div>
+                                                    <div style="display:flex; justify-content:center;">
+                                                        <button class="btn-update-social" onclick="updateSocialAccounts()" style="width:100%; padding:12px 0; background:var(--accent-green); color:#000; border:none; border-radius:5px; font-weight:bold; cursor:pointer; font-family:'Rajdhani'; font-size:1rem; transition:0.2s;">Hesapları Güncelle</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                    
+            <!-- Avatar Modals (styled like other pages) -->
+            <div id="avatarConfirmModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.45); z-index:9999; justify-content:center; align-items:center;">
+                <div style="background:#181818; color:#fff; border-radius:14px; padding:32px 28px; max-width:420px; width:90vw; box-shadow:0 0 24px #000; border:1px solid #333; position:relative; margin:auto;">
+                    <div style="position:absolute; top:0; left:0; width:100%; height:6px; background:var(--accent-cyan); border-radius:14px 14px 0 0;"></div>
+                    <div style="font-size:3.2rem; margin-bottom:18px; margin-top:12px; text-align:center;"><i class="fas fa-question-circle" style="color:var(--accent-gold);"></i></div>
+                    <div id="avatarConfirmMsg" style="font-size:1.08rem; margin-bottom:22px; text-align:center;">Avatarı güncellemek istediğinize emin misiniz?</div>
+                    <div style="display:flex; justify-content:space-between; gap:18px;">
+                        <button onclick="closeAvatarConfirmModal()" style="flex:1; padding:13px 0; background:var(--accent-red); color:#fff; border:none; border-radius:7px; font-weight:bold; font-family:'Rajdhani'; font-size:1.1rem; cursor:pointer;">VAZGEÇ</button>
+                        <button id="avatarConfirmBtn" style="flex:1; padding:13px 0; background:var(--accent-green); color:#000; border:none; border-radius:7px; font-weight:bold; font-family:'Rajdhani'; font-size:1.1rem; cursor:pointer;">EVET</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="avatarSuccessModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.45); z-index:9999; justify-content:center; align-items:center;">
+                <div style="background:#181818; color:#fff; border-radius:14px; padding:32px 28px; max-width:420px; width:90vw; box-shadow:0 0 24px #000; border:1px solid #333; position:relative; margin:auto;">
+                    <div style="position:absolute; top:0; left:0; width:100%; height:6px; background:var(--accent-green); border-radius:14px 14px 0 0;"></div>
+                    <div style="font-size:3.2rem; margin-bottom:18px; margin-top:12px; text-align:center;"><i class="fas fa-check-circle" style="color:var(--accent-green);"></i></div>
+                    <div id="avatarSuccessMsg" style="font-size:1.08rem; margin-bottom:22px; text-align:center;">Avatar başarıyla güncellendi!</div>
+                    <div style="display:flex; justify-content:space-between; gap:18px;">
+                        <button onclick="closeAvatarSuccessModal()" style="flex:1; padding:13px 0; background:var(--accent-green); color:#000; border:none; border-radius:7px; font-weight:bold; font-family:'Rajdhani'; font-size:1.1rem; cursor:pointer;">TAMAM</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="avatarErrorModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.45); z-index:9999; justify-content:center; align-items:center;">
+                <div style="background:#181818; color:#fff; border-radius:14px; padding:32px 28px; max-width:420px; width:90vw; box-shadow:0 0 24px #000; border:1px solid #333; position:relative; margin:auto;">
+                    <div style="position:absolute; top:0; left:0; width:100%; height:6px; background:var(--accent-red); border-radius:14px 14px 0 0;"></div>
+                    <div style="font-size:3.2rem; margin-bottom:18px; margin-top:12px; text-align:center;"><i class="fas fa-times-circle" style="color:var(--accent-red);"></i></div>
+                    <div id="avatarErrorMsg" style="font-size:1.08rem; margin-bottom:22px; text-align:center;">Bir hata oluştu.</div>
+                    <div style="display:flex; justify-content:space-between; gap:18px;">
+                        <button onclick="closeAvatarErrorModal()" style="flex:1; padding:13px 0; background:var(--accent-red); color:#fff; border:none; border-radius:7px; font-weight:bold; font-family:'Rajdhani'; font-size:1.1rem; cursor:pointer;">TAMAM</button>
+                    </div>
+                </div>
             </div>
             
-            <div class="form-group">
-                <label class="form-label">Yeni Şifre</label>
-                <input type="password" class="form-input" id="newPass" placeholder="******">
-            </div>
+     
+       
 
-            <button class="btn-save" onclick="changePassword()">ŞİFREYİ GÜNCELLE</button>
-        </div>
-
-        <!-- PREFERENCES -->
-        <div class="settings-section">
-            <div class="section-title">Oyun Tercihleri</div>
-            
-            <div class="setting-item">
-                <span>Ses Efektleri</span>
-                <label class="switch">
-                    <input type="checkbox" id="toggleSound" onchange="savePreferences()">
-                    <span class="slider"></span>
-                </label>
-            </div>
-
-            <div class="setting-item">
-                <span>Bildirimler</span>
-                <label class="switch">
-                    <input type="checkbox" id="toggleNotif" onchange="savePreferences()">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            
-            <div class="setting-item">
-                <span>Karanlık Mod (Daima Açık)</span>
-                <label class="switch">
-                    <input type="checkbox" checked disabled>
-                    <span class="slider" style="opacity:0.5"></span>
-                </label>
-            </div>
-        </div>
-
-        <!-- SUPPORT -->
-        <div class="settings-section">
-            <div class="section-title">Destek & Geri Bildirim</div>
-            <a href="bug-report.html" class="btn-save" style="display:block; text-align:center; text-decoration:none; background:#e74c3c; color:#fff;">
-                <i class="fas fa-bug"></i> HATA BİLDİR
-            </a>
-        </div>
-
-        <!-- SESSION -->
-        <div class="settings-section" style="border-bottom:none;">
-            <div class="section-title" style="color:var(--accent-red)">Oturum</div>
-            <button class="btn-logout" onclick="logout()">ÇIKIŞ YAP</button>
-            
-            <div style="text-align:center; margin-top:20px; color:#444; font-size:0.8rem;">
-                Sim of World v1.0.2<br>
-                ID: <span id="userIdDisplay">...</span>
-            </div>
-        </div>
-
+     
+        </main>
+    </div>
+        </main>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-    <script src="js/settings.js"></script>
-    <script src="js/loader-manager.js"></script>
-    <script src="js/zoom-prevention.js"></script>
+    <script>
+                // Load avatar from database
+                async function loadAvatarFromDB(userId) {
+                    try {
+                        const response = await fetch(`/api/profile/${userId}`);
+                        const data = await response.json();
+                        if (data.avatar) {
+                            document.getElementById('currentAvatar').src = data.avatar + '?t=' + new Date().getTime();
+                        } else {
+                            document.getElementById('currentAvatar').src = 'uploads/avatars/default.png';
+                        }
+                    } catch (e) {
+                        document.getElementById('currentAvatar').src = 'uploads/avatars/default.png';
+                    }
+                }
+        // Avatar upload logic with backend integration
+        async function uploadAvatar() {
+            const fileInput = document.getElementById('avatarInput');
+            const file = fileInput.files[0];
+            if (!file) {
+                showAvatarErrorModal('Lütfen bir dosya seçin.');
+                return;
+            }
+            if (file.size > 3 * 1024 * 1024) {
+                showAvatarErrorModal('Dosya boyutu en fazla 3MB olabilir.');
+                return;
+            }
+            const userStr = localStorage.getItem('simWorldUser');
+            if (!userStr) {
+                showAvatarErrorModal('Kullanıcı oturumu bulunamadı.');
+                return;
+            }
+            const user = JSON.parse(userStr);
+            // Show confirmation modal
+            showAvatarConfirmModal('Avatarı güncellemek istediğinize emin misiniz?', async () => {
+                const formData = new FormData();
+                formData.append('userId', user.id);
+                formData.append('avatar', file);
+                try {
+                    const response = await fetch('/api/user/upload-avatar', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.json();
+                    if (result.success && result.avatarUrl) {
+                        showAvatarSuccessModal('Avatar başarıyla güncellendi!');
+                        document.getElementById('currentAvatar').src = result.avatarUrl + '?t=' + new Date().getTime();
+                    } else {
+                        showAvatarErrorModal(result.message || 'Avatar güncellenemedi.');
+                    }
+                } catch (error) {
+                    showAvatarErrorModal('Sunucu hatası: ' + error.message);
+                }
+            });
+        }
+
+        function showAvatarConfirmModal(msg, onConfirm) {
+            const modal = document.getElementById('avatarConfirmModal');
+            document.getElementById('avatarConfirmMsg').innerHTML = msg;
+            modal.style.display = 'flex';
+            document.getElementById('avatarConfirmBtn').onclick = function() {
+                modal.style.display = 'none';
+                if (onConfirm) onConfirm();
+            };
+        }
+        function closeAvatarConfirmModal() {
+            document.getElementById('avatarConfirmModal').style.display = 'none';
+        }
+
+        function showAvatarSuccessModal(msg) {
+            const modal = document.getElementById('avatarSuccessModal');
+            document.getElementById('avatarSuccessMsg').innerHTML = msg;
+            modal.style.display = 'flex';
+        }
+        function closeAvatarSuccessModal() {
+            document.getElementById('avatarSuccessModal').style.display = 'none';
+        }
+
+        function showAvatarErrorModal(msg) {
+            const modal = document.getElementById('avatarErrorModal');
+            document.getElementById('avatarErrorMsg').innerHTML = msg;
+            modal.style.display = 'flex';
+        }
+        function closeAvatarErrorModal() {
+            document.getElementById('avatarErrorModal').style.display = 'none';
+        }
+        // Accordion toggle function
+        function toggleAccordion(header) {
+            header.classList.toggle('active');
+            const content = header.nextElementSibling;
+            if (content) {
+                content.classList.toggle('open');
+            }
+        }
+
+        window.addEventListener('load', () => {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            loadAvatarFromDB(user.id);
+        });
+
+        // Prevent zoom via keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + Plus (zoom in)
+            if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '=')) {
+                e.preventDefault();
+            }
+            // Ctrl/Cmd + Minus (zoom out)
+            if ((e.ctrlKey || e.metaKey) && e.key === '-') {
+                e.preventDefault();
+            }
+            // Ctrl/Cmd + 0 (reset zoom)
+            if ((e.ctrlKey || e.metaKey) && e.key === '0') {
+                e.preventDefault();
+            }
+        });
+
+        // Prevent zoom via mouse wheel
+        document.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Prevent pinch zoom on touch devices
+        document.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    </script>
     <script src="js/header-manager.js"></script>
     <script src="js/menu-manager.js"></script>
 </body>

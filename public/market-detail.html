@@ -104,25 +104,24 @@
             position: relative;
             overflow: hidden;
         }
-        .product-header::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(90deg, rgba(255, 215, 0, 0.05) 0%, transparent 60%);
-            pointer-events: none;
-        }
+        .product-header::before { display: none; }
         
         .ph-left { display: flex; align-items: center; gap: 15px; }
 
         .ph-icon-wrapper {
-            width: 50px; height: 50px;
-            background: #151515;
-            border-radius: 14px;
-            display: flex; align-items: center; justify-content: center;
-            border: 1px solid #333;
-            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            background: #0d0d0d;
+            border: 1px solid #2a2a2a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             flex-shrink: 0;
+            transition: 0.3s;
         }
         
-        .ph-icon { width: 60%; height: 60%; object-fit: contain; filter: drop-shadow(0 0 8px rgba(255,215,0,0.4)); margin: 0; }
+        .ph-icon { width: 45px; height: 45px; object-fit: contain; }
         
         .ph-info { display: flex; flex-direction: column; gap: 2px; text-align: left; }
         .ph-name { font-size: 1rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 1px; line-height: 1.2; }
@@ -235,7 +234,7 @@
             justify-content: space-between;
             align-items: center;
             width: 100%;
-            padding: 5px;
+            padding: 10px;
             background: rgba(0, 0, 0, 0.3);
             border-top: 1px solid #333;
             font-size: 0.85rem;
@@ -288,7 +287,7 @@
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
-            display: none; justify-content: center; align-items: center; z-index: 100;
+            display: none; justify-content: center; align-items: center; z-index: 2000;
         }
         .modal-content {
             background: #141414;
@@ -299,6 +298,7 @@
             width: 90%; max-width: 380px; 
             position: relative;
             box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            z-index: 2100;
         }
         .modal-title { 
             font-size: 1.4rem; font-weight: 800; color: #fff; 
@@ -469,7 +469,7 @@
             </div>
 
             <button class="btn-sell-action" onclick="openSellModal()">
-                <i class="fas fa-plus"></i> Ürün Sat
+                <i class="fas fa-coins"></i> Ürün Sat
             </button>
 
             <div class="listings-title">
@@ -489,8 +489,13 @@
     <div class="modal-overlay" id="buyModal">
         <div class="modal-content">
             <button class="btn-close" onclick="closeModal('buyModal')"><i class="fas fa-times"></i></button>
-            <h3 class="modal-title" id="buyModalTitle">SATIN AL</h3>
-            
+            <h3 class="modal-title" id="buyModalTitle">ÜRÜN</h3>
+            <p style="text-align:center; font-size:0.8rem; color:#666; margin-top:-18px; margin-bottom:20px; letter-spacing:1px; text-transform:uppercase;">Satın Alma İşlemi</p>
+
+            <!-- Ürün Açıklaması -->
+            <p id="buyModalItemDesc" style="font-size:0.82rem; color:#888; line-height:1.5; margin-bottom:15px; text-align:center;"></p>
+
+            <!-- Satıcı Bilgisi -->
             <div style="margin-bottom: 15px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; display: flex; align-items: center; gap: 10px;">
                 <img id="buyModalSellerAvatar" src="uploads/avatars/default.png" class="seller-avatar-img" style="width: 32px; height: 32px;">
                 <div>
@@ -581,6 +586,34 @@
         </div>
     </div>
 
+    <!-- GENERIC SUCCESS MODAL -->
+    <div class="modal-overlay" id="successInfoModal">
+        <div class="modal-content">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="width: 70px; height: 70px; background: rgba(46, 204, 113, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 2px solid #2ecc71;">
+                    <i class="fas fa-check" style="font-size: 2rem; color: #2ecc71;"></i>
+                </div>
+            </div>
+            <h3 class="modal-title" id="successInfoTitle" style="color: #2ecc71; margin-bottom: 10px;">BAŞARILI</h3>
+            <div id="successInfoMessage" style="text-align: center; color: #ccc; font-size: 1rem; line-height: 1.6; margin-bottom: 25px;"></div>
+            <button class="btn-confirm-green" style="width:100%" onclick="closeModal('successInfoModal')">TAMAM</button>
+        </div>
+    </div>
+
+    <!-- GENERIC ERROR MODAL -->
+    <div class="modal-overlay" id="errorInfoModal">
+        <div class="modal-content" style="border-top-color: #e74c3c;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="width: 70px; height: 70px; background: rgba(231, 76, 60, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 2px solid #e74c3c;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #e74c3c;"></i>
+                </div>
+            </div>
+            <h3 class="modal-title" id="errorInfoTitle" style="color: #e74c3c; margin-bottom: 10px;">HATA</h3>
+            <div id="errorInfoMessage" style="text-align: center; color: #ccc; font-size: 1rem; line-height: 1.6; margin-bottom: 25px;"></div>
+            <button class="btn-cancel" style="width:100%" onclick="closeModal('errorInfoModal')">TAMAM</button>
+        </div>
+    </div>
+
     <!-- INSUFFICIENT FUNDS MODAL -->
     <div class="modal-overlay" id="insufficientFundsModal">
         <div class="modal-content" style="border-top-color: #e74c3c;">
@@ -617,36 +650,70 @@
     <script src="js/menu-manager.js"></script>
     <script src="js/zoom-prevention.js"></script>
     <script>
-        // Same database as market-list.html for product info
+        const categoryColors = {
+            'farm':         '#2ecc71',
+            'livestock':    '#e67e22',
+            'mining':       '#95a5a6',
+            'industry':     '#3498db',
+            'construction': '#e74c3c',
+            'vehicles':     '#f39c12',
+            'hardware':     '#9b59b6'
+        };
+
+        const itemCategoryMap = {
+            corn:'farm', wheat:'farm', olive:'farm', fruit:'farm', grain:'farm',
+            beef:'livestock', egg:'livestock', honey:'livestock', chicken:'livestock', milk:'livestock',
+            iron:'mining', copper:'mining', coal:'mining', gold_nugget:'mining', uranium:'mining', stone:'mining', sand:'mining', oil:'mining', wood:'mining',
+            steel:'industry', glass:'industry', plastic:'industry', cement:'industry',
+            brick:'construction', plank:'construction', beam:'construction',
+            Noventis:'vehicles', Rugnar:'vehicles', Stradeo:'vehicles', Veltrano:'vehicles', Zentaro:'vehicles',
+            'GX-100':'hardware', 'GX-300':'hardware', 'GX-700':'hardware', 'GX-800':'hardware', 'GX-Titan':'hardware'
+        };
+
         const itemDatabase = {
-            'iron': { name: 'Demir', icon: 'icons/mine-icon/iron.png', desc: 'Sanayi hammaddesi' },
-            'copper': { name: 'Bakır', icon: 'icons/mine-icon/copper.png', desc: 'Elektronik bileşeni' },
-            'stone': { name: 'Taş', icon: 'icons/mine-icon/stone.png', desc: 'İnşaat malzemesi' },
-            'wood': { name: 'Odun', icon: 'icons/mine-icon/wood.png', desc: 'Temel yapı malzemesi' },
-            'sand': { name: 'Kum', icon: 'icons/mine-icon/sand.png', desc: 'Cam yapımında kullanılır' },
-            'coal': { name: 'Kömür', icon: 'icons/mine-icon/coal.png', desc: 'Enerji kaynağı' },
-            'oil': { name: 'Petrol', icon: 'icons/mine-icon/oil-barrel.png', desc: 'Sıvı altın' },
-            'uranium': { name: 'Uranyum', icon: 'icons/mine-icon/uranium.png', desc: 'Nükleer yakıt' },
-            'gold_nugget': { name: 'Altın Parçası', icon: 'icons/mine-icon/gold-nugget.png', desc: 'Değerli maden' },
-            'steak': { name: 'Et', icon: 'icons/food-factory/steak-food.png', desc: 'Yüksek protein' },
-            'salad': { name: 'Salata', icon: 'icons/food-factory/salad.png', desc: 'Sağlıklı öğün' },
-            'rice': { name: 'Pirinç', icon: 'icons/food-factory/rice.png', desc: 'Temel gıda' },
-            'canned_fruit': { name: 'Konserve', icon: 'icons/food-factory/fruit-canned.png', desc: 'Uzun ömürlü' },
-            'beef': { name: 'Sığır Eti', icon: 'icons/ranch-icon/beef.png', desc: 'Çiftlik ürünü' },
-            'honey': { name: 'Bal', icon: 'icons/ranch-icon/honey.png', desc: 'Doğal tatlandırıcı' },
-            'egg': { name: 'Yumurta', icon: 'icons/ranch-icon/egg.png', desc: 'Kahvaltılık' },
-            'electricity': { name: 'Elektrik', icon: 'icons/energy-factory-icon/battery.png', desc: 'Enerji depolama' },
-            'solar_panel': { name: 'Güneş Paneli', icon: 'icons/energy-factory-icon/solar-panel.png', desc: 'Yenilenebilir enerji' },
-            'wind_turbine': { name: 'Rüzgar Türbini', icon: 'icons/energy-factory-icon/wind-turbine.png', desc: 'Rüzgar enerjisi' },
-            'fossil_fuel': { name: 'Fosil Yakıt', icon: 'icons/energy-factory-icon/fossil-fuel.png', desc: 'Geleneksel yakıt' },
-            'cement': { name: 'Çimento', icon: 'icons/factory-icon/cement.png', desc: 'Yapı harcı' },
-            'brick': { name: 'Tuğla', icon: 'icons/factory-icon/brick.png', desc: 'Duvar malzemesi' },
-            'steel': { name: 'Çelik', icon: 'icons/factory-icon/steel.png', desc: 'Güçlendirilmiş metal' },
-            'glass': { name: 'Cam', icon: 'icons/factory-icon/window.png', desc: 'Şeffaf yapı' },
-            'plank': { name: 'Kereste', icon: 'icons/factory-icon/wood-plank.png', desc: 'İşlenmiş odun' },
-            'gold': { name: 'Altın', icon: 'icons/inventory-icon/gold.png', desc: 'Yatırım aracı' },
-            'diamond': { name: 'Elmas', icon: 'icons/inventory-icon/diamond.png', desc: 'En değerli taş' },
-            'weapon_basic': { name: 'Mühimmat', icon: 'icons/mine-icon/uranium.png', desc: 'Askeri malzeme' }
+            // Farm
+            'corn':       { name: 'Mısır',       icon: 'icons/farm-icon/corn.png',          desc: 'Çiftliklerde yetiştirilen temel tarım ürünü. Fabrikalar ve hayvan çiftliklerinde hammadde olarak kullanılır.' },
+            'wheat':      { name: 'Buğday',      icon: 'icons/farm-icon/wheat.png',         desc: 'Ekmek ve un üretiminin temel kaynağı. Gıda sektöründe yüksek talep görür.' },
+            'olive':      { name: 'Zeytin',      icon: 'icons/farm-icon/olive.png',         desc: 'Sıcak iklimlerde yetişen değerli tarım ürünü. Yağ ve gıda sanayisinde kullanılır.' },
+            'fruit':      { name: 'Meyve',       icon: 'icons/farm-icon/fruit.png',         desc: 'Çeşitli meyve türlerini kapsayan tarımsal ürün. Gıda işleme tesislerinde değerlenir.' },
+            'grain':      { name: 'Tahıl',       icon: 'icons/farm-icon/grain.png',         desc: 'Geniş çaplı tarım arazilerinde üretilen temel tahıl. Fabrikalar için vazgeçilmez hammaddedir.' },
+            // Livestock
+            'beef':       { name: 'Et',          icon: 'icons/ranch-icon/beef.png',         desc: 'Büyükbaş hayvancılıktan elde edilen yüksek değerli hayvansal ürün. Gıda zincirinin temelini oluşturur.' },
+            'egg':        { name: 'Yumurta',     icon: 'icons/ranch-icon/egg.png',          desc: 'Kümes hayvanlarından günlük üretilen hayvansal ürün. Gıda sektöründe sürekli talep görür.' },
+            'honey':      { name: 'Bal',         icon: 'icons/ranch-icon/honey.png',        desc: 'Arı çiftliklerinden elde edilen doğal tatlandırıcı. Piyasada yüksek fiyatla işlem görür.' },
+            'chicken':    { name: 'Tavuk',       icon: 'icons/ranch-icon/chicken.png',      desc: 'Kümes hayvanı yetiştiriciliğinden elde edilen hayvansal ürün. Gıda sanayisinde geniş kullanım alanı vardır.' },
+            'milk':       { name: 'Süt',         icon: 'icons/ranch-icon/milk.png',         desc: 'Büyükbaş hayvancılıktan günlük elde edilen temel hayvansal ürün. Süt ürünleri üretiminde kullanılır.' },
+            // Mining
+            'iron':       { name: 'Demir',       icon: 'icons/mine-icon/iron.png',          desc: 'Madenlerde çıkarılan en yaygın metal hammaddesi. Çelik üretimi ve inşaat sektörünün temelidir.' },
+            'copper':     { name: 'Bakır',       icon: 'icons/mine-icon/copper.png',        desc: 'İletkenliği yüksek değerli maden. Elektronik ve endüstriyel üretimde kritik öneme sahiptir.' },
+            'coal':       { name: 'Kömür',       icon: 'icons/mine-icon/coal.png',          desc: 'Fabrika ve enerji tesislerinin vazgeçilmez yakıt kaynağı. Üretim maliyetlerini doğrudan etkiler.' },
+            'gold_nugget':{ name: 'Altın',       icon: 'icons/mine-icon/gold-nugget.png',   desc: 'Nadir bulunan en değerli maden. Hem yatırım aracı hem de üretimde kullanılan prestijli hammaddedir.' },
+            'uranium':    { name: 'Uranyum',     icon: 'icons/mine-icon/uranium.png',       desc: 'Nükleer enerji üretiminde kullanılan nadir ve tehlikeli radyoaktif maden. Çok yüksek piyasa değerine sahiptir.' },
+            'stone':      { name: 'Taş',         icon: 'icons/mine-icon/stone.png',         desc: 'İnşaat ve yapı sektörünün temel hammaddesi. Tuğla ve çimento üretiminde yaygın kullanılır.' },
+            'sand':       { name: 'Kum',         icon: 'icons/mine-icon/sand.png',          desc: 'Cam üretiminin birincil hammaddesi. İnşaat sektöründe de yoğun biçimde kullanılır.' },
+            'oil':        { name: 'Petrol',      icon: 'icons/mine-icon/oil-barrel.png',    desc: 'Sıvı altın olarak bilinen stratejik kaynak. Plastik üretimi ve enerji sektöründe temel girdidir.' },
+            'wood':       { name: 'Odun',        icon: 'icons/mine-icon/wood.png',          desc: 'Ormanlık arazilerden elde edilen çok amaçlı yapı malzemesi. Tahta ve kiriş üretiminin hammaddesidir.' },
+            // Industry
+            'steel':      { name: 'Çelik',        icon: 'icons/factory-icon/steel.png',      desc: 'Demir ve kömürden elde edilen işlenmiş endüstriyel metal. Araç ve yapı üretiminde temel bileşendir.' },
+            'glass':      { name: 'Cam',         icon: 'icons/factory-icon/window.png',     desc: 'Kum eritilerek elde edilen şeffaf yapı malzemesi. İnşaat ve elektronik sektöründe kullanılır.' },
+            'plastic':    { name: 'Plastik',     icon: 'icons/factory-icon/plastic.png',    desc: 'Petrolden türetilen çok yönlü sentetik malzeme. Ekipman ve ambalaj üretiminde yaygın kullanılır.' },
+            'cement':     { name: 'Çimento',      icon: 'icons/factory-icon/cement.png',     desc: 'İnşaat projelerinin temel bağlayıcı malzemesi. Bina ve altyapı yapımında zorunlu hammaddedir.' },
+            // Construction
+            'brick':      { name: 'Tuğla',        icon: 'icons/factory-icon/brick.png',      desc: 'Pişirilmiş kilden üretilen dayanıklı duvar malzemesi. Bina inşaatının vazgeçilmez yapı taşıdır.' },
+            'plank':      { name: 'Tahta',       icon: 'icons/factory-icon/wood-plank.png', desc: 'Odunun işlenmesiyle elde edilen düzleştirilmiş yapı malzemesi. Mobilya ve inşaatta geniş kullanım alanı vardır.' },
+            'beam':       { name: 'Kiriş',        icon: 'icons/factory-icon/beam.png',       desc: 'Çelik veya ahşaptan üretilen taşıyıcı yapı elemanı. Büyük inşaat projelerinin iskeletini oluşturur.' },
+            // Vehicles
+            'Noventis':   { name: 'Noventis',    icon: 'icons/car-icon/Noventis.png',       desc: 'Şık tasarımı ve yakıt verimliliğiyle öne çıkan kompakt sedan. Şehir içi kullanım için idealdir.' },
+            'Rugnar':     { name: 'Rugnar',      icon: 'icons/car-icon/Rugnar.png',         desc: 'Güçlü motoru ve yüksek tork değeriyle dikkat çeken tam boyutlu SUV. Engebeli arazilerde üstün performans sunar.' },
+            'Stradeo':    { name: 'Stradeo',     icon: 'icons/car-icon/Stradeo.png',        desc: 'Spor tasarıma sahip yüksek performanslı otomobil. Hız ve konforу bir arada sunar.' },
+            'Veltrano':   { name: 'Veltrano',    icon: 'icons/car-icon/Veltrano.png',       desc: 'Lüks donanımı ve geniş iç mekanıyla premium segment otomobil. Prestij sembolüdür.' },
+            'Zentaro':    { name: 'Zentaro',     icon: 'icons/car-icon/Zentaro.png',        desc: 'Elektrikli tahrik sistemiyle çevre dostu ulaşım çözümü. Düşük işletme maliyetiyle öne çıkar.' },
+            // Hardware
+            'GX-100':     { name: 'GX-100',      icon: 'icons/video-card/GX-100.png',       desc: 'Giriş seviyesi grafik kartı. Temel kripto madenciliği ve ofis uygulamaları için uygundur.' },
+            'GX-300':     { name: 'GX-300',      icon: 'icons/video-card/GX-300.png',       desc: 'Orta segment ekran kartı. Dengeli fiyat-performans oranıyla madencilik operasyonlarında yaygın tercih edilir.' },
+            'GX-700':     { name: 'GX-700',      icon: 'icons/video-card/GX-700.png',       desc: 'Üst orta segment GPU. Yüksek hash gücüyle kripto madenciliğinde ciddi kazanç sağlar.' },
+            'GX-800':     { name: 'GX-800',      icon: 'icons/video-card/GX-800.png',       desc: 'Profesyonel sınıf grafik işlemcisi. Endüstriyel madencilik tesislerinin gözdesidir.' },
+            'GX-Titan':   { name: 'GX-Titan',    icon: 'icons/video-card/GX-Titan.png',     desc: 'Piyasanın en güçlü ekran kartı. Eşsiz işlem kapasitesiyle madencilikte maksimum verim sağlar.' }
         };
 
         let currentListing = null;
@@ -656,18 +723,17 @@
         let userInventory = 0;
         let currentSort = 'asc';
 
-        // Toastr Config
-        toastr.options = {
-            "closeButton": true,
-            "progressBar": true,
-            "positionClass": "toast-top-right",
-            "timeOut": "3000",
-            "extendedTimeOut": "1000",
-            "showEasing": "swing",
-            "hideEasing": "linear",
-            "showMethod": "fadeIn",
-            "hideMethod": "fadeOut"
-        };
+        function showSuccessModal(message, title = 'BAŞARILI') {
+            document.getElementById('successInfoTitle').innerText = title;
+            document.getElementById('successInfoMessage').innerText = message;
+            document.getElementById('successInfoModal').style.display = 'flex';
+        }
+
+        function showErrorModal(message, title = 'HATA') {
+            document.getElementById('errorInfoTitle').innerText = title;
+            document.getElementById('errorInfoMessage').innerText = message;
+            document.getElementById('errorInfoModal').style.display = 'flex';
+        }
 
         window.onload = () => {
             // Loader Tips
@@ -748,6 +814,8 @@
         function renderProductInfo(itemId) {
             const item = itemDatabase[itemId];
             const container = document.getElementById('productHeader');
+            const catColor = categoryColors[itemCategoryMap[itemId]] || '#ffd700';
+            container.style.borderTopColor = catColor;
             container.innerHTML = `
                 <div class="ph-left">
                     <div class="ph-icon-wrapper">
@@ -755,7 +823,6 @@
                     </div>
                     <div class="ph-info">
                         <h2 class="ph-name">${item.name}</h2>
-                        <p class="ph-desc">${item.desc}</p>
                     </div>
                 </div>
                 <div class="market-stat-grid">
@@ -800,9 +867,15 @@
 
                     // Stats calculation
                     if(statAvg) {
-                        const totalP = listings.reduce((acc, curr) => acc + curr.price, 0);
-                        const avg = Math.round(totalP / listings.length);
-                        statAvg.innerText = `${avg} ₺`;
+                        // Sadece geçerli fiyatları kullan
+                        const validPrices = listings.map(l => Number(l.price)).filter(p => !isNaN(p) && isFinite(p));
+                        if (validPrices.length === 0) {
+                            statAvg.innerText = '-- ₺';
+                        } else {
+                            const totalP = validPrices.reduce((acc, curr) => acc + curr, 0);
+                            const avg = Math.round(totalP / validPrices.length);
+                            statAvg.innerText = `${avg.toLocaleString()} ₺`;
+                        }
                     }
 
                     listings.forEach(l => {
@@ -822,20 +895,23 @@
                         div.innerHTML = `
                             <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 12px;">
                                 <div class="lc-content">
-                                    <div style="width: 50px; height: 50px; background: rgba(255,255,255,0.03); border: 1px solid #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0;">
-                                        <img src="${itemInfo.icon}" style="width: 28px; height: 28px; object-fit: contain;">
+                                    <div style="width: 60px; height: 60px; background: #0d0d0d; border: 1px solid #2a2a2a; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">
+                                        <img src="${itemInfo.icon}" style="width: 46px; height: 46px; object-fit: contain;">
                                     </div>
                                     <div class="lc-info-group">
-                                        <span style="color: #fff; font-size: 1rem; font-weight: 800; text-transform: uppercase;">${itemInfo.name}</span>
-                                        <div style="display: flex; align-items: center; gap: 5px;">
-                                            <span class="badge-stock" style="margin:0;"><i class="fas fa-cubes"></i> Stok: ${l.quantity} adet</span>
-                                            <div class="badge-price" style="margin: 0;">Birim Fiyat: ${l.price} ₺</div>
+                                        <span style="color:#fff; font-size:0.95rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">${itemInfo.name}</span>
+                                        <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+                                            <span style="background:#1a1a1a; border:1px solid #333; border-radius:5px; padding:5px 10px; font-size:0.8rem; font-weight:700; font-family:'Rajdhani',sans-serif; color:#fff; display:inline-flex; align-items:center; gap:5px;">
+                                                <i class="fas fa-layer-group" style="font-size:0.75rem; color:#ffd700;"></i> ${l.quantity} adet
+                                            </span>
+                                            <span style="background:#1a1a1a; border:1px solid #333; border-radius:5px; padding:5px 10px; font-size:0.8rem; font-weight:700; font-family:'Rajdhani',sans-serif; color:#fff; display:inline-flex; align-items:center; gap:5px;">
+                                                <img src="icons/inventory-icon/money.png" style="width:14px; height:14px; object-fit:contain;"> ${Number(l.price).toLocaleString()} ₺
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
-                                
                                 <div class="lc-actions">
-                                    <i class="fas fa-chevron-right" style="color: #444; font-size: 0.8rem;"></i>
+                                    <i class="fas fa-chevron-right" style="color:#444; font-size:0.8rem;"></i>
                                 </div>
                             </div>
 
@@ -844,7 +920,7 @@
                                     <img src="${avatarUrl}" class="seller-avatar-img">
                                     <span>${l.seller_id} - ${l.seller_name || 'Gizli'}</span>
                                 </div>
-                                <div style="color: #888; font-size: 0.75rem; display: flex; align-items: center; gap: 5px;">
+                                <div style="color:#888; font-size:0.75rem; display:flex; align-items:center; gap:5px;">
                                     <i class="far fa-clock"></i>
                                     <span class="expiry-timer" data-created="${l.created_at}">Hesaplanıyor...</span>
                                 </div>
@@ -867,10 +943,8 @@
             
             if (currentSort === 'asc') {
                 icon.className = 'fas fa-sort-amount-down';
-                toastr.info('Sıralama: Ucuzdan Pahalıya');
             } else {
                 icon.className = 'fas fa-sort-amount-up';
-                toastr.info('Sıralama: Pahalıdan Ucuza');
             }
             
             fetchListings(currentItemId);
@@ -879,11 +953,13 @@
         function openBuyModal(listing) {
             currentListing = listing;
             const itemName = itemDatabase[currentItemId] ? itemDatabase[currentItemId].name : 'ÜRÜN';
+            const itemInfo = itemDatabase[currentItemId] || {};
             
             const avatarUrl = listing.seller_avatar || 'uploads/avatars/default.png';
             document.getElementById('buyModalSellerAvatar').src = avatarUrl;
+            document.getElementById('buyModalItemDesc').innerText = itemInfo.desc || '';
 
-            document.getElementById('buyModalTitle').innerText = `${itemName} SATIŞ İLANI`;
+            document.getElementById('buyModalTitle').innerText = itemName;
             document.getElementById('buyModalSeller').innerText = `${listing.seller_id} - ${listing.seller_name || 'Gizli'}`;
             document.getElementById('buyModal').style.display = 'flex';
             document.getElementById('maxStock').innerText = listing.quantity;
@@ -896,10 +972,24 @@
             const itemName = itemDatabase[currentItemId] ? itemDatabase[currentItemId].name : 'ÜRÜN';
             document.getElementById('sellModalTitle').innerText = `${itemName} SATIŞ İLANI OLUŞTUR`;
             document.getElementById('sellModal').style.display = 'flex';
-            document.getElementById('userStock').innerText = userInventory;
+            document.getElementById('userStock').innerText = '...';
             document.getElementById('sellAmount').value = '';
             document.getElementById('sellPrice').value = '';
             document.getElementById('sellTotal').innerText = '0';
+
+            fetch(`/api/inventory/${currentUserId}`)
+                .then(res => res.json())
+                .then(inventory => {
+                    if (inventory && typeof inventory === 'object') {
+                        userInventory = inventory[currentItemId] || 0;
+                    } else {
+                        userInventory = 0;
+                    }
+                    document.getElementById('userStock').innerText = userInventory;
+                })
+                .catch(() => {
+                    document.getElementById('userStock').innerText = userInventory;
+                });
         }
 
         function closeModal(modalId) {
@@ -932,7 +1022,7 @@
             const amount = parseInt(document.getElementById('buyAmount').value);
 
             if (!amount || amount <= 0) {
-                toastr.warning('Geçerli bir miktar giriniz.');
+                showErrorModal('Geçerli bir miktar giriniz.', 'UYARI');
                 return;
             }
 
@@ -965,22 +1055,23 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    closeModal('buyModal');
-                    
                     const itemName = itemDatabase[currentItemId] ? itemDatabase[currentItemId].name : 'ÜRÜN';
                     const totalPrice = amount * currentListing.price;
+                    const sellerLabel = `${currentListing.seller_id} - ${currentListing.seller_name}`;
                     
-                    document.getElementById('successSeller').innerText = `${currentListing.seller_id} - ${currentListing.seller_name}`;
+                    closeModal('buyModal');
+                    
+                    document.getElementById('successSeller').innerText = sellerLabel;
                     document.getElementById('successPrice').innerText = `${totalPrice.toLocaleString()} ₺`;
                     document.getElementById('successAmount').innerText = amount;
                     document.getElementById('successItem').innerText = itemName;
                     
                     document.getElementById('purchaseSuccessModal').style.display = 'flex';
                 } else {
-                    toastr.error(data.message);
+                    showErrorModal(data.message || 'Satın alma işlemi başarısız.');
                 }
             })
-            .catch(err => toastr.error('Bağlantı hatası!'));
+            .catch(err => showErrorModal('Sunucu ile bağlantı kurulamadı.', 'BAĞLANTI HATASI'));
         }
 
         function confirmSell() {
@@ -988,12 +1079,12 @@
             const price = parseInt(document.getElementById('sellPrice').value);
 
             if (!amount || amount <= 0 || !price || price <= 0) {
-                toastr.warning('Geçerli miktar ve fiyat giriniz.');
+                showErrorModal('Geçerli miktar ve fiyat giriniz.', 'UYARI');
                 return;
             }
 
             if (amount > userInventory) {
-                toastr.error('Yetersiz stok!');
+                showErrorModal('Envanterde yeterli ürün bulunmamaktadır.', 'YETERSİZ STOK');
                 return;
             }
 
@@ -1010,30 +1101,31 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    toastr.success('İlan başarıyla oluşturuldu!');
                     closeModal('sellModal');
                     fetchListings(currentItemId);
                     fetchInventory();
+                    showSuccessModal('İlanınız başarıyla oluşturuldu!', 'İLAN OLUŞTURULDU');
                 } else {
-                    toastr.error('Hata: ' + data.message);
+                    showErrorModal(data.message || 'İlan oluşturulamadı.');
                 }
             })
-            .catch(err => toastr.error('Bağlantı hatası!'));
+            .catch(err => showErrorModal('Sunucu ile bağlantı kurulamadı.', 'BAĞLANTI HATASI'));
         }
 
         function goBackToList() {
-            // Find which category this item belongs to
+            const catMap = {
+                farm:         ['corn','wheat','olive','fruit','grain'],
+                livestock:    ['beef','egg','honey','chicken','milk'],
+                mining:       ['iron','copper','coal','gold_nugget','uranium','stone','sand','oil','wood'],
+                industry:     ['steel','glass','plastic','cement'],
+                construction: ['brick','plank','beam'],
+                vehicles:     ['Noventis','Rugnar','Stradeo','Veltrano','Zentaro'],
+                hardware:     ['GX-100','GX-300','GX-700','GX-800','GX-Titan']
+            };
             let foundCat = 'all';
-            const resourceList = ['iron','copper','stone','wood','sand','coal','oil','uranium','gold_nugget'];
-            const foodList = ['steak','salad','rice','canned_fruit','beef','honey','egg'];
-            const energyList = ['battery','solar_panel','wind_turbine','fossil_fuel'];
-            const industryList = ['cement','brick','steel','glass','plank'];
-            
-            if(resourceList.includes(currentItemId)) foundCat = 'resource';
-            if(foodList.includes(currentItemId)) foundCat = 'food';
-            if(energyList.includes(currentItemId)) foundCat = 'energy';
-            if(industryList.includes(currentItemId)) foundCat = 'industry';
-            
+            for (const [cat, items] of Object.entries(catMap)) {
+                if (items.includes(currentItemId)) { foundCat = cat; break; }
+            }
             window.location.href = `market-list.html?cat=${foundCat}`;
         }
 

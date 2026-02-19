@@ -211,6 +211,66 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* ACCORDION */
+        .accordion-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .accordion-header {
+            padding: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.02);
+            transition: background 0.2s;
+        }
+        .accordion-header:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .accordion-header.active {
+             border-bottom: 1px solid var(--border-color);
+             background: rgba(255, 255, 255, 0.05);
+        }
+        .accordion-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .accordion-icon {
+            color: #666;
+            transition: transform 0.3s ease;
+        }
+        .accordion-header.active .accordion-icon {
+            transform: rotate(180deg);
+            color: var(--accent-gold);
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .accordion-content.open {
+            max-height: 1000px; /* Yaklasik bir deger */
+        }
+        .accordion-body {
+            padding: 15px;
+        }
+
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes workPulse { 
+            0% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 2px var(--accent-gold)); } 
+            50% { transform: scale(1.1); opacity: 0.9; filter: drop-shadow(0 0 8px var(--accent-gold)); } 
+            100% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 2px var(--accent-gold)); } 
+        }
+
     </style>
 </head>
 <body>
@@ -229,170 +289,368 @@
         </div>
 
         <main>
-            <!-- BANKA BİLGİ KARTI -->
-            <div class="manage-card" style="border-color: var(--accent-gold); background: linear-gradient(135deg, rgba(255, 215, 0, 0.05), rgba(17, 17, 17, 0.95));">
-                <div class="bank-header" style="text-align: center;">
-                    <i class="fas fa-university" style="font-size: 3rem; color: var(--accent-gold); margin-bottom: 10px;"></i>
-                    
-                    <div class="b-name" id="bNameDisplay" style="font-size: 1.6rem; font-weight: 900; color: #fff; margin-bottom: 5px; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 0 15px rgba(255, 215, 0, 0.2);">Yükleniyor...</div>
-                    <div class="b-owner" style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; display: flex; justify-content: center; align-items: center; gap: 6px;">
-                        <i class="fas fa-user-tie"></i> Sahibi: <span id="bOwnerDisplay">...</span>
-                    </div>
-
-                    <div class="b-stats" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <div class="b-stat" style="background: rgba(255,255,255,0.04); padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                            <i class="fas fa-percentage" style="color:var(--accent-green); font-size: 1.1rem;"></i> 
-                            <span style="font-size: 0.8rem; font-weight: 600; color: #ddd;">Mevduat: %<span id="statInterestRate">0</span></span>
-                        </div>
-                        <div class="b-stat" style="background: rgba(255,255,255,0.04); padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                            <i class="fas fa-credit-card" style="color:var(--accent-red); font-size: 1.1rem;"></i> 
-                            <span style="font-size: 0.8rem; font-weight: 600; color: #ddd;">Kredi: %<span id="statLoanRate">0</span></span>
-                        </div>
-                        <div class="b-stat" style="background: rgba(255,255,255,0.04); padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                            <i class="fas fa-exchange-alt" style="color:var(--accent-cyan); font-size: 1.1rem;"></i> 
-                            <span style="font-size: 0.8rem; font-weight: 600; color: #ddd;">Havale: %<span id="statTransferFee">0</span></span>
-                        </div>
-                        <div class="b-stat" style="background: rgba(255,255,255,0.04); padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                            <i class="fas fa-users" style="color:var(--accent-purple); font-size: 1.1rem;"></i> 
-                            <span style="font-size: 0.8rem; font-weight: 600; color: #ddd;">Müşteri: <span id="statCustomerCount">0</span></span>
-                        </div>
-                        <div class="b-stat" style="background: rgba(255,255,255,0.04); padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                            <i class="fas fa-vault" style="color:var(--accent-gold); font-size: 1.1rem;"></i> 
-                            <span style="font-size: 0.8rem; font-weight: 600; color: #ddd;">İşlem Hacmi: <span id="statTotalVolume">0</span> ₺</span>
-                        </div>
-                        <div class="b-stat" style="background: rgba(255,255,255,0.04); padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                            <i class="fas fa-level-up-alt" style="color:var(--accent-gold); font-size: 1.1rem;"></i> 
-                            <span style="font-size: 0.8rem; font-weight: 600; color: #ddd;">Seviye: <span id="statBankLevel">1</span></span>
-                        </div>
-                    </div>
+            <!-- Bank Identity Header -->
+            <div style="display: flex; align-items: center; background: #111; padding: 15px; border-radius: 10px; border: 1px solid #333; margin-bottom: 20px;">
+                <div style="position: relative; width: 65px; height: 65px; flex-shrink: 0; background: rgba(0, 0, 0, 0.3); border: 1px solid #333; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+                    <img src="icons/bank-icon/bank.png" style="width: 45px; height: 45px; object-fit: contain;">
+                </div>
+                <div>
+                    <h2 id="bankNameHeader" style="font-size: 1rem; color: #fff; margin: 0; font-weight: bold; text-transform: uppercase;">YÜKLENİYOR...</h2>
                 </div>
             </div>
 
             <!-- TABS -->
             <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('settings')">YÖNETİM</button>
+                <button class="tab-btn active" onclick="switchTab('info')">BİLGİLER</button>
+                <button class="tab-btn" onclick="switchTab('settings')">YÖNETİM</button>
                 <button class="tab-btn" onclick="switchTab('vault')">KASA</button>
                 <button class="tab-btn" onclick="switchTab('customers')">MÜŞTERİLER</button>
+                <button class="tab-btn" onclick="switchTab('logs')">LOG</button>
             </div>
 
-            <!-- SETTINGS TAB -->
-            <div id="tab-settings">
-                <div class="manage-card">
-                    <div class="mc-header">Banka Ayarları</div>
-                    <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid var(--accent-gold); border-radius: 8px; padding: 12px; margin-bottom: 15px; text-align: center;">
-                        <i class="fas fa-info-circle" ></i>
-                        <span style="color: var(--accent-gold); font-size: 0.85rem; font-weight: 600;">
-                            Ayarları güncellemek için 50,000 ₺ ücret alınır.
-                        </span>
+            <!-- INFO TAB -->
+            <div id="tab-info">
+                <!-- BANKA BİLGİ KARTI (ACCORDION) -->
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <div class="accordion-title">
+                            <i class="fas fa-info-circle"></i> BANKA BİLGİLERİ
+                        </div>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Banka Adı</label>
-                        <input type="text" id="bankName" class="form-input">
+                    <div class="accordion-content open">
+                        <div class="accordion-body" style="padding: 0;">
+                            <style>
+                                /* INFO LIST ITEMS */
+                                .info-list-item {
+                                    display: flex;
+                                    justify-content: space-between;
+                                    align-items: center;
+                                    padding: 12px 10px;
+                                    transition: all 0.2s;
+                                    border-bottom: 1px solid rgba(255,255,255,0.05);
+                                }
+                                .info-list-item:first-child {
+                                    padding-top: 5px;
+                                }
+                                .info-list-item:last-child {
+                                    border-bottom: none;
+                                    padding-bottom: 5px;
+                                }
+                                .info-list-item:hover {
+                                    opacity: 0.9;
+                                    background: rgba(255,255,255,0.02);
+                                }
+                                .info-left {
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 0;
+                                }
+                                .info-left i,
+                                .info-left img {
+                                    width: 28px;
+                                    min-width: 28px;
+                                    text-align: center;
+                                    margin-right: 10px;
+                                    font-size: 1.1rem;
+                                }
+                                .info-label {
+                                    color: #aaa;
+                                    font-size: 0.9rem;
+                                    font-weight: 500;
+                                    flex: 1;
+                                }
+                                .info-value {
+                                    color: #fff;
+                                    font-size: 0.95rem;
+                                    font-weight: 700;
+                                    text-align: right;
+                                    font-family: 'Rajdhani', sans-serif;
+                                }
+                                .info-note {
+                                    font-size: 0.65rem;
+                                    color: #666;
+                                    margin-top: 2px;
+                                    display: block;
+                                }
+                            </style>
+
+                            <div class="info-list" style="padding: 15px;">
+                                <!-- Owner -->
+                                <div class="info-list-item">
+                                    <div class="info-left">
+                                        <i class="fas fa-user-tie" style="color: var(--text-muted);"></i>
+                                        <div class="info-label">Banka Sahibi</div>
+                                    </div>
+                                    <div class="info-value" id="bOwnerDisplay">...</div>
+                                </div>
+
+                                <!-- Bank Creation Date -->
+                                <div class="info-list-item">
+                                    <div class="info-left">
+                                        <i class="fas fa-calendar-alt" style="color: var(--text-muted);"></i>
+                                        <div class="info-label">Banka Açılış Tarihi</div>
+                                    </div>
+                                    <div class="info-value" id="bCreationDate">...</div>
+                                </div>
+
+                                <!-- Account Opening Fee -->
+                                <div class="info-list-item">
+                                    <div class="info-left">
+                                        <i class="fas fa-file-contract" style="color: var(--accent-cyan);"></i>
+                                        <div class="info-label">Hesap Açılış Ücreti</div>
+                                    </div>
+                                    <div class="info-value text-cyan"><span id="statAccountFee">0</span> ₺</div>
+                                </div>
+
+                                <!-- Interest Rate -->
+                                <div class="info-list-item">
+                                    <div class="info-left">
+                                        <i class="fas fa-percentage" style="color: var(--accent-green);"></i>
+                                        <div class="info-label">Mevduat Faizi</div>
+                                    </div>
+                                    <div class="info-value" style="color: var(--accent-green);">%<span id="statInterestRate">0</span></div>
+                                </div>
+
+                                <!-- Loan Rate -->
+                                <div class="info-list-item">
+                                    <div class="info-left">
+                                        <i class="fas fa-credit-card" style="color: var(--accent-red);"></i>
+                                        <div class="info-label">Kredi Faizi</div>
+                                    </div>
+                                    <div class="info-value" style="color: var(--accent-red);">%<span id="statLoanRate">0</span></div>
+                                </div>
+
+                                <!-- Transfer Fee -->
+                                <div class="info-list-item">
+                                    <div class="info-left">
+                                        <i class="fas fa-exchange-alt" style="color: var(--accent-cyan);"></i>
+                                        <div class="info-label">Havale Ücreti</div>
+                                    </div>
+                                    <div class="info-value" style="color: var(--accent-cyan);">%<span id="statTransferFee">0</span></div>
+                                </div>
+
+                                <!-- Customer Count -->
+                                <div class="info-list-item">
+                                    <div class="info-left">
+                                        <i class="fas fa-users" style="color: var(--accent-purple);"></i>
+                                        <div class="info-label">Müşteriler</div>
+                                    </div>
+                                    <div class="info-value" id="statCustomerCount">0/0</div>
+                                </div>
+
+                                <!-- Total Volume -->
+                                <div class="info-list-item">
+                                    <div class="info-left">
+                                        <i class="fas fa-vault" style="color: var(--accent-gold);"></i>
+                                        <div class="info-label">İşlem Hacmi</div>
+                                    </div>
+                                    <div class="info-value" style="color: var(--accent-gold);"><span id="statTotalVolume">0</span> ₺</div>
+                                </div>
+
+                                <!-- Level -->
+                                <div class="info-list-item">
+                                    <div class="info-left">
+                                        <i class="fas fa-level-up-alt" style="color: var(--accent-gold);"></i>
+                                        <div class="info-label">Seviye</div>
+                                    </div>
+                                    <div class="info-value" id="statBankLevel">1</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Mevduat Faizi (%)</label>
-                        <input type="number" id="interestRate" class="form-input" step="0.1">
+                </div>
+            </div>
+
+            <!-- SETTINGS TAB (Initially Hidden) -->
+            <div id="tab-settings" style="display:none;">
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <span class="accordion-title"><i class="fas fa-cogs"></i> Banka Ayarları</span>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Kredi Faizi (%)</label>
-                        <input type="number" id="loanRate" class="form-input" step="0.1">
+                    <div class="accordion-content open">
+                        <div class="accordion-body">
+                            <div class="form-group">
+                                    <label class="form-label">Banka Adı</label>
+                                <input type="text" id="bankName" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Mevduat Faizi (%)</label>
+                                <input type="number" id="interestRate" class="form-input" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Kredi Faizi (%)</label>
+                                <input type="number" id="loanRate" class="form-input" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Havale Ücreti (%)</label>
+                                <input type="number" id="transferFee" class="form-input" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Hesap Açılış Ücreti (₺)</label>
+                                <input type="number" id="accountOpeningFee" class="form-input" placeholder="Örn: 500">
+                            </div>
+                            <button class="btn-save" onclick="updateSettings()">GÜNCELLE</button>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Havale Ücreti (%)</label>
-                        <input type="number" id="transferFee" class="form-input" step="0.1">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Hesap Açılış Ücreti (₺)</label>
-                        <input type="number" id="accountOpeningFee" class="form-input" placeholder="Örn: 500">
-                    </div>
-                    <button class="btn-save" onclick="updateSettings()">GÜNCELLE</button>
                 </div>
 
-                <div class="manage-card upgrade-card">
-                    <div class="mc-header" >BANKA SEVİYESİ</div>
-                    
-                    <div class="upgrade-info">
-                        <div class="u-col">
-                            <h4>MEVCUT</h4>
-                            <p id="currentLevel">Seviye 1</p>
-                            <small style="color:#aaa" id="currentCap">10 Müşteri</small>
-                        </div>
-                        <div class="u-arrow"><i class="fas fa-arrow-right"></i></div>
-                        <div class="u-col">
-                            <h4>SONRAKİ</h4>
-                            <p id="nextLevel">Seviye 2</p>
-                            <small style="color:var(--accent-green)" id="nextCap">20 Müşteri</small>
-                        </div>
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <span class="accordion-title"><i class="fas fa-layer-group"></i> BANKA SEVİYESİ</span>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
+                    <div class="accordion-content open">
+                        <div class="accordion-body upgrade-card">
+                            <div class="upgrade-info">
+                                <div class="u-col">
+                                    <h4>MEVCUT</h4>
+                                    <p id="currentLevel">Seviye 1</p>
+                                    <small style="color:#aaa" id="currentCap">10 Müşteri</small>
+                                </div>
+                                <div class="u-arrow"><i class="fas fa-arrow-right"></i></div>
+                                <div class="u-col">
+                                    <h4>SONRAKİ</h4>
+                                    <p id="nextLevel">Seviye 2</p>
+                                    <small style="color:var(--accent-green)" id="nextCap">20 Müşteri</small>
+                                </div>
+                            </div>
 
-                    <button id="upgradeBtn" class="btn-upgrade" onclick="openUpgradeModal()">
-                        <i class="fas fa-arrow-circle-up"></i> GELİŞTİR
-                    </button>
+                            <button id="upgradeBtn" class="btn-upgrade" onclick="openUpgradeModal()">
+                                <i class="fas fa-arrow-circle-up"></i> GELİŞTİR
+                            </button>
 
-                    <div id="upgradeProgress" class="upgrade-progress-container">
-                        <div class="u-progress-bg">
-                            <div id="uBar" class="u-progress-fill"></div>
+                            <div id="upgradeProgress" class="upgrade-progress-container">
+                                <div class="u-progress-bg">
+                                    <div id="uBar" class="u-progress-fill"></div>
+                                </div>
+                                <div id="uTimer" class="u-timer-text"><i class="fas fa-clock"></i> Geliştiriliyor... 10s</div>
+                                <button id="uSpeedBtn" class="btn-speedup" onclick="openSpeedUpModal()">
+                                    <i class="fas fa-bolt"></i> HIZLANDIR
+                                </button>
+                            </div>
                         </div>
-                        <div id="uTimer" class="u-timer-text"><i class="fas fa-clock"></i> Geliştiriliyor... 10s</div>
-                        <button id="uSpeedBtn" class="btn-speedup" onclick="openSpeedUpModal()">
-                            <i class="fas fa-bolt"></i> HIZLANDIR
-                        </button>
                     </div>
                 </div>
             </div>
 
             <!-- VAULT TAB -->
             <div id="tab-vault" style="display:none;">
-                <div class="manage-card">
-                    <div class="mc-header">BANKA KASASI</div>
-                    <div class="vault-box">
-                        <div class="vb-title">KASA BAKİYESİ</div>
-                        <div class="vb-amount"><span id="vaultBalance">0</span> ₺</div>
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <span class="accordion-title"><i class="fas fa-vault"></i> BANKA KASASI</span>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
-                    <div class="form-group">
-                        <input type="number" id="vaultAmount" class="form-input" placeholder="Miktar Giriniz...">
-                    </div>
-                    <div style="display:flex; gap:10px;">
-                        <button class="btn-withdraw" style="background:var(--accent-green); color:#fff;" onclick="manageVault('deposit')">KASAYA YATIR</button>
-                        <button class="btn-withdraw" onclick="manageVault('withdraw')">KASADAN ÇEK</button>
-                    </div>
-                </div>
+                    <div class="accordion-content open">
+                        <div class="accordion-body">
+                            
+                            <!-- Bakiye Kısmı -->
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                <div style="font-size: 0.9rem; color: #888; margin-bottom: 5px;">MEVCUT BAKİYE</div>
+                                <div class="vault-balance-amount" id="fVault" style="font-size: 2.2rem; font-weight: 800; color: var(--accent-gold); letter-spacing: 2px; margin-bottom: 8px;">0</div>
+                                <div class="vault-balance-capacity" id="vaultCapacityText" style="color: #666; font-size: 0.85rem; display:none;">Kapasite: SINIRSIZ</div>
+                                <!-- Progress Bar -->
+                                <div style="width: 100%; height: 6px; background: #222; border-radius: 3px; margin: 10px 0; overflow: hidden; border: 1px solid #333;">
+                                    <div id="vaultProgressBar" style="width: 0%; height: 100%; background: var(--accent-gold); transition: width 0.5s ease;"></div>
+                                </div>
+                            </div>
 
-                <div class="manage-card">
-                    <div class="mc-header">İSTATİSTİKLER</div>
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <div class="si-val" id="totalDeposits">0 ₺</div>
-                            <div class="si-lbl">Toplam Mevduat</div>
+                            <!-- İşlem Kısmı -->
+                            <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border: 1px solid #333;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                    <div style="font-size: 0.85rem; color: #aaa;">İşlem Miktarı:</div>
+                                    <div style="text-align: right; font-size: 0.75rem; color: #888;">
+                                        <span style="margin-right: 10px;">Max Yatır: <span id="maxVaultDeposit" style="color:var(--accent-green); cursor:pointer; font-weight:bold;" onclick="setMaxAmount('deposit')">0</span> ₺</span>
+                                        <span>Max Çek: <span id="maxVaultWithdraw" style="color:var(--accent-red); cursor:pointer; font-weight:bold;" onclick="setMaxAmount('withdraw')">0</span> ₺</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="vault-input-group" style="position: relative; margin-bottom: 15px;">
+                                    <input type="number" id="vaultInput" class="form-input" placeholder="0" style="text-align: center; font-size: 1.5rem; color: var(--accent-gold); font-weight: bold; padding-right: 40px; border-color: #444;">
+                                    <span style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #666; font-weight: bold;">₺</span>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <button class="vault-btn" onclick="confirmAction('vault', 'add', null, null)" style="background: var(--accent-green); color: #000; width:100%; padding:12px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">
+                                        <i class="fas fa-arrow-down"></i> YATIR
+                                    </button>
+                                    <button class="vault-btn" onclick="confirmAction('vault', 'withdraw', null, null)" style="background: #e74c3c; color: #fff; border: 1px solid #c0392b; width:100%; padding:12px; border-radius:5px; font-weight:bold; cursor:pointer;">
+                                        <i class="fas fa-arrow-up"></i> ÇEK
+                                    </button>
+                                </div>
+                            </div>
+
                         </div>
-                        <div class="stat-item">
-                            <div class="si-val" id="totalLoans">0 ₺</div>
-                            <div class="si-lbl">Verilen Krediler</div>
+                    </div>
+                </div>
+
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <span class="accordion-title"><i class="fas fa-chart-line"></i> İSTATİSTİKLER</span>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
+                    </div>
+                    <div class="accordion-content open">
+                        <div class="accordion-body">
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <div class="si-val" id="totalDeposits">0 ₺</div>
+                                    <div class="si-lbl">Toplam Mevduat</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="si-val" id="totalLoans">0 ₺</div>
+                                    <div class="si-lbl">Verilen Krediler</div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-
-                <div class="manage-card">
-                    <div class="mc-header">KASA İŞLEM GEÇMİŞİ <span id="vaultLogCount" style="color: var(--text-muted); font-size: 0.9rem; font-weight: normal;">(0)</span></div>
-                    <div class="logs-container" id="vaultLogList">
-                        <!-- JS will populate vault logs -->
-                    </div>
-                </div>
-
-                <div class="manage-card">
-                    <div class="mc-header">MÜŞTERİ İŞLEMLERİ <span id="logCount" style="color: var(--text-muted); font-size: 0.9rem; font-weight: normal;">(0)</span></div>
-                    <div class="logs-container" id="logList">
-                        <!-- JS will populate -->
                     </div>
                 </div>
             </div>
 
             <!-- CUSTOMERS TAB -->
             <div id="tab-customers" style="display:none;">
-                <div class="manage-card">
-                    <div class="mc-header">BANKA MÜŞTERİLERİ <span id="customerCount" style="color: var(--text-muted); font-size: 0.9rem; font-weight: normal;">(0)</span></div>
-                    <div class="customer-grid" id="customerList">
-                        <!-- JS will populate -->
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <span class="accordion-title"><i class="fas fa-users"></i> BANKA MÜŞTERİLERİ <span id="customerCount" style="color: var(--text-muted); font-size: 0.9rem; font-weight: normal; margin-left: 5px;">(0)</span></span>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
+                    </div>
+                    <div class="accordion-content open">
+                        <div class="accordion-body">
+                            <div class="customer-grid" id="customerList">
+                                <!-- JS will populate -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LOGS TAB -->
+            <div id="tab-logs" style="display:none;">
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <span class="accordion-title"><i class="fas fa-history"></i> KASA İŞLEM GEÇMİŞİ <span id="vaultLogCount" style="color: var(--text-muted); font-size: 0.9rem; font-weight: normal; margin-left: 5px;">(0)</span></span>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
+                    </div>
+                    <div class="accordion-content open">
+                        <div class="accordion-body">
+                            <div class="logs-container" id="vaultLogList">
+                                <!-- JS will populate vault logs -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-card">
+                    <div class="accordion-header active" onclick="toggleAccordion(this)">
+                        <span class="accordion-title"><i class="fas fa-users-cog"></i> MÜŞTERİ İŞLEMLERİ <span id="logCount" style="color: var(--text-muted); font-size: 0.9rem; font-weight: normal; margin-left: 5px;">(0)</span></span>
+                        <i class="fas fa-chevron-down accordion-icon"></i>
+                    </div>
+                    <div class="accordion-content open">
+                        <div class="accordion-body">
+                            <div class="logs-container" id="logList">
+                                <!-- JS will populate -->
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -481,6 +739,16 @@
         </div>
     </div>
 
+    <!-- STATUS MODAL -->
+    <div class="modal-overlay" id="statusModal">
+        <div class="modal-content" style="text-align:center;">
+            <i id="statusIcon" class="fas fa-check-circle" style="font-size:3rem; margin-bottom:10px;"></i>
+            <h3 id="statusTitle" style="color:#fff; margin-bottom:5px;">BAŞARILI</h3>
+            <p id="statusMessage" style="color:#aaa; font-size:0.9rem; margin-bottom:20px;">İşlem başarıyla tamamlandı.</p>
+            <button style="width:100%; padding:12px; background:#333; color:#fff; border:none; border-radius:5px; font-weight:bold; cursor:pointer;" onclick="closeModal('statusModal')">TAMAM</button>
+        </div>
+    </div>
+
     <script src="js/loader-manager.js"></script>
     <script src="js/zoom-prevention.js"></script>
     <script src="js/menu-manager.js"></script>
@@ -491,6 +759,18 @@
             return Number(num).toLocaleString('tr-TR');
         };
         let myBank = null;
+
+        function toggleAccordion(header) {
+            header.classList.toggle('active');
+            const content = header.nextElementSibling;
+            if (content.style.maxHeight) {
+                content.style.maxHeight = null;
+                content.classList.remove('open');
+            } else {
+                content.classList.add('open');
+                content.style.maxHeight = content.scrollHeight + "px";
+            }
+        }
 
         async function initPage() {
             await loadMyBank();
@@ -549,8 +829,35 @@
             }
         }
 
-        function renderBankInfo() {
-            document.getElementById('vaultBalance').innerText = fmt(myBank.balance);
+        async function renderBankInfo() {
+            // Update Vault (fVault)
+            const vBal = myBank.balance || 0;
+            document.getElementById('fVault').innerText = fmt(vBal) + ' ₺';
+            if(document.getElementById('vaultBalance')) document.getElementById('vaultBalance').innerText = fmt(vBal); // fallback
+
+            // Update Max Deposit (User Money)
+            const localUser = JSON.parse(localStorage.getItem('simWorldUser'));
+            
+            // Get User Money via API for accuracy
+            try {
+                const res = await fetch(`/api/profile/${localUser.id}`);
+                const userData = await res.json();
+                if(userData) {
+                     document.getElementById('maxVaultDeposit').innerText = fmt(userData.money);
+                     document.getElementById('maxVaultDeposit').dataset.val = userData.money;
+                }
+            } catch(e) {}
+            
+            // Update Max Withdraw (Vault Balance)
+            document.getElementById('maxVaultWithdraw').innerText = fmt(vBal);
+            document.getElementById('maxVaultWithdraw').dataset.val = vBal;
+
+            // Progress Bar (Assuming infinite/unknown capacity for bank for now, or visual full)
+            // Bank logic doesn't have vault limit in server yet. Just set full bar or 50%.
+            document.getElementById('vaultProgressBar').style.width = '100%';
+            document.getElementById('vaultCapacityText').style.display = 'none'; // Hide capacity as it's unlimited
+
+            // Existing Info
             document.getElementById('bankName').value = myBank.name;
             document.getElementById('interestRate').value = myBank.interest_rate;
             document.getElementById('loanRate').value = myBank.loan_rate;
@@ -559,8 +866,22 @@
 
             // Üst bilgi kartını güncelle
             const user = JSON.parse(localStorage.getItem('simWorldUser'));
-            document.getElementById('bNameDisplay').innerText = myBank.name || 'Bilinmeyen Banka';
-            document.getElementById('bOwnerDisplay').innerText = user.username || 'Bilinmiyor';
+            
+            // Header güncelleme
+            document.getElementById('bankNameHeader').innerText = myBank.name || 'Bilinmeyen Banka';
+
+            // document.getElementById('bNameDisplay').innerText = myBank.name || 'Bilinmeyen Banka'; // Removed
+            document.getElementById('bOwnerDisplay').innerText = `#${user.id} - ${user.username}` || 'Bilinmiyor';
+
+            if (myBank.created_at) {
+                const d = new Date(myBank.created_at);
+                document.getElementById('bCreationDate').innerText = d.toLocaleDateString('tr-TR');
+            } else {
+                document.getElementById('bCreationDate').innerText = '-';
+            }
+
+            document.getElementById('statAccountFee').innerText = fmt(myBank.account_opening_fee || 0);
+
             document.getElementById('statInterestRate').innerText = myBank.interest_rate || 0;
             document.getElementById('statLoanRate').innerText = myBank.loan_rate || 0;
             document.getElementById('statTransferFee').innerText = myBank.transfer_fee || 0;
@@ -595,13 +916,107 @@
             checkUpgradeStatus();
         }
 
+
+        // --- CUSTOMER LOGIC ---
         function calculateCapacity(level) {
-            // Seviye bazlı kapasite hesaplama
-            return 10 + ((level - 1) * 10); // Seviye 1: 10, Seviye 2: 20, vb.
+            return 10 + ((level - 1) * 10);
+        }
+        
+        // --- VAULT LOGIC (New) ---
+        function setMaxAmount(type) {
+            const el = type === 'deposit' ? document.getElementById('maxVaultDeposit') : document.getElementById('maxVaultWithdraw');
+            const val = el.dataset.val ? parseFloat(el.dataset.val) : 0;
+            document.getElementById('vaultInput').value = val;
+        }
+
+        async function confirmAction(target, action) {
+             // Wrapper for existing manageVault
+             const amount = document.getElementById('vaultInput').value;
+             if (!amount || amount <= 0) return showStatusModal('error', 'HATA', 'Miktar giriniz.');
+             
+             // Reuse existing logic, but with new input id
+             // We can just call manageVault but manageVault reads 'vaultAmount'.
+             // So we must update manageVault OR redirect manageVault to read 'vaultInput'.
+             // Better: update manageVault to accept amount or read new input.
+             
+             // Quick fix: Set old input value (if it existed) or just rewrite manageVault logic here.
+             manageVault(action === 'add' ? 'deposit' : 'withdraw', amount);
+        }
+
+        async function manageVault(action, amountOverride) {
+            const user = JSON.parse(localStorage.getItem('simWorldUser'));
+            
+            // Banka sahibi kontrolü
+            if (myBank.owner_id !== user.id) {
+                showStatusModal('error', 'HATA', 'Sadece banka sahibi kasa işlemleri yapabilir!');
+                return;
+            }
+            
+            let amount = amountOverride;
+            if(!amount) {
+                // Try old input
+                const inp = document.getElementById('vaultAmount');
+                if(inp) amount = inp.value;
+                // Try new input
+                if(!amount) amount = document.getElementById('vaultInput').value;
+            }
+
+            if (!amount || amount <= 0) return showStatusModal('error', 'HATA', 'Miktar giriniz.');
+
+            const endpoint = action === 'withdraw' ? '/api/banks/withdraw' : '/api/banks/deposit';
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, amount: amount })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    const actionText = action === 'withdraw' ? 'çekildi' : 'yatırıldı';
+                    const displayAmount = result.amount || amount;
+                     
+                    showStatusModal('success', 'BAŞARILI', `${fmt(displayAmount)} ₺ kasadan ${actionText}`);
+                    
+                    if(document.getElementById('vaultInput')) document.getElementById('vaultInput').value = '';
+                    if(document.getElementById('vaultAmount')) document.getElementById('vaultAmount').value = '';
+
+                    myBank.balance = result.newBalance;
+                    
+                    // UI Update
+                    renderBankInfo();
+                    
+                    // Kasa loglarını yenile
+                    await loadVaultLogs();
+                    
+                    // Header Update
+                    if (window.updateHeader) {
+                        try {
+                            const userResponse = await fetch(`/api/profile/${user.id}`);
+                            const userData = await userResponse.json();
+                            if (userData && userData.id) {
+                                window.updateHeader({
+                                    money: userData.money,
+                                    gold: userData.gold,
+                                    diamond: userData.diamond,
+                                    level: userData.level
+                                });
+                            }
+                        } catch (err) {}
+                    }
+                } else {
+                    showStatusModal('error', 'HATA', result.message);
+                }
+            } catch (error) {
+                console.error(error);
+                showStatusModal('error', 'HATA', 'Sunucu hatası.');
+            }
         }
 
         async function updateSettings() {
             const user = JSON.parse(localStorage.getItem('simWorldUser'));
+
             
             // Banka sahibi kontrolü
             if (myBank.owner_id !== user.id) {
@@ -614,15 +1029,6 @@
             const loan = document.getElementById('loanRate').value;
             const fee = document.getElementById('transferFee').value;
             const openingFee = document.getElementById('accountOpeningFee').value;
-
-            // Güncelleme ücreti kontrolü
-            const updateFee = 50000;
-            const currentBalance = myBank.balance || 0;
-            
-            if (currentBalance < updateFee) {
-                toastr.error(`Ayarları güncellemek için banka kasasında en az ${fmt(updateFee)} ₺ bulunmalıdır. Mevcut: ${fmt(currentBalance)} ₺`);
-                return;
-            }
 
             try {
                 const response = await fetch('/api/banks/update', {
@@ -639,93 +1045,70 @@
                 });
                 const result = await response.json();
                 if (result.success) {
-                    // Kasa bakiyesini güncelle
-                    myBank.balance = result.newBalance || (myBank.balance - updateFee);
-                    document.getElementById('vaultBalance').innerText = fmt(myBank.balance);
-                    toastr.success(result.message + ` (${fmt(updateFee)} ₺ ücret kasadan çekildi)`);
-                    
-                    // Üst bilgi kartını güncelle
+                    // Local verileri güncelle
+                    myBank.name = name;
+                    myBank.interest_rate = interest;
+                    myBank.loan_rate = loan;
+                    myBank.transfer_fee = fee;
+                    myBank.account_opening_fee = openingFee;
+
+                    // Arayüzü güncelle
                     renderBankInfo();
+                    
+                    // Başarılı Modal
+                    showStatusModal('success', 'BAŞARILI', result.message || 'Banka ayarları güncellendi.');
                 } else {
-                    toastr.error(result.message);
+                    // Hata Modal
+                    showStatusModal('error', 'HATA', result.message || 'İşlem başarısız.');
                 }
             } catch (error) {
                 console.error(error);
+                showStatusModal('error', 'HATA', 'Sunucu hatası oluştu.');
             }
         }
 
-        async function manageVault(action) {
-            const user = JSON.parse(localStorage.getItem('simWorldUser'));
-            
-            // Banka sahibi kontrolü
-            if (myBank.owner_id !== user.id) {
-                toastr.error('Sadece banka sahibi kasa işlemleri yapabilir!');
-                return;
+        function showStatusModal(type, title, message) {
+            const modal = document.getElementById('statusModal');
+            const icon = document.getElementById('statusIcon');
+            const titleEl = document.getElementById('statusTitle');
+            const msgEl = document.getElementById('statusMessage');
+
+            if (type === 'success') {
+                icon.className = 'fas fa-check-circle';
+                icon.style.color = '#2ecc71';
+                titleEl.style.color = '#2ecc71';
+            } else {
+                icon.className = 'fas fa-times-circle';
+                icon.style.color = '#e74c3c';
+                titleEl.style.color = '#e74c3c';
             }
-            
-            const amount = document.getElementById('vaultAmount').value;
 
-            if (!amount || amount <= 0) return toastr.warning('Miktar giriniz.');
-
-            const endpoint = action === 'withdraw' ? '/api/banks/withdraw' : '/api/banks/deposit';
-
-            try {
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: user.id, amount: amount })
-                });
-                const result = await response.json();
-
-                if (result.success) {
-                    const actionText = action === 'withdraw' ? 'çekildi' : 'yatırıldı';
-                    const displayAmount = result.amount || amount;
-                    toastr.success(`${fmt(displayAmount)} ₺ kasadan ${actionText}`);
-                    document.getElementById('vaultAmount').value = '';
-                    document.getElementById('vaultBalance').innerText = fmt(result.newBalance);
-                    myBank.balance = result.newBalance;
-                    
-                    // Kasa loglarını yenile
-                    await loadVaultLogs();
-                    
-                    // Kullanıcının güncel para bilgisini backend'den çek ve header'ı güncelle
-                    if (window.updateHeader) {
-                        try {
-                            const userResponse = await fetch(`/api/profile/${user.id}`);
-                            const userData = await userResponse.json();
-                            if (userData && userData.id) {
-                                window.updateHeader({
-                                    money: userData.money,
-                                    gold: userData.gold,
-                                    diamond: userData.diamond,
-                                    level: userData.level
-                                });
-                            }
-                        } catch (err) {
-                            console.error('Header güncelleme hatası:', err);
-                        }
-                    }
-                } else {
-                    toastr.error(result.message);
-                }
-            } catch (error) {
-                console.error(error);
-            }
+            titleEl.innerText = title;
+            msgEl.innerText = message;
+            modal.style.display = 'flex';
         }
+
+
 
         function switchTab(tab) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             event.target.classList.add('active');
 
-            document.getElementById('tab-settings').style.display = 'none';
-            document.getElementById('tab-vault').style.display = 'none';
-            document.getElementById('tab-customers').style.display = 'none';
+            // Hide all tabs
+            const tabs = ['info', 'settings', 'vault', 'customers', 'logs'];
+            tabs.forEach(t => {
+                const el = document.getElementById('tab-' + t);
+                if (el) el.style.display = 'none';
+            });
             
-            document.getElementById('tab-' + tab).style.display = 'block';
+            // Show selected tab
+            const selected = document.getElementById('tab-' + tab);
+            if (selected) selected.style.display = 'block';
             
-            // KASA sekmesine geçince kasa loglarını yükle
-            if (tab === 'vault') {
+            // Special logic
+            if (tab === 'logs') {
                 loadVaultLogs();
+                loadLogs();
             }
         }
 

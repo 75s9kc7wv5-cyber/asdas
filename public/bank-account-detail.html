@@ -324,7 +324,9 @@
         <!-- Banka Bilgileri (Hospital Style) -->
         <div class="bank-info">
             <div class="b-level-badge" id="bankLevelBadge">SEVİYE 1</div>
-            <div class="b-icon"><i class="fas fa-university"></i></div>
+            <div class="b-icon">
+                <img src="icons/bank-icon/bank.png" alt="Banka" style="width: 64px; height: 64px; object-fit: contain;">
+            </div>
             <div class="b-name" id="bankNameDisplay">GLOBAL BANK</div>
             <div class="b-owner">
                 <span id="bankOwnerDisplay"></span>
@@ -578,9 +580,9 @@
                     <div class="form-group" style="margin-bottom: 20px;">
                         <label class="input-label">VADE SÜRESİ</label>
                         <div class="duration-grid">
-                            <div class="duration-option selected" onclick="selectDuration(this, 1440)">
-                                <div class="d-days">1 GÜN</div>
-                                <div class="d-desc">Kısa Vade</div>
+                            <div class="duration-option selected" onclick="selectDuration(this, 1)">
+                                <div class="d-days">1 DAKİKA (TEST)</div>
+                                <div class="d-desc">Test Vade</div>
                             </div>
                             <div class="duration-option" onclick="selectDuration(this, 4320)">
                                 <div class="d-days">3 GÜN</div>
@@ -599,7 +601,7 @@
                                 <div class="d-desc">Uzun Vade</div>
                             </div>
                         </div>
-                        <input type="hidden" id="depDuration" value="1440">
+                        <input type="hidden" id="depDuration" value="1">
                     </div>
 
                     <div class="est-return-box" style="border-color: #333;">
@@ -637,10 +639,25 @@
                 <div id="amountGroup" style="margin-bottom: 20px;">
                     <label class="input-label">Miktar</label>
                     <div class="input-wrapper">
-                        <input type="number" id="mAmount" class="modern-input" placeholder="0">
+                        <input type="number" id="mAmount" class="modern-input" placeholder="0" oninput="calcTransferFee()">
                     </div>
                     <div id="minAmountInfo" style="display:none; font-size: 0.75rem; color: #f1c40f; margin-top: 5px; text-align: left;">
                         <i class="fas fa-info-circle"></i> Minimum tutar: 1.000 ₺
+                    </div>
+                </div>
+
+                <div id="transferFeeInfo" style="display:none; margin-bottom: 20px; font-size: 0.85rem; background: #333; padding: 10px; border-radius: 8px;">
+                    <div style="display:flex; justify-content:space-between; color: #aaa;">
+                        <span>Gönderilecek:</span>
+                        <span id="tfSendAmount" style="color:#fff; font-weight:bold;">0 ₺</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; color: #aaa; margin-top: 5px;">
+                        <span>İşlem Ücreti (<span id="tfRateDisplay">%0</span>):</span>
+                        <span id="tfFeeAmount" style="color:var(--warning); font-weight:bold;">0 ₺</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; border-top: 1px solid #555; margin-top: 5px; padding-top: 5px;">
+                        <span style="color: #fff;">TOPLAM MALİYET:</span>
+                        <span id="tfTotalCost" style="color:var(--danger); font-weight:bold; font-size: 1rem;">0 ₺</span>
                     </div>
                 </div>
 
@@ -830,78 +847,103 @@
         logs.filter(l => l.transaction_type !== 'score_update').slice(0, 10).forEach(log => {
             let icon = 'fa-circle';
             let title = 'İşlem';
-            let amountClass = '';
+            let description = '';
+            let amountClass = ''; // 'plus' or 'minus' (handled by CSS, but we need inline colors too)
             let amountPrefix = '';
             let iconColor = '#aaa';
             let iconBg = 'rgba(255,255,255,0.05)';
+            let amountElementStyle = '';
+
+            const amountStr = fmt(log.amount) + ' ₺';
 
             if (log.transaction_type === 'deposit') {
-                icon = 'fa-plus';
+                icon = 'fa-arrow-down';
                 title = 'Para Yatırma';
+                description = `Banka Hesabına <span style="color:#2ecc71; font-weight:bold;">${amountStr}</span> yatırıldı.`;
                 amountClass = 'plus';
+                amountElementStyle = 'color: #2ecc71;';
                 amountPrefix = '+';
                 iconColor = '#2eff71';
                 iconBg = 'rgba(46, 255, 113, 0.15)';
             } else if (log.transaction_type === 'withdraw') {
-                icon = 'fa-minus';
+                icon = 'fa-arrow-up';
                 title = 'Para Çekme';
+                description = `Banka Hesabından <span style="color:#e74c3c; font-weight:bold;">${amountStr}</span> çekildi.`;
                 amountClass = 'minus';
+                amountElementStyle = 'color: #e74c3c;';
                 amountPrefix = '-';
                 iconColor = '#ff4d4d';
                 iconBg = 'rgba(255, 77, 77, 0.15)';
-            } else if (log.transaction_type === 'transfer_out') {
-                icon = 'fa-arrow-right'; // Using arrow-right for sent
-                title = 'Giden Transfer';
-                amountClass = 'minus';
-                amountPrefix = '-';
-                iconColor = '#ff9f43';
-                iconBg = 'rgba(255, 159, 67, 0.15)';
-            } else if (log.transaction_type === 'transfer_in') {
-                icon = 'fa-arrow-left'; // Using arrow-left for received
-                // Parse sender info from description (format: "Gelen Transfer (userId - username)")
-
-                const match = log.description?.match(/\((\d+)\s*-\s*([^)]+)\)/);
-                if (match) {
-                    title = `Gelen Transfer (${match[1]} - ${match[2]})`;
-                } else {
-                    title = 'Gelen Transfer';
-                }
-                amountClass = 'plus';
-                amountPrefix = '+';
-                iconColor = '#00d2d3';
-                iconBg = 'rgba(0, 210, 211, 0.15)';
             } else if (log.transaction_type === 'loan_taken') {
-                icon = 'fa-credit-card';
+                icon = 'fa-hand-holding-usd';
                 title = 'Kredi Kullanımı';
+                description = `Bankadan <span style="color:#2ecc71; font-weight:bold;">${amountStr}</span> kredi çekildi.`;
                 amountClass = 'plus';
+                amountElementStyle = 'color: #2ecc71;';
                 amountPrefix = '+';
                 iconColor = '#5f27cd';
                 iconBg = 'rgba(95, 39, 205, 0.15)';
             } else if (log.transaction_type === 'loan_paid') {
                 icon = 'fa-file-invoice-dollar';
                 title = 'Kredi Ödemesi';
+                description = `Bankaya <span style="color:#3498db; font-weight:bold;">${amountStr}</span> kredi borcu ödendi.`;
                 amountClass = 'minus';
+                amountElementStyle = 'color: #e74c3c;';
                 amountPrefix = '-';
                 iconColor = '#54a0ff';
                 iconBg = 'rgba(84, 160, 255, 0.15)';
+            } else if (log.transaction_type === 'transfer_out') {
+                icon = 'fa-paper-plane'; 
+                title = 'Giden Transfer';
+                // Regex to extract (id - username) from "Transfer: (12 - testuser)"
+                const match = log.description ? log.description.match(/\((.*?)\)/) : null;
+                const receiverInfo = match ? match[1] : 'Bilinmeyen'; // "12 - testuser"
+                
+                description = `${receiverInfo} adlı oyuncuya <span style="color:#e74c3c; font-weight:bold;">${amountStr}</span> gönderildi.`;
+                
+                amountClass = 'minus';
+                amountElementStyle = 'color: #e74c3c;';
+                amountPrefix = '-';
+                iconColor = '#ff9f43';
+                iconBg = 'rgba(255, 159, 67, 0.15)';
+            } else if (log.transaction_type === 'transfer_in') {
+                icon = 'fa-envelope-open-text'; 
+                title = 'Gelen Transfer';
+                // Regex to extract (id - username) from "Gelen Transfer (12 - testuser)"
+                const match = log.description ? log.description.match(/\((.*?)\)/) : null;
+                const senderInfo = match ? match[1] : 'Bilinmeyen'; // "12 - testuser"
+                
+                description = `${senderInfo} adlı oyuncudan <span style="color:#2ecc71; font-weight:bold;">${amountStr}</span> geldi.`;
+
+                amountClass = 'plus';
+                amountElementStyle = 'color: #2ecc71;';
+                amountPrefix = '+';
+                iconColor = '#00d2d3';
+                iconBg = 'rgba(0, 210, 211, 0.15)';
+            } else {
+                // Fallback
+                description = log.description;
+                amountElementStyle = 'color: #fff;';
             }
 
             const date = new Date(log.created_at);
-            const dateStr = date.toLocaleDateString('tr-TR') + ' ' + date.toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'});
+            const dateStr = date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) + 
+                           ' - ' + 
+                           date.toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'});
 
-            let amountDisplay = `${amountPrefix}${fmt(log.amount)} ₺`;
+            let amountDisplay = `${amountPrefix}${amountStr}`;
 
             const item = document.createElement('div');
             item.className = 'log-item';
+            // Adjusted HTML structure to support the description containing HTML
             item.innerHTML = `
                 <div class="log-left">
                     <div class="log-icon" style="background:${iconBg}; color:${iconColor};"><i class="fas ${icon}"></i></div>
                     <div class="log-info">
-                        <h4>${title}</h4>
-                        <p>${dateStr} • ${log.description || ''}</p>
+                        <div style="font-size: 0.85rem; color: #ccc; margin-bottom: 2px;">${description}</div>
+                        <p style="font-size: 0.7rem; color: #666;">${dateStr}</p>
                     </div>
                 </div>
-                <div class="log-amount ${amountClass}">${amountDisplay}</div>
             `;
             list.appendChild(item);
         });
@@ -950,12 +992,12 @@
             document.getElementById('bankBalance').innerText = fmt(accountData.balance) + " ₺";
             document.getElementById('ibanDisplay').innerText = accountData.iban || '----';
             // Owner Display
-            const ownerId = accountData.bank_owner_id || '?';
-            const ownerName = accountData.owner_name || 'Devlet';
+            // Use owner_id if available, otherwise bank_owner_id, fallback to '?'
+            const ownerId = accountData.owner_id || accountData.bank_owner_id || '?';
+            const ownerName = accountData.owner_name || 'Global Finans';
             document.getElementById('bankOwnerDisplay').innerHTML = `
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <i class="fas fa-user-md" style="font-size:0.9rem; color:#3498db;"></i>
-                    <span style="color:#3498db; font-weight:600;">${ownerId} - ${ownerName}</span>
+                <div style="cursor: pointer;" onclick="window.location.href='profile.html?id=${ownerId}'">
+                     <span style="color: #fff; font-weight: bold;">${ownerId} - ${ownerName}</span>
                 </div>
             `;
 
@@ -1111,7 +1153,12 @@
         // Input Limits
         const mAmount = document.getElementById('mAmount');
         mAmount.setAttribute('maxlength', '15');
-        mAmount.setAttribute('oninput', "if(this.value.length > 15) this.value = this.value.slice(0, 15);");
+        
+        // Combine length check and fee calculation
+        mAmount.oninput = function() {
+            if (this.value.length > 15) this.value = this.value.slice(0, 15);
+            if (typeof calcTransferFee === 'function') calcTransferFee();
+        };
         
         const targetIban = document.getElementById('targetIbanInput');
         targetIban.setAttribute('maxlength', '6');
@@ -1120,6 +1167,7 @@
         transferGroup.style.display = 'none';
         amountGroup.style.display = 'block';
         creditOffersGroup.style.display = 'none';
+        document.getElementById('transferFeeInfo').style.display = 'none';
         infoRow.style.display = 'flex';
         confirmBtn.style.display = 'block';
         document.getElementById('mAmount').value = '';
@@ -1163,6 +1211,13 @@
             const valEl = document.getElementById('mInfoVal');
             valEl.innerText = '%' + accountData.transfer_fee;
             valEl.style.color = '#fff'; // Reset color
+
+            // Show Fee Info immediately
+            document.getElementById('transferFeeInfo').style.display = 'block';
+            document.getElementById('tfSendAmount').innerText = '0 ₺';
+            document.getElementById('tfRateDisplay').innerText = '%' + (accountData.transfer_fee || 0);
+            document.getElementById('tfFeeAmount').innerText = '0 ₺';
+            document.getElementById('tfTotalCost').innerText = '0 ₺';
         } else if (action === 'repay') {
             title.innerText = 'Borç Öde';
             document.getElementById('mInfoLabel').innerText = 'Ödeme Detayları';
@@ -1220,7 +1275,16 @@
         
         // Safety check for loan rate
         const rate = (accountData && accountData.loan_rate) ? accountData.loan_rate : 5; 
-        const userEducation = (accountData && accountData.education_skill) ? accountData.education_skill : 1;
+
+        // Fix Education Level Check: Ensure accountData.education_skill is treated as number
+        let userEducation = 0;
+        if (accountData && accountData.education_skill !== undefined && accountData.education_skill !== null) {
+            userEducation = parseInt(accountData.education_skill);
+        } else {
+            console.warn('Education skill not found in accountData, defaulting to 0');
+        }
+
+        console.log('User Education for Loan Check:', userEducation); // Debug Log
 
         packages.forEach(pkg => {
             const amount = pkg.amount;
@@ -1282,6 +1346,41 @@
         takeLoan(amount);
     }
 
+    function calcTransferFee() {
+        // Find input directly in this function to be safe
+        const amountInput = document.getElementById('mAmount');
+        if (!amountInput) return;
+
+        const rawVal = amountInput.value;
+        const amount = parseInt(rawVal) || 0;
+
+        const transferInfo = document.getElementById('transferFeeInfo');
+
+        // Only run for transfer action
+        if (currentAction !== 'transfer') {
+             if(transferInfo) transferInfo.style.display = 'none';
+             return;
+        }
+
+        if(!accountData) return;
+
+        const feeRate = parseFloat(accountData.transfer_fee || 0);
+        const feeAmount = Math.ceil(amount * (feeRate / 100));
+        const totalCost = amount + feeAmount;
+        
+        const elSend = document.getElementById('tfSendAmount');
+        const elRate = document.getElementById('tfRateDisplay');
+        const elFee = document.getElementById('tfFeeAmount');
+        const elTotal = document.getElementById('tfTotalCost');
+
+        if(elSend) elSend.innerText = fmt(amount) + ' ₺';
+        if(elRate) elRate.innerText = '%' + feeRate;
+        if(elFee) elFee.innerText = fmt(feeAmount) + ' ₺';
+        if(elTotal) elTotal.innerText = fmt(totalCost) + ' ₺';
+        
+        if(transferInfo) transferInfo.style.display = 'block';
+    }
+
     // --- ACTIONS ---
     function performAction() {
         const amount = parseInt(document.getElementById('mAmount').value);
@@ -1304,10 +1403,11 @@
         let endpoint = '';
         let body = { userId, bankId, amount };
 
+        if (currentAction === 'transfer') endpoint = '/api/bank-accounts/transfer';
         if (currentAction === 'deposit') endpoint = '/api/bank-accounts/deposit';
         if (currentAction === 'withdraw') endpoint = '/api/bank-accounts/withdraw';
         if (currentAction === 'repay') endpoint = '/api/bank-accounts/pay-loan';
-        if (currentAction === 'transfer') {
+        /*if (currentAction === 'transfer') {
             endpoint = '/api/bank-accounts/transfer';
             body.targetIban = document.getElementById('targetIbanInput').value;
             if (!body.targetIban) {
@@ -1315,6 +1415,20 @@
                 return;
             }
             // Self Transfer Check
+            if (body.targetIban === accountData.iban) {
+                showResult(false, 'Kendi hesabınıza para gönderemezsiniz.');
+                return;
+            }
+            // Fee logic handled in JS calculation display, backend handles deduction
+        }*/
+
+        // Re-write transfer logic properly
+        if (currentAction === 'transfer') {
+            body.targetIban = document.getElementById('targetIbanInput').value;
+             if (!body.targetIban) {
+                showResult(false, 'IBAN giriniz');
+                return;
+            }
             if (body.targetIban === accountData.iban) {
                 showResult(false, 'Kendi hesabınıza para gönderemezsiniz.');
                 return;
@@ -1401,8 +1515,8 @@
         const duration = parseInt(document.getElementById('depDuration').value) || 10;
         const rate = accountData.interest_rate || 0;
         
-        // Formula: Amount * (Rate/100) * (Duration/1440) - Daily interest
-        const interest = Math.floor(amount * (rate / 100) * (duration / 1440));
+        // Formula: Amount * (Rate/100) * (Duration/60) - Hourly interest (Matches Backend)
+        const interest = Math.floor(amount * (rate / 100) * (duration / 60));
         document.getElementById('estInterest').innerText = fmt(interest) + ' ₺';
     }
 
@@ -1437,14 +1551,6 @@
             setTimeout(() => {
                 let msg = data.message;
                 if (data.success) {
-                    // Combine messages
-                    if (data.creditPoints && data.creditPoints !== 0) {
-                         const pointsMsg = data.creditPoints > 0 
-                            ? `\n\n+${data.creditPoints} kredi puanı kazandınız! 🎉`
-                            : `\n\n${data.creditPoints} kredi puanı kaybettiniz! ⚠️`;
-                         msg += pointsMsg;
-                    }
-                    
                     showResult(true, msg);
                     
                     loadAccountDetails();
@@ -1483,13 +1589,45 @@
         
         if (!activeDep) {
             card.style.display = 'none';
+            // Enable Open Button
+            const btn = document.querySelector('.action-btn.btn-mevduat');
+            if(btn) {
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'all';
+                btn.onclick = openMevduatModal;
+                const txt = btn.querySelector('.ab-text');
+                if(txt) txt.innerText = 'MEVDUAT';
+            }
             if (mainDepositInterval) clearInterval(mainDepositInterval);
             return;
         }
 
+        // Disable Open Button
+        const btn = document.querySelector('.action-btn.btn-mevduat');
+        if(btn) {
+            btn.style.opacity = '0.5';
+            btn.style.pointerEvents = 'none';
+            const txt = btn.querySelector('.ab-text');
+            if(txt) txt.innerText = 'AKTİF MEVDUAT';
+        }
+
         card.style.display = 'block';
-        document.getElementById('depPrincipal').innerText = fmt(activeDep.amount) + ' ₺';
-        document.getElementById('depTotalReturn').innerText = fmt(activeDep.amount + activeDep.interest_amount) + ' ₺';
+        
+        // Ensure numbers
+        const amount = parseFloat(activeDep.amount);
+        const interest = parseFloat(activeDep.interest_amount);
+        
+        document.getElementById('depPrincipal').innerText = fmt(amount) + ' ₺';
+        document.getElementById('depTotalReturn').innerText = fmt(amount + interest) + ' ₺'; 
+
+        // Update Label
+        const returnLabel = document.getElementById('depTotalReturn').previousElementSibling; // Assuming label is the prev element
+        if (returnLabel) {
+            // Check if user prefers "Total" or "Interest".
+            // If we calculate correctly (Amount + Interest), the label "Vade Sonu Toplam" is correct.
+            // If we show only Interest, label should be "Vade Sonu Kazanç".
+            // Reverting to Total (Amount + Interest) based on "Total" label expectation.
+        }
         
         // Calculate duration in minutes (approx)
         const start = new Date(activeDep.start_time).getTime();
@@ -1709,9 +1847,12 @@
             setTimeout(() => {
                 showResult(data.success, data.message);
                 if (data.success) {
-                    // Refresh UI to show "Open Account" state
-                    loadAccountDetails();
-                    window.dispatchEvent(new Event('userStatsUpdated'));
+                    // Redirect to bank-list.html on modal close
+                    const btn = document.getElementById('resultBtn');
+                    // Store original onclick if needed, but here we prevent default close and redirect
+                    btn.onclick = function() {
+                        window.location.href = 'bank-list.html';
+                    };
                 }
             }, 200);
         });
